@@ -24,6 +24,7 @@ import type {
   Material,
   MetricKey,
   Observation,
+  ReviewPurpose,
   UploadPreview,
 } from '../../shared/contracts';
 import { api, post, requestErrorText } from '../api';
@@ -32,27 +33,47 @@ import { translateRule } from '../ruleTranslations';
 
 import { useApp, adjustments, type Translate } from '../context';
 import { PageHeading, EmptyState, Tag, Dialog } from '../components';
+import { purposeName } from '../ReviewContext';
 
 export function NewReview({ query }: { query: URLSearchParams }) {
   const { t, workspace, cases, navigate, execute, busy } = useApp();
+  const suppliedMaterial = workspace!.materials.find((item) => item.id === query.get('material'));
+  const suppliedYear = Number(query.get('year'));
   const initial =
-    cases.find((item) => item.id === query.get('case')) ||
-    cases.find((item) => item.kind === 'contrast');
+    query.get('case') === 'custom'
+      ? undefined
+      : cases.find((item) => item.id === query.get('case')) ||
+        cases.find((item) => item.kind === 'contrast');
   const [selectedCase, setSelectedCase] = useState(initial?.id || 'custom');
-  const [selectedIds, setSelectedIds] = useState<string[]>(initial?.materialIds || []);
-  const [title, setTitle] = useState(
-    initial ? `${initial.shortName} · ${t('利润现金兑现核查', 'Profit-to-cash review')}` : ''
+  const [selectedIds, setSelectedIds] = useState<string[]>(
+    suppliedMaterial ? [suppliedMaterial.id] : initial?.materialIds || []
   );
-  const [company, setCompany] = useState(initial?.company || '');
-  const [year, setYear] = useState(initial?.year || 2025);
+  const [title, setTitle] = useState(
+    suppliedMaterial
+      ? `${suppliedMaterial.shortName} · ${t('现金核查', 'Cash review')}`
+      : initial
+        ? `${initial.shortName} · ${t('现金核查', 'Cash review')}`
+        : ''
+  );
+  const [company, setCompany] = useState(suppliedMaterial?.company || initial?.company || '');
+  const [year, setYear] = useState(
+    Number.isInteger(suppliedYear) && suppliedYear >= 2000 && suppliedYear <= 2100
+      ? suppliedYear
+      : suppliedMaterial
+        ? Math.max(...suppliedMaterial.observations.map((item) => item.year), 2000)
+        : initial?.year || 2025
+  );
   const [importOpen, setImportOpen] = useState(false);
   const [useModel, setUseModel] = useState(false);
+  const [purpose, setPurpose] = useState<ReviewPurpose>(
+    query.get('purpose') === 'handover' ? 'handover' : 'external'
+  );
   const selectCase = (item: DemoCase) => {
     setSelectedCase(item.id);
     setSelectedIds(item.materialIds);
     setCompany(item.company);
     setYear(item.year);
-    setTitle(`${item.shortName} · ${t('利润现金兑现核查', 'Profit-to-cash review')}`);
+    setTitle(`${item.shortName} · ${t('现金核查', 'Cash review')}`);
   };
   const selectCustom = () => {
     setSelectedCase('custom');
@@ -67,8 +88,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
         : [...previous, material.id]
     );
     if (!company) setCompany(material.company);
-    if (!title)
-      setTitle(`${material.shortName} · ${t('利润现金兑现核查', 'Profit-to-cash review')}`);
+    if (!title) setTitle(`${material.shortName} · ${t('现金核查', 'Cash review')}`);
   };
   const create = async (event: FormEvent) => {
     event.preventDefault();
@@ -78,6 +98,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
         company: company.trim(),
         year,
         materialIds: selectedIds,
+        purpose,
         useModel,
       } satisfies CreateTaskInput)
     );
@@ -86,19 +107,51 @@ export function NewReview({ query }: { query: URLSearchParams }) {
   return (
     <>
       <PageHeading
-        eyebrow="START WITH ONE CLAIM"
-        title={t('新建现金核查', 'Start a cash review')}
+        title={t('新建核查', 'New review')}
         description={t(
-          '核查目标：利润是否兑现为经营现金？先确认你提供的材料，再开始计算。',
-          'The claim to test: does profit translate into operating cash? Confirm your evidence before calculating.'
+          '比较同年度合并净利润与经营现金净额。',
+          'Compare annual consolidated net profit and operating cash flow.'
         )}
       />
+      <fieldset className="new-purpose">
+        <legend>{t('核查用途', 'Review purpose')}</legend>
+        <div className="purpose-options">
+          {(['external', 'handover'] as const).map((value) => (
+            <label
+              key={value}
+              className={purpose === value ? 'purpose-option selected' : 'purpose-option'}
+            >
+              <input
+                type="radio"
+                name="purpose"
+                value={value}
+                checked={purpose === value}
+                onChange={() => setPurpose(value)}
+              />
+              <span>
+                <strong>{purposeName(value, t)}</strong>
+                <small>
+                  {value === 'external'
+                    ? t(
+                        '核对主体、承诺条件与年报后变化。',
+                        'Review entities, terms and changes since publication.'
+                      )
+                    : t(
+                        '核对交接资料，填写90天收付款工作表。',
+                        'Review handover documents and fill the 90-day cash worksheet.'
+                      )}
+                </small>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="new-layout">
         <div className="new-main">
           <section className="form-section">
             <div className="form-section-heading">
               <span className="section-number">01</span>
-              <h2>{t('选择核查起点', 'Choose your starting point')}</h2>
+              <h2>{t('选择材料', 'Choose evidence')}</h2>
             </div>
             <div className="case-list">
               {cases.map((item) => (
@@ -192,8 +245,8 @@ export function NewReview({ query }: { query: URLSearchParams }) {
             <p className="field-note">
               <ShieldCheck size={15} />
               {t(
-                '任务保存输入快照；后续的压力测试不会修改原材料。',
-                'Your review saves an input snapshot. Later stress tests do not alter the source material.'
+                '调整证据会创建新任务，原材料保留。',
+                'Adjusting evidence creates a new review; source materials remain.'
               )}
             </p>
           </section>
@@ -204,12 +257,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
             </div>
             <div className="form-grid">
               <label className="form-field field-wide">
-                <span>
-                  {t(
-                    '底稿名称（仅作为标签，核查目标固定）',
-                    'Working-paper title (label only; fixed review objective)'
-                  )}
-                </span>
+                <span>{t('核查名称', 'Review name')}</span>
                 <input
                   value={title}
                   onChange={(event) => setTitle(event.target.value)}
@@ -254,8 +302,8 @@ export function NewReview({ query }: { query: URLSearchParams }) {
                 <small>
                   {workspace!.provider.configured
                     ? t(
-                        '开启后，本次允许的财务观测与短摘录将发送至已配置的第三方模型服务。规则计算不依赖模型，模型含义仍需人工复核。',
-                        'When enabled, permitted observations and short excerpts are sent to the configured third-party model service. Calculations do not depend on the model; meanings still need human review.'
+                        '默认不向模型发送材料；选中后将采用的指标、短摘录与规则分析发送至第三方 TokenFlux。解释含义需人工复核。',
+                        'Off by default. Selecting this sends adopted metrics, short excerpts and rule findings to third-party TokenFlux. Meaning requires human review.'
                       )
                     : t(
                         '当前未配置模型接口，规则核查与导出仍可完整运行。',
@@ -265,12 +313,6 @@ export function NewReview({ query }: { query: URLSearchParams }) {
               </span>
             </label>
             <div className="form-submit">
-              <p>
-                {t(
-                  '先验证口径，再计算差额；材料不够时，结论会明确收缩。',
-                  'Scope is verified before calculation. The conclusion narrows when evidence is missing.'
-                )}
-              </p>
               <button
                 className="button button-primary button-large"
                 type="submit"
@@ -282,49 +324,6 @@ export function NewReview({ query }: { query: URLSearchParams }) {
             </div>
           </form>
         </div>
-        <aside className="new-aside">
-          <div className="eyebrow">REVIEW BOUNDARIES</div>
-          <h3>
-            {t('我们核查的，是材料能够支持的结论。', 'We review what the evidence can support.')}
-          </h3>
-          <div className="aside-rule">
-            <CheckCircle2 size={18} />
-            <span>
-              {t(
-                '同公司、同年度、同币种和合并范围',
-                'Same company, year, currency, and consolidated scope'
-              )}
-            </span>
-          </div>
-          <div className="aside-rule">
-            <CheckCircle2 size={18} />
-            <span>
-              {t('每个派生数值，可回溯到来源', 'Every derived number traces back to evidence')}
-            </span>
-          </div>
-          <div className="aside-rule">
-            <CircleAlert size={18} />
-            <span>
-              {t(
-                '不推断违约概率，不输出信用总分',
-                'No default probability or composite credit score'
-              )}
-            </span>
-          </div>
-          <div className="aside-rule">
-            <CircleAlert size={18} />
-            <span>
-              {t(
-                '现金调整不等同于坏账或滞销',
-                'Cash adjustments do not prove bad debt or slow-moving stock'
-              )}
-            </span>
-          </div>
-          <a className="text-link" href="#/method">
-            {t('查看完整方法与局限', 'Read the method and limitations')}
-            <ArrowUpRight size={16} />
-          </a>
-        </aside>
       </div>
       {importOpen && (
         <Dialog
@@ -337,10 +336,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
               setSelectedCase('custom');
               setSelectedIds((previous) => [...previous, material.id]);
               setCompany(material.company);
-              if (!title)
-                setTitle(
-                  `${material.shortName} · ${t('利润现金兑现核查', 'Profit-to-cash review')}`
-                );
+              if (!title) setTitle(`${material.shortName} · ${t('现金核查', 'Cash review')}`);
               setImportOpen(false);
             }}
           />
@@ -352,32 +348,23 @@ export function NewReview({ query }: { query: URLSearchParams }) {
 
 export function caseTitle(item: DemoCase, t: Translate): string {
   if (item.kind === 'contrast')
-    return t(`${item.shortName} · 利润与现金的反差`, 'Songyuan · The profit–cash gap');
+    return t(`${item.shortName} · ${item.year}`, `Songyuan · ${item.year}`);
   if (item.kind === 'counterpoint')
-    return t(`${item.shortName} · 另一种现金结构`, 'Hikvision · A different cash structure');
-  if (item.kind === 'missing')
-    return t('材料不足 · 结论应该停止在哪里', 'Missing evidence · Where conclusions must stop');
-  return t('口径冲突 · 母公司与合并报表', 'Scope conflict · Parent and consolidated statements');
+    return t(`${item.shortName} · ${item.year}`, `Hikvision · ${item.year}`);
+  if (item.kind === 'missing') return t('合并利润范围未确认', 'Unconfirmed consolidation scope');
+  return t('母公司与合并口径冲突', 'Parent and consolidated scope conflict');
 }
 export function caseDescription(item: DemoCase, t: Translate): string {
-  if (item.kind === 'contrast')
-    return t(
-      '利润增长与经营现金下降同时发生。打开完整现金桥，保留两种解释。',
-      'Growing profit meets falling operating cash. Open the full cash bridge and preserve two explanations.'
-    );
-  if (item.kind === 'counterpoint')
-    return t(
-      '同样的方法、不同的现金结构。仅看历史证据，不做跨行业排名。',
-      'The same method, a different historical cash structure. No cross-industry ranking.'
-    );
+  if (item.kind === 'contrast' || item.kind === 'counterpoint')
+    return t('合并年报与现金流补充表。', 'Consolidated annual report and cash flow supplement.');
   if (item.kind === 'missing')
     return t(
-      '人为只提供选定材料；不能确认合并利润，系统停止比例解读。',
-      'A deliberately restricted input. Consolidated profit cannot be verified, so ratio interpretation stops.'
+      '仅提供摘要页；净利润范围未知，未提供调整项。',
+      'Summary page only; profit scope is unknown and adjustments are missing.'
     );
   return t(
-    '人为混入不同范围的观测；展示冲突证据，拒绝静默计算。',
-    'A deliberate mix of reporting scopes. Conflicting evidence is shown, not silently combined.'
+    '材料包含母公司利润与合并经营现金。',
+    'Inputs contain parent-company profit and consolidated operating cash.'
   );
 }
 
@@ -394,11 +381,10 @@ export function MaterialsPage() {
   return (
     <>
       <PageHeading
-        eyebrow="THE EVIDENCE LIBRARY"
         title={t('材料中心', 'Evidence library')}
         description={t(
-          '原始材料、出处与确认后的观测值。每份材料，都应该知道从哪里来。',
-          'Source materials, provenance, and confirmed observations. Know where every piece of evidence comes from.'
+          '查看来源、原文件与已确认的指标。',
+          'Inspect sources, original files and confirmed metrics.'
         )}
         action={
           <button className="button button-primary" onClick={() => setImportOpen(true)}>
@@ -461,6 +447,7 @@ export function MaterialsPage() {
                         ? t('公开披露', 'Public disclosure')
                         : t('用户导入', 'User import')}
                     </Tag>
+                    {!material.observations.length && <Tag>{t('文本材料', 'Text material')}</Tag>}
                   </div>
                   <p>
                     {material.company} · {t('披露/材料日期', 'Document date')}{' '}
@@ -491,12 +478,19 @@ export function MaterialsPage() {
                     className="button button-secondary"
                     onClick={() =>
                       showEvidence(
-                        material.observations.slice(0, 6).map((obs) => ({
-                          materialId: material.id,
-                          page: obs.page,
-                          quote: obs.quote,
-                          sourceUrl: material.sourceUrl,
-                        }))
+                        material.observations.length
+                          ? material.observations.slice(0, 6).map((obs) => ({
+                              materialId: material.id,
+                              page: obs.page,
+                              quote: obs.quote,
+                              sourceUrl: material.sourceUrl,
+                            }))
+                          : material.excerpts.slice(0, 6).map((excerpt) => ({
+                              materialId: material.id,
+                              page: excerpt.page,
+                              quote: excerpt.text,
+                              sourceUrl: material.sourceUrl,
+                            }))
                       )
                     }
                   >
@@ -789,55 +783,89 @@ export function MaterialImporter({ onSaved }: { onSaved: (material: Material) =>
               />
             </label>
           </div>
-          <div className="import-filter-action">
-            <button
-              type="button"
-              className="button button-secondary"
-              onClick={() => {
-                const retained = preview.material.observations.filter(
-                  (obs) => obs.scope === 'consolidated' && obs.period === 'annual'
-                );
-                const removed = preview.material.observations.length - retained.length;
-                setPreview({
-                  ...preview,
-                  material: {
-                    ...preview.material,
-                    observations: retained,
-                    notes: [
-                      ...preview.material.notes,
+          {preview.material.observations.length > 0 && (
+            <div className="import-filter-action">
+              <button
+                type="button"
+                className="button button-secondary"
+                onClick={() => {
+                  const retained = preview.material.observations.filter(
+                    (obs) => obs.scope === 'consolidated' && obs.period === 'annual'
+                  );
+                  const removed = preview.material.observations.length - retained.length;
+                  setPreview({
+                    ...preview,
+                    material: {
+                      ...preview.material,
+                      observations: retained,
+                      notes: [
+                        ...preview.material.notes,
+                        t(
+                          `用户主动仅保留合并年度观测，移除 ${removed} 条其他范围或期间观测。`,
+                          `User explicitly retained consolidated annual observations and removed ${removed} other-scope/period observations.`
+                        ),
+                      ],
+                    },
+                    warnings: [
+                      ...preview.warnings,
                       t(
-                        `用户主动仅保留合并年度观测，移除 ${removed} 条其他范围或期间观测。`,
-                        `User explicitly retained consolidated annual observations and removed ${removed} other-scope/period observations.`
+                        `已显式过滤 ${removed} 条观测，保留 ${retained.length} 条合并年度观测。`,
+                        `Explicitly removed ${removed} observations; kept ${retained.length} consolidated annual observations.`
                       ),
                     ],
-                  },
-                  warnings: [
-                    ...preview.warnings,
-                    t(
-                      `已显式过滤 ${removed} 条观测，保留 ${retained.length} 条合并年度观测。`,
-                      `Explicitly removed ${removed} observations; kept ${retained.length} consolidated annual observations.`
-                    ),
-                  ],
-                });
-              }}
-            >
-              <ShieldCheck size={16} />
-              {t(
-                '仅保留已确认合并年度观测',
-                'Keep only confirmed consolidated annual observations'
-              )}
-            </button>
-            <p>
-              {t(
-                '这会显式移除母公司、未知范围或非年度观测，不是后台自动选择。请先核对原文，再确认保留。',
-                'This explicitly removes parent, unconfirmed-scope, and non-annual observations. It is not a silent background selection. Verify the source before choosing.'
-              )}
-            </p>
-          </div>
+                  });
+                }}
+              >
+                <ShieldCheck size={16} />
+                {t(
+                  '仅保留已确认合并年度观测',
+                  'Keep only confirmed consolidated annual observations'
+                )}
+              </button>
+              <p>
+                {t(
+                  '这会显式移除母公司、未知范围或非年度观测，不是后台自动选择。请先核对原文，再确认保留。',
+                  'This explicitly removes parent, unconfirmed-scope, and non-annual observations. It is not a silent background selection. Verify the source before choosing.'
+                )}
+              </p>
+            </div>
+          )}
           <h3 className="import-observation-title">
             {t('逐项确认结构化观测', 'Confirm each structured observation')}{' '}
             <Tag>{preview.material.observations.length}</Tag>
           </h3>
+          {!preview.material.observations.length && (
+            <p className="field-note">
+              {t(
+                '文本材料：保存提供的原文，不生成财务观测。用于决定依据时仍需核对主体、日期和字段；财务核查缺少指标会停止计算。',
+                'Text material: saves supplied text without creating financial observations. Decision evidence still requires entity, date and field checks; financial calculations stop when metrics are missing.'
+              )}
+            </p>
+          )}
+          {preview.material.excerpts.length > 0 && (
+            <details className="import-text-preview">
+              <summary>
+                {t('查看保存的材料文本', 'Review material text to be saved')} ·{' '}
+                {preview.material.excerpts.length}
+              </summary>
+              {preview.material.excerpts.slice(0, 8).map((excerpt, index) => (
+                <div key={`${excerpt.page}-${index}`}>
+                  <strong>
+                    {t('页', 'Page')} {excerpt.page}
+                  </strong>
+                  <pre>{excerpt.text}</pre>
+                </div>
+              ))}
+              {preview.material.excerpts.length > 8 && (
+                <p className="field-note">
+                  {t(
+                    '此处显示前8段；其余文本与上传文件随材料保留。',
+                    'The first eight excerpts are shown here. Remaining text and the upload are retained with the material.'
+                  )}
+                </p>
+              )}
+            </details>
+          )}
           {preview.material.observations.map((obs, index) => (
             <fieldset className="observation-editor" key={index}>
               <legend>
@@ -1029,7 +1057,11 @@ export function MaterialImporter({ onSaved }: { onSaved: (material: Material) =>
             <button
               type="submit"
               className="button button-primary"
-              disabled={busy || !preview.material.observations.length}
+              disabled={
+                busy ||
+                (!preview.material.observations.length &&
+                  !preview.material.excerpts.some((excerpt) => excerpt.text.trim()))
+              }
             >
               {busy ? <LoaderCircle className="spinner" size={17} /> : <Check size={17} />}{' '}
               {t('确认并保存材料', 'Confirm and save')}

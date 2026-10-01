@@ -1,216 +1,231 @@
-import {
-  ArrowRight,
-  ArrowUpRight,
-  FileText,
-  Layers,
-  ShieldCheck,
-  SlidersHorizontal,
-} from 'lucide-react';
-
+import { useState } from 'react';
+import { ArrowRight, ExternalLink, Search } from 'lucide-react';
 import { money } from '../format';
-
 import { useApp } from '../context';
 
 export function Home() {
   const { t, locale, examples, navigate } = useApp();
-  const sample = examples.find((item) => item.kind === 'contrast');
-  const year = sample?.year;
-  const p = sample?.metrics.find((item) => item.key === 'netProfit')?.value ?? null;
-  const c = sample?.metrics.find((item) => item.key === 'operatingCashFlow')?.value ?? null;
-  const profitGrowth = sample?.metrics.find((item) => item.key === 'profitGrowth')?.value ?? null;
-  const cashGrowth = sample?.metrics.find((item) => item.key === 'cashGrowth')?.value ?? null;
-  const ratio = p && c && Number(p) > 0 ? (Number(c) / Number(p)) * 100 : null;
+  const [companyQuery, setCompanyQuery] = useState('');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const sample = examples.find((item) => item.id === selectedId) || examples[0];
+  const metric = (key: string) => sample?.metrics.find((item) => item.key === key)?.value ?? null;
+  const profit = metric('netProfit');
+  const cash = metric('operatingCashFlow');
+  const ratio = metric('cashConversion');
+  const max = Math.max(Math.abs(Number(profit || 0)), Math.abs(Number(cash || 0)), 1);
+  const growth = (value: string | null) =>
+    value === null ? '—' : `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(2)}%`;
   return (
-    <>
-      <section className="hero section-shell">
-        <div className="hero-copy">
-          <div className="eyebrow">
-            <span className="tiny-square" />
-            CASH EVIDENCE, NOT A GUESS
-          </div>
-          <h1>
-            {t('利润很好。', 'Profit looks good.')}
-            <br />
-            <span>{t('现金呢？', 'What about cash?')}</span>
-          </h1>
-          <p className="hero-description">
-            {t(
-              '合作之前，先核查年度合并利润与现金。照见把两者之间的落差，变成可追溯的证据、两种解释和下一步要问的问题。',
-              'Before a partnership, review annual consolidated profit and cash. CashLens turns the gap between them into traceable evidence, competing explanations, and the questions to ask next.'
-            )}
-          </p>
-          <div className="hero-actions">
+    <div className="home-content">
+      <section className="home-intro">
+        <h1>{t('先核对一笔付款', 'Review a payment first')}</h1>
+        <p>
+          {t(
+            '核对预付款条件，或安排接手后的付款日期。比较两个方案，查看缺哪项材料，以及证据变化后哪些结果仍成立。',
+            'Review prepayment terms or plan a payment after handover. Compare two options, find the missing evidence, and see which results survive changes to the evidence.'
+          )}
+        </p>
+
+        <div className="home-purpose-actions">
+          <div>
             <button
-              className="button button-primary button-large"
-              onClick={() => navigate(`/new${sample ? `?case=${sample.id}` : ''}`)}
+              className="button button-secondary"
+              onClick={() => navigate('/decisions?new=external')}
             >
-              {t('核查一个真实案例', 'Review a real case')}
-              <ArrowUpRight size={20} />
+              {t('核对一笔预付款', 'Review a prepayment')}
+              <ArrowRight size={16} />
             </button>
-            <a className="text-link" href="#/method">
-              {t('了解核查方法', 'Explore the method')}
-              <ArrowRight size={17} />
-            </a>
-          </div>
-          <div className="hero-trust">
-            <ShieldCheck size={16} />
-            {t(
-              '每个数值有出处，每个判断有边界。',
-              'A source for every number. A boundary for every conclusion.'
-            )}
-          </div>
-        </div>
-        <div className="hero-evidence">
-          <div className="hero-paper-head">
-            <span className="paper-label">
-              {t('真实公开年报 · 合并口径', 'PUBLIC ANNUAL REPORT · CONSOLIDATED')}
-            </span>
-            <span className="mono">01 / CASH GAP</span>
-          </div>
-          <div className="hero-company">
-            <h2>{sample?.shortName || t('公开案例', 'Public case')}</h2>
-            <span>
-              {year || '—'} {t('年度', 'FY')}
-              <ArrowUpRight size={18} />
-            </span>
-          </div>
-          <div className="hero-money-row">
-            <div>
-              <span>{t('净利润', 'Net profit')}</span>
-              <strong>
-                {money(p, locale)}
-                <small>CNY</small>
-              </strong>
-            </div>
-            <div className="money-bar profit-bar" style={{ width: '100%' }} />
-            {profitGrowth !== null && (
-              <span className="hero-growth">
-                {t('同比', 'Year over year')}{' '}
-                <strong>
-                  {Number(profitGrowth) > 0 ? '+' : ''}
-                  {Number(profitGrowth).toFixed(2)}%
-                </strong>
-              </span>
-            )}
-          </div>
-          <div className="hero-money-row cash-row">
-            <div>
-              <span>{t('经营活动现金净额', 'Operating cash flow')}</span>
-              <strong>
-                {money(c, locale)}
-                <small>CNY</small>
-              </strong>
-            </div>
-            <div
-              className="money-bar cash-bar"
-              style={{ width: ratio === null ? '0%' : `${Math.max(4, Math.min(100, ratio))}%` }}
-            />
-            {cashGrowth !== null && (
-              <span className="hero-growth">
-                {t('同比', 'Year over year')}{' '}
-                <strong>
-                  {Number(cashGrowth) > 0 ? '+' : ''}
-                  {Number(cashGrowth).toFixed(2)}%
-                </strong>
-              </span>
-            )}
-          </div>
-          <div className="hero-gap">
-            <div>
-              <span>{t('利润现金转化', 'Cash conversion')}</span>
-              <strong>{ratio === null ? '—' : `${ratio.toFixed(2)}%`}</strong>
-            </div>
             <p>
               {t(
-                '利润增长，不等于现金已收回。差距的原因，需要继续核查。',
-                'Profit growth does not prove cash collection. The reason for the gap needs evidence.'
+                '先看合同与收款主体、已付与已交付，再测算这次付款后的未交付暴露。',
+                'Check the contract and receiving entity, payments and delivered value, then calculate undelivered exposure after this payment.'
               )}
             </p>
           </div>
-          <div className="paper-footer">
-            <FileText size={15} />
-            <span>
-              {sample
-                ? t(sample.source.title, `${year} annual report · Consolidated cash-flow notes`)
-                : t('正在读取来源', 'Loading source')}
-            </span>
-            {sample?.source.url && (
+          <div>
+            <button
+              className="button button-secondary"
+              onClick={() => navigate('/decisions?new=handover')}
+            >
+              {t('接手后安排一笔付款', 'Plan a payment after handover')}
+              <ArrowRight size={16} />
+            </button>
+            <p>
+              {t(
+                '按具体日期排列收付事件，对照两种付款日期，定位最早缺口及下一项依据。',
+                'Place cash events on specific dates, compare two payment dates, and locate the earliest gap and next evidence needed.'
+              )}
+            </p>
+          </div>
+        </div>
+        <form
+          className="home-company-search"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (companyQuery.trim())
+              navigate(`/company?query=${encodeURIComponent(companyQuery.trim())}`);
+          }}
+        >
+          <label htmlFor="home-company-query">
+            {t('公司名称或证券代码', 'Company name or security code')}
+          </label>
+          <div>
+            <input
+              id="home-company-query"
+              type="search"
+              required
+              maxLength={80}
+              value={companyQuery}
+              onChange={(event) => setCompanyQuery(event.target.value)}
+              placeholder={t(
+                '例如：松原安全、海康威视、300893',
+                'Chinese company name or code, e.g. 300893'
+              )}
+            />
+            <button className="button button-primary" type="submit">
+              <Search size={16} />
+              {t('查询公司', 'Find company')}
+            </button>
+          </div>
+        </form>
+      </section>
+      <section className="public-example" aria-labelledby="public-example-title">
+        <div className="public-example-toolbar">
+          <h2 id="public-example-title">{t('公开示例', 'Public examples')}</h2>
+          <div
+            className="example-tabs"
+            role="tablist"
+            aria-label={t('选择示例', 'Choose an example')}
+          >
+            {examples.map((item, index) => (
+              <button
+                key={item.id}
+                role="tab"
+                id={`example-tab-${item.id}`}
+                aria-controls="example-panel"
+                tabIndex={sample?.id === item.id ? 0 : -1}
+                onKeyDown={(event) => {
+                  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                  event.preventDefault();
+                  const next =
+                    event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? examples.length - 1
+                        : (index + (event.key === 'ArrowRight' ? 1 : examples.length - 1)) %
+                          examples.length;
+                  setSelectedId(examples[next].id);
+                  (
+                    event.currentTarget.parentElement?.querySelectorAll('button')[next] as
+                      | HTMLButtonElement
+                      | undefined
+                  )?.focus();
+                }}
+                aria-selected={sample?.id === item.id}
+                className={sample?.id === item.id ? 'active' : ''}
+                onClick={() => setSelectedId(item.id)}
+              >
+                {locale === 'en'
+                  ? item.kind === 'contrast'
+                    ? 'Songyuan'
+                    : 'Hikvision'
+                  : item.shortName}
+              </button>
+            ))}
+          </div>
+        </div>
+        {sample && (
+          <div id="example-panel" role="tabpanel" aria-labelledby={`example-tab-${sample.id}`}>
+            <div className="example-heading">
+              <div>
+                <h3>
+                  {locale === 'en'
+                    ? sample.kind === 'contrast'
+                      ? 'Songyuan Safety'
+                      : 'Hikvision'
+                    : sample.shortName}
+                </h3>
+                <p>
+                  {sample.year} · {t('年度合并报表', 'Annual consolidated statements')} · CNY
+                </p>
+              </div>
+              <button
+                className="button button-secondary"
+                onClick={() => navigate(`/new?case=${sample.id}`)}
+              >
+                {t('使用此示例', 'Use this example')}
+                <ArrowRight size={15} />
+              </button>
+            </div>
+            <div className="example-metrics">
+              {[
+                {
+                  label: t('合并净利润', 'Consolidated net profit'),
+                  value: profit,
+                  change: metric('profitGrowth'),
+                  kind: 'profit',
+                },
+                {
+                  label: t('经营现金净额', 'Operating cash flow'),
+                  value: cash,
+                  change: metric('cashGrowth'),
+                  kind: 'cash',
+                },
+              ].map((item) => (
+                <div className="example-metric" key={item.kind}>
+                  <div className="example-metric-heading">
+                    <span>{item.label}</span>
+                    <span className="example-change">
+                      {t('同比', 'YoY')} {growth(item.change)}
+                    </span>
+                  </div>
+                  <strong>
+                    {money(item.value, locale, false)}
+                    <small>CNY</small>
+                  </strong>
+                  <div className="example-bar-track" aria-hidden="true">
+                    <div
+                      className={`example-bar example-bar-${item.kind}`}
+                      style={{
+                        width: `${Math.max(0, Math.min(100, (Math.abs(Number(item.value || 0)) / max) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="example-ratio">
+              <div>
+                <span>{t('现金利润比', 'Cash-to-profit ratio')}</span>
+                <strong>{ratio === null ? '—' : `${Number(ratio).toFixed(2)}%`}</strong>
+              </div>
+              <p>
+                {t(
+                  '经营现金净额 ÷ 合并净利润，不是销售回款率。',
+                  'Operating cash flow ÷ consolidated net profit; not a sales collection rate.'
+                )}
+              </p>
+            </div>
+            <div className="example-source">
+              <span>
+                {sample.year} {t('年度报告', 'annual report')} · {sample.source.documentDate}{' '}
+                {t('披露', 'published')}
+              </span>
               <a href={sample.source.url} target="_blank" rel="noreferrer">
-                {t('原件', 'Source')}
-                <ArrowUpRight size={12} />
+                {t('查看原件', 'Source PDF')}
+                <ExternalLink size={14} />
               </a>
-            )}
+            </div>
           </div>
-          <div className="hero-note">
-            <span className="note-dash" />
-            {t('这是一条核查线索，不是一张信用评级。', 'A line of inquiry, not a credit rating.')}
-          </div>
-        </div>
+        )}
       </section>
-      <section className="home-process section-shell">
-        <div className="section-heading">
-          <span className="eyebrow">THE REVIEW WORKFLOW</span>
-          <h2>{t('看见差距，也看清依据。', 'See the gap. Understand the evidence.')}</h2>
-          <p>
-            {t(
-              '从一条说法开始，直到一个具体问题。',
-              'Start with a claim. Finish with a concrete question.'
-            )}
-          </p>
-        </div>
-        <div className="process-grid">
-          {[
-            [
-              FileText,
-              t('确认材料与口径', 'Confirm evidence and scope'),
-              t(
-                '公司、期间、单位、合并范围，先对齐再计算。',
-                'Align company, period, unit, and consolidation scope before calculating.'
-              ),
-            ],
-            [
-              Layers,
-              t('打开现金桥与原件', 'Open the cash bridge and sources'),
-              t(
-                '数值与原文同屏。解释哪里有依据、哪里还不能确认。',
-                'Keep numbers and original evidence together. See what is supported and what is still uncertain.'
-              ),
-            ],
-            [
-              SlidersHorizontal,
-              t('让结论接受压力测试', 'Put the conclusion under stress'),
-              t(
-                '移除一组证据，重新核查。材料减少，结论也必须收缩。',
-                'Remove a group of observations and rerun. Less evidence must mean a narrower conclusion.'
-              ),
-            ],
-          ].map(([Icon, title, description], i) => {
-            const Symbol = Icon as typeof FileText;
-            return (
-              <article className="process-item" key={i}>
-                <span className="step-number">0{i + 1}</span>
-                <Symbol size={24} />
-                <h3>{title as string}</h3>
-                <p>{description as string}</p>
-              </article>
-            );
-          })}
-        </div>
-      </section>
-      <section className="home-bottom section-shell">
-        <div>
-          <div className="eyebrow">A BETTER QUESTION</div>
-          <h2>
-            {t('不是「这家公司靠谱吗」，', 'Beyond “Is this company reliable?”')}
-            <br />
-            {t('而是「这笔利润，为什么还没变成现金？」', '“Why has this profit not become cash?”')}
-          </h2>
-        </div>
-        <button className="button button-light" onClick={() => navigate('/workspace')}>
-          {t('进入工作台', 'Open workspace')}
-          <ArrowRight size={18} />
-        </button>
-      </section>
-    </>
+      <p className="home-scope">
+        {t(
+          '支持年度合并人民币口径；用于历史财务核查，不作信用评级。',
+          'Annual consolidated CNY statements. Historical financial review, without a credit rating.'
+        )}{' '}
+        <a href="#/method">{t('核查范围', 'Review scope')}</a>
+      </p>
+    </div>
   );
 }

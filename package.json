@@ -31,7 +31,6 @@
     "vite": "8.3.2"
   },
   "dependencies": {
-    "@fontsource/ibm-plex-sans": "5.3.0",
     "better-sqlite3": "13.0.3",
     "express": "5.2.1",
     "lucide-react": "1.49.0",

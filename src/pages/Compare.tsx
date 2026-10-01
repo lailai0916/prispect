@@ -48,6 +48,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
         year: right.year,
         materialIds: right.materialIds,
         excludedMetrics: [],
+        purpose: right.purpose || 'external',
         useModel: false,
       } satisfies CreateTaskInput)
     );
@@ -56,19 +57,18 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
   return (
     <>
       <PageHeading
-        eyebrow="COMPARE THE EVIDENCE, NOT A RANK"
-        title={t('历史核查比较', 'Compare historical reviews')}
+        title={t('比较核查', 'Compare reviews')}
         description={t(
-          '看清材料变化，如何改变解释的边界。比较的是核查任务，不是公司健康排名。',
-          'See how changed evidence changes the boundaries of an explanation. Compare reviews, not company health rankings.'
+          '比较两份任务采用的材料与计算结果。',
+          'Compare the evidence and calculated results of two reviews.'
         )}
       />
       {completed.length < 2 ? (
         <EmptyState
           title={t('准备两份已完成的核查', 'Two completed reviews are needed')}
           text={t(
-            '可先运行完整案例，再通过证据压力测试创建第二份报告。',
-            'Run a full case, then create a second report with an evidence stress test.'
+            '在报告中调整证据并重算，即可创建第二份核查。',
+            'Adjust evidence and rerun an existing report to create a second review.'
           )}
           action={
             <button
@@ -122,8 +122,8 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   <CircleAlert size={19} />
                   <p>
                     {t(
-                      '不同公司可能处于不同的行业和业务阶段。这里只并列显示历史现金结构，不排序、不下安全结论。',
-                      'These companies may operate in different industries and business stages. Historical cash structures are displayed side by side, without ranking or safety conclusions.'
+                      '不同公司只并列展示历史现金结构，不作健康或安全排名。',
+                      'Different companies are shown side by side without health or safety rankings.'
                     )}
                   </p>
                 </div>
@@ -132,19 +132,22 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   <Layers size={19} />
                   <p>
                     {t(
-                      '同一家公司，比较材料与核查边界的变化。重新运行会创建独立报告，原件与历史结果保留。',
-                      'Same company: compare changes in evidence and conclusion boundaries. Reruns create separate reports, preserving original sources and history.'
+                      '两份任务的原件与历史结果均保留。',
+                      'Sources and historical results are retained for both reviews.'
                     )}
                   </p>
                 </div>
               )}
+              <p className="comparison-mobile-hint">
+                {t('左右滑动，比较两份核查。', 'Swipe to compare both reviews.')}
+              </p>
               <div className="comparison-table-wrap">
                 <table className="comparison-table">
                   <thead>
                     <tr>
                       <th>{t('核查维度', 'Review dimension')}</th>
-                      {[left, right].map((task) => (
-                        <th key={task.id}>
+                      {[left, right].map((task, side) => (
+                        <th key={`${side}-${task.id}`}>
                           <span>{task.company}</span>
                           <strong>{task.title}</strong>
                           <a href={`#/tasks/${task.id}`} className="text-link">
@@ -248,15 +251,15 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                 <section className="comparison-changes">
                   <div className="report-section-title">
                     <div>
-                      <div className="eyebrow">WHAT THE EVIDENCE CHANGED</div>
-                      <h2>{t('哪些解释，真的改变了？', 'Which explanations actually changed?')}</h2>
+                      <h2>{t('解释变化', 'Explanation changes')}</h2>
                     </div>
                   </div>
                   <div className="change-columns">
-                    <div>
+                    <div className="change-withdrawn">
                       <h3>
                         <ArrowLeft size={17} />
-                        {t('对照任务中撤回的解释', 'Explanations withdrawn in the comparison')}
+                        {t('撤回', 'Withdrawn')}{' '}
+                        <span className="change-count">{withdrawn.length}</span>
                       </h3>
                       {withdrawn.length ? (
                         withdrawn.map((finding) => (
@@ -264,12 +267,14 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                             <strong>{t(finding.label, translateRule(finding.label))}</strong>
                             <p>
                               {t('原解释依赖的来源：', 'Sources used by this explanation:')}{' '}
-                              {finding.sourceRefs
-                                .map(
-                                  (ref) =>
-                                    `${ref.materialId.slice(0, 8)} · ${t('PDF页', 'PDF p.')} ${ref.page ?? '—'}`
-                                )
-                                .join(' / ')}
+                              {[
+                                ...new Set(
+                                  finding.sourceRefs.map(
+                                    (ref) =>
+                                      `${leftReport.snapshot.find((material) => material.id === ref.materialId)?.title || t('未匹配材料', 'Unmatched material')} · ${t('PDF 页', 'PDF p.')} ${ref.page ?? '—'}`
+                                  )
+                                ),
+                              ].join(' / ')}
                             </p>
                             {finding.sourceRefs.length > 0 && (
                               <button
@@ -283,55 +288,50 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                           </div>
                         ))
                       ) : (
-                        <p>
-                          {t(
-                            '两份报告没有撤回的解释差异。',
-                            'No explanations were withdrawn between these reports.'
-                          )}
-                        </p>
+                        <p>{t('没有撤回的解释。', 'No explanations withdrawn.')}</p>
                       )}
                     </div>
-                    <div>
+                    <div className="change-restored">
                       <h3>
                         <Plus size={17} />
-                        {t('对照任务中新增的解释', 'Explanations added in the comparison')}
+                        {t('新增或恢复', 'Added or restored')}{' '}
+                        <span className="change-count">{restored.length}</span>
                       </h3>
                       {restored.length ? (
                         restored.map((finding) => (
                           <div className="change-item" key={finding.id}>
                             <strong>{t(finding.label, translateRule(finding.label))}</strong>
                             <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
+                            {finding.sourceRefs.length > 0 && (
+                              <button
+                                className="text-link"
+                                onClick={() => showEvidence(finding.sourceRefs, rightReport)}
+                              >
+                                {t('查看来源', 'View sources')}
+                                <ArrowUpRight size={14} />
+                              </button>
+                            )}
                           </div>
                         ))
                       ) : (
-                        <p>
-                          {t(
-                            '两份报告没有新增的解释差异。',
-                            'No explanations were added between these reports.'
-                          )}
-                        </p>
+                        <p>{t('没有新增的解释。', 'No explanations added.')}</p>
                       )}
                     </div>
                   </div>
                   {right.excludedMetrics.length > 0 && (
                     <div className="restore-action">
                       <div>
-                        <h3>
-                          {t(
-                            '补回材料，再看结论能否恢复。',
-                            'Restore evidence and test the conclusion again.'
-                          )}
-                        </h3>
+                        <h3>{t('恢复已排除的指标', 'Restore excluded metrics')}</h3>
                         <p>
                           {t(
-                            '使用对照任务保存的材料，取消人工排除，创建第三份独立核查。不会伪装新增外部资料，新任务默认使用规则模式，不自动发送给模型。',
-                            'Create a third review from the comparison’s saved materials, with the exclusions removed. This does not pretend that new external documents have arrived. The new task uses rules mode without automatically sending evidence to a model.'
+                            '使用对照任务的原材料，另存规则核查。不会向模型发送材料。',
+                            'Save a new rules-based review using the comparison’s original evidence. No materials are sent to a model.'
                           )}
                         </p>
                       </div>
                       <button className="button button-primary" onClick={restore}>
                         <RotateCcw size={16} />
-                        {t('恢复完整输入并重算', 'Restore full input and rerun')}
+                        {t('恢复并重算', 'Restore and rerun')}
                       </button>
                     </div>
                   )}

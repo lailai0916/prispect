@@ -1,6 +1,6 @@
 # GitHub Actions 自动部署
 
-工作流、受限服务器入口、可信主机密钥及仓库 Secrets 已配置。同一核心版本通过专用SSH身份在真实服务器完成发布、资产验证和幂等复发；GitHub事件触发仍须单独验收。本文不含密钥内容，也不提供通用远程命令入口。
+工作流、受限服务器入口、可信主机密钥及仓库 Secrets 已配置。2026-10-02，提交 `53983713f8562dd5227ef3243f5ccfc990e4670b` 已通过真实 main push CI，再由 GitHub 事件自动触发部署；服务器发布清单与该 SHA 一致，公网 HTTPS 健康检查通过。本文不含密钥内容，也不提供通用远程命令入口。
 
 ## 发布的提交
 
@@ -79,8 +79,10 @@ cashlens-deploy ALL=(root) NOPASSWD: /usr/local/sbin/cashlens-ci-deploy *
 
 2026-10-02 本地已通过三个脚本 Bash 语法、Prettier YAML 解析及文档格式、工作流多行 shell 语法。临时独立 checkout 验证模板链接兼容、两次包字节及摘要一致、秘密/状态/raw/Git 排除；11 种危险归档与 7 种非法 SSH 命令被拒绝。源码同长度改写、依赖外新增文件、安装后外部链接均被拒绝。CI 记录夹具确认精确 main push success 被接受，错误 SHA、PR、分支、失败/未完成、fork 与无记录被拒绝。没有执行本机 sudo、systemctl、SSH 或真实依赖安装沙箱。
 
-主任务负责真实验证受限身份的非法命令拒绝、npm 沙箱、备份、权限封存、保留账号状态、资产一致、幂等及失败回滚，然后再触发 GitHub Actions。没有看到这些真实运行结果前，不能写自动部署已上线或已端到端成功。
+受限身份的非法命令拒绝、npm 沙箱、备份、权限封存、保留账号状态、资产一致与幂等已在真实服务器验收。切换后启动故障回滚尚未在生产注入验证，与实际成功部署分别记录。
 
 2026-10-02 实机入口验证：独立构建已有核心提交 `96fa784cc1c0ad3096c4bce7be6c7301f54aeaf6`，包摘要 `a8d9a51140316ffcee4ae7e6bdba2d118eb93cfc7f49c7482faddc21e85fde99`，专用密钥只允许固定 deploy 命令，`id` 返回64。sshd实际ForceCommand固定，密码与转发禁用，sudo仅固定publisher。两份原件移动至独立source-data后哈希不变，账号状态保留。
 
-首次依赖安装因esbuild正常内部硬链接而在封存前拒绝，旧站未切换。补充全树inode名称核对后，实际非root systemd安装、一致性备份、原子切换、API及构建资产逐字节校验成功；重复同包返回已current且健康。错误包哈希实际拒绝，current保持不变。没有在生产站注入启动故障来验证切换后的回滚；回滚逻辑经审查，不能把哈希拒绝称为已实际执行代码回滚。首次GitHub自动触发结果另见acceptance.md。
+首次依赖安装因 esbuild 正常内部硬链接而在封存前拒绝，旧站未切换。补充全树 inode 名称核对后，实际非 root systemd 安装、一致性备份、原子切换、API 及构建资产逐字节校验成功；重复同包返回已 current 且健康。错误包哈希实际拒绝，current 保持不变。没有在生产站注入启动故障来验证切换后的回滚；回滚逻辑经审查，不能把哈希拒绝称为已实际执行代码回滚。
+
+首次 GitHub 自动链路的 [CI 36907501972](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36907501972) 与 [Deploy 36907590434](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36907590434) 均为 success，对应同一 `53983713f8562dd5227ef3243f5ccfc990e4670b`。管理连接只读核对 `/opt/cashlens/current` 和 `RELEASE.json` 均指向该提交，`https://xuejun.cc/api/health` 返回 `{"ok":true}`。这次发布证明自动链路；随后产品功能版本须另记录其对应 SHA 与运行验收。

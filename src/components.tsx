@@ -32,12 +32,11 @@ export function Logo({ light = false }: { light?: boolean }) {
 }
 
 export function PageHeading({
-  eyebrow,
   title,
   description,
   action,
 }: {
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   description?: string;
   action?: ReactNode;
@@ -45,7 +44,6 @@ export function PageHeading({
   return (
     <div className="page-heading">
       <div>
-        <div className="eyebrow">{eyebrow}</div>
         <h1>{title}</h1>
         {description && <p>{description}</p>}
       </div>
@@ -64,9 +62,6 @@ export function EmptyState({
 }) {
   return (
     <div className="empty-state">
-      <div className="empty-icon">
-        <FolderOpen size={28} />
-      </div>
       <h2>{title}</h2>
       <p>{text}</p>
       {action}
@@ -104,10 +99,10 @@ export function TaskTag({ status }: { status: AnalysisTask['status'] }) {
 export function VerdictTag({ verdict }: { verdict: Report['verdict'] }) {
   const { t } = useApp();
   const labels = {
-    attention: t('需要进一步核查', 'Follow-up needed'),
-    supported: t('当前材料支持', 'Supported by current evidence'),
-    insufficient: t('材料不足', 'Insufficient evidence'),
-    conflict: t('口径存在冲突', 'Scope conflict'),
+    attention: t('现金低于利润', 'Cash below profit'),
+    supported: t('金额可核对', 'Amounts supported'),
+    insufficient: t('缺少材料', 'Missing evidence'),
+    conflict: t('输入冲突', 'Input conflict'),
   };
   return (
     <Tag tone={verdict === 'supported' ? 'green' : verdict === 'conflict' ? 'red' : 'amber'}>
@@ -263,10 +258,7 @@ export function EvidenceDrawer({
       >
         <div className="drawer-header">
           <div>
-            <div className="eyebrow">THE ORIGINAL EVIDENCE</div>
-            <h2 id="evidence-title">
-              {t('把数值，放回原文。', 'Put the number back in context.')}
-            </h2>
+            <h2 id="evidence-title">{t('来源', 'Source')}</h2>
           </div>
           <button
             className="icon-button"
@@ -277,12 +269,20 @@ export function EvidenceDrawer({
           </button>
         </div>
         <div className="drawer-scroll">
+          {uniqueRefs.length > 0 && (
+            <p className="source-reading-note">
+              {t(
+                '以下显示已确认的输入与原文摘录，未认证原件真实性。',
+                'Confirmed inputs and source excerpts are shown below; original-document authenticity has not been verified.'
+              )}
+            </p>
+          )}
           {!uniqueRefs.length ? (
             <EmptyState
-              title={t('当前判断没有可用原文引用', 'No source citation for this check')}
+              title={t('无原文引用', 'No source citation')}
               text={t(
-                '它可能是材料缺失检查或方法规则。不能把规则当成公司事实。',
-                'This may be a missing-evidence check or a method rule. A rule is not a company fact.'
+                '此项为口径检查或材料缺失提示。',
+                'This item is a scope check or missing-evidence notice.'
               )}
             />
           ) : (
@@ -386,20 +386,18 @@ export function EvidenceDrawer({
                         rel="noreferrer"
                       >
                         <FileText size={16} />
-                        {t('打开本机原件并定位', 'Open local PDF at page')}
+                        {t('打开 PDF 原件', 'Open original PDF')}
                         <ArrowUpRight size={15} />
                       </a>
                     ) : material?.rawSourceId &&
                       availability[material.rawSourceId] === undefined ? (
-                      <span className="field-note">
-                        {t('正在检查本机原件…', 'Checking local PDF…')}
-                      </span>
+                      <span className="field-note">{t('检查文件…', 'Checking file…')}</span>
                     ) : !material?.uploadId ? (
                       <p className="pdf-unavailable">
                         <CircleAlert size={15} />
                         {t(
-                          '本机原件未下载或此导入无可用 PDF。请核对公开原件或原始上传文件。',
-                          'No local PDF is available for this evidence. Check the public source or the original uploaded file.'
+                          'PDF 原件不可用，请查看公开来源或上传文件。',
+                          'PDF unavailable. Check the public source or uploaded file.'
                         )}
                       </p>
                     ) : null}
@@ -416,8 +414,10 @@ export function EvidenceDrawer({
                     )}
                   </div>
                   {material && (
-                    <div className="evidence-provenance">
-                      <span>{t('来源身份 / 文件哈希', 'Source identity / file hash')}</span>
+                    <details className="evidence-provenance">
+                      <summary>
+                        {t('文件信息与核验范围', 'File information and verification scope')}
+                      </summary>
                       <code>{material.sha256}</code>
                       <p>
                         {material.filename} ·{' '}
@@ -426,7 +426,7 @@ export function EvidenceDrawer({
                           'Consistent observations do not authenticate the document.'
                         )}
                       </p>
-                    </div>
+                    </details>
                   )}
                 </article>
               );

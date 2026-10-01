@@ -31,6 +31,8 @@ import type {
 import { api, post } from '../api';
 import { chartScale, reviewVariantTitle, date, metricName, metricValue, money } from '../format';
 import { translateRule } from '../ruleTranslations';
+import { ModelExplanation } from '../ModelExplanation';
+import { ReviewContext, purposeName } from '../ReviewContext';
 
 import { useApp, adjustments } from '../context';
 import { PageHeading, EmptyState, Tag, TaskTag, VerdictTag, Dialog } from '../components';
@@ -69,20 +71,19 @@ export function TaskPage({ id }: { id: string }) {
       <div className="breadcrumb">
         <a href="#/workspace">{t('工作台', 'Workspace')}</a>
         <ChevronRight size={14} />
-        <span>{t('核查底稿', 'Review working paper')}</span>
+        <span>{t('核查报告', 'Review')}</span>
         <code>{task.id.slice(0, 8)}</code>
       </div>
       <PageHeading
-        eyebrow={t('一条说法，一份可追溯的底稿', 'ONE CLAIM. ONE TRACEABLE WORKING PAPER.')}
         title={task.title}
-        description={`${task.company} · ${task.year} ${t('年度', 'FY')} · ${t('创建于', 'Created')} ${date(task.createdAt, locale)}`}
+        description={`${task.company} · ${task.year} ${t('年度', 'FY')} · ${purposeName(task.purpose, t)} · ${t('创建于', 'Created')} ${date(task.createdAt, locale)}`}
         action={
           <div className="report-actions">
             {report && (
               <>
                 <button className="button button-secondary" onClick={() => setStressOpen(true)}>
                   <SlidersHorizontal size={16} />
-                  {t('证据压力测试', 'Stress test')}
+                  {t('调整证据', 'Adjust evidence')}
                 </button>
                 <a
                   className="button button-secondary"
@@ -95,6 +96,7 @@ export function TaskPage({ id }: { id: string }) {
                 <button
                   className="icon-button"
                   title={t('打印报告', 'Print report')}
+                  aria-label={t('打印报告', 'Print report')}
                   onClick={() => window.print()}
                 >
                   <Printer size={18} />
@@ -108,14 +110,12 @@ export function TaskPage({ id }: { id: string }) {
         <div className="stress-notice">
           <SlidersHorizontal size={18} />
           <p>
-            <strong>
-              {t('这是一次输入材料压力测试。', 'This is an evidence-input stress test.')}
-            </strong>{' '}
+            <strong>{t('本次已调整证据。', 'Evidence adjusted for this review.')}</strong>{' '}
             {t('本次人工移除：', 'Excluded for this review:')}{' '}
             {task.excludedMetrics.map((key) => metricName(key, locale)).join(' / ')}。
             {t(
-              '它表示本次未提供这些观测，不表示公司没有披露。原任务与原件保留。',
-              'This means those observations were not supplied in this run, not that the company failed to disclose them. Original reviews and sources remain.'
+              '仅限制本次使用的指标，不表示公司未披露；原任务和原件保留。',
+              'Only the inputs used in this run are restricted. This does not imply non-disclosure; original reviews and sources remain.'
             )}
           </p>
         </div>
@@ -130,13 +130,13 @@ export function TaskPage({ id }: { id: string }) {
               <TaskTag status={task.status} />
               <h2>
                 {task.status === 'failed'
-                  ? t('本次处理未完成', 'This review could not complete')
-                  : t('材料正在进入核查流程', 'Evidence is moving through the review')}
+                  ? t('核查未完成', 'Review incomplete')
+                  : t('正在核查', 'Review in progress')}
               </h2>
               <p>
                 {t(
-                  '下面显示实际处理阶段与事件，不使用模拟百分比。',
-                  'Stages and timestamps below reflect real work. No simulated progress percentage.'
+                  '处理完成后，报告将显示在这里。',
+                  'Your report will appear here when processing is complete.'
                 )}
               </p>
             </div>
@@ -152,7 +152,7 @@ export function TaskPage({ id }: { id: string }) {
             <div className="inline-actions">
               <button className="button button-primary" onClick={retry}>
                 <RefreshCw size={16} />
-                {t('重试真实处理', 'Retry processing')}
+                {t('重试', 'Retry')}
               </button>
               <button className="button button-secondary" onClick={() => navigate('/new')}>
                 {t('用新材料核查', 'Review new evidence')}
@@ -177,7 +177,7 @@ export function TaskPage({ id }: { id: string }) {
         <details className="execution-details">
           <summary>
             <Activity size={16} />
-            {t('查看实际处理记录', 'View processing records')}
+            {t('处理记录', 'Processing records')}
             <ChevronDown size={16} />
           </summary>
           <StageList task={task} />
@@ -236,7 +236,7 @@ export function StageList({ task }: { task: AnalysisTask }) {
 }
 
 export function ReportView({ task, report }: { task: AnalysisTask; report: Report }) {
-  const { t, locale, execute, showEvidence, navigate } = useApp();
+  const { t, locale, execute, showEvidence, navigate, busy } = useApp();
   const getMetric = (key: string) => report.metrics.find((metric) => metric.key === key);
   const metrics = [
     getMetric('netProfit'),
@@ -245,20 +245,30 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
   ];
   const englishHeadline =
     report.verdict === 'conflict'
-      ? 'The reporting scopes do not align.'
+      ? 'Input checks conflict; cash-bridge attribution has stopped.'
       : report.verdict === 'insufficient'
-        ? 'The evidence sets the limit of this conclusion.'
+        ? 'Required evidence is missing.'
         : report.verdict === 'attention'
-          ? 'Profit and operating cash need a closer look.'
-          : 'Current evidence supports this cash structure.';
+          ? 'Operating cash is below net profit.'
+          : 'The disclosed cash amounts reconcile.';
   const englishSummary =
     report.verdict === 'conflict'
-      ? 'Conflicting scopes cannot be silently combined. Correct the source observations before interpreting the cash relationship.'
+      ? 'Source fields or bridge reconciliation conflict. Review the failed checks and original observations before attributing operating causes.'
       : report.verdict === 'insufficient'
         ? 'Some required observations are missing or cannot be confirmed. The review retains supported numbers and withholds unsupported ratios or explanations.'
         : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
   return (
     <div className="report-content">
+      <div className="report-decision-entry">
+        <span>{t('用这份资料核对一笔付款', 'Use this evidence for a payment decision')}</span>
+        <button
+          className="text-link"
+          onClick={() => navigate(`/decisions?new=${task.purpose || 'external'}&task=${task.id}`)}
+        >
+          {t('新建付款决定', 'New payment decision')}
+          <ArrowRight size={14} />
+        </button>
+      </div>
       <section className={`verdict-section verdict-${report.verdict}`}>
         <div className="verdict-topline">
           <VerdictTag verdict={report.verdict} />
@@ -268,18 +278,33 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                 <i key={i} className={i < report.coverage.present ? 'covered' : ''} />
               ))}
             </span>
-            {report.coverage.present}/{report.coverage.total} {t('证据覆盖', 'evidence coverage')}
+            {report.coverage.present}/{report.coverage.total} {t('核心指标', 'core metrics')}
           </span>
         </div>
-        <h2>{t(report.headline, englishHeadline)}</h2>
-        <p>{t(report.summary, englishSummary)}</p>
-        <div className="verdict-bottom">
-          <ShieldCheck size={16} />
+        <h2>
+          {report.verdict === 'conflict'
+            ? t(
+                '输入核对存在冲突，已停止现金桥解释',
+                'Input checks conflict; cash-bridge attribution has stopped'
+              )
+            : getMetric('cashConversion')?.value != null
+              ? t(
+                  `${report.year}年现金利润比 ${metricValue(getMetric('cashConversion'), locale)}`,
+                  `${report.year} cash-to-profit ratio: ${metricValue(getMetric('cashConversion'), locale)}`
+                )
+              : t('部分指标尚无足够依据', 'Some metrics lack sufficient evidence')}
+        </h2>
+        <p>
           {t(
-            '结论仅针对本次输入材料与历史年度；不构成投资、授信或可靠性判断。',
-            'The conclusion covers only this evidence and historical period. It is not an investment, credit, or reliability decision.'
+            '经营现金净额 ÷ 合并净利润，不是销售回款率。',
+            'Operating cash flow ÷ consolidated net profit, not a sales collection rate.'
           )}
-        </div>
+        </p>
+        <details className="verdict-details">
+          <summary>{t('查看核查摘要', 'Review summary')}</summary>
+          <p>{t(report.headline, englishHeadline)}</p>
+          <p>{t(report.summary, englishSummary)}</p>
+        </details>
       </section>
       <section className="metric-strip" aria-label={t('核心财务指标', 'Core financial metrics')}>
         {metrics.map((metric, index) => (
@@ -334,8 +359,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           <section className="report-section">
             <div className="report-section-title">
               <div>
-                <div className="eyebrow">FOLLOW THE CASH</div>
-                <h2>{t('从利润，到经营现金', 'From profit to operating cash')}</h2>
+                <h2>{t('现金桥', 'Cash bridge')}</h2>
               </div>
               <Tag>{report.year} · CNY</Tag>
             </div>
@@ -343,48 +367,59 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
               <>
                 <p className="section-intro">
                   {t(
-                    '披露的现金流调整，把净利润连接到经营现金。点击任一柱，核对原文。',
-                    'Disclosed cash-flow adjustments connect net profit to operating cash. Select a bar to inspect its source.'
+                    '选择柱形，查看金额、页码与原文。',
+                    'Select a bar to inspect its amount, page and source.'
                   )}
                 </p>
                 <CashBridge steps={report.bridge} report={report} />
                 <div className="chart-legend">
                   <span>
                     <i className="legend-dot ink" />
-                    {t('利润 / 现金净额', 'Profit / net cash')}
+                    {t('起点与终点', 'Starting and ending amounts')}
                   </span>
                   <span>
                     <i className="legend-dot teal" />
-                    {t('增加现金', 'Cash increase')}
+                    {t('正向调整', 'Positive adjustments')}
                   </span>
                   <span>
                     <i className="legend-dot amber" />
-                    {t('减少现金', 'Cash decrease')}
+                    {t('负向调整', 'Negative adjustments')}
                   </span>
                 </div>
-                <p className="chart-caption">
-                  {t(
-                    '中间柱是对净利润的累计调整，不是银行余额或未来现金预测。图形按金额量级舍入，精确金额见原文。「经营性应收调整」并非单一应收账款余额变化；负向调整不直接证明坏账或滞销。',
-                    'Intermediate bars represent cumulative adjustments to profit, not bank balances or future cash. Plot labels are rounded; citations retain exact amounts. Operating receivables adjustments are not simply changes in accounts receivable. Negative adjustments alone do not prove bad debt or slow inventory.'
-                  )}
-                </p>
+                <details className="chart-caption chart-notes">
+                  <summary>{t('图表口径', 'Chart scope')}</summary>
+                  <p>
+                    {t(
+                      '调整项不是现金余额或未来预测。图形标签已舍入，精确金额显示在所选项中；经营性应收调整不等于单一应收账款余额变化，负向调整不能直接证明坏账或滞销。',
+                      'Adjustments are not cash balances or forecasts. Plot labels are rounded; the selected item shows exact amounts. Operating receivables adjustments are not simply changes in accounts receivable, and negative adjustments alone do not prove bad debt or slow inventory.'
+                    )}
+                  </p>
+                </details>
               </>
             ) : (
               <div className="bridge-unavailable">
-                <Layers size={29} />
-                <h3>{t('现金桥没有足够依据', 'The cash bridge is withheld')}</h3>
+                <h3>{t('现金桥未生成', 'Cash bridge unavailable')}</h3>
                 <p>
-                  {t(
-                    '本次材料不能完整支持同口径调整分组。差额不等于已经解释的原因。请依据下方问题单补充材料。',
-                    'Current observations do not support the full adjustment groups on a consistent scope. A gap is not an explained cause. Request the evidence listed below.'
-                  )}
+                  {report.verdict === 'conflict'
+                    ? t(
+                        '现有输入或现金桥核对存在冲突。金额与原文保留，请先复核下方口径检查，再解释经营原因。',
+                        'The inputs or bridge reconciliation conflict. Amounts and sources remain visible; resolve the scope checks below before attributing operating causes.'
+                      )
+                    : t(
+                        '缺少同口径调整项。请补充下方待询证材料；利润与现金的差额不能代替原因解释。',
+                        'Consistent adjustment items are missing. Request the evidence below; a profit-to-cash gap does not explain its causes.'
+                      )}
                 </p>
                 <a
                   className="text-link"
                   href="#questions"
                   onClick={(event) => {
                     event.preventDefault();
-                    document.getElementById('questions')?.scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('questions')?.scrollIntoView({
+                      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                        ? 'auto'
+                        : 'smooth',
+                    });
                   }}
                 >
                   {t('查看补件问题', 'See evidence requests')}
@@ -396,8 +431,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           <section className="report-section">
             <div className="report-section-title">
               <div>
-                <div className="eyebrow">TWO YEARS, ONE SCOPE</div>
-                <h2>{t('两年现金与利润', 'Profit and cash across two years')}</h2>
+                <h2>{t('年度对比', 'Annual comparison')}</h2>
               </div>
             </div>
             <TrendChart report={report} />
@@ -412,8 +446,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
         <aside className="report-secondary">
           <ChecksPanel report={report} />
           <section className="source-panel">
-            <div className="eyebrow">SAVED WITH THIS REVIEW</div>
-            <h2>{t('本次材料快照', 'Evidence snapshot')}</h2>
+            <h2>{t('所用材料', 'Materials used')}</h2>
             {report.snapshot.map((material) => (
               <button
                 className="source-snapshot-row"
@@ -449,19 +482,17 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           </section>
         </aside>
       </div>
+      <ReviewContext task={task} report={report} />
       <section className="report-section findings-section">
         <div className="report-section-title">
           <div>
-            <div className="eyebrow">TWO EXPLANATIONS, OPEN QUESTIONS</div>
-            <h2>
-              {t('事实有边界，解释留余地。', 'Facts have boundaries. Explanations stay open.')}
-            </h2>
+            <h2>{t('可能解释', 'Possible explanations')}</h2>
           </div>
         </div>
         <div className="findings-list">
           {report.findings.map((finding, index) => (
             <article className={`finding-row finding-${finding.severity}`} key={finding.id}>
-              <span className="finding-number">0{index + 1}</span>
+              <span className="finding-number">{index + 1}</span>
               <div>
                 <div className="finding-title">
                   <h3>{t(finding.label, translateRule(finding.label))}</h3>
@@ -476,8 +507,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                 <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
                 {finding.questionIds.length > 0 && (
                   <span className="finding-question-link">
-                    {t('连接', 'Linked to')} {finding.questionIds.length}{' '}
-                    {t('条后续问题', 'follow-up questions')}
+                    {finding.questionIds.length} {t('条待询证问题', 'evidence requests')}
                   </span>
                 )}
               </div>
@@ -487,7 +517,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                   onClick={() => showEvidence(finding.sourceRefs, report)}
                 >
                   <FileText size={15} />
-                  {t('原文依据', 'Source evidence')}
+                  {t('来源', 'Source')}
                 </button>
               )}
             </article>
@@ -497,8 +527,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
       <section className="report-section questions-section" id="questions">
         <div className="report-section-title">
           <div>
-            <div className="eyebrow">THE NEXT USEFUL QUESTION</div>
-            <h2>{t('下一步，向合作方要什么？', 'What should you ask the partner for next?')}</h2>
+            <h2>{t('待询证清单', 'Evidence requests')}</h2>
           </div>
           <Tag tone="green">
             {report.questions.filter((question) => question.status === 'done').length}/
@@ -507,8 +536,8 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
         </div>
         <p className="section-intro">
           {t(
-            '把一个模糊的判断，变成可执行的材料请求。勾选后保存跟进状态，不代表财务问题已被证实或解决。',
-            'Turn a vague judgment into an actionable evidence request. Marking a question complete records follow-up only; it does not prove a financial issue is resolved.'
+            '勾选仅记录跟进完成，不代表财务问题已证实或解决。',
+            'Checking an item records follow-up only; it does not prove a financial issue is resolved.'
           )}
         </p>
         <div className="question-list">
@@ -519,15 +548,18 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
             >
               <label className="question-checkbox">
                 <input
-                  aria-label={`${t('标记完成', 'Mark complete')}: ${question.text}`}
+                  aria-label={`${t('标记完成', 'Mark complete')}: ${t(question.text, translateRule(question.text))}`}
                   type="checkbox"
                   checked={question.status === 'done'}
+                  disabled={busy}
                   onChange={(event) =>
-                    execute(() =>
-                      api<AnalysisTask>(`/tasks/${task.id}/questions/${question.id}`, {
-                        method: 'PATCH',
-                        body: JSON.stringify({ status: event.target.checked ? 'done' : 'open' }),
-                      })
+                    execute(
+                      () =>
+                        api<AnalysisTask>(`/tasks/${task.id}/questions/${question.id}`, {
+                          method: 'PATCH',
+                          body: JSON.stringify({ status: event.target.checked ? 'done' : 'open' }),
+                        }),
+                      t('跟进状态已保存', 'Follow-up saved')
                     )
                   }
                 />
@@ -571,13 +603,22 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
         <div>
           <h3>
             <ShieldCheck size={18} />
-            {t('方法与结论边界', 'Method and conclusion boundaries')}
+            {t('核查范围', 'Review scope')}
           </h3>
-          <ul>
-            {report.limitations.map((item, index) => (
-              <li key={index}>{t(item, translateRule(item))}</li>
-            ))}
-          </ul>
+          <p className="scope-line">
+            {t(
+              '仅核对历史年度合并报表，不作投资、授信或合作决策。',
+              'Historical consolidated financial evidence only; no investment, credit or partnership decisions.'
+            )}
+          </p>
+          <details>
+            <summary>{t('范围详情', 'Scope details')}</summary>
+            <ul>
+              {report.limitations.map((item, index) => (
+                <li key={index}>{t(item, translateRule(item))}</li>
+              ))}
+            </ul>
+          </details>
           <p className="model-status">
             <Activity size={15} />
             {report.model.status === 'not-requested'
@@ -626,7 +667,10 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                   )}
                 </p>
               </div>
-              <p>{report.model.text}</p>
+              <ModelExplanation
+                report={report}
+                onSource={(_title, refs) => showEvidence(refs, report)}
+              />
             </details>
           )}
         </div>
@@ -665,6 +709,8 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
 
 export function CashBridge({ steps, report }: { steps: BridgeStep[]; report: Report }) {
   const { locale, t, showEvidence } = useApp();
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   let running = 0;
   const bars = steps.map((step) => {
     const value = Number(step.value);
@@ -684,6 +730,13 @@ export function CashBridge({ steps, report }: { steps: BridgeStep[]; report: Rep
   const available = width - left - right;
   const pitch = available / bars.length;
   const barWidth = Math.min(70, pitch * 0.64);
+  const selected = bars[activeIndex ?? selectedIndex]?.step;
+  const source = selected?.sourceRefs[0];
+  const material = report.snapshot.find((item) => item.id === source?.materialId);
+  const openStep = (index: number) => {
+    setSelectedIndex(index);
+    showEvidence(bars[index].step.sourceRefs, report);
+  };
   return (
     <>
       <p className="chart-mobile-hint">
@@ -693,130 +746,199 @@ export function CashBridge({ steps, report }: { steps: BridgeStep[]; report: Rep
           'Swipe to see the full bridge; select a bar to inspect its source.'
         )}
       </p>
-      <div className="chart-scroll">
-        <svg
-          className="bridge-chart"
-          viewBox={`0 0 ${width} 375`}
-          role="img"
-          aria-labelledby="bridge-title bridge-description"
-        >
-          <title id="bridge-title">
-            {t('净利润到经营现金的现金桥', 'Cash bridge from net profit to operating cash')}
-          </title>
-          <desc id="bridge-description">
-            {steps
-              .map(
-                (step) => `${metricName(step.key, locale)}: ${money(step.value, locale, false)} CNY`
-              )
-              .join('; ')}
-          </desc>
-          {[0, 1, 2, 3, 4].map((i) => {
-            const val = low + (spread * i) / 4;
-            const position = y(val);
-            return (
-              <g key={i}>
-                <line
-                  x1={left}
-                  x2={width - right}
-                  y1={position}
-                  y2={position}
-                  className="chart-grid"
-                />
-                <text x={left - 10} y={position + 4} textAnchor="end" className="chart-axis">
-                  {(val / axis.divisor).toFixed(axis.digits)}
-                </text>
-              </g>
-            );
-          })}
-          <text x={left - 10} y={21} textAnchor="end" className="chart-unit">
-            {axis.label}
-          </text>
-          <line x1={left} x2={width - right} y1={y(0)} y2={y(0)} className="chart-zero" />
-          {bars.map(({ step, start, end, value }, index) => {
-            const x = left + pitch * index + (pitch - barWidth) / 2;
-            const top = Math.min(y(start), y(end));
-            const height = Math.max(3, Math.abs(y(end) - y(start)));
-            const isPositive = value >= 0;
-            const label =
-              locale === 'en'
-                ? {
-                    netProfit: 'Net profit',
-                    operatingCashFlow: 'Operating cash',
-                    inventoryAdjustment: 'Inventory',
-                    receivablesAdjustment: 'Receivables',
-                    payablesAdjustment: 'Payables',
-                    otherAdjustments: 'Other adjustments',
-                  }[step.key]
-                : {
-                    netProfit: '净利润',
-                    operatingCashFlow: '经营现金',
-                    inventoryAdjustment: '存货调整',
-                    receivablesAdjustment: '经营性应收',
-                    payablesAdjustment: '经营性应付',
-                    otherAdjustments: '其余调整',
-                  }[step.key];
-            return (
-              <g
-                key={step.key}
-                className="chart-bar-group"
-                role="button"
-                tabIndex={0}
-                aria-label={`${label} ${money(step.value, locale, false)} CNY. ${t('查看原文', 'View source')}`}
-                onClick={() => showEvidence(step.sourceRefs, report)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    showEvidence(step.sourceRefs, report);
-                  }
-                }}
-              >
-                <rect
-                  className="chart-hit-area"
-                  x={left + pitch * index}
-                  y={28}
-                  width={pitch}
-                  height={323}
-                  fill="transparent"
-                  pointerEvents="all"
-                />
-                <rect
-                  x={x}
-                  y={top}
-                  width={barWidth}
-                  height={height}
-                  rx="2"
-                  className={
-                    step.kind === 'total'
-                      ? 'bar-total'
-                      : isPositive
-                        ? 'bar-positive'
-                        : 'bar-negative'
-                  }
-                />
-                <text x={x + barWidth / 2} y={top - 10} textAnchor="middle" className="bar-value">
-                  {step.kind === 'adjustment' && isPositive ? '+' : ''}
-                  {(value / axis.divisor).toFixed(2)}
-                </text>
-                {index < bars.length - 1 && (
+      <div className="cash-visual">
+        <div className={`chart-scroll ${activeIndex !== null ? 'lens-active' : ''}`}>
+          <svg
+            className="bridge-chart"
+            onMouseLeave={() => setActiveIndex(null)}
+            viewBox={`0 0 ${width} 375`}
+            role="img"
+            aria-labelledby="bridge-title bridge-description"
+          >
+            <title id="bridge-title">
+              {t('净利润到经营现金的现金桥', 'Cash bridge from net profit to operating cash')}
+            </title>
+            <desc id="bridge-description">
+              {steps
+                .map(
+                  (step) =>
+                    `${metricName(step.key, locale)}: ${money(step.value, locale, false)} CNY`
+                )
+                .join('; ')}
+            </desc>
+            {[0, 1, 2, 3, 4].map((i) => {
+              const val = low + (spread * i) / 4;
+              const position = y(val);
+              return (
+                <g key={i}>
                   <line
-                    x1={x + barWidth}
-                    x2={left + pitch * (index + 1) + (pitch - barWidth) / 2}
-                    y1={y(end)}
-                    y2={y(end)}
-                    className="chart-connector"
+                    x1={left}
+                    x2={width - right}
+                    y1={position}
+                    y2={position}
+                    className="chart-grid"
                   />
-                )}
-                <text x={x + barWidth / 2} y={308} textAnchor="middle" className="bar-label">
-                  {label}
-                </text>
-                <text x={x + barWidth / 2} y={331} textAnchor="middle" className="bar-source-label">
-                  {step.derived ? t('分组计算', 'Grouped') : t('披露值', 'Reported')}{' '}
-                  <tspan>↗</tspan>
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+                  <text x={left - 10} y={position + 4} textAnchor="end" className="chart-axis">
+                    {(val / axis.divisor).toFixed(axis.digits)}
+                  </text>
+                </g>
+              );
+            })}
+            <text x={left - 10} y={21} textAnchor="end" className="chart-unit">
+              {axis.label}
+            </text>
+            <line x1={left} x2={width - right} y1={y(0)} y2={y(0)} className="chart-zero" />
+            {bars.map(({ step, start, end, value }, index) => {
+              const x = left + pitch * index + (pitch - barWidth) / 2;
+              const top = Math.min(y(start), y(end));
+              const height = Math.max(3, Math.abs(y(end) - y(start)));
+              const isPositive = value >= 0;
+              const label =
+                locale === 'en'
+                  ? {
+                      netProfit: 'Net profit',
+                      operatingCashFlow: 'Operating cash',
+                      inventoryAdjustment: 'Inventory',
+                      receivablesAdjustment: 'Receivables',
+                      payablesAdjustment: 'Payables',
+                      otherAdjustments: 'Other adjustments',
+                    }[step.key]
+                  : {
+                      netProfit: '净利润',
+                      operatingCashFlow: '经营现金',
+                      inventoryAdjustment: '存货调整',
+                      receivablesAdjustment: '经营性应收',
+                      payablesAdjustment: '经营性应付',
+                      otherAdjustments: '其余调整',
+                    }[step.key];
+              return (
+                <g
+                  key={step.key}
+                  className={`chart-bar-group ${index === activeIndex ? 'is-active' : ''} ${index === selectedIndex ? 'is-selected' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${label} ${money(step.value, locale, false)} CNY. ${t('查看原文', 'View source')}`}
+                  onMouseEnter={() => setActiveIndex(index)}
+                  onFocus={() => {
+                    setActiveIndex(index);
+                    setSelectedIndex(index);
+                  }}
+                  onBlur={() => setActiveIndex(null)}
+                  onClick={() => openStep(index)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      openStep(index);
+                    } else if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                      event.preventDefault();
+                      const next =
+                        event.key === 'Home'
+                          ? 0
+                          : event.key === 'End'
+                            ? bars.length - 1
+                            : Math.max(
+                                0,
+                                Math.min(
+                                  bars.length - 1,
+                                  index + (event.key === 'ArrowRight' ? 1 : -1)
+                                )
+                              );
+                      (
+                        event.currentTarget.parentElement?.querySelectorAll('[role="button"]')[
+                          next
+                        ] as SVGElement | undefined
+                      )?.focus();
+                    }
+                  }}
+                >
+                  <rect
+                    className="chart-hit-area"
+                    x={left + pitch * index}
+                    y={28}
+                    width={pitch}
+                    height={323}
+                    fill="transparent"
+                    pointerEvents="all"
+                  />
+                  <rect
+                    x={x}
+                    y={top}
+                    width={barWidth}
+                    height={height}
+                    rx="2"
+                    className={
+                      step.kind === 'total'
+                        ? 'chart-bar bar-total'
+                        : isPositive
+                          ? 'chart-bar bar-positive'
+                          : 'chart-bar bar-negative'
+                    }
+                  />
+                  <text x={x + barWidth / 2} y={top - 10} textAnchor="middle" className="bar-value">
+                    {step.kind === 'adjustment' && isPositive ? '+' : ''}
+                    {(value / axis.divisor).toFixed(2)}
+                  </text>
+                  {index < bars.length - 1 && (
+                    <line
+                      x1={x + barWidth}
+                      x2={left + pitch * (index + 1) + (pitch - barWidth) / 2}
+                      y1={y(end)}
+                      y2={y(end)}
+                      className="chart-connector"
+                    />
+                  )}
+                  <text x={x + barWidth / 2} y={308} textAnchor="middle" className="bar-label">
+                    {label}
+                  </text>
+                  <text
+                    x={x + barWidth / 2}
+                    y={331}
+                    textAnchor="middle"
+                    className="bar-source-label"
+                  >
+                    {step.derived ? t('分组计算', 'Grouped') : t('披露值', 'Reported')}{' '}
+                    <tspan>↗</tspan>
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+        {selected && (
+          <div
+            className="evidence-lens"
+            aria-label={t('所选现金桥项目', 'Selected cash bridge item')}
+          >
+            <div className="lens-value">
+              <span>{metricName(selected.key, locale)}</span>
+              <strong>
+                {money(selected.value, locale, false)} <small>CNY</small>
+              </strong>
+            </div>
+            <div className="lens-source">
+              <span>
+                {report.year} ·{' '}
+                {source?.page != null
+                  ? `${t('PDF 页', 'PDF p.')} ${source.page}`
+                  : t('页码未提供', 'Page not provided')}
+                {selected.sourceRefs.length > 1
+                  ? ` · ${selected.sourceRefs.length} ${t('条来源', 'sources')}`
+                  : ''}
+              </span>
+              <p lang={locale === 'en' ? 'zh-Hans' : undefined} title={source?.quote}>
+                {source?.quote || t('未提供原文摘录', 'No source excerpt provided')}
+              </p>
+              <small>{material?.title || t('未匹配材料', 'Material not matched')}</small>
+            </div>
+            <button
+              className="button button-secondary"
+              onClick={() => openStep(activeIndex ?? selectedIndex)}
+            >
+              <FileText size={15} />
+              {t('查看来源', 'View source')}
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
@@ -850,8 +972,7 @@ export function ChecksPanel({ report }: { report: Report }) {
   );
   return (
     <section className="checks-panel">
-      <div className="eyebrow">BEFORE THE CONCLUSION</div>
-      <h2>{t('证据与口径检查', 'Evidence and scope checks')}</h2>
+      <h2>{t('口径检查', 'Scope checks')}</h2>
       {visible.map(row)}
       {remaining.length > 0 && (
         <details>
@@ -962,13 +1083,14 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
         title: reviewVariantTitle(
           task.title,
           excluded.length
-            ? t('压力测试', 'Stress test')
+            ? t('调整证据', 'Evidence adjusted')
             : t('恢复完整证据', 'Full evidence restored')
         ),
         company: task.company,
         year: task.year,
         materialIds: task.materialIds,
         excludedMetrics: excluded,
+        purpose: task.purpose || 'external',
         useModel,
       } satisfies CreateTaskInput)
     );
@@ -978,19 +1100,16 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
     }
   };
   return (
-    <Dialog
-      title={t('让证据减少，让结论收缩。', 'Less evidence. A narrower conclusion.')}
-      onClose={onClose}
-    >
+    <Dialog title={t('调整证据', 'Adjust evidence')} onClose={onClose}>
       <p>
         {t(
-          '选择从本次输入中移除的观测，实际重新执行核查。原报告与原件保持完整。',
-          'Choose observations to exclude from a new run. The review is genuinely recomputed; original reports and sources remain intact.'
+          '修改本次采用的指标，另存新的核查。原任务和原件保留。',
+          'Change the metrics used and save a new review. Original reviews and sources remain.'
         )}
       </p>
       <div className="stress-option-group">
         <button className="text-link" onClick={() => setExcluded(adjustments)}>
-          {t('移除全部现金补充表调整', 'Exclude all cash supplement adjustments')}
+          {t('排除全部调整项', 'Exclude all adjustments')}
           <ArrowRight size={15} />
         </button>
         {(['netProfit', 'operatingCashFlow', ...adjustments] as MetricKey[]).map((key) => (
@@ -1019,13 +1138,11 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
           onChange={(event) => setUseModel(event.target.checked)}
         />
         <span>
-          <strong>
-            {t('本次新任务开启可选智能解释', 'Enable optional model explanation for this new run')}
-          </strong>
+          <strong>{t('开启智能解释', 'Enable model explanation')}</strong>
           <small>
             {t(
-              '新任务默认规则核查。再次勾选后，仅允许的观测和摘录发送至已配置的第三方服务。',
-              'This new task defaults to rules-based review. If selected again, only permitted observations and excerpts are sent to the configured third-party service.'
+              '默认不向模型发送材料；选中后将采用的指标、短摘录与规则分析发送至第三方 TokenFlux。解释含义需人工复核。',
+              'No evidence is sent to a model by default. Selecting this sends adopted metrics, short excerpts and rule findings to third-party TokenFlux. Meaning requires human review.'
             )}
           </small>
         </span>
@@ -1034,8 +1151,8 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
         <CircleAlert size={19} />
         <p>
           {t(
-            '缺少调整附注时，系统应撤回原因归因和完整现金桥，而不是把已算差额包装成解释。',
-            'Without adjustment notes, the system must withhold causal attribution and the complete bridge. A calculated gap must not be presented as an explanation.'
+            '排除调整项后，相应现金桥和原因解释将撤回；可恢复指标并重新核查。',
+            'Excluding adjustments withholds the corresponding bridge and explanations. Restore the metrics and rerun to recover them.'
           )}
         </p>
       </div>
@@ -1054,8 +1171,8 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
         >
           <SlidersHorizontal size={16} />
           {excluded.length === 0
-            ? t('恢复全部证据并核查', 'Restore all evidence and rerun')
-            : t('新建并重新核查', 'Create and recompute')}
+            ? t('恢复并重算', 'Restore and rerun')
+            : t('保存并重算', 'Save and rerun')}
         </button>
       </div>
     </Dialog>

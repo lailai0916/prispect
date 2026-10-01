@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Material } from '../shared/contracts.js';
+import { CONTEXT_NOTE_KEYS, type Material } from '../shared/contracts.js';
 
 export const metricKeys = [
   'netProfit',
@@ -76,7 +76,71 @@ export const taskInputSchema = z.object({
     .refine((ids) => new Set(ids).size === ids.length, '材料不能重复选择'),
   excludedMetrics: z.array(z.enum(metricKeys)).max(6).optional(),
   useModel: z.boolean().default(false),
+  purpose: z.enum(['external', 'handover']).default('external'),
 });
+
+const cashPlanAmount = z
+  .string()
+  .regex(/^\d{1,20}(?:\.\d{1,2})?$/, '资金金额须为非负人民币元字符串，最多两位小数')
+  .refine((value) => value.trim() === value, '资金金额不能含空白');
+const cashPlanDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/)
+  .refine((value) => {
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    return (
+      value.slice(0, 4) !== '0000' &&
+      Number.isFinite(parsed.getTime()) &&
+      parsed.toISOString().slice(0, 10) === value
+    );
+  }, '资金计划日期必须是有效的 YYYY-MM-DD 日期');
+function cashPeriod<const Days extends 30 | 60 | 90>(days: Days) {
+  return z
+    .object({
+      days: z.literal(days),
+      inflow: cashPlanAmount.nullable(),
+      outflow: cashPlanAmount.nullable(),
+    })
+    .strict();
+}
+export const cashPlanInputSchema = z
+  .object({
+    asOf: cashPlanDate,
+    openingCash: cashPlanAmount.nullable(),
+    periods: z.tuple([cashPeriod(30), cashPeriod(60), cashPeriod(90)]),
+  })
+  .strict();
+const contextNotesSchema = z
+  .unknown()
+  .superRefine((input, context) => {
+    if (!input || typeof input !== 'object' || Array.isArray(input)) {
+      context.addIssue({ code: 'custom', message: '场景备注必须为清单事项对象' });
+      return;
+    }
+    for (const key of Object.keys(input))
+      if (!(CONTEXT_NOTE_KEYS as readonly string[]).includes(key))
+        context.addIssue({ code: 'custom', message: '场景备注事项不在支持清单中', path: [key] });
+  })
+  .pipe(
+    z.partialRecord(
+      z.enum(CONTEXT_NOTE_KEYS),
+      z.object({ done: z.boolean(), note: z.string().max(2000) }).strict()
+    )
+  );
+export const taskContextSchema = z
+  .object({
+    purpose: z.enum(['external', 'handover']).optional(),
+    contextNotes: contextNotesSchema.optional(),
+    cashPlan: cashPlanInputSchema.nullable().optional(),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      value.purpose !== undefined ||
+      value.contextNotes !== undefined ||
+      value.cashPlan !== undefined,
+    '场景更新至少需要用途、备注或资金计划'
+  );
 export class ApiFault extends Error {
   constructor(
     public status: number,

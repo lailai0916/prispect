@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { ArrowRight, ArrowUpRight, Copy, Plus, Search, ShieldCheck, Trash2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Copy, Plus, Search, Trash2 } from 'lucide-react';
 import type { AnalysisTask, CreateTaskInput } from '../../shared/contracts';
 import { api, post } from '../api';
 import { reviewVariantTitle, date } from '../format';
 
 import { useApp } from '../context';
 import { PageHeading, EmptyState, TaskTag, VerdictTag } from '../components';
+import { purposeName } from '../ReviewContext';
 
 export function WorkspacePage() {
   const { t, locale, workspace, navigate, execute, confirm } = useApp();
@@ -21,6 +22,7 @@ export function WorkspacePage() {
         year: task.year,
         materialIds: task.materialIds,
         excludedMetrics: task.excludedMetrics,
+        purpose: task.purpose || 'external',
         useModel: false,
       } satisfies CreateTaskInput)
     );
@@ -29,12 +31,7 @@ export function WorkspacePage() {
   return (
     <>
       <PageHeading
-        eyebrow="YOUR REVIEW DESK"
-        title={t('核查工作台', 'Your review workspace')}
-        description={t(
-          '一次核查，保留一份材料快照。继续上次工作，或从新问题开始。',
-          'Every review keeps its own evidence snapshot. Continue your work or start with a new question.'
-        )}
+        title={t('工作台', 'Workspace')}
         action={
           <button className="button button-primary" onClick={() => navigate('/new')}>
             <Plus size={17} />
@@ -45,34 +42,15 @@ export function WorkspacePage() {
       <div className="workspace-stats">
         <div>
           <span>{t('核查任务', 'Reviews')}</span>
-          <strong>{workspace!.tasks.length.toString().padStart(2, '0')}</strong>
+          <strong>{workspace!.tasks.length}</strong>
         </div>
         <div>
           <span>{t('已完成', 'Completed')}</span>
-          <strong>
-            {workspace!.tasks
-              .filter((task) => task.status === 'completed')
-              .length.toString()
-              .padStart(2, '0')}
-          </strong>
+          <strong>{workspace!.tasks.filter((task) => task.status === 'completed').length}</strong>
         </div>
         <div>
           <span>{t('已保存材料', 'Saved materials')}</span>
-          <strong>{workspace!.materials.length.toString().padStart(2, '0')}</strong>
-        </div>
-        <div className="workspace-mode">
-          <ShieldCheck />
-          <span>
-            {t('规则核查模式', 'Rules-based review')}
-            <small>
-              {workspace!.provider.configured
-                ? t('已配置可选模型解释', 'Optional model configured')
-                : t(
-                    '未配置模型 API，计算与证据核查可独立运行',
-                    'No model API configured. Calculations and evidence checks run independently.'
-                  )}
-            </small>
-          </span>
+          <strong>{workspace!.materials.length}</strong>
         </div>
       </div>
       <div className="list-toolbar">
@@ -90,22 +68,20 @@ export function WorkspacePage() {
       {!tasks.length ? (
         <EmptyState
           title={
-            search
-              ? t('没有匹配的核查', 'No matching reviews')
-              : t('第一条说法，等你核查。', 'Your first claim is ready for review.')
+            search ? t('没有匹配的核查', 'No matching reviews') : t('暂无核查', 'No reviews yet')
           }
           text={
             search
               ? t('尝试其他公司或名称。', 'Try a different company or title.')
               : t(
-                  '选择公开年报案例，或者导入你自己的结构化材料。',
-                  'Choose a public annual-report case or import your structured evidence.'
+                  '选择示例或导入材料，开始核查。',
+                  'Choose an example or import evidence to begin.'
                 )
           }
           action={
             !search && (
               <button className="button button-primary" onClick={() => navigate('/new')}>
-                {t('开始第一份核查', 'Start your first review')}
+                {t('新建核查', 'New review')}
                 <ArrowRight size={16} />
               </button>
             )
@@ -116,7 +92,7 @@ export function WorkspacePage() {
           <table className="review-table">
             <thead>
               <tr>
-                <th>{t('核查任务 / 主体', 'Review / company')}</th>
+                <th>{t('任务 / 公司', 'Review / company')}</th>
                 <th>{t('年度', 'Year')}</th>
                 <th>{t('状态', 'Status')}</th>
                 <th>{t('材料 / 结论', 'Evidence / verdict')}</th>
@@ -134,6 +110,7 @@ export function WorkspacePage() {
                       {task.title}
                     </a>
                     <span className="table-subtitle">{task.company}</span>
+                    <span className="table-purpose">{purposeName(task.purpose, t)}</span>
                   </td>
                   <td className="mono">{task.year}</td>
                   <td>
@@ -148,9 +125,7 @@ export function WorkspacePage() {
                       </span>
                     )}
                     {task.excludedMetrics.length > 0 && (
-                      <span className="table-subtitle">
-                        {t('证据压力测试', 'Evidence stress test')}
-                      </span>
+                      <span className="table-subtitle">{t('已调整证据', 'Evidence adjusted')}</span>
                     )}
                   </td>
                   <td className="mono muted">{date(task.createdAt, locale)}</td>
@@ -200,10 +175,6 @@ export function WorkspacePage() {
         </div>
       )}
       <div className="workspace-footnote">
-        <span>
-          <span className="status-dot" />
-          {t('个人工作区 · 自动保存', 'Personal workspace · Automatically saved')}
-        </span>
         <a className="text-link" href="#/materials">
           {t('管理核查材料', 'Manage evidence')}
           <ArrowRight size={16} />

@@ -1,0 +1,585 @@
+.cash-stress-lab {
+  margin-top: 28px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 24px;
+  min-width: 0;
+  background: var(--surface-subtle);
+}
+.cash-stress-lab * {
+  min-width: 0;
+}
+.cash-stress-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.cash-stress-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.cash-stress-heading h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.cash-stress-session-label {
+  color: var(--subtle);
+  font-size: 11px;
+  white-space: nowrap;
+  padding-top: 4px;
+}
+.cash-stress-intro {
+  margin: 12px 0 8px;
+  color: var(--ink);
+  font-size: 13px;
+}
+.cash-stress-basis {
+  margin: 0 0 24px;
+  font-size: 11px;
+  color: var(--subtle);
+}
+.cash-stress-layout {
+  display: grid;
+  grid-template-columns: minmax(190px, 0.7fr) minmax(0, 1.5fr);
+  gap: 32px;
+}
+.cash-stress-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-right: 24px;
+  border-right: 1px solid var(--line);
+}
+.cash-stress-control > label,
+.cash-stress-control-title label,
+.cash-stress-delay > span:first-child {
+  font-size: 12px;
+  font-weight: 600;
+}
+.cash-stress-control-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.cash-stress-control-title output {
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.05em;
+  color: var(--accent);
+}
+.cash-stress-control-title output small {
+  font-size: 13px;
+  margin-left: 2px;
+}
+.cash-stress-control p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.cash-stress-range {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin: 8px 0 -6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  appearance: none;
+  background: transparent;
+  cursor: default;
+}
+.cash-stress-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 3px;
+  background: linear-gradient(
+    to right,
+    var(--accent) var(--cash-stress-range-fill),
+    var(--control-border) var(--cash-stress-range-fill)
+  );
+}
+.cash-stress-range::-moz-range-track {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--control-border);
+}
+.cash-stress-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+.cash-stress-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.cash-stress-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--paper);
+}
+.cash-stress-range-labels {
+  display: flex;
+  justify-content: space-between;
+  color: var(--subtle);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.cash-stress-delay {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+.cash-stress-switch {
+  position: relative;
+  display: inline-flex;
+  width: 36px;
+  height: 22px;
+  flex-shrink: 0;
+}
+.cash-stress-switch input {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+}
+.cash-stress-switch > span {
+  width: 36px;
+  height: 22px;
+  border-radius: 12px;
+  background: var(--control-border);
+  pointer-events: none;
+  transition: background 120ms ease;
+}
+.cash-stress-switch > span::after {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  margin: 3px;
+  border-radius: 50%;
+  background: var(--paper);
+  transition: transform 120ms ease;
+}
+.cash-stress-switch input:checked + span {
+  background: var(--action);
+}
+.cash-stress-switch input:checked + span::after {
+  transform: translateX(14px);
+  background: var(--on-action);
+}
+.cash-stress-switch:has(input:focus-visible) {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 12px;
+}
+.cash-stress-extra {
+  width: 100%;
+  margin-top: 8px;
+  min-height: 40px;
+  padding: 9px 10px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.cash-stress-extra[aria-invalid='true'] {
+  border-color: var(--red);
+}
+.cash-stress-control p.cash-stress-error {
+  color: var(--red);
+}
+.cash-stress-reset {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  align-self: flex-start;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  min-height: 36px;
+  color: var(--muted);
+  background: var(--paper);
+  font-size: 11px;
+}
+.cash-stress-reset:not(:disabled):hover {
+  color: var(--ink);
+  background: var(--hover);
+}
+.cash-stress-reset:not(:disabled):active {
+  background: var(--pressed);
+}
+.cash-stress-lab :is(button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.cash-stress-results {
+  display: flex;
+  flex-direction: column;
+}
+.cash-stress-chart-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+.cash-stress-chart-meta > span:last-child {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.cash-stress-plot {
+  position: relative;
+  height: 210px;
+  margin-left: 64px;
+}
+.cash-stress-plot svg {
+  display: block;
+  overflow: visible;
+  width: 100%;
+  height: 100%;
+}
+.cash-stress-axis {
+  position: absolute;
+  top: 0;
+  left: -64px;
+  width: 56px;
+  height: 100%;
+  color: var(--subtle);
+  font-size: 10px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.cash-stress-axis span {
+  position: absolute;
+  right: 0;
+  transform: translateY(-50%);
+}
+.cash-stress-axis .cash-stress-zero-label {
+  color: var(--muted);
+}
+.cash-stress-grid {
+  stroke: var(--chart-grid);
+  vector-effect: non-scaling-stroke;
+}
+.cash-stress-zero {
+  stroke: var(--chart-total);
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 3 3;
+}
+.cash-stress-bar-baseline {
+  fill: var(--chart-total);
+  opacity: 0.45;
+}
+.cash-stress-bar-stress {
+  fill: var(--accent);
+}
+.cash-stress-bar-gap {
+  fill: var(--red);
+}
+.cash-stress-period-labels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 12px 0 0 64px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+}
+.cash-stress-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: flex-end;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.cash-stress-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.cash-stress-legend i {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.cash-stress-swatch-baseline {
+  background: var(--chart-total);
+  opacity: 0.45;
+}
+.cash-stress-swatch-stress {
+  background: var(--accent);
+}
+.cash-stress-swatch-gap {
+  background: var(--red);
+}
+.cash-stress-chart-note {
+  margin: 12px 0 0;
+  font-size: 10px;
+  color: var(--subtle);
+}
+.cash-stress-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 24px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.cash-stress-summary dt {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+.cash-stress-summary dd {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.cash-stress-summary .cash-stress-summary-gap dd {
+  color: var(--red);
+}
+.cash-stress-threshold-note {
+  margin: 12px 0 0;
+  font-size: 10px;
+  color: var(--subtle);
+}
+.cash-stress-table-wrap {
+  position: relative;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  max-width: 100%;
+  margin-top: 24px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+}
+.cash-stress-mobile-hint {
+  display: none;
+}
+.cash-stress-table {
+  width: 100%;
+  min-width: 400px;
+  border-collapse: collapse;
+  text-align: right;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.cash-stress-table caption {
+  padding: 10px 14px;
+  text-align: left;
+  color: var(--muted);
+  font-size: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.cash-stress-table th,
+.cash-stress-table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 400;
+  white-space: nowrap;
+}
+.cash-stress-table thead {
+  color: var(--muted);
+  font-size: 11px;
+  background: var(--surface-subtle);
+}
+.cash-stress-table th:first-child {
+  text-align: left;
+}
+.cash-stress-table tr:last-child > * {
+  border-bottom: 0;
+}
+.cash-stress-table .cash-stress-negative {
+  color: var(--red);
+  font-weight: 600;
+}
+.cash-stress-flow-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin-top: 12px;
+}
+.cash-stress-flow-note p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.cash-stress-flow-note strong {
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.cash-stress-disclaimer {
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--subtle);
+  font-size: 10px;
+  line-height: 1.7;
+}
+.cash-stress-empty,
+.cash-stress-unavailable {
+  border: 1px dashed var(--control-border);
+  border-radius: 6px;
+  padding: 24px;
+  color: var(--muted);
+}
+.cash-stress-empty {
+  margin-top: 20px;
+}
+.cash-stress-unavailable {
+  min-height: 270px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.cash-stress-empty strong,
+.cash-stress-unavailable strong {
+  font-size: 13px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.cash-stress-empty p,
+.cash-stress-unavailable p {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+@media (max-width: 1050px) {
+  .cash-stress-layout {
+    grid-template-columns: minmax(170px, 0.65fr) minmax(0, 1fr);
+    gap: 20px;
+  }
+  .cash-stress-controls {
+    padding-right: 20px;
+  }
+  .cash-stress-summary {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 14px;
+  }
+  .cash-stress-summary > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+@media (max-width: 720px) {
+  .cash-stress-mobile-hint {
+    display: block;
+    margin: 20px 0 -12px;
+    color: var(--subtle);
+    font-size: 11px;
+  }
+  .cash-stress-lab {
+    padding: 18px;
+    margin-top: 24px;
+  }
+  .cash-stress-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .cash-stress-controls {
+    padding: 0 0 22px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    gap: 18px;
+  }
+  .cash-stress-control-title output {
+    font-size: 30px;
+  }
+  .cash-stress-range {
+    height: 44px;
+  }
+  .cash-stress-control > label,
+  .cash-stress-control-title label,
+  .cash-stress-delay > span:first-child {
+    font-size: 13px;
+  }
+  .cash-stress-extra,
+  .cash-stress-reset {
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .cash-stress-control p {
+    font-size: 12px;
+  }
+  .cash-stress-plot {
+    height: 200px;
+    margin-left: 52px;
+  }
+  .cash-stress-axis {
+    left: -52px;
+    width: 44px;
+    font-size: 9px;
+  }
+  .cash-stress-period-labels {
+    margin-left: 52px;
+    font-size: 9px;
+  }
+  .cash-stress-chart-meta,
+  .cash-stress-chart-note,
+  .cash-stress-threshold-note {
+    font-size: 11px;
+  }
+  .cash-stress-heading h3 {
+    font-size: 19px;
+  }
+  .cash-stress-session-label {
+    font-size: 10px;
+  }
+  .cash-stress-summary dd {
+    font-size: 16px;
+  }
+  .cash-stress-summary dt {
+    font-size: 11px;
+  }
+  .cash-stress-legend {
+    justify-content: flex-start;
+    font-size: 11px;
+  }
+  .cash-stress-disclaimer {
+    font-size: 11px;
+  }
+  .cash-stress-unavailable {
+    min-height: 180px;
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cash-stress-switch > span,
+  .cash-stress-switch > span::after {
+    transition: none;
+  }
+}

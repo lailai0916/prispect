@@ -1,0 +1,561 @@
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { PDFParse } from 'pdf-parse';
+import type {
+  CompanyAnnouncement,
+  CompanyCandidatePreview,
+  CompanyIdentity,
+  Check,
+  Material,
+  MetricKey,
+  MoneyUnit,
+  Observation,
+} from '../shared/contracts.js';
+import { analyze } from './engine.js';
+import { ApiFault, fenToYuan, moneyToFen, validateMaterial } from './validation.js';
+import { shanghaiDate } from './company-sources.js';
+
+export interface CompanyPdfPage {
+  page: number;
+  text: string;
+}
+export interface CompanyPdfText {
+  pages: CompanyPdfPage[];
+  total: number;
+  sha256: string;
+}
+export async function readCompanyPdf(
+  buffer: Buffer,
+  signal?: AbortSignal
+): Promise<CompanyPdfText> {
+  if (!buffer.subarray(0, 5).equals(Buffer.from('%PDF-')))
+    throw new ApiFault(400, 'COMPANY_INVALID_PDF', '原件没有PDF标记');
+  const parser = new PDFParse({ data: new Uint8Array(buffer), isEvalSupported: false });
+  const timer = setTimeout(() => {
+    void parser.destroy().catch(() => undefined);
+  }, 40000);
+  const abort = () => {
+    void parser.destroy().catch(() => undefined);
+  };
+  signal?.addEventListener('abort', abort, { once: true });
+  try {
+    if (signal?.aborted) throw new ApiFault(504, 'COMPANY_CANCELLED', 'PDF读取已中止');
+    const info = await parser.getInfo();
+    if (info.total > 500)
+      throw new ApiFault(413, 'COMPANY_PAGE_LIMIT', 'PDF超过500页预算，请提供相关财务页');
+    const text = await parser.getText({ cellSeparator: '\t' });
+    if (signal?.aborted) throw new ApiFault(504, 'COMPANY_CANCELLED', 'PDF读取已中止');
+    if (text.text.length > 8_000_000)
+      throw new ApiFault(413, 'COMPANY_TEXT_LIMIT', 'PDF文本超过本次处理预算');
+    if (text.text.trim().length < 40)
+      throw new ApiFault(
+        422,
+        'COMPANY_NO_TEXT',
+        '未取得可用PDF文本，当前未运行OCR；请补充文本财报'
+      );
+    return {
+      pages: text.pages.map((page) => ({ page: page.num, text: page.text })),
+      total: info.total,
+      sha256: createHash('sha256').update(buffer).digest('hex'),
+    };
+  } catch (error) {
+    if (error instanceof ApiFault) throw error;
+    throw new ApiFault(422, 'COMPANY_PDF_PARSE', 'PDF文本读取未完成，未生成替代金额');
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', abort);
+    await parser.destroy().catch(() => undefined);
+  }
+}
+
+const amounts = /\(?[−－-]?\d[\d,]*(?:\.\d+)?\)?/g;
+const compact = (text: string) => text.replace(/\s/g, '').replace(/[−－]/g, '-');
+function numeric(raw: string): string {
+  raw = raw.replace(/,/g, '').replace(/[−－]/g, '-');
+  return raw.startsWith('(') ? `-${raw.slice(1, -1)}` : raw;
+}
+function metricFor(label: string): MetricKey | null {
+  if (
+    /^(?:[一二三四五六七八九十]+[、.．])?净利润(?:[（(]|$)/.test(label) &&
+    !/归属|少数/.test(label)
+  )
+    return 'netProfit';
+  if (/^经营活动产生的现金流量净额/.test(label)) return 'operatingCashFlow';
+  if (/^存货的减少/.test(label)) return 'inventoryAdjustment';
+  if (/^经营性应收项目的减少/.test(label)) return 'receivablesAdjustment';
+  if (/^经营性应付项目的增加/.test(label)) return 'payablesAdjustment';
+  return null;
+}
+function findUnit(text: string): 'yuan' | 'qian' | 'wan' | 'yi' | null {
+  const matches = [...text.matchAll(/单位[：:]\s*(?:人民币)?\s*(千元|万元|亿元|元)/g)];
+  const unit = matches.at(-1)?.[1];
+  return unit
+    ? ({ 元: 'yuan', 千元: 'qian', 万元: 'wan', 亿元: 'yi' } as const)[
+        unit as '元' | '千元' | '万元' | '亿元'
+      ]
+    : null;
+}
+function sourceCurrency(text: string): string {
+  if (/币种[：:]?\s*美元|单位[：:]\s*美元/.test(text)) return 'USD';
+  return /人民币|RMB/.test(text) ? 'CNY' : 'XXX';
+}
+function tableColumns(text: string, year: number): boolean | null {
+  const lines = text.split('\n').map(compact);
+  for (let index = lines.length - 1; index >= 0; index--) {
+    let line = lines[index]!;
+    if (
+      /^20\d{2}(?:年度|年)?$/.test(line) &&
+      index > 0 &&
+      /^20\d{2}(?:年度|年)?$/.test(lines[index - 1]!)
+    )
+      line = lines[index - 1]! + line;
+    if (/^(?:项目|附注|行次|补充资料)?(?:20\d{2}(?:年度|年)?){2}$/.test(line)) {
+      const years = [...line.matchAll(/20\d{2}/g)].map((match) => Number(match[0]));
+      return years[0] === year && years[1] === year - 1;
+    }
+    if (
+      /^(?:项目|附注|行次|补充资料)?(?:本期(?:金额|发生额)|本年(?:金额|发生额))(?:上期(?:金额|发生额)|上年(?:金额|发生额))$/.test(
+        line
+      )
+    )
+      return true;
+  }
+  return null;
+}
+function supplementHeader(text: string): string {
+  const lines = text.split('\n').slice(-10);
+  let unitIndex = -1;
+  for (let index = 0; index < lines.length; index++)
+    if (findUnit(lines[index]!) !== null) unitIndex = index;
+  if (unitIndex < 0) return '';
+  const trailing = lines.slice(unitIndex + 1).map(compact);
+  if (
+    trailing.some(
+      (line) =>
+        !/^(?:项目|附注|行次|补充资料|本期金额|上期金额|本年金额|上年金额|本期发生额|上期发生额|本年发生额|上年发生额|20\d{2}(?:年度|年)?|\d+)*$/.test(
+          line
+        )
+    )
+  )
+    return '';
+  return lines.slice(unitIndex).join('\n');
+}
+
+export function candidateCompanyName(pages: CompanyPdfPage[]): string | null {
+  const matches = pages.slice(0, 4).flatMap((page) =>
+    page.text.split('\n').flatMap((line) => {
+      const value = compact(line).match(
+        /^[\u3400-\u9fffA-Za-z0-9（）()·&]{2,100}(?:股份有限公司|有限责任公司|有限公司)/
+      )?.[0];
+      return value ? [value] : [];
+    })
+  );
+  return [...new Set(matches)][0] || null;
+}
+
+/** Only explicit table boundaries, column headers and source units produce candidates. */
+export function extractFinancialCandidates(
+  identity: CompanyIdentity,
+  announcement: CompanyAnnouncement,
+  pdf: CompanyPdfText,
+  year: number,
+  selectedPages?: number[],
+  strategy?: 'supplement' | 'statements'
+): CompanyCandidatePreview {
+  const warnings = [
+    '自动提取是候选预览；来源可追溯不等于业务真实性已认证，采用前须核对主体、期间、单位与合并口径。',
+  ];
+  const company = candidateCompanyName(pdf.pages) || identity.companyName || identity.shortName;
+  const cover = pdf.pages
+    .slice(0, 5)
+    .map((page) => page.text)
+    .join('\n');
+  const coverYear =
+    compact(cover).includes(`${year}年年度报告`) && announcement.reportYear === year;
+  if (!coverYear) warnings.push('官方标题与原件封面年度尚未同时确认，未采用表格金额。');
+  const reportCurrency =
+    /(?:人民币(?:元|千元|万元)|(?:记账本位币|编报货币)[\s\S]{0,40}人民币|以人民币为记账本位币)/.test(
+      pdf.pages.map((page) => page.text).join('\n')
+    )
+      ? 'CNY'
+      : 'XXX';
+  const observations: Observation[] = [];
+  const excerpts: Material['excerpts'] = [];
+  const used = new Set<string>();
+  const allowed = selectedPages ? new Set(selectedPages) : null;
+  let scope: Observation['scope'] = 'unknown';
+  let recent = '';
+  let table: {
+    kind: 'profit' | 'cash' | 'supplement';
+    scope: Observation['scope'];
+    unit: ReturnType<typeof findUnit>;
+    currency: string;
+    columns: boolean;
+    header: string;
+    rows: { label: string; values: string[]; page: number; quote: string }[];
+    label: string;
+    closed: boolean;
+    incomplete: boolean;
+  } | null = null;
+  const add = (
+    row: { label: string; values: string[]; page: number; quote: string },
+    key: MetricKey,
+    column: number,
+    unit: NonNullable<ReturnType<typeof findUnit>>,
+    currency: string,
+    statementScope: Observation['scope']
+  ) => {
+    if (allowed && !allowed.has(row.page)) return;
+    const raw = row.values[column];
+    if (raw === undefined) return;
+    let value = raw,
+      normalizedUnit: MoneyUnit = unit === 'qian' ? 'yuan' : unit;
+    try {
+      if (unit === 'qian') value = fenToYuan(moneyToFen(raw, 'yuan') * 1000n);
+      else moneyToFen(raw, normalizedUnit);
+    } catch {
+      warnings.push(`第${row.page}页金额精度或格式无法确认，未采用该行。`);
+      return;
+    }
+    const idKey = `${key}|${year - column}|${statementScope}|${value}|${normalizedUnit}`;
+    if (used.has(idKey)) return;
+    used.add(idKey);
+    observations.push({
+      id: `cninfo-${identity.securityCode}-${announcement.id}-${key}-${year - column}-${observations.length}`,
+      key,
+      year: year - column,
+      period: 'annual',
+      value,
+      unit: normalizedUnit,
+      currency,
+      scope: statementScope,
+      page: row.page,
+      quote: `${row.quote.slice(0, 1050)}；第${column + 1}列${year - column}年度；原表单位${{ yuan: '元', qian: '千元', wan: '万元', yi: '亿元' }[unit]}${unit === 'qian' ? '，按千元×1000转换为元' : ''}`,
+      kind: 'reported',
+    });
+  };
+  const finish = () => {
+    if (!table) return;
+    const current = table;
+    table = null;
+    if (
+      (strategy === 'supplement' && current.kind !== 'supplement') ||
+      (strategy === 'statements' && current.kind === 'supplement')
+    )
+      return;
+    if (!coverYear || !current.columns || !current.unit) return;
+    const total = current.rows.find((row) => metricFor(row.label) === 'operatingCashFlow');
+    for (const row of current.rows) {
+      const key = metricFor(row.label);
+      if (!key) continue;
+      if (
+        (current.kind === 'profit' && key !== 'netProfit') ||
+        (current.kind === 'cash' && key !== 'operatingCashFlow')
+      )
+        continue;
+      for (let column = 0; column < 2; column++)
+        add(row, key, column, current.unit, current.currency, current.scope);
+    }
+    if (
+      current.kind !== 'supplement' ||
+      !current.closed ||
+      !total ||
+      current.scope !== 'consolidated' ||
+      current.currency !== 'CNY'
+    )
+      return;
+    const other = current.rows.filter((row) => !metricFor(row.label));
+    if (current.incomplete || !other.length || other.some((row) => row.values.length !== 2)) {
+      warnings.push('其余调整行不完整，没有以现金桥残差代替原始分组。');
+      return;
+    }
+    for (let column = 0; column < 2; column++) {
+      const components = other.map((row) => ({
+        label: row.label.slice(0, 200),
+        value: fenToYuan(
+          moneyToFen(row.values[column]!, current.unit === 'qian' ? 'yuan' : current.unit!) *
+            (current.unit === 'qian' ? 1000n : 1n)
+        ),
+        page: row.page,
+        quote: `${row.quote.slice(0, 1000)}；原表单位${current.unit === 'qian' ? '千元' : current.unit}`,
+      }));
+      if (allowed && components.some((row) => !allowed.has(row.page!))) continue;
+      const value = fenToYuan(
+        components.reduce((sum, row) => sum + moneyToFen(row.value, 'yuan'), 0n)
+      );
+      const idKey = `otherAdjustments|${year - column}|consolidated|${value}|yuan`;
+      if (used.has(idKey)) continue;
+      used.add(idKey);
+      observations.push({
+        id: `cninfo-${identity.securityCode}-${announcement.id}-other-${year - column}`,
+        key: 'otherAdjustments',
+        year: year - column,
+        period: 'annual',
+        value,
+        unit: 'yuan',
+        currency: 'CNY',
+        scope: 'consolidated',
+        page: components[0]!.page,
+        quote: '原表中除存货、经营性应收及经营性应付以外的已提取调整行逐项求和；不是现金桥残差。',
+        kind: 'derived',
+        components,
+      });
+    }
+  };
+  for (const page of pdf.pages) {
+    for (const line of page.text.split('\n')) {
+      const text = compact(line);
+      const previous = recent;
+      recent = `${recent}\n${line}`.slice(-3500);
+      if (
+        /^(?:[一二三四五六七八九十\d、.．]*)?(?:母公司(?:财务报表|资产负债表|利润表|现金流量表))/.test(
+          text
+        )
+      ) {
+        finish();
+        scope = 'parent';
+      }
+      if (
+        /^(?:[一二三四五六七八九十\d、.．]*)?(?:合并(?:财务报表|资产负债表|利润表|现金流量表))/.test(
+          text
+        )
+      ) {
+        finish();
+        scope = 'consolidated';
+      }
+      const kind = /将净利润调节为经营活动(?:的)?现金流量/.test(text)
+        ? 'supplement'
+        : /^(?:[一二三四五六七八九十\d、.．]*)?合并利润表/.test(text)
+          ? 'profit'
+          : /^(?:[一二三四五六七八九十\d、.．]*)?合并现金流量表/.test(text)
+            ? 'cash'
+            : null;
+      if (kind) {
+        finish();
+        const context = kind === 'supplement' ? supplementHeader(previous) : '';
+        table = {
+          kind,
+          scope,
+          unit: findUnit(context),
+          currency: sourceCurrency(context) === 'XXX' ? reportCurrency : sourceCurrency(context),
+          columns: tableColumns(context, year) === true,
+          header: context,
+          rows: [],
+          label: '',
+          closed: false,
+          incomplete: false,
+        };
+        if (excerpts.length < 30)
+          excerpts.push({
+            page: page.page,
+            text: `${context.slice(-900)}\n${page.text.slice(0, 2000)}`.slice(0, 4000),
+          });
+        continue;
+      }
+      if (!table) continue;
+      const newUnit = findUnit(line);
+      if (newUnit) {
+        if (table.rows.length && table.unit && newUnit !== table.unit) {
+          warnings.push('本表金额行后出现不同单位，暂停该表；未把新单位套到先前金额。');
+          table.incomplete = true;
+          table.unit = null;
+          finish();
+          continue;
+        }
+        table.unit = newUnit;
+        if (sourceCurrency(line) !== 'XXX') table.currency = sourceCurrency(line);
+      }
+      table.header = `${table.header}\n${line}`.slice(-500);
+      const columns = tableColumns(table.header, year);
+      if (columns !== null) {
+        table.columns = columns;
+        if (!columns && !warnings.some((warning) => warning.includes('列顺序')))
+          warnings.push(
+            '本表显式年度列顺序与当前/上年不一致，暂停该表金额提取；未借用封面或其他表的年度。'
+          );
+      }
+      if (!table.columns) continue;
+      if (/^2[.．、]/.test(text) && table.kind === 'supplement') {
+        finish();
+        continue;
+      }
+      if (!text || /^--|^\d+$|年度报告|^项目|^单位|^本期|^上期|^本年|^上年/.test(text)) continue;
+      const values = [...line.matchAll(amounts)].map((match) => numeric(match[0]));
+      const label = compact(line.replace(amounts, ''));
+      if (!values.length) {
+        table.label = `${table.label}${label}`.slice(0, 600);
+        continue;
+      }
+      if (values.length !== 2) {
+        table.incomplete = true;
+        table.label = '';
+        continue;
+      }
+      const row = {
+        label: `${table.label}${label}`,
+        values,
+        page: page.page,
+        quote: `${table.label ? `${table.label}\n` : ''}${line.trim()}`,
+      };
+      table.label = '';
+      if (table.kind !== 'supplement' && !metricFor(row.label)) continue;
+      table.rows.push(row);
+      if (metricFor(row.label) === 'operatingCashFlow' && table.kind === 'supplement') {
+        table.closed = true;
+        finish();
+        continue;
+      }
+      if (table.rows.length > 100) {
+        warnings.push('表格行数超过预算，停止本表分组提取。');
+        finish();
+      }
+    }
+  }
+  finish();
+  if (!observations.length)
+    warnings.push(
+      '未找到同时确认年度、列顺序、单位与表格边界的金额；请补充合并财务表或手工核对字段。'
+    );
+  if (observations.some((row) => row.scope === 'unknown' || row.currency === 'XXX'))
+    warnings.push('部分观测的合并范围或币种待确认；规则不会把未知当作已核实。');
+  const filtered = observations.filter((row) => row.scope !== 'parent');
+  if (filtered.length !== observations.length)
+    warnings.push('母公司独立表已识别并排除，不与合并表混用。');
+  const material = validateMaterial({
+    company,
+    shortName: identity.shortName,
+    title: announcement.title,
+    filename: `${identity.securityCode}-${year}-${announcement.id}.pdf`,
+    origin: 'public-report',
+    documentDate: shanghaiDate(announcement.publishedAt),
+    sourceUrl: announcement.sourceUrl,
+    sha256: pdf.sha256,
+    observations: filtered.slice(0, 100),
+    notes: warnings,
+    excerpts,
+  });
+  const report = analyze({ title: '公开财报候选核验', company, year, materialIds: ['candidate'] }, [
+    { ...material, id: 'candidate', createdAt: new Date().toISOString() },
+  ]);
+  appendSourceRowChecks(material, year, report.checks);
+  return {
+    material,
+    reviewRequired: true,
+    warnings,
+    tablePages: [
+      ...new Set(filtered.map((row) => row.page).filter((page): page is number => page !== null)),
+    ].sort((a, b) => a - b),
+    checks: report.checks,
+  };
+}
+
+function appendSourceRowChecks(
+  material: Omit<Material, 'id' | 'createdAt'>,
+  year: number,
+  checks: Check[]
+): void {
+  for (const period of [year, year - 1]) {
+    const keys: MetricKey[] = [
+      'netProfit',
+      'inventoryAdjustment',
+      'receivablesAdjustment',
+      'payablesAdjustment',
+      'otherAdjustments',
+      'operatingCashFlow',
+    ];
+    const rows = keys.map((key) =>
+      material.observations.filter(
+        (row) =>
+          row.key === key &&
+          row.year === period &&
+          row.scope === 'consolidated' &&
+          row.currency === 'CNY'
+      )
+    );
+    if (
+      rows.some(
+        (values) =>
+          !values.length ||
+          new Set(values.map((row) => moneyToFen(row.value, row.unit).toString())).size !== 1
+      )
+    )
+      continue;
+    const selected = rows.map((values) => values[0]!);
+    const difference =
+      selected.slice(0, 5).reduce((sum, row) => sum + moneyToFen(row.value, row.unit), 0n) -
+      moneyToFen(selected[5]!.value, selected[5]!.unit);
+    const thousand = selected.some((row) => row.quote.includes('原表单位千元'));
+    checks.push({
+      id: `source-row-reconciliation-${period}`,
+      label: '原始财务行逐项加总',
+      status: difference === 0n ? 'pass' : 'fail',
+      message:
+        difference === 0n
+          ? `${period}年度原始行求和与披露经营现金净额精确一致。`
+          : `${period}年度原始行求和与披露经营现金净额相差${fenToYuan(difference < 0n ? -difference : difference)}元（${difference < 0n ? -difference : difference}分）。${thousand ? '原表以千元列示，差异可能与列示精度有关，但原因未经核查。' : ''}保留原始金额，不以残差更改字段。`,
+      sourceRefs: selected.map((row) => ({
+        materialId: 'candidate',
+        page: row.page,
+        quote: row.quote,
+        sourceUrl: material.sourceUrl,
+      })),
+    });
+  }
+}
+
+export async function verifiedFixturePreview(
+  root: string,
+  identity: CompanyIdentity,
+  announcement: CompanyAnnouncement,
+  pdf: CompanyPdfText,
+  year: number
+): Promise<CompanyCandidatePreview | null> {
+  const manifest = JSON.parse(
+    await readFile(path.join(root, 'data/source-manifest.json'), 'utf8')
+  ) as {
+    sources: { id: string; securityCode: string; sha256: string; url: string; pdfPages: number }[];
+  };
+  const match = manifest.sources.find(
+    (source) =>
+      ['songyuan-2025', 'hikvision-2025'].includes(source.id) &&
+      source.securityCode === identity.securityCode &&
+      source.sha256 === pdf.sha256 &&
+      source.url === announcement.sourceUrl &&
+      source.pdfPages === pdf.total &&
+      year === 2025 &&
+      announcement.reportYear === 2025
+  );
+  if (!match) return null;
+  const fixture = validateMaterial(
+    JSON.parse(await readFile(path.join(root, 'data/cases', `${match.id}.json`), 'utf8'))
+  );
+  const material = validateMaterial({
+    ...fixture,
+    filename: `${identity.securityCode}-${year}-${announcement.id}.pdf`,
+    title: announcement.title,
+    documentDate: shanghaiDate(announcement.publishedAt),
+    rawSourceId: undefined,
+    managementExplanation: undefined,
+    notes: [
+      '本次实际下载原件的SHA-256、URL及页数与逐页审查的公开样本完全匹配；重用已核对的金额与原始分组行。',
+      '样本原件核对不等于企业经营或承诺安全，采用仍需确认。',
+    ],
+  });
+  const report = analyze(
+    { title: '公开原件候选核验', company: material.company, year, materialIds: ['candidate'] },
+    [{ ...material, id: 'candidate', createdAt: new Date().toISOString() }]
+  );
+  appendSourceRowChecks(material, year, report.checks);
+  return {
+    material,
+    reviewRequired: true,
+    warnings: [...material.notes],
+    tablePages: [
+      ...new Set(
+        material.observations.map((row) => row.page).filter((page): page is number => page !== null)
+      ),
+    ].sort((a, b) => a - b),
+    checks: report.checks,
+  };
+}

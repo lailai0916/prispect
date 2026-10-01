@@ -10,12 +10,15 @@ import { previewUpload } from './import.js';
 import { explainWithModel, modelConfigFromEnv, type ModelConfig } from './model.js';
 import { seeds, WorkspaceStore } from './store.js';
 import { AuthStore, authentication, type AuthContext } from './auth.js';
-import { ApiFault, taskInputSchema, validateMaterial } from './validation.js';
+import { installDecisionRoutes } from './decision-routes.js';
+import { installCompanyRoutes, type CompanyService } from './company-routes.js';
+import { ApiFault, taskContextSchema, taskInputSchema, validateMaterial } from './validation.js';
 
 export interface AppOptions {
   root?: string;
   dataDir?: string;
   model?: ModelConfig;
+  companyService?: CompanyService;
 }
 export async function createApp(options: AppOptions = {}) {
   const root = options.root || process.cwd();
@@ -315,6 +318,8 @@ export async function createApp(options: AppOptions = {}) {
   app.get('/api/workspace', (_req, res) => {
     res.json((res.locals.store as WorkspaceStore).workspace(provider));
   });
+  installDecisionRoutes(app, { auth });
+  const company = installCompanyRoutes(app, { root, auth, model, service: options.companyService });
   let uploads = 0;
   const limitUpload = (
     _req: express.Request,
@@ -484,6 +489,7 @@ export async function createApp(options: AppOptions = {}) {
         ...input,
         id: randomUUID(),
         excludedMetrics: input.excludedMetrics || [],
+        contextNotes: {},
         status: 'queued',
         createdAt: now,
         updatedAt: now,
@@ -533,6 +539,32 @@ export async function createApp(options: AppOptions = {}) {
     })
   );
   app.patch(
+    '/api/tasks/:id/context',
+    wrap(async (req, res) => {
+      const store = res.locals.store as WorkspaceStore;
+      const task = taskById(String(req.params.id), store);
+      const parsed = taskContextSchema.safeParse(req.body);
+      if (!parsed.success)
+        throw new ApiFault(
+          400,
+          'INVALID_CONTEXT',
+          parsed.error.issues[0]?.message || '场景信息无效'
+        );
+      const input = parsed.data;
+      if (input.purpose !== undefined) task.purpose = input.purpose;
+      if (input.contextNotes !== undefined)
+        task.contextNotes = { ...task.contextNotes, ...input.contextNotes };
+      if (input.cashPlan === null) delete task.cashPlan;
+      else if (input.cashPlan !== undefined)
+        task.cashPlan = { ...input.cashPlan, updatedAt: new Date().toISOString() };
+      task.purpose ||= 'external';
+      task.contextNotes ||= {};
+      task.updatedAt = new Date().toISOString();
+      await store.persist();
+      res.json(task);
+    })
+  );
+  app.patch(
     '/api/tasks/:id/questions/:questionId',
     wrap(async (req, res) => {
       const store = res.locals.store as WorkspaceStore;
@@ -555,6 +587,12 @@ export async function createApp(options: AppOptions = {}) {
       const task = taskById(String(req.params.id), res.locals.store as WorkspaceStore);
       if (running.has(task.id) || task.status === 'queued')
         throw new ApiFault(409, 'TASK_RUNNING', '执行中的任务不能删除');
+      if (
+        (store.state.decisions || []).some((decision) =>
+          decision.versions.some((version) => version.input.reportTaskId === task.id)
+        )
+      )
+        throw new ApiFault(409, 'TASK_IN_USE', '决定历史版本仍引用这份财报任务，请保留报告');
       store.state.tasks = store.state.tasks.filter((item) => item.id !== task.id);
       delete store.state.inputs[task.id];
       await store.persist();
@@ -588,6 +626,8 @@ export async function createApp(options: AppOptions = {}) {
         throw new ApiFault(400, 'CONFIRM_REQUIRED', '重置需明确确认 RESET_DEMO');
       if (store.state.tasks.some((task) => running.has(task.id) || scheduled.has(task.id)))
         throw new ApiFault(409, 'TASK_RUNNING', '存在执行中的任务，暂时不能重置');
+      if (company.busy(store))
+        throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '公开证据查询或保存中，暂时不能重置');
       await store.reset();
       res.json(store.workspace(provider));
     })
@@ -637,6 +677,7 @@ export async function createApp(options: AppOptions = {}) {
     auth,
     workspaceForUser,
     waitForIdle: async () => {
+      await company.waitForIdle();
       while (running.size || scheduled.size)
         await new Promise((resolve) => setTimeout(resolve, 10));
     },

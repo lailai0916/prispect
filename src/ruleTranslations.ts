@@ -1,6 +1,19 @@
 import { metricNames } from './format';
 
 const rules: Record<string, string> = {
+  '原始文件已暂存于当前账号；请在24小时内确认保存，未确认文件会过期清理。确认后随材料保留，个人额度250MB。':
+    'The original upload is temporarily retained in your account. Confirm within 24 hours before it expires; confirmed files remain with the material. Your account quota is 250 MB.',
+  '采用材料的主体字段一致。': 'Company fields are consistent across the adopted materials.',
+  '保留已采用金额；现有材料不能解释现金差额的经营原因。':
+    'Adopted amounts remain visible; the current evidence does not explain the operating causes of the cash gap.',
+  '保留已采用金额；缺失或口径不一致的项目不参与计算。':
+    'Adopted amounts remain visible; missing or inconsistent items are excluded from calculations.',
+  现金利润比: 'Cash-to-profit ratio',
+
+  经营性应收调整为零: 'Operating receivables adjustment is zero',
+  '本期经营性应收现金桥调整合计为零。':
+    'The operating receivables bridge adjustment totals zero for this period.',
+
   '任务处理或保存失败，请检查本机工作区后重试。':
     'Processing or saving failed. Check the workspace and retry the actual review.',
   '本次未启用智能解释；未向模型服务发送材料。':
@@ -155,11 +168,146 @@ const rules: Record<string, string> = {
   '规则解释完成；未执行模型调用。': 'Rules-based explanation completed. No model call was made.',
   '保存报告、问题状态与全部输入快照。':
     'Saving the report, follow-up status, and full input snapshot.',
+  原始财务行逐项加总: 'Reconcile original financial rows',
+  公开选择页二次核对: 'Recheck selected public pages',
+  '输入口径、数值或现金桥核对存在冲突。保留可单独采用的金额与原始来源，暂停依赖冲突证据的解释；差额不直接证明经营风险。':
+    'Input scope, amounts or bridge reconciliation conflict. Independently admissible amounts and original sources remain visible. Explanations dependent on conflicting evidence stop; the difference alone does not establish operating risk.',
+  重新确认官方主体: 'Reconfirm the official company identity',
+  检索指定年度完整年报: 'Retrieve the requested annual report',
+  检索近90天公告线索: 'Retrieve disclosures from the last 90 days',
+  下载官方年报原件并计算哈希: 'Download the official report and compute its hash',
+  读取真实PDF页与文本: 'Read PDF pages and text',
+  提取候选并运行确定性核验: 'Extract candidates and run deterministic checks',
+  有限重试公开证据页规划: 'Retry public-evidence page selection',
+  模型选择公开证据核查页: 'Select public-evidence pages with the optional model',
+  重新验证模型选中的原件页: 'Recheck model-selected original pages',
+  可选模型解释公开核查证据: 'Optional model explanation of public evidence',
+  可选公开证据模型: 'Optional public-evidence model',
+  '仅使用精确代码与机构ID绑定的公告。':
+    'Use disclosures tied to the exact security code and organization ID.',
+  '指定年度没有全本时停止，不换成其他年份。':
+    'Stop if the requested annual report is unavailable; do not substitute another year.',
+  '本步未逐份下载公告，普通公告不自动判为风险。':
+    'Individual recent disclosures were not downloaded in this step. Ordinary disclosures are not automatically classified as risks.',
+  '候选始终需要用户确认；缺失不填零，不用残差补其他调整。':
+    'Candidates always require confirmation. Missing values stay unknown; residuals do not replace source adjustment rows.',
+  '只改变确定性复核的候选页选择，模型不产生金额。':
+    'The model only selects pages for deterministic rechecking; it does not generate amounts.',
+  '如果局部页遗漏证据或引入冲突，保留原始全表候选而不覆盖。':
+    'If selected pages omit evidence or create conflicts, retain the original full-table candidates.',
+  '冲突时不调用解释模型，金额与核验失败原样保留。':
+    'Conflicting input is not sent for model explanation. Amounts and failed checks remain visible.',
+  '引用ID与输出格式已检查；解释含义仍需人工核对，不构成财务认证。':
+    'Citation IDs and output format were checked. Interpretation still needs human review; this is not financial certification.',
+  '模型默认关闭，只有本次显式授权才发送公开候选页与字段。':
+    'The model is off by default. Public candidate pages and fields are sent only with explicit authorization for this run.',
+  '模型服务未配置，真实规则工具链保留。':
+    'No model service is configured. The rules-based retrieval workflow remains available.',
+  '本次未启用，未向外部模型发送数据。':
+    'Not enabled for this run. No data was sent to an external model.',
+  '仅同年度合并可采用字段及短摘录；不含私人文件、备注或现金计划':
+    'Only same-year consolidated admissible fields and short excerpts; no private files, notes or cash plan',
+  '金融机构财务口径需要专门方法，当前工业企业现金桥工具未支持；未套用通用评级。':
+    'Financial institutions require a separate accounting method. This industrial-company cash bridge does not support them or assign a generic rating.',
+  '已取得公开原件，但没有足够可确认的财务观测。请补充或核对表格字段，不填零。':
+    'The public original was retrieved, but there are insufficient confirmable financial observations. Supply or review the table fields; missing values are not filled with zero.',
+  '公开证据查询未完成。可重新查询，或自行导入材料。':
+    'Public-evidence retrieval did not complete. Start another retrieval or import the source yourself.',
+  '所选代码与机构ID未在官方来源同时匹配，停止而非选择相近公司':
+    'The security code and organization ID did not match in the official source. Retrieval stopped instead of selecting a similar company.',
+  '官方披露来源暂不可达，已完成一次重试；未替换为其他主体或年份':
+    'The official source remained unavailable after one retry. No other company or year was substituted.',
+  本次Agent检索预算已结束: 'This retrieval reached its execution limit.',
+  '公开页规划失败或选择无效，确定性候选完整保留。':
+    'Public-page planning failed or returned an invalid selection. Deterministic candidates remain available.',
+  '模型页选择器建议补充材料；未补造观测或改写规则结果。':
+    'The model page selector requested more evidence. No observations were invented and rule results were not rewritten.',
+  '同年度存在多个完整年报版本；已下载最新披露版本，其他版本链接仍保留，采用前请核对更正或修订。':
+    'Multiple full reports exist for this year. The latest disclosed version was downloaded; other links remain available. Check corrections or revisions before adopting.',
+  '近期公告检索未完成，不等于不存在近期变化。':
+    'Recent-disclosure retrieval did not complete. This does not establish the absence of recent changes.',
+  '自动提取是候选预览；来源可追溯不等于业务真实性已认证，采用前须核对主体、期间、单位与合并口径。':
+    'Automatic extraction produces candidates. Traceable sources do not certify business authenticity; confirm company, period, units and consolidation scope before adoption.',
+  '官方标题与原件封面年度尚未同时确认，未采用表格金额。':
+    'The year has not been confirmed in both the official title and document cover; table amounts were not adopted.',
+  '其余调整行不完整，没有以现金桥残差代替原始分组。':
+    'Other adjustment rows are incomplete. A cash-bridge residual was not substituted for source components.',
+  '表格行数超过预算，停止本表分组提取。':
+    'This table exceeds the row limit; component extraction stopped.',
+  '未找到同时确认年度、列顺序、单位与表格边界的金额；请补充合并财务表或手工核对字段。':
+    'No amounts had confirmed year, column order, units and table boundaries. Supply consolidated statements or review the fields manually.',
+  '部分观测的合并范围或币种待确认；规则不会把未知当作已核实。':
+    'Some consolidation scopes or currencies remain unconfirmed. Rules do not treat unknown values as verified.',
+  '母公司独立表已识别并排除，不与合并表混用。':
+    'Separate parent-company statements were identified and excluded from consolidated inputs.',
+  '本次实际下载原件的SHA-256、URL及页数与逐页审查的公开样本完全匹配；重用已核对的金额与原始分组行。':
+    'The downloaded original matches the reviewed public sample by SHA-256, URL and page count. Its previously checked amounts and source components were reused.',
+  '样本原件核对不等于企业经营或承诺安全，采用仍需确认。':
+    'A matched source does not establish business or commitment safety. Adoption still requires confirmation.',
+  '原件仅向当前账号开放；未采用原件24小时后过期，确认后随材料保留。':
+    'The original is private to this account. Unadopted files expire after 24 hours; confirmed originals are retained with their materials.',
   '核查报告已持久保存，可重开与导出。': 'Review persisted. It can be reopened and exported.',
 };
 
 export function translateRule(text: string): string {
   if (rules[text]) return rules[text];
+  const bridgeDifference = text.match(
+    /^利润与调整合计 ([\d.-]+) 元，经营现金 ([\d.-]+) 元；差额（经营现金−合计）([\d.-]+) 元。停止现金桥解释并请求复核，不以残差补数。$/
+  );
+  if (bridgeDifference)
+    return `Net profit plus adjustments total CNY ${bridgeDifference[1]}; operating cash is CNY ${bridgeDifference[2]}. Difference (operating cash minus total): CNY ${bridgeDifference[3]}. Bridge attribution has stopped pending review; no residual is substituted.`;
+  const originalDifference = text.match(
+    /^(\d+)年度原始行求和与披露经营现金净额相差([\d.-]+)元（([\d.-]+)分）。原表以千元列示，差异可能与列示精度有关，但原因未经核查。保留原始金额，不以残差更改字段。$/
+  );
+  if (originalDifference)
+    return `For ${originalDifference[1]}, the sum of original rows differs from disclosed operating cash by CNY ${originalDifference[2]} (${originalDifference[3]} cents). The source is presented in thousands of yuan; presentation precision may be relevant, but the cause has not been investigated. Original amounts remain unchanged; no residual alters the fields.`;
+  const originalBalanced = text.match(/^(\d+)年度原始行求和与披露经营现金净额精确一致。$/);
+  if (originalBalanced)
+    return `For ${originalBalanced[1]}, the sum of original rows exactly equals disclosed operating cash.`;
+  const reselected = text.match(
+    /^二次(现金补充表|合并报表)页复核取得(\d+)项本年度候选；(已提取值与全表候选一致|出现与全表不一致的候选，需逐页人工核对)。原全表候选及原有冲突未覆盖。$/
+  );
+  if (reselected)
+    return `A second review of selected ${reselected[1] === '现金补充表' ? 'cash supplement' : 'consolidated statement'} pages produced ${reselected[2]} current-year candidates. ${reselected[3] === '已提取值与全表候选一致' ? 'Extracted values match the full-table candidates.' : 'Some candidates differ from the full-table extraction and require page-by-page review.'} The original full-table candidates and conflicts were retained.`;
+  const absentAnnual = text.match(
+    /^没有匹配(\d+)年度的中文完整年报。请补充该年度合并财报；没有换用其他年度。$/
+  );
+  if (absentAnnual)
+    return `No full Chinese annual report matched ${absentAnnual[1]}. Supply consolidated statements for that year; no other year was substituted.`;
+  const identitySummary = text.match(/^官方A股主体：(.*)（(\d+)）。法定全名继续与原件核对。$/);
+  if (identitySummary)
+    return `Official A-share identity: ${identitySummary[1]} (${identitySummary[2]}). The legal name still needs confirmation against the original.`;
+  const annualCount = text.match(/^取得(\d+)份指定年度中文全本候选(；分页预算仍有后续结果)?。$/);
+  if (annualCount)
+    return `${annualCount[1]} full Chinese annual-report candidates retrieved.${annualCount[2] ? ' Further pages exceed the current pagination budget.' : ''}`;
+  const recentCount = text.match(
+    /^取得(\d+)条近期公告标题与官方原件链接(；当前仅前30条，不声称全面覆盖)?。$/
+  );
+  if (recentCount)
+    return `${recentCount[1]} recent disclosure titles and official source links retrieved.${recentCount[2] ? ' Only the first 30 are covered.' : ''}`;
+  const downloaded = text.match(/^实际下载(\d+)字节PDF，SHA-256已计算；不接受任意来源。$/);
+  if (downloaded)
+    return `${downloaded[1]} PDF bytes downloaded and SHA-256 computed. Arbitrary sources are not accepted.`;
+  const readPages = text.match(/^实际PDF共(\d+)页，已取得页码对应的文本。当前未执行OCR。$/);
+  if (readPages) return `${readPages[1]} PDF pages read with page-aligned text. OCR was not run.`;
+  const identityInput = text.match(/^(\d+) · orgId校验$/);
+  if (identityInput) return `${identityInput[1]} · verify organization ID`;
+  const annualInput = text.match(/^(\d+)年度 · 中文全本 · 排除摘要\/英文$/);
+  if (annualInput)
+    return `${annualInput[1]} · full Chinese report · exclude summaries and English editions`;
+  const recentInput = text.match(/^(\d+) · 近90天官方公告$/);
+  if (recentInput) return `${recentInput[1]} · official disclosures from the last 90 days`;
+  const bytesInput = text.match(/^(\d+)字节 · 最多500页$/);
+  if (bytesInput) return `${bytesInput[1]} bytes · maximum 500 pages`;
+  const extractionInput = text.match(/^(\d+)年度 · 合并表边界\/列\/单位\/原始行$/);
+  if (extractionInput)
+    return `${extractionInput[1]} · consolidated table boundaries, columns, units and source rows`;
+  const planningInput = text.match(/^(\d+)个已下载公开页ID白名单；模型不得写金额$/);
+  if (planningInput)
+    return `${planningInput[1]} downloaded public-page IDs on the allowlist; the model must not generate amounts`;
+  const candidatePrecision = text.match(/^第(\d+)页金额精度或格式无法确认，未采用该行。$/);
+  if (candidatePrecision)
+    return `Amount precision or format on page ${candidatePrecision[1]} could not be confirmed; the row was not adopted.`;
   const parentTable = text.match(/^第 (\d+) 页为母公司表/);
   if (parentTable)
     return `Page ${parentTable[1]} is a parent-company table. Observations are retained to expose conflicts and must not be combined with consolidated data.`;

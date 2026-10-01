@@ -28,6 +28,79 @@ const errorMessages: Record<string, string> = {
   MATERIAL_NOT_FOUND: 'The selected material no longer exists. Refresh your evidence library.',
   TASK_RUNNING: 'A review is still running. Wait for completion before this action.',
   TASK_NOT_FOUND: 'This review was not found. It may have been deleted.',
+  INVALID_COMPANY_QUERY:
+    'Enter a company short name or six-digit security code, up to 80 characters.',
+  COMPANY_INPUT_INVALID:
+    'The security code, organization ID or year is outside the supported range.',
+  COMPANY_IDENTITY_MISMATCH:
+    'The code and organization ID did not match the official source. No similar company was substituted.',
+  COMPANY_UPLOAD_BOUND:
+    'This original is already bound to another material. Continue from your workspace or retrieve it again.',
+  COMPANY_MODEL_HTTP:
+    'The public-evidence planning model request did not complete. Rules-based candidates remain available.',
+  COMPANY_MODEL_SELECTION:
+    'The model page selection failed the allowlist or format check. Rules-based candidates remain available.',
+  COMPANY_INVALID_PDF: 'The downloaded original has no valid PDF signature.',
+  COMPANY_PAGE_LIMIT:
+    'The PDF exceeds the 500-page processing limit. Import the relevant financial pages.',
+  COMPANY_TEXT_LIMIT: 'The PDF text exceeds the processing limit.',
+  COMPANY_NO_TEXT:
+    'No usable PDF text was found. OCR was not run; provide text-based financial statements.',
+  COMPANY_PDF_PARSE: 'PDF text extraction did not complete. No substitute amounts were generated.',
+  COMPANY_QUERY_INVALID:
+    'Enter a company short name or six-digit security code, up to 80 characters.',
+  COMPANY_SOURCE_UNAVAILABLE:
+    'The official source did not respond after retry. Retry later or import the original yourself.',
+  COMPANY_SOURCE_FORMAT:
+    'The official source returned an unsupported response. No substitute company or report was used.',
+  COMPANY_SOURCE_EMPTY: 'The official source returned no usable evidence for this request.',
+  COMPANY_SOURCE_HTTP:
+    'The official source could not serve this request. Retry later or import the original.',
+  COMPANY_SOURCE_TOO_LARGE: 'The official file exceeds the 25 MB limit.',
+  COMPANY_SOURCE_URL: 'This document URL is outside the permitted official source.',
+  COMPANY_SOURCE_NOT_PDF: 'The official download is not a supported PDF.',
+  COMPANY_TOOL_BUDGET:
+    'The retrieval reached its tool-call limit. No additional sources were fetched.',
+  COMPANY_CANCELLED: 'The retrieval was cancelled before completion.',
+  INVALID_COMPANY_RUN:
+    'Check the selected company identity and year. Retrieval covers 2010 through the latest completed calendar year.',
+  COMPANY_RUN_NOT_FOUND: 'This retrieval record was not found in your account.',
+  COMPANY_RUN_LIMIT:
+    'Your account has 30 retrieval records. Delete an old record before starting another.',
+  COMPANY_AGENT_BUSY: 'An evidence retrieval or save is in progress. Retry after it finishes.',
+  COMPANY_REPORT_UNAVAILABLE: 'This retrieval has no retained downloadable original.',
+  COMPANY_PREVIEW_NOT_READY: 'The original and candidate input are not ready for confirmation.',
+  COMPANY_ADOPT_BUSY: 'This evidence is already being saved.',
+  CONFIRM_REQUIRED:
+    'Confirm the candidate company, year, units, period, scope and source before saving.',
+  COMPANY_SOURCE_MISMATCH:
+    'Original source metadata cannot be changed. Review observation fields instead.',
+  ADOPTED_MATERIAL_REMOVED:
+    'The evidence previously adopted from this run was removed. Retrieve it again.',
+  INVALID_CONTEXT:
+    'Check the scenario date, follow-up notes and cash amounts. Amounts must be nonnegative, with at most two decimal places.',
+  DECISION_NOT_FOUND: 'This decision was not found in your account.',
+  DECISION_VERSION_NOT_FOUND: 'The selected input version was not found.',
+  INVALID_REVISION: 'Select a valid version number.',
+  DECISION_REVISION_CONFLICT:
+    'A newer version exists. Reload before saving; your changes have not overwritten it.',
+  DECISION_VERSION_LIMIT: 'This decision has reached its 100-version limit.',
+  DECISION_EVIDENCE_LIMIT: 'This decision has reached its 50-evidence-record limit.',
+  DECISION_LIMIT: 'Your account has reached its 50-decision limit.',
+  INVALID_DECISION:
+    'Check the decision fields, dates and cash amounts. Amounts need at most two decimal places; blank fields remain unknown.',
+  INVALID_DECISION_PATCH: 'Reload this decision before saving its complete updated inputs.',
+  INVALID_DECISION_EVIDENCE: 'Check the evidence entity, date, source, text and supplied fields.',
+  EVIDENCE_REFERENCE_MISMATCH:
+    'The observation or page does not belong to the selected material. The original binding has not been changed.',
+  DECISION_EVIDENCE_NOT_FOUND: 'This evidence record was not found in the current decision.',
+  INVALID_DECISION_RESTORE: 'Select an existing revision to restore as a new version.',
+  INVALID_EVIDENCE_STATE: 'Reload the decision before changing this evidence record’s state.',
+  INVALID_EVIDENCE_SCOPE:
+    'Provide a valid entity, covered date and scope-correction reason (up to 1,000 characters).',
+  EVIDENCE_SCOPE_NOT_LOCATED:
+    'The corrected entity or date was not located in the linked saved text. Original text and amounts have not changed.',
+  EVIDENCE_SCOPE_UNCHANGED: 'The entity and covered date have not changed.',
   INVALID_TASK: 'Review input is invalid. Check the company, year, and selected materials.',
   INVALID_MATERIAL:
     'The material has invalid fields. Check values, units, periods, and statement scopes.',

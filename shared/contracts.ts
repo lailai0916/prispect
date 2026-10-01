@@ -9,6 +9,44 @@ export type StatementScope = 'consolidated' | 'parent' | 'unknown';
 export type MoneyUnit = 'yuan' | 'wan' | 'yi';
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
 export type Verdict = 'supported' | 'attention' | 'insufficient' | 'conflict';
+export type ReviewPurpose = 'external' | 'handover';
+
+export const CONTEXT_NOTE_KEYS = [
+  'external.identity',
+  'external.promise',
+  'external.latest',
+  'handover.cash',
+  'handover.schedule',
+  'handover.controls',
+] as const;
+export type ContextNoteKey = (typeof CONTEXT_NOTE_KEYS)[number];
+export interface ContextNote {
+  done: boolean;
+  note: string;
+}
+export type ContextNotes = Partial<Record<ContextNoteKey, ContextNote>>;
+export interface CashPlanPeriod {
+  days: 30 | 60 | 90;
+  inflow: string | null;
+  outflow: string | null;
+}
+export interface CashPlanInput {
+  asOf: string;
+  openingCash: string | null;
+  periods: [
+    CashPlanPeriod & { days: 30 },
+    CashPlanPeriod & { days: 60 },
+    CashPlanPeriod & { days: 90 },
+  ];
+}
+export interface CashPlan extends CashPlanInput {
+  updatedAt?: string;
+}
+export interface TaskContextPatch {
+  purpose?: ReviewPurpose;
+  contextNotes?: ContextNotes;
+  cashPlan?: CashPlanInput | null;
+}
 
 export interface EvidenceRef {
   materialId: string;
@@ -156,6 +194,9 @@ export interface AnalysisTask {
   materialIds: string[];
   excludedMetrics: MetricKey[];
   useModel?: boolean;
+  purpose?: ReviewPurpose;
+  contextNotes?: ContextNotes;
+  cashPlan?: CashPlan;
   status: TaskStatus;
   createdAt: string;
   updatedAt: string;
@@ -177,6 +218,7 @@ export interface CreateTaskInput {
   materialIds: string[];
   excludedMetrics?: MetricKey[];
   useModel?: boolean;
+  purpose?: ReviewPurpose;
 }
 
 export interface UploadPreview {
@@ -200,4 +242,83 @@ export interface AccountUser {
 export interface AuthSession {
   user: AccountUser | null;
   csrfToken: string | null;
+}
+
+export interface CompanyIdentity {
+  securityCode: string;
+  orgId: string;
+  shortName: string;
+  companyName: string | null;
+  exchange: 'szse' | 'sse' | 'bse' | 'unknown';
+  sourceUrl: string;
+}
+export interface CompanySearchResponse {
+  query: string;
+  candidates: CompanyIdentity[];
+  limitedToListed: true;
+  source: 'cninfo';
+  truncated: boolean;
+}
+export interface CompanyAnnouncement {
+  id: string;
+  title: string;
+  publishedAt: string;
+  sourceUrl: string;
+  category: 'annual' | 'recent';
+  reportYear?: number;
+}
+export interface CompanyAgentTrace {
+  id: string;
+  tool: string;
+  label: string;
+  status: 'running' | 'completed' | 'failed' | 'skipped';
+  startedAt: string;
+  finishedAt?: string;
+  inputSummary: string;
+  outputSummary?: string;
+  decision?: string;
+  sources: { title: string; url: string; page?: number; sha256?: string }[];
+}
+export interface CompanyCandidatePreview {
+  material: Omit<Material, 'id' | 'createdAt'>;
+  reviewRequired: true;
+  warnings: string[];
+  tablePages: number[];
+  checks: Check[];
+}
+export interface CompanyRunInput {
+  securityCode: string;
+  orgId: string;
+  year: number;
+  purpose?: ReviewPurpose;
+  useModel?: boolean;
+}
+export interface CompanyResearchRun {
+  id: string;
+  input: CompanyRunInput;
+  identity?: CompanyIdentity;
+  status: 'queued' | 'running' | 'ready' | 'failed' | 'adopted';
+  createdAt: string;
+  updatedAt: string;
+  trace: CompanyAgentTrace[];
+  announcements: CompanyAnnouncement[];
+  preview?: CompanyCandidatePreview;
+  stoppedReason?: string;
+  error?: string;
+  adoptedMaterialId?: string;
+  model: {
+    requested: boolean;
+    status: 'not-requested' | 'not-configured' | 'not-called' | 'completed' | 'failed';
+    provider?: string;
+    name?: string;
+    error?: string;
+  };
+}
+export interface CompanyAdoptInput {
+  confirmed: true;
+  material: Omit<Material, 'id' | 'createdAt'>;
+}
+export interface CompanyAdoptResponse {
+  material: Material;
+  run: CompanyResearchRun;
 }

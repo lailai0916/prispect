@@ -53,12 +53,12 @@ export function date(value: string, locale: Locale): string {
 
 export const metricNames = {
   netProfit: ['合并净利润', 'Consolidated net profit'],
-  operatingCashFlow: ['经营活动现金净额', 'Operating cash flow'],
+  operatingCashFlow: ['经营现金净额', 'Operating cash flow'],
   inventoryAdjustment: ['存货调整', 'Inventory adjustment'],
   receivablesAdjustment: ['经营性应收调整', 'Operating receivables'],
   payablesAdjustment: ['经营性应付调整', 'Operating payables'],
-  otherAdjustments: ['其余披露调整', 'Other disclosed adjustments'],
-  cashConversion: ['利润现金转化', 'Cash conversion'],
+  otherAdjustments: ['其余已披露调整', 'Other disclosed adjustments'],
+  cashConversion: ['现金利润比', 'Cash-to-profit ratio'],
   profitGrowth: ['净利润同比', 'Profit change'],
   cashGrowth: ['经营现金同比', 'Cash flow change'],
 } as const;
@@ -99,7 +99,7 @@ export function chartScale(maximum: number, range: number, locale: Locale, ticks
 export function baseReviewTitle(title: string): string {
   return title
     .replace(
-      /(?:\s*·\s*(?:压力测试|Stress test|恢复完整证据|Full evidence restored|恢复完整输入|Full input restored|复核|Review copy))+\s*$/g,
+      /(?:\s*·\s*(?:压力测试|Stress test|调整证据|Evidence adjusted|恢复完整证据|Full evidence restored|恢复完整输入|Full input restored|复核|Review copy))+\s*$/g,
       ''
     )
     .trim();

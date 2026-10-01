@@ -59,54 +59,8 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
   };
   return (
     <section className="auth-layout">
-      <div className="auth-story">
-        <div className="eyebrow">YOUR EVIDENCE, YOUR WORKSPACE</div>
-        <h1>
-          {t('保存证据。', 'Save the evidence.')}
-          <br />
-          <span>{t('继续追问。', 'Keep asking.')}</span>
-        </h1>
-        <p>
-          {t(
-            '建立你的核查工作区。材料、历史底稿与后续问题，保存在你的账号里。',
-            'Create your review workspace. Evidence, historical working papers, and follow-up questions are saved to your account.'
-          )}
-        </p>
-        <div className="auth-story-points">
-          <span>
-            <ShieldCheck size={18} />
-            {t('账号之间，工作区独立', 'Separate workspaces for each account')}
-          </span>
-          <span>
-            <Layers size={18} />
-            {t('真实材料快照与持久保存', 'Real evidence snapshots and persistence')}
-          </span>
-          <span>
-            <SlidersHorizontal size={18} />
-            {t('重算、比较、导出，完整闭环', 'Recompute, compare, and export')}
-          </span>
-        </div>
-        <a className="text-link" href="#/">
-          {t('返回首页，查看公开案例', 'View a public case on the homepage')}
-          <ArrowUpRight size={16} />
-        </a>
-      </div>
       <div className="auth-form-panel">
-        <div className="eyebrow">{isRegister ? 'CREATE YOUR ACCOUNT' : 'WELCOME BACK'}</div>
-        <h2>
-          {isRegister ? t('创建账号', 'Create your account') : t('登录照见', 'Log in to CashLens')}
-        </h2>
-        <p>
-          {isRegister
-            ? t(
-                '创建后即可使用完整核查功能。',
-                'Your account gives you the complete review workflow.'
-              )
-            : t(
-                '打开保存的核查，继续上次工作。',
-                'Open your saved reviews and continue your work.'
-              )}
-        </p>
+        <h1>{isRegister ? t('创建账号', 'Create account') : t('登录', 'Log in')}</h1>
         <form onSubmit={submit}>
           {isRegister && (
             <label className="form-field">
@@ -118,7 +72,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 maxLength={80}
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                placeholder={t('你希望我们如何称呼你', 'How should we address you?')}
+                placeholder={t('姓名或昵称', 'Name or nickname')}
               />
             </label>
           )}
@@ -147,14 +101,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               value={password}
               onChange={(event) => setPassword(event.target.value)}
             />
-            {isRegister && (
-              <small>
-                {t(
-                  '至少 10 个字符，建议使用独立密码。',
-                  'At least 10 characters. Use a unique password.'
-                )}
-              </small>
-            )}
+            {isRegister && <small>{t('至少 10 个字符。', 'At least 10 characters.')}</small>}
           </label>
           {isRegister && (
             <label className="form-field">
@@ -183,9 +130,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
             disabled={busy}
           >
             {busy ? <LoaderCircle size={18} className="spinner" /> : <ArrowRight size={18} />}{' '}
-            {isRegister
-              ? t('创建账号并进入工作区', 'Create account and open workspace')
-              : t('登录并继续', 'Log in and continue')}
+            {isRegister ? t('创建账号', 'Create account') : t('登录', 'Log in')}
           </button>
         </form>
         <p className="auth-switch">
@@ -202,12 +147,12 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
           <LockKeyhole size={15} />
           <span>
             {t(
-              '账号保留你的材料和历史核查；邮箱是登录标识，尚无邮件找回，请妥善保存独立密码。',
-              'Your account keeps materials and review history. Email is your login identifier; email-based recovery is not yet available. Keep a unique password safe.'
+              '邮箱用于登录；目前不支持邮件找回。',
+              'Email is used to log in. Email recovery is not available.'
             )}
             {isRegister && (
               <a className="privacy-link" href="#/method?section=privacy">
-                {t('了解数据保存与模型使用', 'Learn about data storage and model use')}
+                {t('数据与隐私', 'Data and privacy')}
                 <ArrowUpRight size={12} />
               </a>
             )}
@@ -261,11 +206,7 @@ export function AccountPage() {
     <>
       <PageHeading
         eyebrow="YOUR ACCOUNT"
-        title={t('账号与工作区', 'Account and workspace')}
-        description={t(
-          '资料修改、密码和会话都通过真实服务保存。',
-          'Profile, password, and session changes are saved by the server.'
-        )}
+        title={t('账号', 'Account')}
         action={
           <button className="button button-secondary" onClick={logout} disabled={busy}>
             <LogOut size={16} />
@@ -275,23 +216,11 @@ export function AccountPage() {
       />
       <div className="account-layout">
         <aside className="account-summary">
-          <div className="account-avatar">
-            <UserRound size={34} />
-          </div>
           <h2>{user!.name}</h2>
           <p>{user!.email}</p>
           <span>
             {t('注册时间', 'Registered')} {date(user!.createdAt, locale)}
           </span>
-          <div className="info-strip">
-            <ShieldCheck size={18} />
-            <p>
-              {t(
-                '此账号的材料与核查，与其他账号分开保存。',
-                'Evidence and reviews in this account are stored separately from other accounts.'
-              )}
-            </p>
-          </div>
         </aside>
         <div className="account-forms">
           <form onSubmit={saveProfile} className="form-section">
@@ -310,7 +239,7 @@ export function AccountPage() {
               />
             </label>
             <label className="form-field">
-              <span>{t('邮箱（账号标识）', 'Email (account identifier)')}</span>
+              <span>{t('邮箱（不可修改）', 'Email (cannot be changed)')}</span>
               <input value={user!.email} disabled />
             </label>
             <button className="button button-primary" disabled={busy} type="submit">
@@ -359,12 +288,7 @@ export function AccountPage() {
                 />
               </label>
             </div>
-            <p className="field-note">
-              {t(
-                '至少 10 个字符。本版本无邮件找回服务。',
-                'At least 10 characters. Email-based recovery is not available.'
-              )}
-            </p>
+            <p className="field-note">{t('至少 10 个字符。', 'At least 10 characters.')}</p>
             {validation && (
               <p className="inline-error" role="alert">
                 {validation}

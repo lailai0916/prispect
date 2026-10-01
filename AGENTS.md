@@ -3,10 +3,14 @@
 ## Project
 
 `xuejun-hackathon` is the private repository for CashLens (照见), a cash-conversion
-evidence product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
+evidence and payment-decision product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
 It uses strict TypeScript, React/Vite and Express, SQLite accounts/sessions, and isolated
 atomic per-user working-paper storage. The narrow financial task compares same-period
-consolidated annual net profit and operating cash and traces supported adjustments.
+consolidated annual net profit and operating cash and traces supported adjustments. It serves external money/trust decisions and internal
+operating handovers. Private decisions use immutable input/evidence versions and conditional
+prepayment exposure or dated cash-event calculations. Historical signals motivate inquiry;
+direct private records support their own fields. User-entered plans, statements and decision
+records are distinct from historical report facts and never enter public-model payloads.
 
 Keep the actual implementation, runtime, build, and test commands current here as the project develops.
 
@@ -46,9 +50,10 @@ acceptance separate from unit-test success. `npm start` serves the production bu
 
 ## Ownership and product boundaries
 
-- `shared/contracts.ts` defines the API contract; coordinate changes before concurrent edits.
+- `shared/contracts.ts` and `shared/decision-contracts.ts` define the API contracts; coordinate changes before concurrent edits.
 - `server/` owns auth, tenant-scoped access, validation, computation, imports and exports.
 - `src/` owns the bilingual product flow; all visible actions must have actual behavior.
+- Production deployment uses main CI-gated `.github/workflows/deploy.yml` and fixed root-owned helpers. Never execute received archive maintenance scripts as root.
 - `data/source-manifest.json` and `data/cases/` retain reproducible facts and short excerpts.
 - Do not commit `.env`, `.cashlens`, raw financial reports, browser profiles or credentials.
 - Use actual stage events, preserve missing data and stop dependent inference on conflicts.

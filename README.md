@@ -13,7 +13,7 @@
 
 ## Website Introduction
 
-CashLens (照见) turns consolidated annual financial evidence into a reproducible cash-conversion working paper. It helps procurement and operating leads compare net profit with operating cash, inspect the original evidence, and request specific follow-up materials.
+CashLens (照见) reviews the evidence for a specific company payment: an external prepayment or a new payment after taking over operations. Sourced annual profit and operating cash identify questions to investigate; private transaction records and dated cash plans support separate, conditional calculations. Historical financial signals never fill current cash or future receipts.
 
 Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction. The core analytical question is deliberately narrow. Historical cash ratios are not company ratings, credit decisions, or investment advice. Customer demand and willingness to pay remain research assumptions.
 
@@ -21,11 +21,15 @@ Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray di
 
 🔐 **Personal Accounts** — Real registration, login, profile and password changes, expiring sessions, logout, and isolated materials, reviews and exports.
 
+🗂️ **Public Evidence Agent** — Select an A-share company, retrieve its official annual report, retain the PDF and real tool history, and review extracted candidates before adoption. Optional constrained model planning selects evidence pages; deterministic checks keep missing inputs and source conflicts visible.
+
 🧮 **Reproducible Financial Analysis** — JSON, CSV and text-PDF preview; editable confirmation; period, currency and scope checks; exact integer-fen computation; persisted reports and questions.
 
-🔎 **Evidence and Follow-up** — A sourced cash bridge, page references, component rows and competing explanations. Withholding evidence starts a new review and withdraws unsupported explanations; it never silently fills hidden observations.
+🔎 **Evidence and Decision Versions** — A sourced cash bridge, page references and competing explanations lead to evidence requests. Payment decisions retain input/evidence versions, source-text bindings and known conflicts. Withdrawing direct evidence withholds dependent record calculations while keeping unrelated facts and explicitly entered assumptions.
 
-🌐 **Bilingual Workflow** — Chinese and English home, workspace, imports, reports, comparison, account and methodology flows, with printable HTML and JSON exports. Original source quotations retain their language.
+🧪 **Payment Scenarios** — External scenarios compare undelivered exposure after proposed payments against a user-set limit. Internal scenarios compare specific payment dates, event balances, period ends and conditional payment/collection thresholds across listed 90-day events. Same-day order, coverage and negotiation assumptions remain visible. Missing inputs remain unknown.
+
+🌐 **Bilingual Workflow** — Chinese and English home, decisions, workspace, imports, reports, comparison, account and methodology flows; automatic system light/dark themes; printable HTML and versioned JSON exports. Original source quotations retain their language.
 
 ## Getting Started
 
@@ -49,9 +53,11 @@ npm run data:samples
 
 `check` runs strict types, financial/account/API tests, the client build and formatting checks. `data:fetch` downloads only manifest-listed public reports and verifies SHA256; the original PDFs are excluded from Git. `data:samples` prepares structured import examples. Scanned PDFs and ambiguous table values require confirmation rather than invented extraction.
 
-The default mode uses real deterministic processing and requires no model API. Optional model configuration belongs only in the server `.env`, using `.env.example`. No model credentials are included. Model output receives only permitted evidence; citation-ID and numeric validation do not prove semantic correctness.
+The default mode uses real deterministic processing and requires no model API. Company research and report explanation each require their own explicit model choice. Optional model configuration belongs only in the server `.env`, using `.env.example`. No model credentials are included. Models receive only the permitted evidence for that operation, never private notes or manual cash plans; citation-ID and numeric validation do not prove semantic correctness. Public retrieval covers the configured A-share disclosure source, without a licensed commercial company-data integration.
 
-Accounts, sessions and each user's working papers persist in `CASHLENS_DATA_DIR` (default `.cashlens`). Keep the entire directory and read [deployment and backup notes](docs/deployment.md) before deploying or restoring it. Public deployment at xuejun.cc is authorized and its actual status will be recorded in the acceptance report. This is a single-process early product, without email verification, password-reset mail, multi-node availability or measured production capacity.
+Accounts, sessions and each user's working papers persist in `CASHLENS_DATA_DIR` (default `.cashlens`). Keep the entire directory and read [deployment and backup notes](docs/deployment.md) before deploying or restoring it. The public product is available at [xuejun.cc](https://xuejun.cc), with HTTPS, persistent accounts and working papers. Release checks and verification boundaries are recorded in [the acceptance report](docs/acceptance.md). This is a single-process early product, without email verification, password-reset mail, multi-node availability or measured production capacity.
+
+Main-branch CI gates deployment through a restricted SSH entry, with artifact/source integrity checks, a consistent state backup, asset verification and automatic rollback. See [automatic deployment](docs/actions-deployment.md).
 
 See [the plan](docs/plan.md), [method and source research](docs/research.md), [API contract](docs/api.md), [AI-use disclosure](docs/ai-usage.md) and [competition submission requirements](docs/submission-checklist.md). Private-repository badges may be unavailable.
 

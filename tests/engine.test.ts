@@ -43,6 +43,30 @@ test('two real cases recompute amounts, independent remaining rows and percentag
   assert.equal(hik.bridge?.length, 6);
   assert.equal(metric(hik, 'netProfit').value, '15433655239.83');
 });
+test('a zero aggregate receivables adjustment does not claim a cash release', () => {
+  const material = structuredClone(fixture.materials[0]!);
+  const receivables = material.observations.find(
+    (item) => item.year === 2025 && item.key === 'receivablesAdjustment'
+  )!;
+  const cash = material.observations.find(
+    (item) => item.year === 2025 && item.key === 'operatingCashFlow'
+  )!;
+  receivables.value = '0.00';
+  receivables.quote = 'Synthetic fixture: receivables cash-flow adjustment is zero.';
+  cash.value = '540418200.24';
+  cash.quote = 'Synthetic fixture: operating cash flow reflects the zero adjustment.';
+  const report = run(material);
+  assert.equal(report.bridge?.length, 6);
+  assert.equal(metric(report, 'receivablesAdjustment').value, '0.00');
+  assert.equal(
+    report.findings.find((item) => item.id === 'receivables')?.label,
+    '经营性应收调整为零'
+  );
+  assert.equal(
+    report.questions.some((item) => item.id === 'collections'),
+    false
+  );
+});
 test('artificially missing material never borrows hidden consolidated profit', () => {
   const report = run(fixture.materials[2]!);
   assert.equal(report.verdict, 'insufficient');
@@ -122,6 +146,29 @@ test('real changed input recomputes and missing raw adjustment rows stop bridge'
   )!.components = undefined;
   assert.equal(run(missing).bridge, null);
   assert.equal(run(missing).verdict, 'insufficient');
+});
+test('a nonzero sourced bridge difference remains visible without discarding comparable profit and cash', () => {
+  const material = structuredClone(fixture.materials[0]!);
+  const cash = material.observations.find(
+    (item) => item.key === 'operatingCashFlow' && item.year === 2025
+  )!;
+  cash.value = '26199123.70';
+  cash.quote =
+    'Synthetic fixture: disclosed cash differs from the unchanged adjustment sum by 2000 yuan.';
+  const report = run(material);
+  const check = report.checks.find((item) => item.id === 'bridge-balance')!;
+  assert.equal(report.verdict, 'conflict');
+  assert.equal(report.bridge, null);
+  assert.match(check.message, /合计 26197123\.70 元/);
+  assert.match(check.message, /经营现金 26199123\.70 元/);
+  assert.match(check.message, /经营现金−合计）2000\.00 元/);
+  assert.ok(check.sourceRefs.some((ref) => ref.quote === cash.quote));
+  assert.equal(metric(report, 'netProfit').value, '366373098.93');
+  assert.equal(metric(report, 'operatingCashFlow').value, '26199123.70');
+  assert.equal(
+    report.findings.some((finding) => finding.id === 'receivables'),
+    false
+  );
 });
 test('invalid material identifiers, scope and precision are rejected', () => {
   assert.throws(() => validateMaterial({ ...fixture.materials[0], filename: '../evil.json' }));

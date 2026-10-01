@@ -1,10 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-const packages = ['@fontsource/ibm-plex-sans', 'lucide-react', 'react', 'react-dom', 'scheduler'];
+const packages = ['lucide-react', 'react', 'react-dom', 'scheduler'];
 const blocks = [
   'CashLens browser dependencies: license notices',
-  'The following notices apply to included third-party fonts, icons and client libraries.',
+  'The following notices apply to included third-party icons and client libraries.',
 ];
 for (const name of packages) {
   const directory = path.join('node_modules', name);

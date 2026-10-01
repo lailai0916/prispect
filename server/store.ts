@@ -1,7 +1,14 @@
 import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
-import type { AnalysisTask, DemoCase, Material, Workspace } from '../shared/contracts.js';
+import type {
+  AnalysisTask,
+  CompanyResearchRun,
+  DemoCase,
+  Material,
+  Workspace,
+} from '../shared/contracts.js';
+import type { DecisionCase } from '../shared/decision-contracts.js';
 import { ApiFault, validateMaterial } from './validation.js';
 
 export const UPLOAD_QUOTA_BYTES = 250 * 1024 * 1024;
@@ -21,6 +28,8 @@ export interface StoredWorkspace {
   tasks: AnalysisTask[];
   inputs: Record<string, Material[]>;
   uploads: Record<string, UploadRecord>;
+  companyRuns?: CompanyResearchRun[];
+  decisions?: DecisionCase[];
 }
 export async function seeds(root: string): Promise<{ materials: Material[]; cases: DemoCase[] }> {
   const names = ['songyuan-2025', 'hikvision-2025', 'missing', 'conflict'];
@@ -103,7 +112,26 @@ export class WorkspaceStore {
         throw new Error('不支持的工作区格式');
       for (const material of this.state.materials) validateMaterial(material);
       this.state.uploads ||= {};
-      for (const task of this.state.tasks)
+      this.state.companyRuns ||= [];
+      this.state.decisions ||= [];
+      if (!Array.isArray(this.state.decisions)) throw new Error('决定记录格式无效');
+      if (!Array.isArray(this.state.companyRuns)) throw new Error('企业查询记录格式无效');
+      for (const run of this.state.companyRuns) {
+        if (run.status === 'queued' || run.status === 'running') {
+          run.status = 'failed';
+          run.error = '服务重启中断了公开证据查询，可重新查询；已有原件与任务保留。';
+          run.updatedAt = new Date().toISOString();
+          for (const entry of run.trace)
+            if (entry.status === 'running') {
+              entry.status = 'failed';
+              entry.finishedAt = run.updatedAt;
+              entry.outputSummary = run.error;
+            }
+        }
+      }
+      for (const task of this.state.tasks) {
+        task.purpose ||= 'external';
+        task.contextNotes ||= {};
         if (task.status === 'running' || task.status === 'queued') {
           task.status = 'failed';
           task.error = '服务重启中断了任务，可重试本次保存的输入快照。';
@@ -115,6 +143,7 @@ export class WorkspaceStore {
               stage.message = task.error;
             }
         }
+      }
       await this.persist();
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
@@ -127,6 +156,8 @@ export class WorkspaceStore {
         tasks: [],
         inputs: {},
         uploads: {},
+        companyRuns: [],
+        decisions: [],
       };
       await this.persist();
     }
@@ -290,10 +321,33 @@ export class WorkspaceStore {
       return { buffer: result.buffer, filename: result.record.filename };
     });
   }
+  async pendingFile(uploadId: string) {
+    return this.serializeUploads(async () => {
+      const result = await this.verifiedUpload(uploadId);
+      return { buffer: result.buffer, filename: result.record.filename };
+    });
+  }
+  async discardUnconfirmedUpload(uploadId: string) {
+    return this.serializeUploads(async () => {
+      const record = this.state.uploads[uploadId];
+      if (!record || record.materialId) return;
+      delete this.state.uploads[uploadId];
+      await this.persist();
+      await rm(this.uploadFilename(uploadId), { force: true });
+    });
+  }
   async deleteMaterial(id: string) {
     return this.serializeUploads(async () => {
       const material = this.state.materials.find((item) => item.id === id);
       if (!material) throw new ApiFault(404, 'MATERIAL_NOT_FOUND', '未找到材料');
+      if (
+        (this.state.decisions || []).some((decision) =>
+          decision.versions.some((version) =>
+            version.evidence.some((record) => record.materialId === id)
+          )
+        )
+      )
+        throw new ApiFault(409, 'MATERIAL_IN_USE', '决定历史版本仍引用这份材料，请保留原件');
       if (this.state.tasks.some((task) => task.materialIds.includes(id)))
         throw new ApiFault(409, 'MATERIAL_IN_USE', '已有任务引用这份材料，请先删除相关任务');
       this.state.materials = this.state.materials.filter((item) => item.id !== id);
@@ -319,6 +373,8 @@ export class WorkspaceStore {
         tasks: [],
         inputs: {},
         uploads: {},
+        companyRuns: [],
+        decisions: [],
       };
       try {
         await this.persist();

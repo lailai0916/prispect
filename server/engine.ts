@@ -62,7 +62,7 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
     status: subjectMismatch ? 'fail' : 'pass',
     message: subjectMismatch
       ? '材料主体与核查公司不一致，停止合并计算。'
-      : '所有选定材料属于同一核查主体。',
+      : '采用材料的主体字段一致。',
     sourceRefs: [],
   });
   let conflict = subjectMismatch;
@@ -182,7 +182,7 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
     previousCash = get(input.year - 1, 'operatingCashFlow');
   metrics.push({
     key: 'cashConversion',
-    label: '现金转化比例',
+    label: '现金利润比',
     value: profit && cash ? percent(cash.fen, profit.fen) : null,
     previousValue:
       previousProfit && previousCash ? percent(previousCash.fen, previousProfit.fen) : null,
@@ -258,8 +258,8 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
       status: closed ? 'pass' : 'fail',
       message: closed
         ? '净利润与全部调整之和精确等于经营现金净额，按人民币分核对。'
-        : '利润与调整之和不等于经营现金净额，停止解释并请求复核。',
-      sourceRefs: bridgeKeys.flatMap((key) => get(input.year, key)!.refs),
+        : `利润与调整合计 ${fenToYuan(total)} 元，经营现金 ${fenToYuan(cash.fen)} 元；差额（经营现金−合计）${fenToYuan(cash.fen - total)} 元。停止现金桥解释并请求复核，不以残差补数。`,
+      sourceRefs: [...bridgeKeys.flatMap((key) => get(input.year, key)!.refs), ...cash.refs],
     });
     if (!groupedVerified || !closed) {
       insufficient = true;
@@ -310,8 +310,8 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
       label: conflict ? '先修复证据冲突' : '证据不足，暂停归因',
       severity: 'insufficient',
       explanation: conflict
-        ? '无法在冲突口径上给出可靠结论；原始来源已保留供双方核对。'
-        : '当前材料可以展示已确认的事实，但不能证明现金差额由哪些经营因素造成。',
+        ? '输入口径、数值或现金桥核对存在冲突。保留可单独采用的金额与原始来源，暂停依赖冲突证据的解释；差额不直接证明经营风险。'
+        : '保留已采用金额；现有材料不能解释现金差额的经营原因。',
       basis: 'source',
       sourceRefs: [],
       questionIds: ['supplement'],
@@ -361,10 +361,12 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
     } else
       findings.push({
         id: 'receivables',
-        label: '应收项目释放经营现金',
+        label: receivables.fen === 0n ? '经营性应收调整为零' : '应收项目释放经营现金',
         severity: 'neutral',
         explanation:
-          '正向调整表示本期经营性应收项目的合计现金影响，不代表所有客户均已回款，也不是企业安全结论。',
+          receivables.fen === 0n
+            ? '本期经营性应收现金桥调整合计为零。'
+            : '正向调整表示本期经营性应收项目的合计现金影响，不代表所有客户均已回款，也不是企业安全结论。',
         basis: 'calculation',
         sourceRefs: receivables.refs,
         questionIds: [],
@@ -434,7 +436,7 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
         ? '同口径材料可重算并闭合现金桥。这里只支持本期金额与来源核查，不评价企业安全性。'
         : verdict === 'conflict'
           ? '输入存在混用或矛盾，系统保留来源并拒绝无声覆盖。请按问题单修复后再核查。'
-          : '已确认的事实保留展示。没有提供或无法确认的材料不补零，也不从隐藏案例补回。';
+          : '保留已采用金额；缺失或口径不一致的项目不参与计算。';
   return {
     verdict,
     headline,
