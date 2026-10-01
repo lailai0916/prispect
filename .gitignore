@@ -1,5 +1,10 @@
 # Dependencies
 node_modules/
+.cashlens/
+data/raw/
+work/
+test-results/
+playwright-report/
 .pnp
 .pnp.js
 

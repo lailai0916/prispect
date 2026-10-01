@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "verifiedOn": "2026-10-01",
+  "timeZone": "Asia/Shanghai",
+  "purpose": "Noncommercial hackathon research and source verification",
+  "scope": "Annual 2025 consolidated statements with annual 2024 comparative figures",
+  "rights": {
+    "statementUrl": "https://www.cninfo.com.cn/new/snapshot/companyDetailCn?code=300502",
+    "statementRetrievedOn": "2026-10-01",
+    "rawFilesAreLocalOnly": true,
+    "openDataLicenseFound": false,
+    "commercialUseAuthorized": false,
+    "note": "Keep issuer and disclosure-platform rights. Do not redistribute full reports as project-licensed content. Public access does not confer unrestricted commercial reuse."
+  },
+  "sources": [
+    {
+      "id": "songyuan-2025",
+      "company": "浙江松原汽车安全系统股份有限公司",
+      "shortName": "松原安全",
+      "securityCode": "300893",
+      "documentTitle": "2025 年年度报告",
+      "publishedOn": "2026-04-11",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-04-11/1225095334.PDF",
+      "localFile": "data/raw/songyuan-2025.pdf",
+      "sha256": "b9467b04d1cb9e16fca09b61e405448173a0e7b48ef3dca639e458f335f1aab1",
+      "bytes": 1393099,
+      "pdfPages": 227,
+      "currency": "CNY",
+      "unit": "yuan",
+      "statementScope": "consolidated",
+      "evidence": {
+        "section": "合并现金流量表补充资料",
+        "pdfPages": [190, 191],
+        "printedPages": [190, 191],
+        "periodColumns": [2025, 2024],
+        "textExtractionVerified": true,
+        "renderedPagesVisuallyChecked": true,
+        "amounts": {
+          "2025": {
+            "consolidatedNetProfit": "366373098.93",
+            "operatingCashFlow": "26197123.70",
+            "inventoryAdjustment": "-321030062.96",
+            "operatingReceivablesAdjustment": "-514221076.54",
+            "operatingPayablesAdjustment": "277839624.95"
+          },
+          "2024": {
+            "consolidatedNetProfit": "260384779.07",
+            "operatingCashFlow": "139523699.14",
+            "inventoryAdjustment": "-97709735.85",
+            "operatingReceivablesAdjustment": "-505674866.17",
+            "operatingPayablesAdjustment": "311675744.68"
+          }
+        },
+        "derivedGroupedAdjustments": {
+          "label": "All reported adjustments except inventory, operating receivables and operating payables",
+          "formula": "operatingCashFlow - consolidatedNetProfit - inventoryAdjustment - operatingReceivablesAdjustment - operatingPayablesAdjustment",
+          "2025": "217235539.32",
+          "2024": "170847777.41",
+          "independentReportedSumVerified": true,
+          "isOriginalOtherLine": false
+        },
+        "additionalEvidence": [
+          {
+            "pdfPage": 24,
+            "fact": "Top-five customers account for 73.63% of sales in 2025; disclosed as anonymous customer numbers, insufficient for identity matching."
+          },
+          {
+            "pdfPages": [28, 29],
+            "fact": "Management discusses bank-acceptance-bill settlement of fixed-asset investment and expansion in explaining cash-flow changes. These explanations are not independently verified by this team."
+          },
+          {
+            "pdfPage": 29,
+            "fact": "Management states it found no large overdue receivables among the top ten customers. Underlying customer-level subsequent receipts were not available to this team."
+          }
+        ]
+      }
+    },
+    {
+      "id": "hikvision-2025",
+      "company": "杭州海康威视数字技术股份有限公司",
+      "shortName": "海康威视",
+      "securityCode": "002415",
+      "documentTitle": "2025 年年度报告",
+      "publishedOn": "2026-04-18",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-04-18/1225123062.PDF",
+      "localFile": "data/raw/hikvision-2025.pdf",
+      "sha256": "a805779efb81bea8158e119ad7c733c4669b8d492dc03c7613199970bfa4b8b2",
+      "bytes": 17337277,
+      "pdfPages": 263,
+      "currency": "CNY",
+      "unit": "yuan",
+      "statementScope": "consolidated",
+      "evidence": {
+        "section": "合并财务报表项目注释 60：现金流量表补充资料",
+        "pdfPages": [229],
+        "printedPages": [228],
+        "periodColumns": [2025, 2024],
+        "textExtractionVerified": true,
+        "renderedPagesVisuallyChecked": true,
+        "amounts": {
+          "2025": {
+            "consolidatedNetProfit": "15433655239.83",
+            "operatingCashFlow": "25339411083.10",
+            "inventoryAdjustment": "-1804456641.20",
+            "operatingReceivablesAdjustment": "8011882904.98",
+            "operatingPayablesAdjustment": "713235377.41"
+          },
+          "2024": {
+            "consolidatedNetProfit": "13141022060.51",
+            "operatingCashFlow": "13264092022.73",
+            "inventoryAdjustment": "-299985733.29",
+            "operatingReceivablesAdjustment": "-4204715982.09",
+            "operatingPayablesAdjustment": "479604764.25"
+          }
+        },
+        "derivedGroupedAdjustments": {
+          "label": "All reported adjustments except inventory, operating receivables and operating payables",
+          "formula": "operatingCashFlow - consolidatedNetProfit - inventoryAdjustment - operatingReceivablesAdjustment - operatingPayablesAdjustment",
+          "2025": "2985094202.08",
+          "2024": "4148166913.35",
+          "independentReportedSumVerified": true,
+          "isOriginalOtherLine": false
+        },
+        "additionalEvidence": [
+          {
+            "pdfPage": 260,
+            "printedPage": 259,
+            "fact": "Parent-company cash reconciliation is separate and must not be combined with consolidated operating cash flow."
+          }
+        ]
+      }
+    }
+  ],
+  "missingEvidenceDemo": {
+    "kind": "artificially restricted real-document input",
+    "sourceId": "songyuan-2025",
+    "suppliedPdfPages": [9],
+    "withheldPdfPages": [190, 191],
+    "label": "Only selected headline financial indicators were provided in this demonstration; cash-flow supplemental evidence was not supplied.",
+    "mustNotClaimIssuerFailedToDisclose": true,
+    "mustNotUseHiddenSourceFields": true,
+    "expectedBehavior": "Report supplied facts, mark reconciliation causes as insufficiently evidenced, and request consolidated cash-flow supplemental information and subsequent-collection records."
+  }
+}
