@@ -86,3 +86,7 @@ cashlens-deploy ALL=(root) NOPASSWD: /usr/local/sbin/cashlens-ci-deploy *
 首次依赖安装因 esbuild 正常内部硬链接而在封存前拒绝，旧站未切换。补充全树 inode 名称核对后，实际非 root systemd 安装、一致性备份、原子切换、API 及构建资产逐字节校验成功；重复同包返回已 current 且健康。错误包哈希实际拒绝，current 保持不变。没有在生产站注入启动故障来验证切换后的回滚；回滚逻辑经审查，不能把哈希拒绝称为已实际执行代码回滚。
 
 首次 GitHub 自动链路的 [CI 36907501972](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36907501972) 与 [Deploy 36907590434](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36907590434) 均为 success，对应同一 `53983713f8562dd5227ef3243f5ccfc990e4670b`。管理连接只读核对 `/opt/cashlens/current` 和 `RELEASE.json` 均指向该提交，`https://xuejun.cc/api/health` 返回 `{"ok":true}`。这次发布证明自动链路；随后产品功能版本须另记录其对应 SHA 与运行验收。
+
+## 新版功能的真实发布
+
+功能提交 `0c3590176760b68f06f6e1163e907e34ee174b5a` 的 [CI 36933840965](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36933840965) 与 [Deploy 36933997877](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36933997877) 均成功，服务器 current/RELEASE.json 一致。严格 HTTPS 下页面与主 JS/CSS 哈希匹配已部署目录；新版决定流与公开 Agent 另行实际运行，详见 acceptance.md。该记录不把旧基础设施发布当作新版产品验收，也不声称跨平台构建字节一致或故障回滚已生产注入。
