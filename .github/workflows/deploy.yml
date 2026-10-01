@@ -1,0 +1,132 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: cashlens-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >-
+      ${{
+        (github.event_name == 'workflow_run' &&
+         github.event.workflow_run.conclusion == 'success' &&
+         github.event.workflow_run.event == 'push' &&
+         github.event.workflow_run.head_branch == 'main' &&
+         github.event.workflow_run.head_repository.full_name == github.repository) ||
+        (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+      }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Select tested commit
+        id: commit
+        env:
+          RELEASE_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+          printf 'sha=%s\n' "$RELEASE_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ steps.commit.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Require the current main commit
+        env:
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$(git rev-parse HEAD)" == "$RELEASE_SHA" ]]
+          [[ "$(git rev-parse refs/remotes/origin/main)" == "$RELEASE_SHA" ]]
+      - name: Require a successful main push CI for this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          set -euo pipefail
+          gh api --method GET "repos/$GH_REPO/actions/workflows/ci.yml/runs" \
+            -H 'Accept: application/vnd.github+json' \
+            -f branch=main -f event=push -f head_sha="$RELEASE_SHA" \
+            -f status=success -f per_page=100 > "$RUNNER_TEMP/cashlens-ci-runs.json"
+          python3 - "$RUNNER_TEMP/cashlens-ci-runs.json" "$RELEASE_SHA" "$GH_REPO" <<'PY'
+          import json, sys
+          runs = json.load(open(sys.argv[1]))["workflow_runs"]
+          matches = [
+              r for r in runs if
+              r.get("head_sha") == sys.argv[2] and
+              r.get("head_branch") == "main" and
+              r.get("event") == "push" and
+              r.get("status") == "completed" and
+              r.get("conclusion") == "success" and
+              (r.get("head_repository") or {}).get("full_name") == sys.argv[3]
+          ]
+          if not matches:
+              raise SystemExit("This exact main commit has no successful push CI.")
+          print("Verified successful main CI for " + sys.argv[2])
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Validate a manual deployment
+        if: github.event_name == 'workflow_dispatch'
+        run: npm run check
+      - name: Build a fresh release
+        run: |
+          set -euo pipefail
+          rm -rf -- dist
+          npm run build
+      - name: Package the checked-out commit
+        env:
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+        run: bash scripts/package-release.sh "$RELEASE_SHA" "$RUNNER_TEMP/cashlens-release.tar.gz"
+      - name: Send the verified package through the restricted SSH entry
+        env:
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+          CASHLENS_HOST: ${{ vars.CASHLENS_HOST }}
+          CASHLENS_USER: ${{ vars.CASHLENS_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.CASHLENS_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.CASHLENS_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ "$CASHLENS_HOST" =~ ^[A-Za-z0-9][A-Za-z0-9.-]*$ ]]
+          [[ "$CASHLENS_USER" == 'cashlens-deploy' ]]
+          [[ -n "$SSH_PRIVATE_KEY" && -n "$SSH_KNOWN_HOSTS" ]]
+          ssh_dir="$(mktemp -d "$RUNNER_TEMP/cashlens-ssh.XXXXXX")"
+          trap 'rm -rf -- "$ssh_dir"' EXIT
+          printf '%s\n' "$SSH_PRIVATE_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          chmod 600 "$ssh_dir/key" "$ssh_dir/known_hosts"
+          unset SSH_PRIVATE_KEY SSH_KNOWN_HOSTS
+          artifact_hash="$(cat "$RUNNER_TEMP/cashlens-release.tar.gz.sha256")"
+          [[ "$artifact_hash" =~ ^[0-9a-f]{64}$ ]]
+          ssh -T -i "$ssh_dir/key" -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$ssh_dir/known_hosts" \
+            -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=3 \
+            "$CASHLENS_USER@$CASHLENS_HOST" "deploy $RELEASE_SHA $artifact_hash" \
+            < "$RUNNER_TEMP/cashlens-release.tar.gz"
+      - name: Check public HTTPS health
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+            --retry 5 --retry-delay 2 --retry-connrefused --max-time 10 \
+            https://xuejun.cc/api/health > "$RUNNER_TEMP/cashlens-public-health.json"
+          python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1])).get("ok") is True else 1)' \
+            "$RUNNER_TEMP/cashlens-public-health.json"

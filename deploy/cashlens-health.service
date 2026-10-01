@@ -1,0 +1,11 @@
+[Unit]
+Description=CashLens health and state disk check
+After=cashlens.service
+
+[Service]
+Type=oneshot
+User=cashlens
+Group=cashlens
+ExecStart=/usr/local/sbin/cashlens-healthcheck
+NoNewPrivileges=true
+PrivateTmp=true

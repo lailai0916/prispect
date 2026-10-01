@@ -3,5 +3,5 @@ Description=Consistent CashLens state backup
 
 [Service]
 Type=oneshot
-ExecStart=/opt/cashlens/current/deploy/backup.sh
+ExecStart=/usr/local/sbin/cashlens-backup
 UMask=0077
