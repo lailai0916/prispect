@@ -1,65 +1,46 @@
 <div align="center">
-  <h1>lailai-template</h1>
+  <h1>Xuejun Hackathon</h1>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
   <p>
-    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/lailai-template/ci.yml?branch=main&style=flat-square" />
-    <img src="https://img.shields.io/github/last-commit/lailai0916/lailai-template?style=flat-square" />
-    <img src="https://img.shields.io/github/languages/top/lailai0916/lailai-template?style=flat-square" />
-    <img src="https://img.shields.io/github/repo-size/lailai0916/lailai-template?style=flat-square" />
+    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/xuejun-hackathon/ci.yml?branch=main&style=flat-square" />
+    <img src="https://img.shields.io/github/last-commit/lailai0916/xuejun-hackathon?style=flat-square" />
+    <img src="https://img.shields.io/github/languages/top/lailai0916/xuejun-hackathon?style=flat-square" />
+    <img src="https://img.shields.io/github/repo-size/lailai0916/xuejun-hackathon?style=flat-square" />
     <img src="https://img.shields.io/badge/code_style-prettier-ff69b4?style=flat-square" />
-    <img src="https://img.shields.io/github/license/lailai0916/lailai-template?style=flat-square" />
+    <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" />
   </p>
 </div>
 
 ## 项目简介
 
-开箱即用的 GitHub 仓库模板，统一维护仓库标准、初始化指南、双语 README 示例与校验工具。
+团队参加学军中学「回响·48H 青年创造营」黑客松的项目仓库。目前已建立项目基础配置，参赛应用正在筹备开发。
 
 ## 项目特性
 
-📄 **统一标准** — [SETUP.md](SETUP.md) 集中维护仓库命名、README、GitHub About、工程配置与验收要求。
+🗂️ **团队工作区** — 集中开发与评审团队的参赛项目。
 
-🗺️ **持续维护** — 新项目保留简短的上游规范入口；初始化文档验收后清理，后续仍可查阅标准。
-
-🧪 **集中校验** — Python 检查器可直接验证外部项目，规范与检查逻辑只在模板维护。
-
-📮 **可用配置** — 提供双语文档、协作表单、Git 默认配置、Prettier 和 Agent 项目地图。
+🌐 **双语文档** — 英文与简体中文介绍保持一致，说明项目现状与准备步骤。
 
 ## 快速开始
 
-点击 **Use this template** 创建仓库，完整阅读 [初始化指南](SETUP.md)，按实际项目替换内容并验收：
+安装 Node.js 22 与 npm，然后准备仓库：
 
 ```bash
+git clone https://github.com/lailai0916/xuejun-hackathon.git
+cd xuejun-hackathon
 npm ci --ignore-scripts
 npm run format:check
-python3 scripts/check_repository.py --root . --initializing
-python3 scripts/check_repository.py --root . --initializing --github
 ```
 
-`--github` 使用 GitHub CLI 只读核对远端元数据。实际功能、翻译与部署仍需相应检查。
-
-验收后删除新项目继承的 `SETUP.md`，保留上游链接，并将持续校验切换至模板的固定版本。
-模板源仓库永久保留指南与测试。已有仓库维护同样查阅该指南，无需复制规范正文。
+访问仓库需要具有权限的 GitHub 账号。使用 `npm run format` 格式化改动。应用运行说明将随实现补充。由于仓库为私有，部分仓库徽章可能无法显示。
 
 ## 项目结构
 
 ```bash
-lailai-template/
-├── scripts/                        # 通用仓库校验工具
-├── tests/                          # 迁移与初始化回归测试
-├── package.json                    # 格式化命令与依赖
-└── SETUP.md                        # 仓库标准与初始化指南
+xuejun-hackathon/
+├── package-lock.json               # 开发依赖锁定文件
+└── package.json                    # 格式化命令与依赖
 ```
-
-## 校验
-
-```bash
-python3 scripts/check_repository.py --root .
-python3 -m unittest discover -s tests -v
-npm run format:check
-```
-
-跨仓库使用方法、验收范围和初始化文件清理边界均由 [SETUP.md](SETUP.md) 维护。
 
 ## 许可协议
 

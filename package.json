@@ -1,5 +1,5 @@
 {
-  "name": "lailai-template",
+  "name": "xuejun-hackathon",
   "private": true,
   "scripts": {
     "format": "prettier --write .",

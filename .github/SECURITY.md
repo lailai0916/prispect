@@ -2,12 +2,12 @@
 
 ## Reporting a vulnerability
 
-Please do not disclose security vulnerabilities in public issues. Use the repository's
-**Security** tab and select **Report a vulnerability**. Include the affected version or
-commit, reproduction steps, impact, and any suggested mitigation.
+Report security vulnerabilities directly to the repository owner through a private channel
+available to the team. Include the affected commit, reproduction steps, impact, and any
+suggested mitigation. Do not post credentials or sensitive data in issues.
 
-若发现安全漏洞，请勿创建公开 issue。请在仓库的 **Security** 页面选择
-**Report a vulnerability**，并包含受影响版本或提交、复现步骤、影响与建议的缓解方案。
+若发现安全漏洞，请通过团队已有的私下沟通渠道联系仓库所有者，并包含受影响提交、
+复现步骤、影响与建议的缓解方案。请勿在 issue 中发布凭据或敏感数据。
 
 ## Supported versions
 

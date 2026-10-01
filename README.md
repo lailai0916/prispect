@@ -1,73 +1,46 @@
 <div align="center">
-  <h1>lailai-template</h1>
+  <h1>Xuejun Hackathon</h1>
   <p><strong>English</strong> · <a href="README.zh-Hans.md">简体中文</a></p>
   <p>
-    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/lailai-template/ci.yml?branch=main&style=flat-square" />
-    <img src="https://img.shields.io/github/last-commit/lailai0916/lailai-template?style=flat-square" />
-    <img src="https://img.shields.io/github/languages/top/lailai0916/lailai-template?style=flat-square" />
-    <img src="https://img.shields.io/github/repo-size/lailai0916/lailai-template?style=flat-square" />
+    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/xuejun-hackathon/ci.yml?branch=main&style=flat-square" />
+    <img src="https://img.shields.io/github/last-commit/lailai0916/xuejun-hackathon?style=flat-square" />
+    <img src="https://img.shields.io/github/languages/top/lailai0916/xuejun-hackathon?style=flat-square" />
+    <img src="https://img.shields.io/github/repo-size/lailai0916/xuejun-hackathon?style=flat-square" />
     <img src="https://img.shields.io/badge/code_style-prettier-ff69b4?style=flat-square" />
-    <img src="https://img.shields.io/github/license/lailai0916/lailai-template?style=flat-square" />
+    <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" />
   </p>
 </div>
 
 ## Project Introduction
 
-A ready-to-use GitHub template that keeps repository standards, setup guidance, bilingual README
-examples, and validation tools together.
+The team's project workspace for the Xuejun High School “Echo · 48H Youth Creation Camp” hackathon. The repository currently contains the project foundation; the competition application is being prepared for development.
 
 ## Project Features
 
-📄 **Shared Standards** — [SETUP.md](SETUP.md) owns repository naming, READMEs, GitHub About,
-engineering defaults, and acceptance requirements.
+🗂️ **Team Workspace** — A shared repository for developing and reviewing the team's competition project.
 
-🗺️ **Ongoing Maintenance** — Generated projects retain a short upstream reference after removing
-their accepted initialization guide.
-
-🧪 **Central Validation** — The Python checker validates external projects; standards and check
-implementations are maintained only in the template.
-
-📮 **Working Defaults** — Bilingual documentation, collaboration forms, Git configuration,
-Prettier, and an Agent project map are ready to adapt.
+🌐 **Bilingual Documentation** — English and Simplified Chinese introductions describe the same project status and setup.
 
 ## Getting Started
 
-Click **Use this template**, read the complete [setup guide](SETUP.md), and adapt and verify the
-generated project:
+Install Node.js 22 and npm, then prepare the repository:
 
 ```bash
+git clone https://github.com/lailai0916/xuejun-hackathon.git
+cd xuejun-hackathon
 npm ci --ignore-scripts
 npm run format:check
-python3 scripts/check_repository.py --root . --initializing
-python3 scripts/check_repository.py --root . --initializing --github
 ```
 
-`--github` uses GitHub CLI to verify remote metadata without modifying it. Functionality,
-translation quality, and deployment require their corresponding checks.
-
-After acceptance, remove the generated project's inherited `SETUP.md`, retain the upstream link,
-and run ongoing validation from a fixed template revision. The source template permanently keeps
-the guide and tests. Existing projects consult the same guide without copying its contents.
+Repository access requires a GitHub account with permission. Run `npm run format` to format changes. Application setup instructions will be added with the implementation. Repository badges may be unavailable because the repository is private.
 
 ## Project Structure
 
 ```bash
-lailai-template/
-├── scripts/                        # Shared repository validation
-├── tests/                          # Migration and initialization regression tests
-├── package.json                    # Formatter commands and dependencies
-└── SETUP.md                        # Repository standards and initialization guide
+xuejun-hackathon/
+├── package-lock.json               # Locked development dependencies
+└── package.json                    # Formatting commands and dependencies
 ```
-
-## Validation
-
-```bash
-python3 scripts/check_repository.py --root .
-python3 -m unittest discover -s tests -v
-npm run format:check
-```
-
-[SETUP.md](SETUP.md) owns cross-repository usage, acceptance coverage, and initialization cleanup.
 
 ## License
 
