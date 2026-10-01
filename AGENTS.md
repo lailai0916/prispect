@@ -2,9 +2,11 @@
 
 ## Project
 
-`xuejun-hackathon` is the team's private project workspace for the Xuejun High School
-“Echo · 48H Youth Creation Camp” hackathon. The initial repository contains formatting,
-documentation, and collaboration configuration. No application stack has been chosen yet.
+`xuejun-hackathon` is the private repository for CashLens (照见), a cash-conversion
+evidence product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
+It uses strict TypeScript, React/Vite and Express, SQLite accounts/sessions, and isolated
+atomic per-user working-paper storage. The narrow financial task compares same-period
+consolidated annual net profit and operating cash and traces supported adjustments.
 
 Keep the actual implementation, runtime, build, and test commands current here as the project develops.
 
@@ -17,7 +19,13 @@ Do not copy the generic standards or checker into this repository.
 ## Commands
 
 ```bash
-npm ci --ignore-scripts
+npm ci
+npm run dev
+npm run build
+npm start
+npm run check
+npm run data:fetch
+npm run data:samples
 npm run format:check
 npm run format
 ```
@@ -31,7 +39,26 @@ python3 ../lailai-template/scripts/check_repository.py --root . --github
 ```
 
 `--github` requires authenticated GitHub CLI and verifies live metadata without changing it.
-There are no application build or test commands until an implementation is added.
+`npm ci` must permit the native SQLite dependency installation. `npm run check` covers
+types, financial/auth/API tests, client build and formatting. Keep browser and deployment
+acceptance separate from unit-test success. `npm start` serves the production build on
+127.0.0.1:4317 by default; development uses 4318 for the client and 4317 for the API.
+
+## Ownership and product boundaries
+
+- `shared/contracts.ts` defines the API contract; coordinate changes before concurrent edits.
+- `server/` owns auth, tenant-scoped access, validation, computation, imports and exports.
+- `src/` owns the bilingual product flow; all visible actions must have actual behavior.
+- `data/source-manifest.json` and `data/cases/` retain reproducible facts and short excerpts.
+- Do not commit `.env`, `.cashlens`, raw financial reports, browser profiles or credentials.
+- Use actual stage events, preserve missing data and stop dependent inference on conflicts.
+- A consistent schema or balanced bridge does not authenticate a user-uploaded source.
+- Withheld evidence must not reach calculations or optional model explanations.
+- Task title is a working-paper name, not an arbitrary natural-language claim detector.
+- Production is a single-process self-hosted service. Require configured HTTPS origin,
+  secure sessions and deployment verification; do not claim capacity or certifications untested.
+- Current server/domain deployment is authorized by this task. Do not extend that authority
+  to unrelated hosts, unrelated data, payments, official submissions or third-party messages.
 
 ## Local conventions
 

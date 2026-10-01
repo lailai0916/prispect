@@ -1,0 +1,375 @@
+{
+  "company": "杭州海康威视数字技术股份有限公司",
+  "shortName": "海康威视",
+  "title": "2025 年年度报告 · 合并现金流补充资料",
+  "filename": "hikvision-2025.json",
+  "origin": "public-report",
+  "documentDate": "2026-04-18",
+  "sourceUrl": "https://static.cninfo.com.cn/finalpage/2026-04-18/1225123062.PDF",
+  "sha256": "a805779efb81bea8158e119ad7c733c4669b8d492dc03c7613199970bfa4b8b2",
+  "observations": [
+    {
+      "id": "hikvision-2025-2025-netProfit",
+      "key": "netProfit",
+      "year": 2025,
+      "value": "15433655239.83",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "合并净利润；2025年：15433655239.83元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2025-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2025,
+      "value": "25339411083.10",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营活动产生的现金流量净额；2025年：25339411083.10元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2025-inventoryAdjustment",
+      "key": "inventoryAdjustment",
+      "year": 2025,
+      "value": "-1804456641.20",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "存货的减少（增加以负号填列）；2025年：-1804456641.20元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2025-receivablesAdjustment",
+      "key": "receivablesAdjustment",
+      "year": 2025,
+      "value": "8011882904.98",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营性应收项目的减少（增加以负号填列）；2025年：8011882904.98元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2025-payablesAdjustment",
+      "key": "payablesAdjustment",
+      "year": 2025,
+      "value": "713235377.41",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营性应付项目的增加（减少以负号填列）；2025年：713235377.41元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2025-otherAdjustments",
+      "key": "otherAdjustments",
+      "year": 2025,
+      "value": "2985094202.08",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "其余已披露调整为逐行分组求和，不等同原表“其他”行。",
+      "kind": "derived",
+      "components": [
+        {
+          "label": "资产减值准备",
+          "value": "436805418.06",
+          "page": 229,
+          "quote": "资产减值准备；2025年：436805418.06元"
+        },
+        {
+          "label": "信用损失准备",
+          "value": "800561956.90",
+          "page": 229,
+          "quote": "信用损失准备；2025年：800561956.90元"
+        },
+        {
+          "label": "固定资产折旧",
+          "value": "1646029560.21",
+          "page": 229,
+          "quote": "固定资产折旧；2025年：1646029560.21元"
+        },
+        {
+          "label": "使用权资产摊销",
+          "value": "204889152.91",
+          "page": 229,
+          "quote": "使用权资产摊销；2025年：204889152.91元"
+        },
+        {
+          "label": "无形资产摊销",
+          "value": "106794293.52",
+          "page": 229,
+          "quote": "无形资产摊销；2025年：106794293.52元"
+        },
+        {
+          "label": "长期待摊费用摊销",
+          "value": "96689890.95",
+          "page": 229,
+          "quote": "长期待摊费用摊销；2025年：96689890.95元"
+        },
+        {
+          "label": "处置长期资产损失",
+          "value": "-26913929.91",
+          "page": 229,
+          "quote": "处置长期资产损失；2025年：-26913929.91元"
+        },
+        {
+          "label": "固定资产报废损失",
+          "value": "111507.13",
+          "page": 229,
+          "quote": "固定资产报废损失；2025年：111507.13元"
+        },
+        {
+          "label": "公允价值变动损失",
+          "value": "17915101.74",
+          "page": 229,
+          "quote": "公允价值变动损失；2025年：17915101.74元"
+        },
+        {
+          "label": "财务费用",
+          "value": "71877702.83",
+          "page": 229,
+          "quote": "财务费用；2025年：71877702.83元"
+        },
+        {
+          "label": "投资损失",
+          "value": "-219289659.82",
+          "page": 229,
+          "quote": "投资损失；2025年：-219289659.82元"
+        },
+        {
+          "label": "权益结算股份支付",
+          "value": "161910835.98",
+          "page": 229,
+          "quote": "权益结算股份支付；2025年：161910835.98元"
+        },
+        {
+          "label": "受限资金减少",
+          "value": "-83562708.52",
+          "page": 229,
+          "quote": "受限资金减少；2025年：-83562708.52元"
+        },
+        {
+          "label": "递延所得税资产减少",
+          "value": "-219035388.89",
+          "page": 229,
+          "quote": "递延所得税资产减少；2025年：-219035388.89元"
+        },
+        {
+          "label": "递延所得税负债增加",
+          "value": "1558879.99",
+          "page": 229,
+          "quote": "递延所得税负债增加；2025年：1558879.99元"
+        },
+        {
+          "label": "递延收益增加",
+          "value": "-11248411.00",
+          "page": 229,
+          "quote": "递延收益增加；2025年：-11248411.00元"
+        }
+      ],
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-netProfit",
+      "key": "netProfit",
+      "year": 2024,
+      "value": "13141022060.51",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "合并净利润；2024年：13141022060.51元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2024,
+      "value": "13264092022.73",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营活动产生的现金流量净额；2024年：13264092022.73元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-inventoryAdjustment",
+      "key": "inventoryAdjustment",
+      "year": 2024,
+      "value": "-299985733.29",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "存货的减少（增加以负号填列）；2024年：-299985733.29元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-receivablesAdjustment",
+      "key": "receivablesAdjustment",
+      "year": 2024,
+      "value": "-4204715982.09",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营性应收项目的减少（增加以负号填列）；2024年：-4204715982.09元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-payablesAdjustment",
+      "key": "payablesAdjustment",
+      "year": 2024,
+      "value": "479604764.25",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营性应付项目的增加（减少以负号填列）；2024年：479604764.25元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-otherAdjustments",
+      "key": "otherAdjustments",
+      "year": 2024,
+      "value": "4148166913.35",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "其余已披露调整为逐行分组求和，不等同原表“其他”行。",
+      "kind": "derived",
+      "components": [
+        {
+          "label": "资产减值准备",
+          "value": "445914387.59",
+          "page": 229,
+          "quote": "资产减值准备；2024年：445914387.59元"
+        },
+        {
+          "label": "信用损失准备",
+          "value": "1068789505.74",
+          "page": 229,
+          "quote": "信用损失准备；2024年：1068789505.74元"
+        },
+        {
+          "label": "固定资产折旧",
+          "value": "1491731725.01",
+          "page": 229,
+          "quote": "固定资产折旧；2024年：1491731725.01元"
+        },
+        {
+          "label": "使用权资产摊销",
+          "value": "295082848.33",
+          "page": 229,
+          "quote": "使用权资产摊销；2024年：295082848.33元"
+        },
+        {
+          "label": "无形资产摊销",
+          "value": "99999893.62",
+          "page": 229,
+          "quote": "无形资产摊销；2024年：99999893.62元"
+        },
+        {
+          "label": "长期待摊费用摊销",
+          "value": "97115766.37",
+          "page": 229,
+          "quote": "长期待摊费用摊销；2024年：97115766.37元"
+        },
+        {
+          "label": "处置长期资产损失",
+          "value": "14539975.31",
+          "page": 229,
+          "quote": "处置长期资产损失；2024年：14539975.31元"
+        },
+        {
+          "label": "固定资产报废损失",
+          "value": "322794.37",
+          "page": 229,
+          "quote": "固定资产报废损失；2024年：322794.37元"
+        },
+        {
+          "label": "公允价值变动损失",
+          "value": "-47759102.43",
+          "page": 229,
+          "quote": "公允价值变动损失；2024年：-47759102.43元"
+        },
+        {
+          "label": "财务费用",
+          "value": "256441388.18",
+          "page": 229,
+          "quote": "财务费用；2024年：256441388.18元"
+        },
+        {
+          "label": "投资损失",
+          "value": "-85911585.51",
+          "page": 229,
+          "quote": "投资损失；2024年：-85911585.51元"
+        },
+        {
+          "label": "权益结算股份支付",
+          "value": "865428572.59",
+          "page": 229,
+          "quote": "权益结算股份支付；2024年：865428572.59元"
+        },
+        {
+          "label": "受限资金减少",
+          "value": "-8254649.98",
+          "page": 229,
+          "quote": "受限资金减少；2024年：-8254649.98元"
+        },
+        {
+          "label": "递延所得税资产减少",
+          "value": "-236371472.37",
+          "page": 229,
+          "quote": "递延所得税资产减少；2024年：-236371472.37元"
+        },
+        {
+          "label": "递延所得税负债增加",
+          "value": "-17155614.66",
+          "page": 229,
+          "quote": "递延所得税负债增加；2024年：-17155614.66元"
+        },
+        {
+          "label": "递延收益增加",
+          "value": "-91747518.81",
+          "page": 229,
+          "quote": "递延收益增加；2024年：-91747518.81元"
+        }
+      ],
+      "period": "annual"
+    }
+  ],
+  "notes": [
+    "仅用于历史年度、合并口径核查，不代表企业实时状态。",
+    "其余分组保留并重算原始调整行；未披露的空白单元格不转换成零。"
+  ],
+  "excerpts": [
+    {
+      "page": 229,
+      "text": "合并现金流量表补充资料；单位：人民币元；本年与上年金额。"
+    }
+  ],
+  "rawSourceId": "hikvision-2025"
+}

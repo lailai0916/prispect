@@ -1,0 +1,13 @@
+.git
+.env
+.env.*
+node_modules
+dist
+.cashlens
+.playwright-cli
+output
+work
+data/raw
+deliverables
+tests
+*.log

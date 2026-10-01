@@ -1,0 +1,342 @@
+{
+  "company": "浙江松原汽车安全系统股份有限公司",
+  "shortName": "松原安全",
+  "title": "2025 年年度报告 · 合并现金流补充资料",
+  "filename": "songyuan-2025.json",
+  "origin": "public-report",
+  "documentDate": "2026-04-11",
+  "sourceUrl": "https://static.cninfo.com.cn/finalpage/2026-04-11/1225095334.PDF",
+  "sha256": "b9467b04d1cb9e16fca09b61e405448173a0e7b48ef3dca639e458f335f1aab1",
+  "observations": [
+    {
+      "id": "songyuan-2025-2025-netProfit",
+      "key": "netProfit",
+      "year": 2025,
+      "value": "366373098.93",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 190,
+      "quote": "合并净利润；2025年：366373098.93元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2025-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2025,
+      "value": "26197123.70",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "经营活动产生的现金流量净额；2025年：26197123.70元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2025-inventoryAdjustment",
+      "key": "inventoryAdjustment",
+      "year": 2025,
+      "value": "-321030062.96",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "存货的减少（增加以负号填列）；2025年：-321030062.96元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2025-receivablesAdjustment",
+      "key": "receivablesAdjustment",
+      "year": 2025,
+      "value": "-514221076.54",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "经营性应收项目的减少（增加以负号填列）；2025年：-514221076.54元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2025-payablesAdjustment",
+      "key": "payablesAdjustment",
+      "year": 2025,
+      "value": "277839624.95",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "经营性应付项目的增加（减少以负号填列）；2025年：277839624.95元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2025-otherAdjustments",
+      "key": "otherAdjustments",
+      "year": 2025,
+      "value": "217235539.32",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "其余已披露调整为逐行分组求和，不等同原表“其他”行。",
+      "kind": "derived",
+      "components": [
+        {
+          "label": "资产减值准备",
+          "value": "33958848.11",
+          "page": 190,
+          "quote": "资产减值准备；2025年：33958848.11元"
+        },
+        {
+          "label": "固定资产折旧",
+          "value": "99052435.84",
+          "page": 190,
+          "quote": "固定资产折旧；2025年：99052435.84元"
+        },
+        {
+          "label": "使用权资产折旧",
+          "value": "3742145.89",
+          "page": 190,
+          "quote": "使用权资产折旧；2025年：3742145.89元"
+        },
+        {
+          "label": "无形资产摊销",
+          "value": "9399424.48",
+          "page": 190,
+          "quote": "无形资产摊销；2025年：9399424.48元"
+        },
+        {
+          "label": "长期待摊费用摊销",
+          "value": "42949625.17",
+          "page": 190,
+          "quote": "长期待摊费用摊销；2025年：42949625.17元"
+        },
+        {
+          "label": "处置长期资产损失",
+          "value": "-233097.62",
+          "page": 190,
+          "quote": "处置长期资产损失；2025年：-233097.62元"
+        },
+        {
+          "label": "固定资产报废损失",
+          "value": "319237.87",
+          "page": 190,
+          "quote": "固定资产报废损失；2025年：319237.87元"
+        },
+        {
+          "label": "公允价值变动损失",
+          "value": "-37922.94",
+          "page": 190,
+          "quote": "公允价值变动损失；2025年：-37922.94元"
+        },
+        {
+          "label": "财务费用",
+          "value": "27571698.46",
+          "page": 191,
+          "quote": "财务费用；2025年：27571698.46元"
+        },
+        {
+          "label": "投资损失",
+          "value": "-182634.90",
+          "page": 191,
+          "quote": "投资损失；2025年：-182634.90元"
+        },
+        {
+          "label": "递延所得税资产减少",
+          "value": "1783033.77",
+          "page": 191,
+          "quote": "递延所得税资产减少；2025年：1783033.77元"
+        },
+        {
+          "label": "递延所得税负债增加",
+          "value": "-4872068.71",
+          "page": 191,
+          "quote": "递延所得税负债增加；2025年：-4872068.71元"
+        },
+        {
+          "label": "其他",
+          "value": "3784813.90",
+          "page": 191,
+          "quote": "其他；2025年：3784813.90元"
+        }
+      ],
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-netProfit",
+      "key": "netProfit",
+      "year": 2024,
+      "value": "260384779.07",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 190,
+      "quote": "合并净利润；2024年：260384779.07元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2024,
+      "value": "139523699.14",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "经营活动产生的现金流量净额；2024年：139523699.14元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-inventoryAdjustment",
+      "key": "inventoryAdjustment",
+      "year": 2024,
+      "value": "-97709735.85",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "存货的减少（增加以负号填列）；2024年：-97709735.85元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-receivablesAdjustment",
+      "key": "receivablesAdjustment",
+      "year": 2024,
+      "value": "-505674866.17",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "经营性应收项目的减少（增加以负号填列）；2024年：-505674866.17元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-payablesAdjustment",
+      "key": "payablesAdjustment",
+      "year": 2024,
+      "value": "311675744.68",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "经营性应付项目的增加（减少以负号填列）；2024年：311675744.68元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-otherAdjustments",
+      "key": "otherAdjustments",
+      "year": 2024,
+      "value": "170847777.41",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 191,
+      "quote": "其余已披露调整为逐行分组求和，不等同原表“其他”行。",
+      "kind": "derived",
+      "components": [
+        {
+          "label": "资产减值准备",
+          "value": "56377551.25",
+          "page": 190,
+          "quote": "资产减值准备；2024年：56377551.25元"
+        },
+        {
+          "label": "固定资产折旧",
+          "value": "76903400.59",
+          "page": 190,
+          "quote": "固定资产折旧；2024年：76903400.59元"
+        },
+        {
+          "label": "使用权资产折旧",
+          "value": "1221599.24",
+          "page": 190,
+          "quote": "使用权资产折旧；2024年：1221599.24元"
+        },
+        {
+          "label": "无形资产摊销",
+          "value": "4371273.77",
+          "page": 190,
+          "quote": "无形资产摊销；2024年：4371273.77元"
+        },
+        {
+          "label": "长期待摊费用摊销",
+          "value": "17040024.89",
+          "page": 190,
+          "quote": "长期待摊费用摊销；2024年：17040024.89元"
+        },
+        {
+          "label": "处置长期资产损失",
+          "value": "-232306.13",
+          "page": 190,
+          "quote": "处置长期资产损失；2024年：-232306.13元"
+        },
+        {
+          "label": "固定资产报废损失",
+          "value": "112171.33",
+          "page": 190,
+          "quote": "固定资产报废损失；2024年：112171.33元"
+        },
+        {
+          "label": "公允价值变动损失",
+          "value": "108597.51",
+          "page": 190,
+          "quote": "公允价值变动损失；2024年：108597.51元"
+        },
+        {
+          "label": "财务费用",
+          "value": "20006649.08",
+          "page": 191,
+          "quote": "财务费用；2024年：20006649.08元"
+        },
+        {
+          "label": "递延所得税资产减少",
+          "value": "-2248770.23",
+          "page": 191,
+          "quote": "递延所得税资产减少；2024年：-2248770.23元"
+        },
+        {
+          "label": "递延所得税负债增加",
+          "value": "-9153683.48",
+          "page": 191,
+          "quote": "递延所得税负债增加；2024年：-9153683.48元"
+        },
+        {
+          "label": "其他",
+          "value": "6341269.59",
+          "page": 191,
+          "quote": "其他；2024年：6341269.59元"
+        }
+      ],
+      "period": "annual"
+    }
+  ],
+  "notes": [
+    "仅用于历史年度、合并口径核查，不代表企业实时状态。",
+    "其余分组保留并重算原始调整行；未披露的空白单元格不转换成零。"
+  ],
+  "excerpts": [
+    {
+      "page": 190,
+      "text": "合并现金流量表补充资料；单位：人民币元；本年与上年金额。"
+    },
+    {
+      "page": 191,
+      "text": "合并现金流量表补充资料；单位：人民币元；本年与上年金额。"
+    },
+    {
+      "page": 29,
+      "text": "管理层说明：银行承兑汇票用于相关结算；公司称前十大客户不存在大额逾期，期后回款尚未经本队独立核验。"
+    }
+  ],
+  "rawSourceId": "songyuan-2025",
+  "managementExplanation": "公司将部分现金流变化解释为扩产及银行承兑汇票结算；公司称前十大客户未见大额逾期。以上为管理层说法，本队未取得逐客户期后回款记录验证。"
+}

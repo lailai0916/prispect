@@ -1,0 +1,72 @@
+{
+  "company": "杭州海康威视数字技术股份有限公司",
+  "shortName": "海康威视",
+  "title": "真实母公司利润 + 合并现金 · 口径冲突示范",
+  "filename": "hikvision-mixed-scope.json",
+  "origin": "public-report",
+  "documentDate": "2026-04-18",
+  "sourceUrl": "https://static.cninfo.com.cn/finalpage/2026-04-18/1225123062.PDF",
+  "sha256": "a805779efb81bea8158e119ad7c733c4669b8d492dc03c7613199970bfa4b8b2",
+  "observations": [
+    {
+      "id": "hikvision-2025-2025-netProfit",
+      "key": "netProfit",
+      "year": 2025,
+      "value": "11246784128.48",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "parent",
+      "page": 260,
+      "quote": "母公司净利润；2025年：11246784128.48元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2025-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2025,
+      "value": "25339411083.10",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营活动产生的现金流量净额；2025年：25339411083.10元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-netProfit",
+      "key": "netProfit",
+      "year": 2024,
+      "value": "9484641144.09",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "parent",
+      "page": 260,
+      "quote": "母公司净利润；2024年：9484641144.09元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "hikvision-2025-2024-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2024,
+      "value": "13264092022.73",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 229,
+      "quote": "经营活动产生的现金流量净额；2024年：13264092022.73元",
+      "kind": "reported",
+      "period": "annual"
+    }
+  ],
+  "notes": ["人为组合不同范围的真实披露数值，验证系统拒绝混用；不代表原披露有错。"],
+  "excerpts": [
+    {
+      "page": 229,
+      "text": "合并现金流量表补充资料；单位：人民币元；本年与上年金额。"
+    }
+  ],
+  "rawSourceId": "hikvision-2025"
+}

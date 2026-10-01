@@ -1,0 +1,7 @@
+[Unit]
+Description=Consistent CashLens state backup
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cashlens/current/deploy/backup.sh
+UMask=0077

@@ -1,0 +1,22 @@
+services:
+  cashlens:
+    build: .
+    restart: unless-stopped
+    stop_grace_period: 120s
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4317
+      CASHLENS_DATA_DIR: /app/.cashlens
+      APP_ORIGIN: ${APP_ORIGIN:?Set APP_ORIGIN to the actual HTTPS origin}
+    ports:
+      - '127.0.0.1:4317:4317'
+    volumes:
+      - cashlens-state:/app/.cashlens
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  cashlens-state:

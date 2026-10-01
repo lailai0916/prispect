@@ -1,5 +1,5 @@
 <div align="center">
-  <h1>Xuejun Hackathon</h1>
+  <h1>CashLens</h1>
   <p><strong>English</strong> · <a href="README.zh-Hans.md">简体中文</a></p>
   <p>
     <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/xuejun-hackathon/ci.yml?branch=main&style=flat-square" />
@@ -11,37 +11,72 @@
   </p>
 </div>
 
-## Project Introduction
+## Website Introduction
 
-The team's project workspace for the Xuejun High School “Echo · 48H Youth Creation Camp” hackathon. The repository currently contains the project foundation; the competition application is being prepared for development.
+CashLens (照见) turns consolidated annual financial evidence into a reproducible cash-conversion working paper. It helps procurement and operating leads compare net profit with operating cash, inspect the original evidence, and request specific follow-up materials.
 
-## Project Features
+Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction. The core analytical question is deliberately narrow. Historical cash ratios are not company ratings, credit decisions, or investment advice. Customer demand and willingness to pay remain research assumptions.
 
-🗂️ **Team Workspace** — A shared repository for developing and reviewing the team's competition project.
+## Website Features
 
-🌐 **Bilingual Documentation** — English and Simplified Chinese introductions describe the same project status and setup.
+🔐 **Personal Accounts** — Real registration, login, profile and password changes, expiring sessions, logout, and isolated materials, reviews and exports.
+
+🧮 **Reproducible Financial Analysis** — JSON, CSV and text-PDF preview; editable confirmation; period, currency and scope checks; exact integer-fen computation; persisted reports and questions.
+
+🔎 **Evidence and Follow-up** — A sourced cash bridge, page references, component rows and competing explanations. Withholding evidence starts a new review and withdraws unsupported explanations; it never silently fills hidden observations.
+
+🌐 **Bilingual Workflow** — Chinese and English home, workspace, imports, reports, comparison, account and methodology flows, with printable HTML and JSON exports. Original source quotations retain their language.
 
 ## Getting Started
 
-Install Node.js 22 and npm, then prepare the repository:
+Use Node.js 22.12 or newer and npm. Access to this private repository requires authorization.
 
 ```bash
 git clone https://github.com/lailai0916/xuejun-hackathon.git
 cd xuejun-hackathon
-npm ci --ignore-scripts
-npm run format:check
+npm ci
+npm run build
+npm start
 ```
 
-Repository access requires a GitHub account with permission. Run `npm run format` to format changes. Application setup instructions will be added with the implementation. Repository badges may be unavailable because the repository is private.
+Open `http://127.0.0.1:4317`, register your own account with a password of at least 10 characters, and start a review. On macOS, `start.command` performs the installation if needed, builds and starts the application. For development use `npm run dev` and open `http://127.0.0.1:4318`.
+
+```bash
+npm run check
+npm run data:fetch
+npm run data:samples
+```
+
+`check` runs strict types, financial/account/API tests, the client build and formatting checks. `data:fetch` downloads only manifest-listed public reports and verifies SHA256; the original PDFs are excluded from Git. `data:samples` prepares structured import examples. Scanned PDFs and ambiguous table values require confirmation rather than invented extraction.
+
+The default mode uses real deterministic processing and requires no model API. Optional model configuration belongs only in the server `.env`, using `.env.example`. No model credentials are included. Model output receives only permitted evidence; citation-ID and numeric validation do not prove semantic correctness.
+
+Accounts, sessions and each user's working papers persist in `CASHLENS_DATA_DIR` (default `.cashlens`). Keep the entire directory and read [deployment and backup notes](docs/deployment.md) before deploying or restoring it. Public deployment at xuejun.cc is authorized and its actual status will be recorded in the acceptance report. This is a single-process early product, without email verification, password-reset mail, multi-node availability or measured production capacity.
+
+See [the plan](docs/plan.md), [method and source research](docs/research.md), [API contract](docs/api.md), [AI-use disclosure](docs/ai-usage.md) and [competition submission requirements](docs/submission-checklist.md). Private-repository badges may be unavailable.
 
 ## Project Structure
 
 ```bash
 xuejun-hackathon/
-├── package-lock.json               # Locked development dependencies
-└── package.json                    # Formatting commands and dependencies
+├── data/                           # Verified sample inputs and source manifest
+├── deploy/                         # HTTPS reverse-proxy configuration
+├── docs/                           # Method, evidence, delivery and deployment notes
+├── public/                         # Local brand assets
+├── scripts/                        # Development and source-fetch utilities
+├── server/                         # Authentication, isolated storage and analysis API
+├── shared/                         # Typed contracts between client and server
+├── src/                            # Bilingual React application
+├── tests/                          # Financial, account and API verification
+├── compose.yml                     # Persistent single-server container configuration
+├── Dockerfile                      # Optional container build
+├── package-lock.json               # Exact dependency lock
+├── package.json                    # Runtime and verification commands
+├── start.command                   # macOS startup shortcut
+├── tsconfig.json                   # Strict TypeScript configuration
+└── vite.config.ts                  # Client build and local API proxy
 ```
 
 ## License
 
-This project's code is licensed under [MIT License](LICENSE).
+This project's code is licensed under [MIT License](LICENSE), and this website's content is licensed under [CC BY 4.0](LICENSE-docs). The content license covers original website text, documentation and presentation material. Third-party libraries, fonts and disclosed financial reports retain their original rights; neither project license grants commercial redistribution rights to those reports. See [sources and notices](docs/sources.md).

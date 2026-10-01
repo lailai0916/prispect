@@ -1,0 +1,75 @@
+{
+  "company": "浙江松原汽车安全系统股份有限公司",
+  "shortName": "松原安全",
+  "title": "人为限制输入 · 仅提供主要指标页",
+  "filename": "songyuan-headline-only.json",
+  "origin": "public-report",
+  "documentDate": "2026-04-11",
+  "sourceUrl": "https://static.cninfo.com.cn/finalpage/2026-04-11/1225095334.PDF",
+  "sha256": "b9467b04d1cb9e16fca09b61e405448173a0e7b48ef3dca639e458f335f1aab1",
+  "observations": [
+    {
+      "id": "songyuan-2025-2025-netProfit",
+      "key": "netProfit",
+      "year": 2025,
+      "value": "366373098.93",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "unknown",
+      "page": 9,
+      "quote": "归属于上市公司股东的净利润；2025年：366373098.93元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2025-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2025,
+      "value": "26197123.70",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 9,
+      "quote": "经营活动产生的现金流量净额；2025年：26197123.70元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-netProfit",
+      "key": "netProfit",
+      "year": 2024,
+      "value": "260384779.07",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "unknown",
+      "page": 9,
+      "quote": "归属于上市公司股东的净利润；2024年：260384779.07元",
+      "kind": "reported",
+      "period": "annual"
+    },
+    {
+      "id": "songyuan-2025-2024-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2024,
+      "value": "139523699.14",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "page": 9,
+      "quote": "经营活动产生的现金流量净额；2024年：139523699.14元",
+      "kind": "reported",
+      "period": "annual"
+    }
+  ],
+  "notes": [
+    "这是人为仅提供第9页的压力测试，不能声称发行人没有披露附注。",
+    "第9页利润为归母净利润，缺少合并净利润口径证明。"
+  ],
+  "excerpts": [
+    {
+      "page": 9,
+      "text": "主要会计数据：归属于上市公司股东的净利润；经营活动产生的现金流量净额。"
+    }
+  ],
+  "rawSourceId": "songyuan-2025"
+}
