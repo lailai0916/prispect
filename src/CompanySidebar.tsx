@@ -50,6 +50,11 @@ export function CompanySidebar({
   const [revision, setRevision] = useState(0);
   const [deleting, setDeleting] = useState<string[]>([]);
   const pendingDeletes = useRef(new Set<string>());
+  const focusAfterDelete = useRef<{
+    owner: string;
+    id: string;
+    preferred: HTMLAnchorElement | null;
+  } | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const latest = useRef({ owner: user?.id, route, records });
   latest.current = { owner: user?.id, route, records };
@@ -61,6 +66,7 @@ export function CompanySidebar({
     setError('');
     setLoading(true);
     setDeleting([]);
+    focusAfterDelete.current = null;
   }, [user?.id]);
   useEffect(() => {
     if (!user) return;
@@ -99,6 +105,23 @@ export function CompanySidebar({
       window.removeEventListener(COMPANY_RECORDS_EVENT, load);
     };
   }, [user?.id, locale, revision]);
+  useEffect(() => {
+    const focus = focusAfterDelete.current;
+    if (!focus || focus.owner !== user?.id || records.some((run) => run.id === focus.id)) return;
+    focusAfterDelete.current = null;
+    const available = Array.from(
+      list.current?.querySelectorAll<HTMLAnchorElement>('a.sidebar-company') || []
+    ).filter((link) => {
+      const id = new URL(link.href).searchParams.get('run');
+      return id && id !== focus.id && !pendingDeletes.current.has(`${focus.owner}:${id}`);
+    });
+    const target =
+      (focus.preferred && available.includes(focus.preferred) ? focus.preferred : available[0]) ||
+      list.current
+        ?.closest('.workspace-sidebar, .navigation-panel-body')
+        ?.querySelector<HTMLButtonElement>('.sidebar-create');
+    target?.focus({ preventScroll: true });
+  }, [records, user?.id]);
   const sorted = [...records].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const selected = records.find((run) => run.id === currentId);
   const companies = sorted
@@ -122,6 +145,8 @@ export function CompanySidebar({
           const nextLink =
             row?.nextElementSibling?.querySelector<HTMLAnchorElement>('a') ||
             row?.previousElementSibling?.querySelector<HTMLAnchorElement>('a');
+          if (restoreFocus)
+            focusAfterDelete.current = { owner, id: run.id, preferred: nextLink || null };
           const remaining = latest.current.records.filter((record) => record.id !== run.id);
           setRecords((previous) => previous.filter((record) => record.id !== run.id));
           window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
@@ -130,7 +155,9 @@ export function CompanySidebar({
             latest.current.route.split('?')[0] === '/company' &&
             currentQuery.get('run') === run.id
           ) {
-            const next = [...remaining].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+            const next = remaining
+              .filter((record) => !pendingDeletes.current.has(`${owner}:${record.id}`))
+              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
             navigate(
               next
                 ? companyPath(next.id, resolveCompanySection(currentQuery.get('section')))
@@ -138,17 +165,6 @@ export function CompanySidebar({
               { replace: true }
             );
           }
-          if (restoreFocus)
-            requestAnimationFrame(() => {
-              if (latest.current.owner !== owner) return;
-              const target = nextLink?.isConnected
-                ? nextLink
-                : list.current?.querySelector<HTMLAnchorElement>('a') ||
-                  list.current
-                    ?.closest('.workspace-sidebar, .navigation-panel-body')
-                    ?.querySelector<HTMLButtonElement>('.sidebar-create');
-              target?.focus({ preventScroll: true });
-            });
           return true;
         },
         t('查询记录已删除', 'Query record deleted')
