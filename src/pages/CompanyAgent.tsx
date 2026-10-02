@@ -529,8 +529,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   {t(
                     '相关公开材料将交由 AI 处理。',
                     'Relevant public documents are sent for AI processing.'
-                  )}
-                  {' '}
+                  )}{' '}
                   <a href="#/method?section=privacy">{t('数据使用', 'Data use')}</a>
                 </small>
                 {!workspace?.provider.configured && (
