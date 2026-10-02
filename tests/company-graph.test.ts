@@ -420,6 +420,148 @@ test('durable cancellation resumes only incomplete public nodes, reuses source h
     await rm(directory, { recursive: true, force: true });
   }
 });
+for (const legacyChoice of [undefined, false]) {
+  test(`legacy AI ${legacyChoice === undefined ? 'omission' : 'opt-out'} upgrades only incomplete checkpoint nodes without relaxing identity or model scope`, async () => {
+    const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-ai-checkpoint-'));
+    const source = fixture({ blockNotice: true });
+    const controller = new AbortController();
+    const threadId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+    let progress: CompanyGraphProgress | undefined;
+    let financeDone!: () => void;
+    const financeCompleted = new Promise<void>((resolve) => {
+      financeDone = resolve;
+    });
+    let modelCalls = 0;
+    const model = {
+      apiKey: 'fixture-only',
+      model: 'grok-4.7-fast',
+      baseUrl: 'https://model.invalid/v1',
+      fetch: async (_url: Parameters<typeof fetch>[0], init?: RequestInit) => {
+        modelCalls++;
+        const supplied = JSON.parse(JSON.parse(String(init?.body)).messages[1].content);
+        const content = supplied.candidates
+          ? { action: 'finish', selectedIds: [] }
+          : { selections: [] };
+        return json({ choices: [{ message: { content: JSON.stringify(content) } }] });
+      },
+    };
+    const oldInput = {
+      ...input,
+      ...(legacyChoice === undefined ? {} : { useModel: legacyChoice }),
+    };
+    try {
+      const running = runCompanyResearch(oldInput, {
+        root,
+        fetch: source.fetch,
+        model,
+        signal: controller.signal,
+        checkpoint: { directory, threadId },
+        onProgress: (value) => {
+          progress = value;
+          if (
+            value.branches.some(
+              (branch) => branch.id === 'finance' && branch.status === 'completed'
+            )
+          )
+            financeDone();
+        },
+      });
+      await Promise.all([source.started, financeCompleted]);
+      const reader = SqliteSaver.fromConnString(path.join(directory, 'checkpoints.sqlite'));
+      try {
+        let savedFinance = false;
+        for (let attempt = 0; attempt < 200 && !savedFinance; attempt++) {
+          const saved = await reader.getTuple({ configurable: { thread_id: threadId } });
+          savedFinance =
+            !!saved?.checkpoint.channel_values.finance ||
+            !!saved?.pendingWrites?.some(([, channel]) => channel === 'finance');
+          if (!savedFinance) await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+        assert.ok(
+          savedFinance,
+          'the completed financial result is durably checkpointed before cancellation'
+        );
+      } finally {
+        reader.db.close();
+      }
+      controller.abort();
+      await assert.rejects(running);
+      assert.equal(modelCalls, 0);
+      const before = source.calls.filter((url) => url.endsWith('/15.PDF')).length;
+      const oldScope = await readFile(path.join(directory, 'scope.json'), 'utf8');
+      const upgradedInput = { ...oldInput, useModel: true };
+      for (const different of [
+        { input: { ...upgradedInput, securityCode: '000001' }, model },
+        { input: { ...upgradedInput, orgId: 'ANOTHER' }, model },
+        { input: { ...upgradedInput, year: 2024 }, model },
+        { input: upgradedInput, model: { ...model, model: 'another-model' } },
+        { input: upgradedInput, model: { ...model, baseUrl: 'https://another.invalid/v1' } },
+        { input: upgradedInput, model: { ...model, serviceTier: 'priority' as const } },
+      ]) {
+        await assert.rejects(
+          () =>
+            runCompanyResearch(different.input, {
+              root,
+              fetch: source.fetch,
+              model: different.model,
+              checkpoint: { directory, threadId, resume: true },
+              previousProgress: progress,
+            }),
+          /主体、年度或模型选项不同/
+        );
+        assert.equal(await readFile(path.join(directory, 'scope.json'), 'utf8'), oldScope);
+      }
+      const resumedTools: string[] = [];
+      const resumed = await runCompanyResearch(upgradedInput, {
+        root,
+        fetch: source.fetch,
+        model,
+        checkpoint: { directory, threadId, resume: true },
+        previousProgress: progress,
+        onUpdate: (entry) => {
+          resumedTools.push(entry.tool);
+        },
+      });
+      assert.ok(modelCalls > 0, 'incomplete public branches now use the configured model');
+      assert.equal(resumed.agent?.budget.modelRequests, modelCalls);
+      assert.equal(source.calls.filter((url) => url.endsWith('/15.PDF')).length, before);
+      assert.ok(
+        !resumedTools.includes('model_public_summary'),
+        'saved financial results are not rerun'
+      );
+      assert.equal(
+        resumed.model.status,
+        'not-requested',
+        'the completed historical financial branch keeps its actual model status'
+      );
+      assert.equal(
+        JSON.parse(await readFile(path.join(directory, 'scope.json'), 'utf8')).input.useModel,
+        true
+      );
+      assert.ok(resumed.preview?.material.observations.length);
+      assert.equal(
+        resumed.agent?.budget.sourceRequests,
+        source.calls.length,
+        'source budget remains cumulative'
+      );
+      await assert.rejects(
+        () =>
+          runCompanyResearch(oldInput, {
+            root,
+            model,
+            fetch: source.fetch,
+            checkpoint: { directory, threadId, resume: true },
+          }),
+        /主体、年度或模型选项不同/,
+        'a checkpoint cannot return to a retired opt-out'
+      );
+    } finally {
+      controller.abort();
+      await rm(directory, { recursive: true, force: true });
+    }
+  });
+}
+
 test('public model selection accepts only existing references and type-matched hypotheses; no private fields or automatic tier are sent', async () => {
   const source = fixture();
   const bodies: string[] = [];

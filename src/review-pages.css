@@ -607,7 +607,7 @@
     padding: 20px 16px;
   }
   .financial-create-page input,
-  .financial-create-page select {
+  .financial-create-page .select-trigger {
     font-size: 16px;
     min-height: 44px;
   }

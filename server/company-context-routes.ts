@@ -5,7 +5,7 @@ import type { CompanyResearchRun } from '../shared/contracts.js';
 import type { AuthStore, AuthContext } from './auth.js';
 import type { WorkspaceStore } from './store.js';
 import type { ModelConfig } from './model.js';
-import { ApiFault } from './validation.js';
+import { ApiFault, modelEnabledSchema } from './validation.js';
 import { searchCompanies } from './company-sources.js';
 import { retrieveCompanyContext, verificationLinks } from './company-context-sources.js';
 import { retrieveIndustrySnapshot } from './company-industry.js';
@@ -98,14 +98,18 @@ export function installCompanyContextRoutes(
           orgId: '',
           year: body.data.year,
           purpose: body.data.purpose,
-          useModel: false,
+          useModel: true,
         },
         status: 'ready',
         createdAt: now,
         updatedAt: now,
         trace: [],
         announcements: [],
-        model: { requested: false, status: 'not-requested' },
+        model: {
+          requested: true,
+          status: options.model.apiKey ? 'not-called' : 'not-configured',
+          error: reason,
+        },
         informationGap: { name: body.data.name, reason },
         contextStatus: 'ready',
         context: {
@@ -292,7 +296,7 @@ export function installCompanyContextRoutes(
         .object({
           question: z.string().trim().min(1).max(500),
           basis: z.enum(['parent', 'consolidated']),
-          useModel: z.boolean().default(false),
+          useModel: modelEnabledSchema,
         })
         .strict()
         .safeParse(req.body);

@@ -91,15 +91,15 @@ export const termsDocument: ProductDocument = {
     },
     {
       id: 'privacy',
-      title: ['5. 私人数据与可选 AI', '5. Private data and optional AI'],
+      title: ['5. 数据处理与 AI', '5. Data processing and AI'],
       paragraphs: [
         [
-          '私人核查事项、付款记录、现金计划、跟进备注和账号资料不进入公开企业研究的 AI 请求。公开 AI 功能按该次页面选择执行；发送范围与服务提供方在选择界面及隐私政策中说明。',
-          'Private cases, payment records, cash plans, follow-up notes and account information are not included in public-company AI requests. Public AI features follow the choice made for that run; the choice interface and privacy policy explain the sending scope and provider.',
+          'AI 自动参与公司查询、财报核查和企业问答，无需单独启用，也不提供关闭选项。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
+          'AI is an automatic part of company lookup, financial reviews and company questions, with no separate enable or disable option. The privacy policy describes the processing scope, external services and record retention.',
         ],
         [
-          '阅读或接受本协议不替代具体功能所需的数据使用告知与同意。你可以按界面选择不用可选 AI；已发生的数据处理及后续保留，依照隐私政策与适用法律处理。',
-          'Reading or accepting these terms does not replace data-use notices or consent required for a particular feature. You may choose not to use optional AI. Processing already performed and subsequent retention are governed by the privacy policy and applicable law.',
+          '阅读或接受本协议不替代依法需要的数据使用告知与同意。你可以停止使用相应功能；已发生的数据处理及后续保留，依照隐私政策与适用法律处理。',
+          'Reading or accepting these terms does not replace data-use notices or consent required by law. You may stop using the relevant features. Processing already performed and subsequent retention are governed by the privacy policy and applicable law.',
         ],
       ],
       links: [{ label: ['查看隐私政策', 'Read the privacy policy'], href: '/privacy' }],

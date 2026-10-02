@@ -40,7 +40,8 @@ test('owner-only cancellation/resume, revision checks and duplicate request iden
         source: 'cninfo',
         truncated: false,
       }),
-      runCompanyResearch: async (_input, options) => {
+      runCompanyResearch: async (input, options) => {
+        assert.equal(input.useModel, true);
         invocations++;
         const progress = initialCompanyGraphProgress(options.previousProgress);
         if (invocations === 1) {
@@ -101,6 +102,7 @@ test('owner-only cancellation/resume, revision checks and duplicate request iden
     });
     assert.equal(created.status, 202);
     const first = (await created.json()) as CompanyResearchRun;
+    assert.equal(first.input.useModel, true);
     const duplicate = await fetch(base + '/api/company-runs', {
       method: 'POST',
       headers,
@@ -146,6 +148,14 @@ test('owner-only cancellation/resume, revision checks and duplicate request iden
     }
     assert.equal(stopped.status, 'failed');
     assert.equal(stopped.agent?.recoverable, true);
+    const ownerSession = (await (
+      await fetch(base + '/api/auth/session', { headers: owner })
+    ).json()) as AuthSession;
+    const store = await application.workspaceForUser(ownerSession.user!.id);
+    const historical = store.state.companyRuns!.find((run) => run.id === stopped.id)!;
+    historical.input.useModel = false;
+    historical.model = { requested: false, status: 'not-requested' };
+    await store.persist();
     const stale = await fetch(base + `/api/company-runs/${first.id}/resume`, {
       method: 'POST',
       headers: owner,
@@ -164,6 +174,7 @@ test('owner-only cancellation/resume, revision checks and duplicate request iden
       body: JSON.stringify({ revision: stopped.agent!.revision }),
     });
     assert.equal(resumed.status, 202);
+    assert.equal(((await resumed.json()) as CompanyResearchRun).input.useModel, true);
     await secondRunning;
     const delayedCancel = await fetch(base + `/api/company-runs/${first.id}/cancel`, {
       method: 'POST',

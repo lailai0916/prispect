@@ -102,12 +102,12 @@
   color: var(--muted);
   font-size: 11px;
 }
-.company-assistant-company-picker select {
+.company-assistant-company-picker .select-trigger {
   flex: 1;
   min-width: 0;
-  min-height: 32px;
-  padding: 5px 28px 5px 9px;
-  font-size: 12px;
+  min-height: var(--select-min-height, 32px);
+  padding: 5px 9px;
+  font-size: var(--select-font-size, 12px);
   background-color: var(--surface-subtle);
 }
 .company-assistant-content {
@@ -168,11 +168,11 @@
   gap: 6px;
   min-width: 0;
 }
-.company-assistant-context-controls select {
+.company-assistant-context-controls .select-trigger {
   max-width: 190px;
-  min-height: 29px;
+  min-height: var(--select-min-height, 29px);
   padding-block: 4px;
-  font-size: 11px;
+  font-size: var(--select-font-size, 12px);
 }
 .company-assistant-context-controls .icon-button {
   font-size: 11px;
@@ -298,33 +298,10 @@
   gap: 8px;
   margin-top: 5px;
 }
-.context-questions-compact .context-model-choice {
-  font-size: 10px;
-}
-.context-questions-compact .context-model-choice input {
-  width: 13px;
-  height: 13px;
-  margin: 0;
-}
 .context-questions-compact .start-submit {
   flex: 0 0 auto;
   width: 29px;
   height: 29px;
-}
-.context-questions-compact .context-question-model-notice {
-  margin-top: 9px;
-  color: var(--muted);
-  font-size: 10px;
-}
-.context-questions-compact .context-question-model-notice summary {
-  width: fit-content;
-  cursor: pointer;
-}
-.context-questions-compact .context-question-model-notice[open] .context-data-note {
-  max-height: 96px;
-  overflow-y: auto;
-  margin-top: 6px;
-  font-size: 10px;
 }
 .context-questions-compact .inline-error {
   margin: 8px 0 0;
@@ -380,9 +357,6 @@
   }
   .context-questions-compact .context-question-scroll {
     padding-block: 0;
-  }
-  .context-questions-compact .context-question-model-notice[open] .context-data-note {
-    max-height: 48px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

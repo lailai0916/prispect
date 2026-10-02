@@ -65,6 +65,11 @@ export const materialInputSchema = z.object({
   uploadId: z.string().uuid().optional(),
   managementExplanation: z.string().max(2000).optional(),
 });
+// Retain the legacy request field while making AI part of every new analysis.
+export const modelEnabledSchema = z
+  .boolean()
+  .optional()
+  .transform(() => true);
 export const taskInputSchema = z.object({
   title: z.string().trim().min(1).max(200),
   company: z.string().trim().min(1).max(200),
@@ -75,7 +80,7 @@ export const taskInputSchema = z.object({
     .max(30)
     .refine((ids) => new Set(ids).size === ids.length, '材料不能重复选择'),
   excludedMetrics: z.array(z.enum(metricKeys)).max(6).optional(),
-  useModel: z.boolean().default(false),
+  useModel: modelEnabledSchema,
   purpose: z.enum(['external', 'handover']).default('external'),
 });
 

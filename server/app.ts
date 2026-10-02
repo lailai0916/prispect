@@ -138,6 +138,7 @@ export async function createApp(options: AppOptions = {}) {
     };
     try {
       task.status = 'running';
+      task.useModel = true;
       await changeStage(0, 'running', '读取本次保存的输入快照。');
       const inputs = store.state.inputs[taskId];
       if (!inputs?.length) throw new Error('本次任务缺少保存的输入快照');
@@ -157,28 +158,21 @@ export async function createApp(options: AppOptions = {}) {
         3,
         'running',
         model.apiKey
-          ? !task.useModel
-            ? '本次未启用智能解释；未向模型服务发送材料。'
-            : report.verdict === 'conflict'
-              ? '输入冲突，不调用模型；规则核查保留。'
-              : '实际调用可选模型，检查引用 ID 与格式；含义需人工复核。'
+          ? report.verdict === 'conflict'
+            ? '输入冲突，不调用模型；规则核查保留。'
+            : '正在生成智能解释与询证问题。'
           : '未配置模型，采用确定性规则解释与询证问题。'
       );
-      task.report = await explainWithModel(
-        report,
-        model,
-        task.excludedMetrics,
-        task.useModel === true
-      );
+      task.report = await explainWithModel(report, model, task.excludedMetrics, true);
       await changeStage(
         3,
         'completed',
-        task.report.model.status === 'failed'
-          ? '模型未完成；规则报告完整保留。'
-          : task.report.model.status === 'not-requested'
-            ? '规则解释完成；本次未授权外部模型调用。'
-            : model.apiKey
-              ? '模型输出的引用 ID 与格式已检查；解释含义需人工复核。'
+        task.report.model.status === 'completed'
+          ? '模型输出的引用 ID 与格式已检查；解释含义需人工复核。'
+          : task.report.model.error?.includes('未调用')
+            ? task.report.model.error
+            : task.report.model.status === 'failed'
+              ? '模型未完成；规则报告完整保留。'
               : '规则解释完成；未执行模型调用。'
       );
       await changeStage(4, 'running', '保存报告、问题状态与全部输入快照。');
@@ -596,6 +590,7 @@ export async function createApp(options: AppOptions = {}) {
       if (running.has(task.id) || task.status === 'queued')
         throw new ApiFault(409, 'TASK_RUNNING', '任务正在执行，请等待结束');
       task.status = 'queued';
+      task.useModel = true;
       task.error = undefined;
       task.stages = stages();
       task.updatedAt = new Date().toISOString();

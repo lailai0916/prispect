@@ -70,7 +70,8 @@ async function serviceMock(): Promise<CompanyService> {
       source: 'cninfo',
       truncated: false,
     }),
-    runCompanyResearch: async (_input, options) => {
+    runCompanyResearch: async (input, options) => {
+      assert.equal(input.useModel, true, 'company research always receives enabled AI');
       const startedAt = new Date().toISOString();
       const entry = {
         id: 'actual-test-tool',
@@ -93,7 +94,7 @@ async function serviceMock(): Promise<CompanyService> {
         announcements: [],
         preview: structuredClone(preview),
         buffer,
-        model: { requested: false, status: 'not-requested' },
+        model: { requested: true, status: 'not-configured' },
       };
     },
   };
@@ -143,10 +144,14 @@ const runInput = {
   year: 2025,
   purpose: 'handover',
 };
-async function makeRun(service: Awaited<ReturnType<typeof openService>>, client: Client) {
+async function makeRun(
+  service: Awaited<ReturnType<typeof openService>>,
+  client: Client,
+  input: typeof runInput & { useModel?: boolean } = runInput
+) {
   const response = await service.request(
     '/api/company-runs',
-    requestOptions(client, runInput, 'POST')
+    requestOptions(client, input, 'POST')
   );
   assert.equal(response.status, 202);
   const queued = (await response.json()) as CompanyResearchRun;
@@ -155,6 +160,31 @@ async function makeRun(service: Awaited<ReturnType<typeof openService>>, client:
   assert.equal(result.status, 200);
   return (await result.json()) as CompanyResearchRun;
 }
+
+test('company research automatically requests AI with omitted, false and true legacy flags', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-company-ai-'));
+  const service = await openService(directory, await serviceMock());
+  try {
+    const client = await authenticate(service, 'company-automatic-ai@example.com');
+    for (const choice of [undefined, false, true]) {
+      const run = await makeRun(service, client, {
+        ...runInput,
+        ...(choice === undefined ? {} : { useModel: choice }),
+      });
+      assert.equal(run.input.useModel, true);
+      assert.equal(run.model.requested, true);
+      assert.equal(run.model.status, 'not-configured');
+    }
+    const invalid = await service.request(
+      '/api/company-runs',
+      requestOptions(client, { ...runInput, useModel: 'false' }, 'POST')
+    );
+    assert.equal(invalid.status, 400);
+  } finally {
+    await service.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test('company queries keep real trace events and original files private; confirmed adoption survives a crash between durable writes', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-company-api-'));
@@ -209,7 +239,7 @@ test('company queries keep real trace events and original files private; confirm
     let run = await makeRun(service, alice);
     assert.equal(run.status, 'ready');
     assert.equal(run.input.purpose, 'handover');
-    assert.equal(run.input.useModel, false);
+    assert.equal(run.input.useModel, true);
     assert.equal(run.trace.length, 1);
     assert.equal(run.trace[0]?.status, 'completed');
     assert.ok(run.trace[0]?.finishedAt);

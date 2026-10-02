@@ -38,6 +38,9 @@ const rules: Record<string, string> = {
     'The annual period is unconfirmed. Sharing a year label does not establish the same reporting period.',
   '输入冲突，不调用模型；规则核查保留。':
     'Input conflicts: no model call is made. The rules-based review remains available.',
+  '正在生成智能解释与询证问题。': 'Generating AI interpretation and evidence requests.',
+  '实际调用模型，检查引用 ID 与格式；含义需人工复核。':
+    'Calling the model and checking citation IDs and format. Meaning still needs human review.',
   '实际调用可选模型，检查引用 ID 与格式；含义需人工复核。':
     'Calling the optional model and checking citation IDs and format. Meaning still needs human review.',
   '模型输出的引用 ID 与格式已检查；解释含义需人工复核。':
@@ -220,6 +223,11 @@ const rules: Record<string, string> = {
   有限重试公开证据页规划: 'Retry public-evidence page selection',
   模型选择公开证据核查页: 'Select public-evidence pages with the optional model',
   重新验证模型选中的原件页: 'Recheck model-selected original pages',
+  模型解释公开核查证据: 'Model interpretation of public evidence',
+  公开证据模型: 'Public-evidence model',
+  '解释同年度合并可采用字段及短摘录。':
+    'Interpret admissible same-year consolidated fields and short excerpts.',
+  '解释已取得的公开候选页与字段。': 'Interpret retrieved public candidate pages and fields.',
   可选模型解释公开核查证据: 'Optional model explanation of public evidence',
   可选公开证据模型: 'Optional public-evidence model',
   '仅使用精确代码与机构ID绑定的公告。':

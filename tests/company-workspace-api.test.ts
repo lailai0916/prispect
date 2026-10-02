@@ -6,7 +6,7 @@ import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import type { AuthSession, CompanyResearchRun } from '../shared/contracts.js';
 import { createApp } from '../server/app.js';
-import { answerCompanyRules } from '../server/company-questions.js';
+import { answerCompanyQuestion } from '../server/company-questions.js';
 import { contextAmountFields, type CompanyContextSnapshot } from '../shared/company-workspace.js';
 
 const identity = {
@@ -53,6 +53,7 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
   let calls = 0,
     fail = false,
     release: (() => void) | undefined;
+  const questionChoices: boolean[] = [];
   const gate = () =>
     new Promise<void>((resolve) => {
       release = resolve;
@@ -94,7 +95,10 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
       industry: async () => {
         throw Error('not available');
       },
-      question: async (run, q, basis) => answerCompanyRules(run, q, basis),
+      question: async (run, q, basis, useModel, model) => {
+        questionChoices.push(useModel);
+        return answerCompanyQuestion(run, q, basis, useModel, model);
+      },
     },
   });
   const server = app.app.listen(0, '127.0.0.1');
@@ -169,12 +173,16 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     assert.equal(ready.context?.financials[0]?.amounts.ocf, '80.00');
     assert.equal((await call(`/company-runs/${run.id}/context`, {})).status, 200);
     assert.equal(calls, 1);
-    const answer = await call(`/company-runs/${run.id}/questions`, {
-      question: '现金和利润有什么差异？',
-      basis: 'parent',
-      useModel: false,
-    });
-    assert.equal(answer.status, 200);
+    for (const choice of [undefined, false, true]) {
+      const answer = await call(`/company-runs/${run.id}/questions`, {
+        question: '现金和利润有什么差异？',
+        basis: 'parent',
+        ...(choice === undefined ? {} : { useModel: choice }),
+      });
+      assert.equal(answer.status, 200);
+      assert.equal((await answer.json()).mode, 'rules-fallback');
+    }
+    assert.deepEqual(questionChoices, [true, true, true]);
     assert.equal(
       (
         await call(
@@ -192,7 +200,7 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     const failed = (await (await call(`/company-runs/${run.id}`)).json()) as CompanyResearchRun;
     assert.equal(failed.contextStatus, 'failed');
     assert.equal(failed.context?.fetchedAt, ready.context?.fetchedAt);
-    assert.equal(failed.questions?.length, 1);
+    assert.equal(failed.questions?.length, 3);
     const gap = await call('/company-gaps', {
       name: '未上市制造公司',
       year: 2025,
@@ -202,6 +210,9 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     const gapRun = (await gap.json()) as CompanyResearchRun;
     assert.equal(gapRun.informationGap?.name, '未上市制造公司');
     assert.equal(gapRun.context?.financials.length, 0);
+    assert.equal(gapRun.input.useModel, true);
+    assert.equal(gapRun.model.requested, true);
+    assert.equal(gapRun.model.status, 'not-configured');
     assert.equal(
       (await call(`/company-runs/${gapRun.id}/industry`, { period: '2025-12-31' })).status,
       422
@@ -216,7 +227,7 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     );
     assert.ok(
       persisted.companyRuns.some(
-        (item: CompanyResearchRun) => item.id === run.id && item.questions?.length === 1
+        (item: CompanyResearchRun) => item.id === run.id && item.questions?.length === 3
       )
     );
   } finally {

@@ -439,8 +439,8 @@
 .company-candidate-table td:nth-child(7) {
   width: 85px;
 }
-.company-candidate-table :is(input, select) {
-  font-size: 12px;
+.company-candidate-table :is(input, .select-trigger) {
+  font-size: var(--select-font-size, 12px);
   font-variant-numeric: tabular-nums;
   padding: 7px 9px;
 }
@@ -570,9 +570,6 @@
   min-height: 32px;
   padding: 6px 0;
 }
-.company-options .model-opt-in {
-  margin-bottom: 20px;
-}
 .company-progress {
   padding: 0 0 12px;
 }
@@ -692,7 +689,7 @@
 .company-candidate-table input[type='number'] {
   min-width: 88px;
 }
-.company-candidate-table select {
+.company-candidate-table .select-trigger {
   min-width: 100px;
 }
 .company-candidate-table td:last-child {
@@ -1008,7 +1005,7 @@
     width: 100%;
     margin-left: 0;
   }
-  .company-candidate-table :is(input, select) {
+  .company-candidate-table :is(input, .select-trigger) {
     font-size: 16px;
     min-height: 44px;
   }

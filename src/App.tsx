@@ -14,7 +14,6 @@ import {
   Menu,
   Plus,
   RefreshCw,
-  ShieldCheck,
   X,
   UserRound,
   BookOpen,
@@ -396,14 +395,6 @@ export function App() {
           <BookOpen size={16} />
           {t('使用文档', 'Documentation')}
         </a>
-        <a
-          href="/method"
-          className={`sidebar-method ${page === '/method' ? 'active' : ''}`}
-          onClick={() => setMenuOpen(false)}
-        >
-          <ShieldCheck size={16} />
-          {t('方法', 'Method')}
-        </a>
         {user && (
           <ActionMenu
             label={t('账号菜单', 'Account menu')}
@@ -454,13 +445,6 @@ export function App() {
                   aria-current={page === '/docs' ? 'page' : undefined}
                 >
                   {t('文档', 'Docs')}
-                </a>
-                <a
-                  href="/method"
-                  className={page === '/method' ? 'active' : ''}
-                  aria-current={page === '/method' ? 'page' : undefined}
-                >
-                  {t('方法', 'Method')}
                 </a>
               </nav>
             )}

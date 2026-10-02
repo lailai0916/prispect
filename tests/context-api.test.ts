@@ -112,7 +112,8 @@ test('task purposes, both-context notes and manual cash assumptions persist with
   let modelCalls = 0;
   let service: Awaited<ReturnType<typeof openService>> | undefined = await openService(
     directory,
-    () => modelCalls++
+    () => modelCalls++,
+    true
   );
   try {
     const alice = await register(service, 'context-alice@example.com');
@@ -138,7 +139,8 @@ test('task purposes, both-context notes and manual cash assumptions persist with
     const task = (await (
       await service.request(`/api/tasks/${pending.id}`, options(alice))
     ).json()) as AnalysisTask;
-    assert.equal(task.report?.model.status, 'not-requested');
+    assert.equal(task.report?.model.status, 'completed');
+    assert.equal(modelCalls, 1);
     const financialReport = structuredClone(task.report);
     const patch = async (body: TaskContextPatch) => {
       const result = await service!.request(
@@ -266,7 +268,7 @@ test('task purposes, both-context notes and manual cash assumptions persist with
     assert.equal(fresh.purpose, 'handover');
     assert.deepEqual(fresh.contextNotes, {});
     assert.equal(fresh.cashPlan, undefined);
-    assert.equal(fresh.useModel, false);
+    assert.equal(fresh.useModel, true);
     await service.waitForIdle();
     await service.stop();
     service = undefined;
@@ -291,7 +293,11 @@ test('task purposes, both-context notes and manual cash assumptions persist with
     assert.equal(cleared.cashPlan, undefined);
     assert.deepEqual(cleared.contextNotes, updated.contextNotes);
     assert.deepEqual(cleared.report, financialReport);
-    assert.equal(modelCalls, 0);
+    assert.equal(
+      modelCalls,
+      2,
+      'only the original and copied analyses call AI; private edits and reopening do not'
+    );
   } finally {
     await service?.stop();
     await rm(directory, { recursive: true, force: true });
@@ -302,7 +308,8 @@ test('legacy saved tasks without purpose or scenario fields load with external d
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-legacy-context-'));
   let service: Awaited<ReturnType<typeof openService>> | undefined = await openService(
     directory,
-    () => assert.fail('No model call')
+    () => {},
+    true
   );
   try {
     const client = await register(service, 'legacy-context@example.com');
@@ -354,7 +361,7 @@ test('legacy saved tasks without purpose or scenario fields load with external d
   }
 });
 
-test('scenario notes and cash assumptions remain private when an opted-in task retries a mocked explanation', async () => {
+test('scenario notes and cash assumptions remain private when automatic AI analysis retries a mocked explanation', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-context-model-'));
   const payloads: string[] = [];
   const service = await openService(directory, (body) => payloads.push(body!), true);
@@ -376,7 +383,6 @@ test('scenario notes and cash assumptions remain private when an opted-in task r
           year: 2025,
           materialIds: cases[0]!.materialIds,
           purpose: 'handover',
-          useModel: true,
         },
         'POST'
       )

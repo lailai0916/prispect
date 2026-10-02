@@ -1,3 +1,4 @@
+import { Select } from '../Select';
 import { useContext, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { ArrowUpRight, FileSearch, LoaderCircle, RefreshCw, Trash2 } from 'lucide-react';
 import type { CompanyResearchRun } from '../../shared/contracts';
@@ -251,23 +252,23 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <div className="context-reading-controls">
             <label>
               {t('阅读视角', 'Reading view')}
-              <select
+              <Select
                 value={view}
-                onChange={(event) => setView(event.target.value as 'public' | 'manager')}
+                onValueChange={(selectedValue) => setView(selectedValue as 'public' | 'manager')}
               >
                 <option value="public">{t('公众视图', 'Public view')}</option>
                 <option value="manager">{t('管理者尽调', 'Management diligence')}</option>
-              </select>
+              </Select>
             </label>
             <label>
               {t('网页指标利润口径', 'Web profit basis')}
-              <select
+              <Select
                 value={basis}
-                onChange={(event) => setBasis(event.target.value as CompanyReadingBasis)}
+                onValueChange={(selectedValue) => setBasis(selectedValue as CompanyReadingBasis)}
               >
                 <option value="parent">{t('归母净利润', 'Attributable profit')}</option>
                 <option value="consolidated">{t('合并净利润', 'Consolidated profit')}</option>
-              </select>
+              </Select>
             </label>
           </div>
           <p className="context-data-note">

@@ -1,3 +1,4 @@
+import { Select } from './Select';
 import { useMemo, useState } from 'react';
 import { ArrowUpRight, FileSearch } from 'lucide-react';
 import type { CompanyContextSnapshot, CompanyDisclosure } from '../shared/company-workspace';
@@ -129,24 +130,24 @@ export function CompanyDisclosuresView({ snapshot }: { snapshot: CompanyContextS
       <div className="context-filters">
         <label>
           {t('范围', 'Period')}
-          <select
+          <Select
             value={days}
-            onChange={(event) => {
-              setDays(Number(event.target.value));
+            onValueChange={(selectedValue) => {
+              setDays(Number(selectedValue));
               setExpanded(false);
             }}
           >
             <option value={90}>{t('近九十天', 'Last 90 days')}</option>
             <option value={365}>{t('近一年', 'Last year')}</option>
             <option value={1095}>{t('近三年', 'Last three years')}</option>
-          </select>
+          </Select>
         </label>
         <label>
           {t('类别', 'Category')}
-          <select
+          <Select
             value={category}
-            onChange={(event) => {
-              setCategory(event.target.value);
+            onValueChange={(selectedValue) => {
+              setCategory(selectedValue);
               setExpanded(false);
             }}
           >
@@ -154,15 +155,15 @@ export function CompanyDisclosuresView({ snapshot }: { snapshot: CompanyContextS
             {categories.map((category) => (
               <option key={category}>{category}</option>
             ))}
-          </select>
+          </Select>
         </label>
         <label>
           {t('关注度', 'Attention')}
-          <select value={attention} onChange={(event) => setAttention(event.target.value)}>
+          <Select value={attention} onValueChange={(selectedValue) => setAttention(selectedValue)}>
             <option value="material">{t('财务重点', 'Financial focus')}</option>
             <option value="high">{t('高关注', 'High attention')}</option>
             <option value="all">{t('全部相关', 'All relevant')}</option>
-          </select>
+          </Select>
         </label>
         <div className="context-segmented" aria-label={t('公告视图', 'Disclosure view')}>
           <button type="button" aria-pressed={grouped} onClick={() => setGrouped(true)}>

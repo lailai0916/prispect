@@ -16,15 +16,31 @@ interface Client {
   cookie: string;
   csrf: string;
 }
-async function openService(directory: string, onModel: () => void) {
+async function openService(directory: string, onModel: (body: string) => void) {
   const app = await createApp({
     root: process.cwd(),
     dataDir: directory,
     model: {
       apiKey: 'test-only-no-network',
-      fetch: async () => {
-        onModel();
-        throw new Error('Private decisions must never call a model');
+      fetch: async (_url, request) => {
+        const body = String(request?.body);
+        onModel(body);
+        const supplied = JSON.parse(JSON.parse(body).messages[1].content);
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    explanations: [
+                      { text: '应继续核对公开财报原文。', citations: [supplied.evidence[0].id] },
+                    ],
+                  }),
+                },
+              },
+            ],
+          })
+        );
       },
     },
   });
@@ -139,9 +155,14 @@ const gate = (detail: DecisionDetail, id: string) =>
 test('distinguishing material review persists through actual HTTP revisions, owner boundaries, withdrawal, restoration and restart without a private model request', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-distinction-api-'));
   let calls = 0;
+  const modelBodies: string[] = [];
+  const captureModel = (body: string) => {
+    calls++;
+    modelBodies.push(body);
+  };
   let service: Awaited<ReturnType<typeof openService>> | undefined = await openService(
     directory,
-    () => calls++
+    captureModel
   );
   try {
     const alice = await account(service, 'distinction-alice@example.com');
@@ -152,6 +173,10 @@ test('distinguishing material review persists through actual HTTP revisions, own
       (await service.request(`/api/cases/${demo.id}/import`, options(alice, {}, 'POST'))).status,
       201
     );
+    const quote = `${demo.company}截至2026-10-02，虚构账龄测试字段100元，不是该公司当前事实。 PRIVATE_COLLECTIONS_73419`;
+    const contraryQuote = `${demo.company}截至2026-10-02，虚构账龄测试字段200元，不是该公司当前事实。 PRIVATE_CONTRARY_73419`;
+    const saved = await material(service, alice, [quote, contraryQuote]);
+    assert.equal(calls, 0, 'saving private material does not request AI');
     const taskResponse = await service.request(
       '/api/tasks',
       options(
@@ -161,16 +186,25 @@ test('distinguishing material review persists through actual HTTP revisions, own
           company: demo.company,
           year: demo.year,
           materialIds: demo.materialIds,
-          useModel: false,
         },
         'POST'
       )
     );
     assert.equal(taskResponse.status, 202);
     const task = (await taskResponse.json()) as AnalysisTask;
+    assert.equal(task.useModel, true);
     await service.waitForIdle();
+    const completedTask = (await (
+      await service.request(`/api/tasks/${task.id}`, options(alice))
+    ).json()) as AnalysisTask;
+    assert.equal(completedTask.report?.model.status, 'completed');
+    const publicModelBaseline = calls;
+    assert.equal(publicModelBaseline, 1, 'the public financial background is analyzed with AI');
+    const privateCashFloor = '918273645.67';
     const decisionInput: DecisionInput = {
       ...input(),
+      title: 'PRIVATE_DECISION_73419',
+      promise: 'PRIVATE_PROMISE_73419',
       purpose: 'handover',
       transactionEntity: demo.company,
       reportTaskId: task.id,
@@ -178,7 +212,7 @@ test('distinguishing material review persists through actual HTTP revisions, own
       datedCash: {
         asOf: '2026-10-02',
         openingCash: null,
-        cashFloor: '0',
+        cashFloor: privateCashFloor,
         proposedAmount: null,
         proposedDay: null,
         alternativeDay: null,
@@ -190,9 +224,6 @@ test('distinguishing material review persists through actual HTTP revisions, own
     let detail = (await created.json()) as DecisionDetail;
     const url = `/api/decisions/${detail.decision.id}`;
     const baselineCash = detail.evaluation.cash;
-    const quote = `${demo.company}截至2026-10-02，虚构账龄测试字段100元，不是该公司当前事实。`;
-    const contraryQuote = `${demo.company}截至2026-10-02，虚构账龄测试字段200元，不是该公司当前事实。`;
-    const saved = await material(service, alice, [quote, contraryQuote]);
     const payload = {
       ...evidence(saved.id, quote, '100'),
       entity: demo.company,
@@ -283,8 +314,9 @@ test('distinguishing material review persists through actual HTTP revisions, own
     assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'conflict');
     assert.deepEqual(detail.evaluation.cash, baselineCash);
     assert.equal(detail.evaluation.recordedCash?.primary.status, 'unknown');
+    assert.equal(calls, publicModelBaseline, 'private evidence changes never request AI');
     await service.stop();
-    service = await openService(directory, () => calls++);
+    service = await openService(directory, captureModel);
     const restarted = await account(service, 'distinction-alice@example.com', true);
     const current = (await (
       await service.request(url, options(restarted))
@@ -303,27 +335,62 @@ test('distinguishing material review persists through actual HTTP revisions, own
     );
     assert.equal(
       calls,
-      0,
-      'private evidence and cash records never enter a configured external model'
+      publicModelBaseline,
+      'private evidence, cash records and reopening never add external model requests'
     );
+    for (const body of modelBodies) {
+      for (const privateValue of [
+        quote,
+        contraryQuote,
+        'PRIVATE_COLLECTIONS_73419',
+        'PRIVATE_CONTRARY_73419',
+        decisionInput.title,
+        decisionInput.promise,
+        privateCashFloor,
+        saved.id,
+        detail.decision.id,
+        'distinction-alice@example.com',
+      ])
+        assert.ok(
+          !body.includes(privateValue),
+          'private workspace data is excluded from AI payloads'
+        );
+      const supplied = JSON.parse(JSON.parse(body).messages[1].content);
+      assert.equal(supplied.datedCash, undefined);
+      assert.equal(supplied.external, undefined);
+      assert.equal(supplied.promise, undefined);
+      assert.equal(supplied.decisions, undefined);
+    }
   } finally {
     await service?.stop();
     await rm(directory, { recursive: true, force: true });
   }
 });
 
-test('private decisions enforce owner and CSRF boundaries, serialize revision writes, preserve historical references and survive a service restart without any model call', async () => {
+test('private decisions enforce owner and CSRF boundaries, serialize revision writes and survive restart without requests beyond their public financial background', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-decision-api-'));
   let calls = 0;
+  const modelBodies: string[] = [];
+  const captureModel = (body: string) => {
+    calls++;
+    modelBodies.push(body);
+  };
   let service: Awaited<ReturnType<typeof openService>> | undefined = await openService(
     directory,
-    () => calls++
+    captureModel
   );
   try {
     const alice = await account(service, 'decision-alice@example.com');
     const bob = await account(service, 'decision-bob@example.com');
+    const privateTotalAmount = '871234567.89';
+    const privateInput: DecisionInput = {
+      ...input(),
+      title: 'PRIVATE_PAYMENT_DECISION_84520',
+      promise: 'PRIVATE_PAYMENT_PROMISE_84520',
+      external: { ...input().external!, totalAmount: privateTotalAmount },
+    };
     assert.equal((await service.request('/api/decisions')).status, 401);
-    const create = await service.request('/api/decisions', options(alice, input(), 'POST'));
+    const create = await service.request('/api/decisions', options(alice, privateInput, 'POST'));
     assert.equal(create.status, 201);
     let detail = (await create.json()) as DecisionDetail;
     const url = `/api/decisions/${detail.decision.id}`;
@@ -331,7 +398,7 @@ test('private decisions enforce owner and CSRF boundaries, serialize revision wr
     assert.equal(
       (
         await service.request(url, {
-          ...options(alice, { baseRevision: 1, input: input() }, 'PATCH'),
+          ...options(alice, { baseRevision: 1, input: privateInput }, 'PATCH'),
           headers: { Cookie: alice.cookie, 'Content-Type': 'application/json' },
         })
       ).status,
@@ -340,7 +407,7 @@ test('private decisions enforce owner and CSRF boundaries, serialize revision wr
     assert.equal(
       (
         await service.request(url, {
-          ...options(alice, { baseRevision: 1, input: input() }, 'PATCH'),
+          ...options(alice, { baseRevision: 1, input: privateInput }, 'PATCH'),
           headers: { ...options(alice).headers, Origin: 'https://evil.invalid' },
         })
       ).status,
@@ -350,14 +417,14 @@ test('private decisions enforce owner and CSRF boundaries, serialize revision wr
       ['第一版', '第二版'].map((title) =>
         service!.request(
           url,
-          options(alice, { baseRevision: 1, input: { ...input(), title } }, 'PATCH')
+          options(alice, { baseRevision: 1, input: { ...privateInput, title } }, 'PATCH')
         )
       )
     );
     assert.deepEqual(writes.map((response) => response.status).sort(), [200, 409]);
     detail = (await (await service.request(url, options(alice))).json()) as DecisionDetail;
     assert.equal(detail.version.revision, 2);
-    const quote = '测试公司截至2026-10-02已付10元。';
+    const quote = '测试公司截至2026-10-02已付10元。 PRIVATE_PAYMENT_QUOTE_84520';
     const original = await material(service, alice, [quote]);
     const foreign = await material(service, bob, [quote]);
     assert.equal(
@@ -398,6 +465,7 @@ test('private decisions enforce owner and CSRF boundaries, serialize revision wr
         .status,
       409
     );
+    assert.equal(calls, 0, 'private decisions and evidence do not request the configured model');
     const demos = (await (await service.request('/api/cases')).json()) as DemoCase[];
     assert.equal(
       (await service.request(`/api/cases/${demos[0]!.id}/import`, options(alice, {}, 'POST')))
@@ -420,18 +488,34 @@ test('private decisions enforce owner and CSRF boundaries, serialize revision wr
     );
     assert.equal(taskResponse.status, 202);
     const task = (await taskResponse.json()) as AnalysisTask;
+    assert.equal(task.useModel, true, 'legacy false flags cannot disable public financial AI');
     await service.waitForIdle();
+    const completedTask = (await (
+      await service.request(`/api/tasks/${task.id}`, options(alice))
+    ).json()) as AnalysisTask;
+    assert.equal(completedTask.report?.model.status, 'completed');
+    const publicModelBaseline = calls;
+    assert.equal(publicModelBaseline, 1);
     const link = await service.request(
       url,
-      options(alice, { baseRevision: 4, input: { ...input(), reportTaskId: task.id } }, 'PATCH')
+      options(
+        alice,
+        { baseRevision: 4, input: { ...privateInput, reportTaskId: task.id } },
+        'PATCH'
+      )
     );
     assert.equal(link.status, 200);
     assert.equal(
       (await service.request(`/api/tasks/${task.id}`, options(alice, undefined, 'DELETE'))).status,
       409
     );
+    assert.equal(
+      calls,
+      publicModelBaseline,
+      'linking a report never sends private decision inputs'
+    );
     await service.stop();
-    service = await openService(directory, () => calls++);
+    service = await openService(directory, captureModel);
     const restarted = await account(service, 'decision-alice@example.com', true);
     const saved = (await (await service.request(url, options(restarted))).json()) as DecisionDetail;
     assert.equal(saved.version.revision, 5);
@@ -467,7 +551,29 @@ test('private decisions enforce owner and CSRF boundaries, serialize revision wr
         (item: Material) => item.id === foreign.id
       )
     );
-    assert.equal(calls, 0);
+    assert.equal(calls, publicModelBaseline, 'private restore, reset and restart never request AI');
+    for (const body of modelBodies) {
+      for (const privateValue of [
+        quote,
+        'PRIVATE_PAYMENT_QUOTE_84520',
+        privateInput.title,
+        privateInput.promise,
+        privateTotalAmount,
+        original.id,
+        foreign.id,
+        detail.decision.id,
+        'decision-alice@example.com',
+      ])
+        assert.ok(
+          !body.includes(privateValue),
+          'public AI cannot read private payment workspace data'
+        );
+      const supplied = JSON.parse(JSON.parse(body).messages[1].content);
+      assert.equal(supplied.datedCash, undefined);
+      assert.equal(supplied.external, undefined);
+      assert.equal(supplied.promise, undefined);
+      assert.equal(supplied.decisions, undefined);
+    }
   } finally {
     await service?.stop();
     await rm(directory, { recursive: true, force: true });

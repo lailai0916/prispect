@@ -269,7 +269,7 @@ export function StageList({ task }: { task: AnalysisTask }) {
     analyse: 'Review financial evidence',
     analyze: 'Review financial evidence',
     report: 'Build evidence report',
-    model: 'Optional model explanation',
+    model: 'AI interpretation',
     save: 'Persist review snapshot',
     parse: 'Read structured observations',
   };
@@ -289,7 +289,12 @@ export function StageList({ task }: { task: AnalysisTask }) {
             )}
           </span>
           <div>
-            <strong>{t(stage.label, stageEn[stage.key] || `Processing: ${stage.key}`)}</strong>
+            <strong>
+              {t(
+                stage.key === 'model' ? 'AI 解读' : stage.label,
+                stageEn[stage.key] || `Processing: ${stage.key}`
+              )}
+            </strong>
             {stage.message && <p>{t(stage.message, translateRule(stage.message))}</p>}
           </div>
           <span className="stage-time mono">
@@ -1037,7 +1042,7 @@ export function ReportView({
             <p className="model-status">
               <Activity size={15} />
               {report.model.status === 'not-requested'
-                ? t('未使用 AI 解读', 'AI interpretation not requested')
+                ? t('未生成 AI 解读', 'AI interpretation not generated')
                 : report.model.status === 'not-configured'
                   ? t('AI 解读暂不可用', 'AI interpretation unavailable')
                   : report.model.status === 'failed'
@@ -1903,8 +1908,7 @@ export function StressDialog({
   initialExcluded?: MetricKey[];
   focusedMetric?: MetricKey;
 }) {
-  const { t, locale, workspace, execute, navigate, busy } = useApp();
-  const [useModel, setUseModel] = useState(false);
+  const { t, locale, execute, navigate, busy } = useApp();
   const [excluded, setExcluded] = useState<MetricKey[]>(
     initialExcluded ?? (task.excludedMetrics.length ? task.excludedMetrics : adjustments)
   );
@@ -1922,7 +1926,7 @@ export function StressDialog({
         materialIds: task.materialIds,
         excludedMetrics: excluded,
         purpose: task.purpose || 'external',
-        useModel,
+        useModel: true,
       } satisfies CreateTaskInput)
     );
     if (next) {
@@ -1976,31 +1980,7 @@ export function StressDialog({
           </label>
         ))}
       </div>
-      <label className="model-opt-in">
-        <input
-          type="checkbox"
-          checked={useModel}
-          disabled={!workspace!.provider.configured}
-          onChange={(event) => setUseModel(event.target.checked)}
-        />
-        <span>
-          <strong>{t('使用 AI 解读', 'Add AI interpretation')}</strong>
-          <small>
-            {t(
-              '分析本次采用的财务数据与原文摘录。',
-              'Interpret the adopted financial data and source excerpts.'
-            )}{' '}
-            <a
-              href="/privacy?section=ai"
-              target="_blank"
-              rel="noreferrer"
-              aria-label={t('数据使用（新标签页）', 'Data use (new tab)')}
-            >
-              {t('数据使用', 'Data use')}
-            </a>
-          </small>
-        </span>
-      </label>
+
       <div className="warning-box">
         <CircleAlert size={19} />
         <p>

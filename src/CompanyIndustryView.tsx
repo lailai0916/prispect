@@ -1,3 +1,4 @@
+import { Select } from './Select';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, FileSearch, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
@@ -77,17 +78,17 @@ export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
         <div className="context-filters">
           <label>
             {t('年度', 'Year')}
-            <select
+            <Select
               aria-label={t('行业对比年度', 'Industry-comparison year')}
               value={period}
-              onChange={(event) => setPeriod(event.target.value)}
+              onValueChange={(selectedValue) => setPeriod(selectedValue)}
             >
               {(years.length ? years : [period]).map((year) => (
                 <option key={year} value={year}>
                   {year.slice(0, 4)} {t('年报', 'annual')}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <button
             className="icon-button"

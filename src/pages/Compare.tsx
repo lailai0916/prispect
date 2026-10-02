@@ -1,3 +1,4 @@
+import { Select } from '../Select';
 import { useState } from 'react';
 import {
   ArrowLeft,
@@ -86,7 +87,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
         materialIds: right.materialIds,
         excludedMetrics: [],
         purpose: right.purpose || 'external',
-        useModel: false,
+        useModel: true,
       } satisfies CreateTaskInput)
     );
     if (next) navigate(`/tasks/${next.id}`);
@@ -122,24 +123,24 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
           <div className="compare-selectors">
             <label className="form-field">
               <span>{t('基准任务', 'Baseline review')}</span>
-              <select value={leftId} onChange={(event) => setLeftId(event.target.value)}>
+              <Select value={leftId} onValueChange={(selectedValue) => setLeftId(selectedValue)}>
                 {completed.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.title} · {date(task.createdAt, locale)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <span className="compare-versus">↔</span>
             <label className="form-field">
               <span>{t('对照任务', 'Comparison review')}</span>
-              <select value={rightId} onChange={(event) => setRightId(event.target.value)}>
+              <Select value={rightId} onValueChange={(selectedValue) => setRightId(selectedValue)}>
                 {completed.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.title} · {date(task.createdAt, locale)}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           </div>
           {left && right && leftReport && rightReport && (
@@ -479,8 +480,8 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                         <h3>{t('恢复已排除的指标', 'Restore excluded metrics')}</h3>
                         <p>
                           {t(
-                            '使用对照任务的原材料，另存规则核查。不会向模型发送材料。',
-                            'Save a new rules-based review using the comparison’s original evidence. No materials are sent to a model.'
+                            '使用对照任务的原材料，另存新的核查并自动进行 AI 解读。',
+                            'Save a new review using the comparison’s original evidence, with automatic AI interpretation.'
                           )}
                         </p>
                       </div>

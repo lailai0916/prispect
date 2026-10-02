@@ -1,3 +1,4 @@
+import { Select } from './Select';
 import { useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ArrowUp, BookOpen, LoaderCircle, MessageCircle, RefreshCw, X } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
@@ -175,8 +176,8 @@ export function CompanyAssistant({ route }: { route: string }) {
             )
           : /问答|企业|公司|口径|规则|模型|company|question|model|profit|rules/i.test(question)
             ? t(
-                '选择上方“企业问答”和已载入企业，即可继续原有问答。默认使用规则，回答和引用保存在该企业记录中；使用大模型解释需要主动勾选。',
-                'Choose Company questions and a loaded company above. Rules are the default; answers and citations stay with that company record. Model explanations require explicit opt-in.'
+                '选择上方“企业问答”和已载入企业，即可由 AI 结合企业公开资料回答，回答和引用保存在该企业记录中。',
+                'Choose Company questions and a loaded company above. AI answers using the company’s public evidence; answers and citations stay with that company record.'
               )
             : t(
                 '我可以介绍公司查询、数据来源、核查工具和企业问答的使用方法。具体企业财务问题，请切换“企业问答”并选择已载入企业；更多说明见使用文档。',
@@ -268,12 +269,12 @@ export function CompanyAssistant({ route }: { route: string }) {
             <>
               <div className="company-assistant-company-picker">
                 <label htmlFor={`${panelId}-company`}>{t('企业', 'Company')}</label>
-                <select
+                <Select
                   id={`${panelId}-company`}
                   value={selected}
                   disabled={!choices.length}
-                  onChange={(event) => {
-                    setSelected(event.target.value);
+                  onValueChange={(selectedValue) => {
+                    setSelected(selectedValue);
                     setLoadError('');
                     setBasis('parent');
                   }}
@@ -291,23 +292,23 @@ export function CompanyAssistant({ route }: { route: string }) {
                       {record.name} · {record.input.year}
                     </option>
                   ))}
-                </select>
+                </Select>
               </div>
               {run?.context && (
                 <div className="company-assistant-context-controls">
                   <label htmlFor={`${panelId}-basis`}>{t('利润口径', 'Profit basis')}</label>
-                  <select
+                  <Select
                     id={`${panelId}-basis`}
                     value={basis}
-                    onChange={(event) => {
-                      const next = event.target.value as CompanyReadingBasis;
+                    onValueChange={(selectedValue) => {
+                      const next = selectedValue as CompanyReadingBasis;
                       setBasis(next);
                       current?.changeBasis(next);
                     }}
                   >
                     <option value="parent">{t('归母净利润', 'Attributable profit')}</option>
                     <option value="consolidated">{t('合并净利润', 'Consolidated profit')}</option>
-                  </select>
+                  </Select>
                 </div>
               )}
               {(recordsError || loadError) && (

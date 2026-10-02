@@ -246,9 +246,9 @@
   gap: 12px;
   min-width: 0;
 }
-.decision-version-bar select {
+.decision-version-bar .select-trigger {
   max-width: 440px;
-  font-size: 12px;
+  font-size: var(--select-font-size, 12px);
 }
 .decision-revision-list {
   border: 1px solid var(--line);
@@ -857,7 +857,7 @@
   .decision-options > div {
     padding: 20px;
   }
-  .decision-version-bar select {
+  .decision-version-bar .select-trigger {
     width: 100%;
     max-width: 100%;
   }
@@ -884,10 +884,10 @@
     justify-content: space-between;
   }
   .decisions-page input,
-  .decisions-page select,
+  .decisions-page .select-trigger,
   .decisions-page textarea,
   .decision-evidence-form input,
-  .decision-evidence-form select,
+  .decision-evidence-form .select-trigger,
   .decision-evidence-form textarea {
     font-size: 16px;
     min-height: 44px;

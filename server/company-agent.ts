@@ -480,7 +480,7 @@ async function runFinancialBranch(
       await options.onUpdate?.({
         id: randomUUID(),
         tool: 'model_public_summary',
-        label: '可选模型解释公开核查证据',
+        label: '模型解释公开核查证据',
         status: 'skipped',
         startedAt: new Date().toISOString(),
         finishedAt: new Date().toISOString(),
@@ -497,8 +497,8 @@ async function runFinancialBranch(
     } else if (remaining() > 0 && modelCalls < 3) {
       await tool(
         'model_public_summary',
-        '可选模型解释公开核查证据',
-        '仅同年度合并可采用字段及短摘录；不含私人文件、备注或现金计划',
+        '模型解释公开核查证据',
+        '解释同年度合并可采用字段及短摘录。',
         async () => {
           modelCalls++;
           const explained = await explainWithModel(
@@ -553,11 +553,11 @@ async function runFinancialBranch(
     const trace: CompanyAgentTrace = {
       id: randomUUID(),
       tool: 'optional_model',
-      label: '可选公开证据模型',
+      label: '公开证据模型',
       status: 'skipped',
       startedAt: new Date().toISOString(),
       finishedAt: new Date().toISOString(),
-      inputSummary: '模型默认关闭，只有本次显式授权才发送公开候选页与字段。',
+      inputSummary: '解释已取得的公开候选页与字段。',
       outputSummary: input.useModel
         ? '模型服务未配置，真实规则工具链保留。'
         : '本次未启用，未向外部模型发送数据。',
@@ -945,8 +945,30 @@ export async function runCompanyResearch(
     await mkdir(checkpoint.directory, { recursive: true, mode: 0o700 });
     const scopeFile = path.join(checkpoint.directory, 'scope.json');
     if (checkpoint.resume) {
-      if (savedScope !== scope)
-        throw new ApiFault(409, 'COMPANY_RESUME_SCOPE', '断点主体、年度或模型选项不同，不能复用');
+      if (savedScope !== scope) {
+        let upgradedScope: string | undefined;
+        try {
+          const previous = JSON.parse(savedScope!);
+          if (
+            input.useModel === true &&
+            previous.input &&
+            (previous.input.useModel === false || !Object.hasOwn(previous.input, 'useModel'))
+          )
+            upgradedScope = JSON.stringify({
+              ...previous,
+              input: { ...previous.input, useModel: true },
+            });
+        } catch {
+          /* Malformed checkpoints cannot be upgraded. */
+        }
+        // Upgrade only the retired opt-out. Completed nodes keep their saved
+        // results; incomplete nodes use AI with the original cumulative budget.
+        if (upgradedScope !== scope)
+          throw new ApiFault(409, 'COMPANY_RESUME_SCOPE', '断点主体、年度或模型选项不同，不能复用');
+        const temporary = `${scopeFile}.${randomUUID()}.tmp`;
+        await writeFile(temporary, scope, { mode: 0o600, flag: 'wx' });
+        await rename(temporary, scopeFile);
+      }
     } else {
       await writeFile(scopeFile, scope, { mode: 0o600, flag: 'wx' });
     }

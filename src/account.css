@@ -65,17 +65,17 @@
 }
 .account-form input,
 .account-form textarea,
-.account-form select,
+.account-form .select-trigger,
 .account-field input {
   font: inherit;
-  font-size: 14px;
+  font-size: var(--select-font-size, 14px);
   min-height: 44px;
   width: 100%;
   padding: 11px 12px;
   border: 1px solid var(--control-border, var(--account-line));
   background: var(--account-bg);
   color: var(--account-ink);
-  border-radius: 9px;
+  border-radius: var(--radius, 6px);
   min-width: 0;
   box-sizing: border-box;
 }
@@ -85,11 +85,14 @@
 }
 .account-form input:focus-visible,
 .account-form textarea:focus-visible,
-.account-form select:focus-visible,
+.account-form .select-trigger:focus-visible,
 .account-page button:focus-visible,
 .account-auth-shell button:focus-visible {
-  outline: 3px solid var(--accent-border, #9dbbf1);
+  outline: 2px solid var(--accent, #4263db);
   outline-offset: 3px;
+}
+.account-form .select-trigger:focus-visible {
+  outline: none;
 }
 .account-form input:disabled {
   background: var(--surface-subtle, #f6f7f9);
@@ -122,21 +125,25 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
+  min-height: 44px;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: var(--radius, 6px);
   padding: 10px 17px;
   font: inherit;
   font-size: 14px;
   font-weight: 550;
   cursor: pointer;
   text-decoration: none;
+  transition:
+    background 120ms,
+    border-color 120ms,
+    box-shadow 120ms;
 }
 .account-action {
   background: var(--action, #245cd1);
   color: var(--on-action, #fff);
 }
-.account-action:hover {
+.account-action:not(:disabled):hover {
   background: var(--action-hover, #184ebd);
 }
 .account-secondary {
@@ -144,7 +151,7 @@
   color: var(--account-ink);
   border-color: var(--control-border, var(--account-line));
 }
-.account-secondary:hover {
+.account-secondary:not(:disabled):hover {
   background: var(--hover, #f0f3f7);
 }
 .account-danger {

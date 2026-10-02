@@ -1,3 +1,4 @@
+import { Select } from '../Select';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import {
@@ -195,7 +196,6 @@ export function NewReview({ query }: { query: URLSearchParams }) {
       : materialYear
   );
   const materialImport = useMaterialImport();
-  const [useModel, setUseModel] = useState(false);
   const [purpose, setPurpose] = useState<ReviewPurpose>(
     query.get('purpose') === 'handover' ? 'handover' : 'external'
   );
@@ -219,7 +219,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
         year,
         materialIds: selectedIds,
         purpose,
-        useModel,
+        useModel: true,
       } satisfies CreateTaskInput)
     );
     if (task) navigate(`/tasks/${task.id}`);
@@ -375,36 +375,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
               </div>
             </fieldset>
           </details>
-          <label className="model-opt-in">
-            <input
-              type="checkbox"
-              checked={useModel}
-              disabled={!workspace!.provider.configured}
-              onChange={(event) => setUseModel(event.target.checked)}
-            />
-            <span>
-              <strong>{t('使用 AI 解读', 'Add AI interpretation')}</strong>
-              <small>
-                {workspace!.provider.configured
-                  ? t(
-                      '分析本次采用的财务数据与原文摘录。',
-                      'Interpret the adopted financial data and source excerpts.'
-                    )
-                  : t(
-                      'AI 解读暂不可用，仍可核对财务数据。',
-                      'AI interpretation is unavailable. Financial checks remain available.'
-                    )}{' '}
-                <a
-                  href="/privacy?section=ai"
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={t('数据使用（在新标签页打开）', 'Data use (opens in a new tab)')}
-                >
-                  {t('数据使用', 'Data use')}
-                </a>
-              </small>
-            </span>
-          </label>
+
           <div className="form-submit">
             <button
               className="button button-primary"
@@ -1198,10 +1169,10 @@ export function MaterialImporter({
                 <div className="observation-grid">
                   <label className="form-field">
                     <span>{t('指标', 'Metric')}</span>
-                    <select
+                    <Select
                       value={obs.key}
-                      onChange={(event) =>
-                        updateObservation(index, { key: event.target.value as MetricKey })
+                      onValueChange={(selectedValue) =>
+                        updateObservation(index, { key: selectedValue as MetricKey })
                       }
                     >
                       {(['netProfit', 'operatingCashFlow', ...adjustments] as MetricKey[]).map(
@@ -1211,7 +1182,7 @@ export function MaterialImporter({
                           </option>
                         )
                       )}
-                    </select>
+                    </Select>
                   </label>
                   <label className="form-field">
                     <span>{t('年度', 'Year')}</span>
@@ -1238,26 +1209,26 @@ export function MaterialImporter({
                   </label>
                   <label className="form-field">
                     <span>{t('单位', 'Unit')}</span>
-                    <select
+                    <Select
                       value={obs.unit}
-                      onChange={(event) =>
+                      onValueChange={(selectedValue) =>
                         updateObservation(index, {
-                          unit: event.target.value as Observation['unit'],
+                          unit: selectedValue as Observation['unit'],
                         })
                       }
                     >
                       <option value="yuan">{t('元', 'Yuan')}</option>
                       <option value="wan">{t('万元', '10,000 yuan')}</option>
                       <option value="yi">{t('亿元', '100m yuan')}</option>
-                    </select>
+                    </Select>
                   </label>
                   <label className="form-field">
                     <span>{t('会计期间', 'Reporting period')}</span>
-                    <select
+                    <Select
                       value={obs.period || 'unknown'}
-                      onChange={(event) =>
+                      onValueChange={(selectedValue) =>
                         updateObservation(index, {
-                          period: event.target.value as Observation['period'],
+                          period: selectedValue as Observation['period'],
                         })
                       }
                     >
@@ -1265,7 +1236,7 @@ export function MaterialImporter({
                       <option value="interim">{t('半年度', 'Interim')}</option>
                       <option value="quarterly">{t('季度', 'Quarterly')}</option>
                       <option value="unknown">{t('待确认', 'Unconfirmed')}</option>
-                    </select>
+                    </Select>
                   </label>
                   <label className="form-field">
                     <span>{t('币种', 'Currency')}</span>
@@ -1280,18 +1251,18 @@ export function MaterialImporter({
                   </label>
                   <label className="form-field">
                     <span>{t('报表范围', 'Statement scope')}</span>
-                    <select
+                    <Select
                       value={obs.scope}
-                      onChange={(event) =>
+                      onValueChange={(selectedValue) =>
                         updateObservation(index, {
-                          scope: event.target.value as Observation['scope'],
+                          scope: selectedValue as Observation['scope'],
                         })
                       }
                     >
                       <option value="consolidated">{t('合并', 'Consolidated')}</option>
                       <option value="parent">{t('母公司', 'Parent company')}</option>
                       <option value="unknown">{t('未知，待确认', 'Unknown / unconfirmed')}</option>
-                    </select>
+                    </Select>
                   </label>
                   <label className="form-field">
                     <span>{t('PDF 页码', 'PDF page')}</span>
@@ -1308,17 +1279,17 @@ export function MaterialImporter({
                   </label>
                   <label className="form-field">
                     <span>{t('观测性质', 'Observation type')}</span>
-                    <select
+                    <Select
                       value={obs.kind}
-                      onChange={(event) =>
+                      onValueChange={(selectedValue) =>
                         updateObservation(index, {
-                          kind: event.target.value as Observation['kind'],
+                          kind: selectedValue as Observation['kind'],
                         })
                       }
                     >
                       <option value="reported">{t('原文披露', 'Reported')}</option>
                       <option value="derived">{t('派生计算', 'Derived')}</option>
-                    </select>
+                    </Select>
                   </label>
                   <label className="form-field field-wide">
                     <span>{t('原文短摘录', 'Short source excerpt')}</span>

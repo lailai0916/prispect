@@ -1,3 +1,4 @@
+import { Select } from '../Select';
 import { useEffect, useRef, useState } from 'react';
 import { Settings2, LoaderCircle } from 'lucide-react';
 import type { CompanyIdentity, CompanyResearchRun, ReviewPurpose } from '../../shared/contracts';
@@ -13,7 +14,6 @@ export function CompanyQueryPage() {
   const latest = new Date().getFullYear() - 1;
   const [year, setYear] = useState(latest);
   const [purpose, setPurpose] = useState<ReviewPurpose>('external');
-  const [useModel, setUseModel] = useState(false);
   const [options, setOptions] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
@@ -39,7 +39,7 @@ export function CompanyQueryPage() {
                 orgId: identity.orgId,
                 year,
                 purpose,
-                useModel,
+                useModel: true,
               }
             : { name, year, purpose }
         ),
@@ -91,46 +91,39 @@ export function CompanyQueryPage() {
       </div>
       {options && (
         <Dialog title={t('查询选项', 'Query options')} onClose={() => setOptions(false)}>
-          <label className="field-label">
-            {t('原件核查年度', 'Original-report year')}
-            <select value={year} onChange={(event) => setYear(Number(event.target.value))}>
-              {Array.from({ length: latest - 2010 + 1 }, (_, index) => latest - index).map(
-                (value) => (
-                  <option key={value} value={value}>
-                    {value}
-                  </option>
-                )
-              )}
-            </select>
-          </label>
-          <label className="field-label">
-            {t('核查目的', 'Review purpose')}
-            <select
-              value={purpose}
-              onChange={(event) => setPurpose(event.target.value as ReviewPurpose)}
-            >
-              <option value="external">{t('外部付款', 'External payment')}</option>
-              <option value="handover">{t('内部交接', 'Internal handover')}</option>
-            </select>
-          </label>
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={useModel}
-              onChange={(event) => setUseModel(event.target.checked)}
-            />
-            {t('使用模型辅助解释原件', 'Use model assistance for original reports')}
-          </label>
-          <p className="muted">
-            {t(
-              '仅发送取得的公开材料；你的付款计划和私有材料不会发送。',
-              'Only retrieved public evidence is sent. Private evidence and payment plans are excluded.'
-            )}{' '}
-            <a href="/privacy">{t('隐私政策', 'Privacy policy')}</a>
-          </p>
-          <button className="button button-primary" onClick={() => setOptions(false)}>
-            {t('完成', 'Done')}
-          </button>
+          <div className="query-options-form">
+            <label className="field-label">
+              {t('原件核查年度', 'Original-report year')}
+              <Select
+                value={year}
+                onValueChange={(selectedValue) => setYear(Number(selectedValue))}
+              >
+                {Array.from({ length: latest - 2010 + 1 }, (_, index) => latest - index).map(
+                  (value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  )
+                )}
+              </Select>
+            </label>
+            <label className="field-label">
+              {t('核查目的', 'Review purpose')}
+              <Select
+                value={purpose}
+                onValueChange={(selectedValue) => setPurpose(selectedValue as ReviewPurpose)}
+              >
+                <option value="external">{t('外部付款', 'External payment')}</option>
+                <option value="handover">{t('内部交接', 'Internal handover')}</option>
+              </Select>
+            </label>
+
+            <div className="dialog-actions">
+              <button className="button button-primary" onClick={() => setOptions(false)}>
+                {t('完成', 'Done')}
+              </button>
+            </div>
+          </div>
         </Dialog>
       )}
     </div>

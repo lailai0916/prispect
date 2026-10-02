@@ -1,3 +1,4 @@
+import { Select } from '../Select';
 import { createContext, useContext, useEffect, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
@@ -583,9 +584,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               </summary>
               <label className="form-field">
                 <span>{t('选择本账号核查', 'Select your review')}</span>
-                <select
+                <Select
                   value={input.reportTaskId || ''}
-                  onChange={(e) => setInput({ ...input, reportTaskId: e.target.value || null })}
+                  onValueChange={(selectedValue) =>
+                    setInput({ ...input, reportTaskId: selectedValue || null })
+                  }
                 >
                   <option value="">{t('不关联', 'No linked review')}</option>
                   {workspace?.tasks
@@ -595,7 +598,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                         {task.company} · {task.year} · {task.title}
                       </option>
                     ))}
-                </select>
+                </Select>
               </label>
               <p className="field-note">
                 {t(
@@ -700,9 +703,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               <History size={15} />
               <label>
                 {t('版本回放', 'Version replay')}
-                <select
+                <Select
                   value={detail.version.revision}
-                  onChange={(e) => navigate(`/decisions?id=${id}&revision=${e.target.value}`)}
+                  onValueChange={(selectedValue) =>
+                    navigate(`/decisions?id=${id}&revision=${selectedValue}`)
+                  }
                 >
                   {detail.revisions.map((version) => (
                     <option key={version.revision} value={version.revision}>
@@ -710,7 +715,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                       {date(version.createdAt, locale)}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               {readOnly ? (
                 <>
@@ -1627,19 +1632,19 @@ function DecisionInputs({
               </label>
               <label className="form-field">
                 <span>{t('收付方向', 'Direction')}</span>
-                <select
+                <Select
                   value={flow.direction}
-                  onChange={(e) =>
+                  onValueChange={(selectedValue) =>
                     updateCash({
                       flows: cash.flows.map((v, i) =>
-                        i === index ? { ...v, direction: e.target.value as 'in' | 'out' } : v
+                        i === index ? { ...v, direction: selectedValue as 'in' | 'out' } : v
                       ),
                     })
                   }
                 >
                   <option value="in">{t('收款', 'Receipt')}</option>
                   <option value="out">{t('付款', 'Payment')}</option>
-                </select>
+                </Select>
               </label>
               <DayField
                 label={t('事件日', 'Event day')}
@@ -2255,12 +2260,12 @@ function EvidenceDialog({
         <div className="decision-form-grid">
           <label className="form-field">
             <span>{t('材料用途', 'Evidence slot')}</span>
-            <select
+            <Select
               value={evidence.slot}
-              onChange={(e) =>
+              onValueChange={(selectedValue) =>
                 setEvidence({
                   ...evidence,
-                  slot: e.target.value as DecisionEvidenceSlot,
+                  slot: selectedValue as DecisionEvidenceSlot,
                   values: {},
                   flowId: undefined,
                 })
@@ -2271,14 +2276,14 @@ function EvidenceDialog({
                   {evidenceName(slot, t)}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label className="form-field">
             <span>{t('记录性质', 'Record type')}</span>
-            <select
+            <Select
               value={evidence.kind}
-              onChange={(e) =>
-                setEvidence({ ...evidence, kind: e.target.value as DecisionEvidenceInput['kind'] })
+              onValueChange={(selectedValue) =>
+                setEvidence({ ...evidence, kind: selectedValue as DecisionEvidenceInput['kind'] })
               }
             >
               <option value="source-record">{t('原文记录', 'Source record')}</option>
@@ -2286,7 +2291,7 @@ function EvidenceDialog({
                 {t('对方陈述或承诺', 'Counterparty statement or promise')}
               </option>
               <option value="assumption">{t('情景假设', 'Scenario assumption')}</option>
-            </select>
+            </Select>
           </label>
           <label className="form-field">
             <span>{t('记录所涉及主体', 'Entity covered by the record')}</span>
@@ -2310,16 +2315,16 @@ function EvidenceDialog({
           <div className="decision-form-grid">
             <label className="form-field">
               <span>{t('主体角色', 'Entity role')}</span>
-              <select
+              <Select
                 value={evidence.values.role || 'contract'}
-                onChange={(e) =>
-                  setValue({ role: e.target.value as 'contract' | 'payee' | 'refund' })
+                onValueChange={(selectedValue) =>
+                  setValue({ role: selectedValue as 'contract' | 'payee' | 'refund' })
                 }
               >
                 <option value="contract">{t('合同责任主体', 'Contract-responsible entity')}</option>
                 <option value="payee">{t('收款主体', 'Receiving entity')}</option>
                 <option value="refund">{t('退款责任主体', 'Refund-responsible entity')}</option>
-              </select>
+              </Select>
             </label>
             <label className="form-field">
               <span>{t('原文主体完整名称', 'Full entity name in the source')}</span>
@@ -2367,10 +2372,12 @@ function EvidenceDialog({
           <div className="decision-form-grid">
             <label className="form-field">
               <span>{t('对应现金事件', 'Linked cash event')}</span>
-              <select
+              <Select
                 required
                 value={evidence.flowId || ''}
-                onChange={(e) => setEvidence({ ...evidence, flowId: e.target.value || undefined })}
+                onValueChange={(selectedValue) =>
+                  setEvidence({ ...evidence, flowId: selectedValue || undefined })
+                }
               >
                 <option value="">{t('选择已录入事件', 'Select an entered event')}</option>
                 {input.datedCash?.flows.map((flow) => (
@@ -2378,7 +2385,7 @@ function EvidenceDialog({
                     {flow.label} · D{flow.day ?? '?'}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <DayField
               label={t('原文对应事件日', 'Event day supported by the source')}
@@ -2416,12 +2423,12 @@ function EvidenceDialog({
           </summary>
           <label className="form-field">
             <span>{t('材料', 'Material')}</span>
-            <select
+            <Select
               value={evidence.materialId || ''}
-              onChange={(e) =>
+              onValueChange={(selectedValue) =>
                 setEvidence({
                   ...evidence,
-                  materialId: e.target.value || undefined,
+                  materialId: selectedValue || undefined,
                   observationId: undefined,
                   page: null,
                 })
@@ -2435,16 +2442,16 @@ function EvidenceDialog({
                   {item.shortName} · {item.title}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           {material && (
             <>
               <label className="form-field">
                 <span>{t('已有观测定位', 'Locate an existing observation')}</span>
-                <select
+                <Select
                   value={evidence.observationId || ''}
-                  onChange={(e) => {
-                    const obs = material.observations.find((item) => item.id === e.target.value);
+                  onValueChange={(selectedValue) => {
+                    const obs = material.observations.find((item) => item.id === selectedValue);
                     setEvidence({
                       ...evidence,
                       observationId: obs?.id,
@@ -2462,7 +2469,7 @@ function EvidenceDialog({
                       {metricName(obs.key, locale)} · {obs.year} · PDF {obs.page ?? '?'}
                     </option>
                   ))}
-                </select>
+                </Select>
               </label>
               <label className="form-field">
                 <span>{t('材料页码', 'Material page')}</span>

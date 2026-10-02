@@ -38,8 +38,9 @@ export function StartInput({
   const [activeCandidate, setActiveCandidate] = useState(-1);
   const composer = useRef<HTMLFormElement>(null);
   const selectionText = useRef('');
-  const safeQuery = interpretStart(text, mode).companyQuery;
-  const companyIntent = interpretStart(text, mode).kind === 'company';
+  const intent = interpretStart(text, mode);
+  const safeQuery = companyOnly ? text.trim() || null : intent.companyQuery;
+  const companyIntent = companyOnly || intent.kind === 'company';
   useEffect(() => {
     setCandidates([]);
     setSearched(false);
@@ -48,15 +49,16 @@ export function StartInput({
       !user ||
       !companyIntent ||
       !safeQuery ||
-      safeQuery.length < 2 ||
+      safeQuery.length < (companyOnly ? 1 : 2) ||
+      safeQuery.length > 80 ||
       selectionText.current === text
     ) {
       setFinding(false);
       return;
     }
     const controller = new AbortController();
+    setFinding(true);
     const timer = setTimeout(() => {
-      setFinding(true);
       void api<CompanySearchResponse>(`/companies/search?q=${encodeURIComponent(safeQuery)}`, {
         signal: controller.signal,
       })
@@ -77,7 +79,7 @@ export function StartInput({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [safeQuery, companyIntent, user?.id, locale, text]);
+  }, [safeQuery, companyIntent, companyOnly, user?.id, locale, text]);
   const chooseCompany = (identity: CompanyIdentity) => {
     selectionText.current = identity.shortName;
     setText(identity.shortName);
@@ -114,11 +116,12 @@ export function StartInput({
     if (!value) return;
     const intent = interpretStart(value, mode);
     if (intent.kind === 'company') {
+      if (companyOnly && value.length > 80) {
+        setError(t('公司名称或证券代码最多 80 个字符。', 'Use at most 80 characters.'));
+        return;
+      }
       if (onCompanyChoice && (!searched || finding)) {
         setCompletionOpen(true);
-        setError(
-          t('请等待公司检索完成，再选择主体。', 'Wait for the search, then select an entity.')
-        );
         return;
       }
       if (onCompanyChoice && searched && !candidates.length) {
@@ -184,7 +187,7 @@ export function StartInput({
       <textarea
         id="start-query"
         rows={2}
-        maxLength={1000}
+        maxLength={companyOnly ? 80 : 1000}
         value={text}
         disabled={disabled}
         placeholder={

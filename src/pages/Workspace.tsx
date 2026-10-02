@@ -37,7 +37,7 @@ export function WorkspacePage() {
         materialIds: task.materialIds,
         excludedMetrics: task.excludedMetrics,
         purpose: task.purpose || 'external',
-        useModel: false,
+        useModel: true,
       } satisfies CreateTaskInput)
     );
     if (result) navigate(`/tasks/${result.id}`);

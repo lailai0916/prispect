@@ -239,29 +239,6 @@
   font-size: 12px;
   color: var(--muted);
 }
-.model-opt-in {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 14px 0;
-  margin-top: 16px;
-  border-top: 1px solid var(--line);
-}
-.model-opt-in > input {
-  margin-top: 3px;
-}
-.model-opt-in strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 500;
-}
-.model-opt-in small {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.65;
-  margin-top: 5px;
-}
 .segmented-control {
   display: inline-flex;
   gap: 3px;
@@ -2056,13 +2033,6 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   .field-note {
     font-size: 11px;
   }
-  .model-opt-in {
-    gap: 10px;
-    min-height: 44px;
-  }
-  .model-opt-in small {
-    font-size: 11px;
-  }
   .form-submit {
     justify-content: stretch;
   }
@@ -2074,8 +2044,8 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
     gap: 12px;
   }
   .observation-grid .form-field input,
-  .observation-grid .form-field select {
-    font-size: 13px;
+  .observation-grid .form-field .select-trigger {
+    font-size: var(--select-font-size, 13px);
   }
   .import-bottom {
     align-items: stretch;

@@ -12,7 +12,7 @@ import {
   searchCompanies,
 } from './company-agent.js';
 import type { WorkspaceStore } from './store.js';
-import { ApiFault, validateMaterial } from './validation.js';
+import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
 
 export interface CompanyService {
   searchCompanies: typeof searchCompanies;
@@ -38,7 +38,7 @@ export function installCompanyRoutes(
         .min(2010)
         .max(new Date().getUTCFullYear() - 1),
       purpose: z.enum(['external', 'handover']).default('external'),
-      useModel: z.boolean().default(false),
+      useModel: modelEnabledSchema,
     })
     .strict();
   const wrap =
@@ -55,6 +55,11 @@ export function installCompanyRoutes(
   const busy = (store: WorkspaceStore) =>
     records(store).some((run) => active.has(run.id) || adopting.has(run.id));
   const execute = (run: CompanyResearchRun, store: WorkspaceStore, resume: boolean) => {
+    run.input.useModel = true;
+    run.model.requested = true;
+    if (run.model.status === 'not-requested') {
+      run.model.status = options.model.apiKey ? 'not-called' : 'not-configured';
+    }
     const controller = new AbortController();
     controllers.set(run.id, controller);
     const execution = Symbol(run.id);
@@ -334,12 +339,8 @@ export function installCompanyRoutes(
         announcements: [],
         agent: { ...initialCompanyGraphProgress(), ...(requestKey ? { requestKey } : {}) },
         model: {
-          requested: input.data.useModel,
-          status: input.data.useModel
-            ? options.model.apiKey
-              ? 'not-called'
-              : 'not-configured'
-            : 'not-requested',
+          requested: true,
+          status: options.model.apiKey ? 'not-called' : 'not-configured',
         },
       };
       records(store).unshift(run);

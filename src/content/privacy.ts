@@ -22,8 +22,8 @@ export const privacyDocument: ProductDocument = {
           'For personal-information or data-processing questions, contact lailai0x394@gmail.com. External disclosure sites, model services and other external pages also apply their own rules. This policy does not replace their privacy notices.',
         ],
         [
-          '账号登录和私人工作区需要必要的身份与服务信息；头像、简介、组织、附加安全方式和 AI 解读属于可选择的功能。不填写可选资料或关闭 AI 解读，不影响已经提供的规则核查和条件计算。',
-          'Account access and private workspaces need identity and service information. Avatars, biographies, organization details, additional sign-in methods and AI interpretation are optional. Leaving optional profile fields blank or turning off AI interpretation does not prevent rules-based reviews and conditional calculations.',
+          '账号登录和私人工作区需要必要的身份与服务信息；头像、简介、组织和附加安全方式可按需填写或使用。AI 自动参与公司查询、财报核查和企业问答，具体处理范围见本政策的“AI 解读与对外发送”。',
+          'Account access and private workspaces need identity and service information. Avatars, biographies, organization details and additional sign-in methods are optional. AI is an automatic part of company lookup, financial reviews and company questions; see “AI interpretation and external processing” for its scope.',
         ],
       ],
     },
@@ -101,8 +101,8 @@ export const privacyDocument: ProductDocument = {
           [
             ['公开公司查询', 'Public company lookup'],
             [
-              '输入的查询词、所选主体与证券代码、年度、用途、公开公告及年报、原件哈希、候选字段、执行与错误记录、模型选项和返回结果。',
-              'Entered search terms, selected identity and security code, year, purpose, public announcements and annual reports, original hashes, candidate fields, execution and error records, model choices and results.',
+              '输入的查询词、所选主体与证券代码、年度、用途、公开公告及年报、原件哈希、候选字段、执行与错误记录、模型处理状态和返回结果。',
+              'Entered search terms, selected identity and security code, year, purpose, public announcements and annual reports, original hashes, candidate fields, execution and error records, model-processing status and results.',
             ],
             [
               '检索官方披露资料、确认主体、读取原件、形成候选、记录覆盖范围，并在允许时恢复中断的查询。',
@@ -169,8 +169,8 @@ export const privacyDocument: ProductDocument = {
       emphasis: true,
       paragraphs: [
         [
-          'AI 是可选择的处理方式。公司查询在 AI 可用时默认勾选“使用 AI 解读”，财报核查默认不启用 AI；你可以在提交前改变当次选项。启用时会把下列内容发送给外部模型服务。关闭该选项可以继续使用官方资料检索和规则计算。',
-          'AI processing is optional. Company lookup has “Use AI interpretation” selected by default when AI is available; financial reviews have AI off by default. You can change the option before submitting. When enabled, the information below is sent to an external model service. With the option off, official-source retrieval and rules-based calculations remain available.',
+          'AI 是公司查询、财报核查和企业问答的默认处理环节，无需单独启用，也不提供关闭选项。提交相应查询或问题时，系统会按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统会保留信息缺口或规则结果，并如实记录模型未完成的状态。析光助手的本地使用帮助不调用外部模型。',
+          'AI is an automatic part of company lookup, financial reviews and company questions, with no separate enable or disable option. Submitting a query or question sends data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model service retain evidence gaps or rules-based results with the model’s actual incomplete status. Local product help in the Prispect assistant does not call an external model.',
         ],
       ],
       table: {
@@ -192,7 +192,18 @@ export const privacyDocument: ProductDocument = {
             ],
           ],
           [
-            ['财报核查的可选解释', 'Optional financial-review explanation'],
+            ['企业问答与析光助手', 'Company questions and the Prispect assistant'],
+            [
+              '你提交的企业问题、当前企业与利润口径、已取得的公开快照、公开字段及来源引用。问题按原文发送，请勿包含私人信息。本地产品帮助不发送模型请求。',
+              'Your submitted company question, the current company and profit basis, retrieved public snapshots, public fields and source references. Questions are sent as entered; do not include private information. Local product help does not send model requests.',
+            ],
+            [
+              '账号标识与安全凭据、私人核查材料、付款安排、现金计划、私人备注，以及其他账号的企业记录。',
+              'Account identifiers and security credentials, private review materials, payment arrangements, cash plans, private notes or company records from other accounts.',
+            ],
+          ],
+          [
+            ['财报核查解释', 'Financial-review explanation'],
             [
               '报告实际采用的本期与比较年度合并指标、关联短摘录与证据标识、规则结论及非管理层解释的规则分析。若你选用自己上传的财务材料，相关已采用字段与摘录也可能发送。',
               'Current and comparison-year consolidated metrics actually used by the report, associated short excerpts and evidence identifiers, the rules verdict and rules analysis excluding management explanations. If you use uploaded financial materials, their accepted fields and excerpts may also be sent.',
@@ -206,20 +217,20 @@ export const privacyDocument: ProductDocument = {
       },
       bullets: [
         [
-          '当前选用 AI 时，请求由 TokenFlux.dev 外部接口处理。经该接口处理不代表已确定由某一模型厂商直接接收数据。',
-          'When AI is selected, requests currently pass through the external TokenFlux.dev API. Use of this API does not establish that a particular model developer directly receives the data.',
+          'AI 请求当前由 TokenFlux.dev 外部接口处理。经该接口处理不代表已确定由某一模型厂商直接接收数据。',
+          'AI requests currently pass through the external TokenFlux.dev API. Use of this API does not establish that a particular model developer directly receives the data.',
         ],
         [
-          '我们尚未完成对该服务的运营主体、下游接收方、保存区域、保存期限、训练用途与合同保障的核验，不承诺其不保存、不训练或仅在境内处理。请不要在外发摘录中放入个人敏感信息、商业秘密或无权提供的资料；不能接受这些边界时，请关闭 AI。',
-          'We have not completed verification of this service’s operating entity, downstream recipients, storage regions, retention, training use or contractual safeguards. We do not promise zero retention, no training or processing only within mainland China. Keep sensitive personal information, trade secrets and unauthorized material out of externally sent excerpts. Turn off AI if these limits are unacceptable.',
+          '我们尚未完成对该服务的运营主体、下游接收方、保存区域、保存期限、训练用途与合同保障的核验，不承诺其不保存、不训练或仅在境内处理。请不要在外发摘录或企业问题中放入个人敏感信息、商业秘密或无权提供的资料。AI 处理是相应功能的一部分；不能接受上述处理范围时，请勿提交该类查询、核查或问题。',
+          'We have not completed verification of this service’s operating entity, downstream recipients, storage regions, retention, training use or contractual safeguards. We do not promise zero retention, no training or processing only within mainland China. Keep sensitive personal information, trade secrets and unauthorized material out of externally sent excerpts and company questions. AI processing is part of these features. Do not submit the relevant lookup, review or question if you cannot accept this processing scope.',
         ],
         [
           '外发摘录没有自动脱敏功能。公开披露资料也可能含有人员姓名等个人信息；公开可访问不等于可以任意使用。我们不以私人核查事项或现金计划训练自有模型，也没有把这些私人输入接入公开查询模型。',
           'Externally sent excerpts are not automatically redacted. Public disclosures may contain names or other personal information; public availability does not permit unrestricted use. We do not train our own models on private reviews or cash plans, and these private inputs are not connected to the public lookup model.',
         ],
         [
-          '提交前关闭 AI 选项，可避免本次 AI 请求；查询运行中取消，可停止后续步骤，但不能追回已经发送的数据。规则报告与返回的解释分别保存；核查来源标识、格式或数值不代表已认证解释的含义，也不会自动决定是否付款。',
-          'Turning off AI before submission avoids AI requests for that submission. Cancelling a running lookup can stop subsequent steps, but cannot recall data already sent. Rules reports and returned explanations are retained separately. Checking source identifiers, format or numbers does not authenticate an interpretation’s meaning or automatically decide a payment.',
+          'AI 不提供单独关闭选项。查询运行中取消，可停止后续步骤，但不能追回已经发送的数据。规则报告与返回的解释分别保存；核查来源标识、格式或数值不代表已认证解释的含义，也不会自动决定是否付款。',
+          'There is no separate switch to disable AI. Cancelling a running lookup can stop subsequent steps, but cannot recall data already sent. Rules reports and returned explanations are retained separately. Checking source identifiers, format or numbers does not authenticate an interpretation’s meaning or automatically decide a payment.',
         ],
       ],
       links: [
@@ -234,8 +245,8 @@ export const privacyDocument: ProductDocument = {
       title: ['外部服务与访问', 'External services and access'],
       paragraphs: [
         [
-          '企业概览还通过东方财富与新浪公开接口读取财务、行业、资料与新闻。企业记录、公开快照、来源比对和最多五十条问答按账号保存，删除查询时一并移除。主动启用企业问答模型时，发送问题与已取得的公开快照，不发送账号标识、私有材料、付款安排或服务端密钥配置。',
-          'Company context also retrieves financial, industry, profile and news data through Eastmoney and Sina public interfaces. Company records, public snapshots, comparisons and up to fifty answers are stored per account and removed with the query. Optional company-question model calls send the question and retrieved public snapshot, excluding account identifiers, private evidence, payment plans and server-key configuration.',
+          '企业概览还通过东方财富与新浪公开接口读取财务、行业、资料与新闻。企业记录、公开快照、来源比对和最多五十条问答按账号保存，删除查询时一并移除。企业问答自动调用模型，发送问题与已取得的公开快照，不发送账号标识、私有材料、付款安排或服务端密钥配置。',
+          'Company context also retrieves financial, industry, profile and news data through Eastmoney and Sina public interfaces. Company records, public snapshots, comparisons and up to fifty answers are stored per account and removed with the query. Company questions automatically call the model with the question and retrieved public snapshot, excluding account identifiers, private evidence, payment plans and server-key configuration.',
         ],
         [
           '公司查询把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',
@@ -359,8 +370,8 @@ export const privacyDocument: ProductDocument = {
           'Specify the account, data categories, requested action and a reply channel. We will verify identity and authority only as necessary, and handle the request under applicable law or explain why it cannot be met. Do not send passwords, recovery codes or unnecessary identity documents.',
         ],
         [
-          '可在提交前关闭 AI 选项，避免该次可选 AI 处理；运行中取消查询，可停止后续步骤。已经发送的数据、完成的处理和历史结果不会因此自动消失。依法需要留存或技术上暂时难以删除的数据，应限制用途并继续采取必要保护措施。对处理答复有异议，可以再次联系我们或依法向有权机关反映。',
-          'Turn off AI before submission to avoid optional AI processing for that request. Cancel a running lookup to stop subsequent steps. Data already sent, completed processing and historical results do not automatically disappear. Data that must legally be retained or cannot yet be technically deleted should have its use restricted and remain protected. You may contact us again about a response or raise the matter with a competent authority under applicable law.',
+          'AI 是相应查询、核查和企业问答的自动处理环节，页面不提供单独关闭选项。你可以停止使用这些功能；运行中取消查询，可停止后续步骤。已经发送的数据、完成的处理和历史结果不会因此自动消失。依法需要留存或技术上暂时难以删除的数据，应限制用途并继续采取必要保护措施。对处理答复有异议，可以再次联系我们或依法向有权机关反映。',
+          'AI is an automatic part of the relevant lookup, review and company-question features, with no separate disable switch. You may stop using these features. Cancel a running lookup to stop subsequent steps. Data already sent, completed processing and historical results do not automatically disappear. Data that must legally be retained or cannot yet be technically deleted should have its use restricted and remain protected. You may contact us again about a response or raise the matter with a competent authority under applicable law.',
         ],
       ],
       links: [

@@ -22,8 +22,7 @@ export function CompanyQuestionsView({
     [question, setQuestion] = useState(''),
     [sending, setSending] = useState(false),
     [pendingQuestion, setPendingQuestion] = useState(''),
-    [error, setError] = useState(''),
-    [useModel, setUseModel] = useState(false);
+    [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null),
     active = useRef(true),
     draft = useRef(''),
@@ -54,7 +53,7 @@ export function CompanyQuestionsView({
     try {
       const answer = await api<CompanyQuestionAnswer>(`/company-runs/${run.id}/questions`, {
         method: 'POST',
-        body: JSON.stringify({ question: value.trim(), basis, useModel }),
+        body: JSON.stringify({ question: value.trim(), basis, useModel: true }),
         signal: request.signal,
       });
       if (active.current && !request.signal.aborted) {
@@ -84,22 +83,13 @@ export function CompanyQuestionsView({
     t('有哪些需要核实的公告？', 'Which disclosures need verification?'),
     t('接手前需要哪些材料？', 'What evidence is needed before a handover?'),
   ];
-  const modelNotice = (
-    <p className="context-data-note">
-      {t(
-        '问题与当前企业的公开资料将发送至服务端配置的模型服务；不包含私人核查材料、付款计划或账号资料。请勿在此输入私人信息。',
-        'Your question and current public company context will be sent to the configured model provider. Private review materials, payment plans and account data are excluded. Do not enter private information here.'
-      )}{' '}
-      <a href="/privacy">{t('隐私说明', 'Privacy details')}</a>
-    </p>
-  );
   return (
     <section className={`context-questions${compact ? ' context-questions-compact' : ''}`}>
       <div className="context-question-scroll" ref={scrolling}>
         <p className="context-data-note">
           {t(
-            '围绕当前企业已取得的公开材料提问。默认使用规则；回答和来源按数据快照保存。',
-            'Ask about retrieved public company evidence. Rules are the default; answers and sources are saved against their data snapshot.'
+            '围绕当前企业已取得的公开材料提问，回答和来源按数据快照保存。',
+            'Ask about retrieved public company evidence. Answers and sources are saved against their data snapshot.'
           )}
         </p>
         <div className="context-question-suggestions">
@@ -186,14 +176,6 @@ export function CompanyQuestionsView({
             }}
           />
           <div className="start-input-toolbar">
-            <label className="context-model-choice">
-              <input
-                type="checkbox"
-                checked={useModel}
-                onChange={(event) => setUseModel(event.target.checked)}
-              />
-              {t('使用大模型解释', 'Use model explanation')}
-            </label>
             <button
               type="submit"
               className="start-submit"
@@ -204,15 +186,6 @@ export function CompanyQuestionsView({
             </button>
           </div>
         </form>
-        {useModel &&
-          (compact ? (
-            <details className="context-question-model-notice">
-              <summary>{t('模型使用与隐私说明', 'Model use and privacy')}</summary>
-              {modelNotice}
-            </details>
-          ) : (
-            modelNotice
-          ))}
         {error && (
           <p className="inline-error" role="alert">
             {error}

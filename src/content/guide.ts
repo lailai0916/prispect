@@ -75,24 +75,24 @@ export const guideDocument: ProductDocument = {
           'Public and management views change presentation only; external payment and internal handover remain separate review purposes. Web context retains attributable and consolidated profit bases and labels three-year totals. The original cash bridge uses same-year consolidated profit. Industry averages use same-year peers, excluding the target, and are withheld below five valid peers.',
         ],
         [
-          '助手在公司页面沿用当前企业和利润口径；在其他页面，可以选择账号内已保存的企业。企业问答默认按当前公开快照生成规则回答，回答与来源随企业记录保存。可主动选择服务端模型辅助解释；失败时回落规则。未登录或尚未载入企业时，助手提供本地产品帮助，以及文档、登录或新建查询入口。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
-          'On company pages, the assistant uses the current company and profit basis. Elsewhere, you can select a company saved in your account. Company questions default to rules over the current public snapshot, saving answers and sources with the company record. Server-side model assistance is optional and falls back to rules on failure. Signed-out visitors and accounts without a loaded company receive local product help and links to documentation, sign-in or a new query. Missing fields stay unknown. Failed refreshes retain earlier timestamps and do not imply no risk.',
+          '助手在公司页面沿用当前企业和利润口径；在其他页面，可以选择账号内已保存的企业。企业问答自动使用 AI 结合当前公开快照回答，回答与来源随企业记录保存；模型失败时保留规则底稿并显示实际状态。未登录或尚未载入企业时，助手提供本地产品帮助，以及文档、登录或新建查询入口。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
+          'On company pages, the assistant uses the current company and profit basis. Elsewhere, you can select a company saved in your account. Company questions automatically use AI with the current public snapshot, saving answers and sources with the company record. Model failures retain the rules-based working paper and show the actual status. Signed-out visitors and accounts without a loaded company receive local product help and links to documentation, sign-in or a new query. Missing fields stay unknown. The coverage page does not infer “no risk” from missing information. Failed refreshes retain earlier timestamps rather than labeling old data as newly updated.',
         ],
         [
           '输入准确公司名称或证券代码。准确唯一匹配可直接开始；简称有歧义时选择披露主体。当前覆盖巨潮大陆 A 股披露，未匹配不等于公司不存在或没有风险。',
           'Enter an exact company name or security code. An exact unique match can start directly; ambiguous names require choosing a disclosure identity. Coverage is currently mainland A-share disclosures on CNINFO. No match does not establish that a company does not exist or has no risk.',
         ],
         [
-          '默认选择上一年度，以实际检索到的完整年报为准；缺少该年度年报时会说明。明确指定年度时按该年度核查。检索选项中的 AI 解读用于公开资料，数据使用范围可在隐私页查看。',
-          'The default selects the previous year, subject to finding its complete annual report; a missing report is stated. If you specify a year, that year is used. AI interpretation in the lookup options processes public material; its data scope is described in the privacy page.',
+          '默认选择上一年度，以实际检索到的完整年报为准；缺少该年度年报时会说明。明确指定年度时按该年度核查。AI 自动协助检索和分析；检索选项用于调整年度与核查用途。',
+          'The default selects the previous year, subject to finding its complete annual report; a missing report is stated. If you specify a year, that year is used. AI automatically assists retrieval and analysis. Lookup options let you adjust the year and review purpose.',
         ],
         [
           '执行中查看各任务轨道与实际活动；完成、失败、取消和可恢复状态分别显示。取消保留已取得内容；只有可恢复的运行提供恢复操作。返回已有运行不会要求重新创建它。',
           'During execution, inspect task tracks and actual activity. Completion, failure, cancellation and recoverability have distinct states. Cancellation retains obtained content; resume is offered only for recoverable runs. Returning to an existing run does not require creating it again.',
         ],
         [
-          '结果先看财务观察，再打开来源核对金额、年度、单位和合并范围。核对候选后点击“采用并核查”；析光保存材料并建立规则报告，不沿用公司查询的 AI 选择。',
-          'Read financial observations first, then open their sources to check amounts, year, units and consolidated scope. After reviewing candidates, select “Adopt and review.” Prispect saves the material and creates a rule report without inheriting the lookup’s AI choice.',
+          '结果先看财务观察，再打开来源核对金额、年度、单位和合并范围。核对候选后点击“采用并核查”；析光保存材料、建立规则报告，并自动进行 AI 解读。必要证据缺失或输入冲突时，暂停依赖这些字段的解释。',
+          'Read financial observations first, then open their sources to check amounts, year, units and consolidated scope. After reviewing candidates, select “Adopt and review.” Prispect saves the material, creates a rules report and automatically runs AI interpretation. Missing required evidence or conflicting inputs pauses explanations that depend on those fields.',
         ],
         [
           '历史财务图表并行读取东方财富公开网页的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',
@@ -294,8 +294,8 @@ export const guideDocument: ProductDocument = {
           'Private reviews retain full inputs and evidence changes. Historical versions are read-only; restoring older inputs creates a new version while retaining current known conflicts. Recheck dates and current conditions before restoring.',
         ],
         [
-          '财报核查的“调整证据”选择本次采用哪些指标，另建任务并重算。原任务和原件保留；恢复全部证据也建立新任务，不继承此前 AI 授权。',
-          '“Adjust evidence” chooses metrics for a financial review and creates a new recalculated task. The original task and source remain. Restoring all evidence also creates a new task without inheriting earlier AI authorization.',
+          '财报核查的“调整证据”选择本次采用哪些指标，另建任务并重算。原任务和原件保留；恢复全部证据也建立新任务。新任务自动尝试 AI 解读，只使用本次实际采用且满足核查条件的证据。',
+          '“Adjust evidence” chooses metrics for a financial review and creates a new recalculated task. The original task and source remain. Restoring all evidence also creates a new task. New tasks automatically attempt AI interpretation using only evidence adopted for that task that meets the review requirements.',
         ],
         [
           '比较页选择基准与对照，查看数字、解释和来源哪些改变。比较用于核对证据变化，不用不同公司的结果做跨行业健康排名。',
@@ -354,8 +354,8 @@ export const guideDocument: ProductDocument = {
       title: ['AI、语言与外观', 'AI, language and appearance'],
       paragraphs: [
         [
-          '公开公司查询与私人财报解读的 AI 选择分别生效。公开查询发送所选公司的公开资料；财报解读按当次选择发送采用的指标、短摘录与规则分析。私人事项、现金计划和备注不进入公开查询模型。详细字段与第三方处理见数据与隐私。',
-          'AI choices for public lookup and private financial interpretation apply separately. Public lookup sends selected-company public material; financial interpretation sends adopted metrics, short excerpts and rule analysis when enabled for that task. Private reviews, cash plans and notes do not enter public-query models. See Data and privacy for exact fields and third-party processing.',
+          '公开公司查询、财报核查和企业问答自动使用 AI，不需要单独启用。模型未完成时保留已有核查结果，并显示实际状态。数据处理范围与第三方服务说明见隐私政策。',
+          'Company lookup, financial reviews and company questions use AI automatically without a separate switch. If the model does not complete, existing review results are retained with its actual status. See the privacy policy for data-processing scope and third-party services.',
         ],
         [
           '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。外观可选择自动、浅色或深色；自动模式跟随系统设置。',

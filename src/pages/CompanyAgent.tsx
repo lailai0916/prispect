@@ -1,3 +1,4 @@
+import { Select } from '../Select';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
@@ -88,7 +89,6 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
       ? requested
       : latest;
   });
-  const [useModel, setUseModel] = useState(true);
   const autoStarted = useRef(new Set<string>());
   const runKeys = useRef(new Map<string, string>());
   const [run, setRun] = useState<CompanyResearchRun | null>(null);
@@ -141,8 +141,8 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
     if (!publicQuery) {
       setError(
         t(
-          '请只输入公司名称或六位证券代码。付款说明不会发送至公开检索。',
-          'Enter only a company name or six-digit security code. Payment descriptions are not sent to public search.'
+          '请只输入公司名称或六位证券代码。',
+          'Enter only a company name or six-digit security code.'
         )
       );
       return;
@@ -241,8 +241,8 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
     if (!publicQuery) {
       setError(
         t(
-          '请只输入公司名称或六位证券代码。付款说明不会发送至公开检索。',
-          'Enter only a company name or six-digit security code. Payment descriptions are not sent to public search.'
+          '请只输入公司名称或六位证券代码。',
+          'Enter only a company name or six-digit security code.'
         )
       );
       return;
@@ -259,7 +259,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
         orgId: identity.orgId,
         year,
         purpose,
-        useModel,
+        useModel: true,
       };
       const inputKey = JSON.stringify(input);
       const key = runKeys.current.get(inputKey) || crypto.randomUUID();
@@ -290,7 +290,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
         item.materialIds[0] === materialId &&
         !item.excludedMetrics.length &&
         (item.purpose || 'external') === (run.input.purpose || 'external') &&
-        !item.useModel
+        item.useModel === true
     );
     if (existing) {
       navigate(`/tasks/${existing.id}`);
@@ -305,7 +305,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
           materialIds: [materialId],
           excludedMetrics: [],
           purpose: run.input.purpose || 'external',
-          useModel: false,
+          useModel: true,
         } satisfies CreateTaskInput),
       t('核查已创建', 'Review created')
     );
@@ -521,39 +521,6 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                 </div>
               </fieldset>
             </div>
-            <label className="model-opt-in">
-              <input
-                type="checkbox"
-                checked={useModel}
-                disabled={!workspace?.provider.configured || creating}
-                onChange={(event) => setUseModel(event.target.checked)}
-              />
-              <span>
-                <strong>{t('使用 AI 解读', 'Use AI interpretation')}</strong>
-                <small>
-                  {t(
-                    '相关公开材料将交由 AI 处理。',
-                    'Relevant public documents are sent for AI processing.'
-                  )}{' '}
-                  <a
-                    href="/privacy?section=ai"
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={t('数据使用（新标签页）', 'Data use (new tab)')}
-                  >
-                    {t('数据使用', 'Data use')}
-                  </a>
-                </small>
-                {!workspace?.provider.configured && (
-                  <small>
-                    {t(
-                      'AI 解读暂不可用，仍可查询和核对原文。',
-                      'AI interpretation is unavailable. You can still search and check the source documents.'
-                    )}
-                  </small>
-                )}
-              </span>
-            </label>
           </details>{' '}
         </>
       )}
@@ -1036,19 +1003,19 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                                 />
                               </td>
                               <td>
-                                <select
+                                <Select
                                   aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('单位', 'unit')}`}
                                   value={obs.unit}
-                                  onChange={(event) =>
+                                  onValueChange={(selectedValue) =>
                                     updateObservation(index, {
-                                      unit: event.target.value as Observation['unit'],
+                                      unit: selectedValue as Observation['unit'],
                                     })
                                   }
                                 >
                                   <option value="yuan">{t('元', 'Yuan')}</option>
                                   <option value="wan">{t('万元', '10,000 yuan')}</option>
                                   <option value="yi">{t('亿元', '100m yuan')}</option>
-                                </select>
+                                </Select>
                               </td>
                               <td>
                                 <input
@@ -1065,12 +1032,12 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                               </td>
                               {detailedColumns && (
                                 <td>
-                                  <select
+                                  <Select
                                     value={obs.period || 'unknown'}
                                     aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('期间', 'period')}`}
-                                    onChange={(event) =>
+                                    onValueChange={(selectedValue) =>
                                       updateObservation(index, {
-                                        period: event.target.value as Observation['period'],
+                                        period: selectedValue as Observation['period'],
                                       })
                                     }
                                   >
@@ -1078,23 +1045,23 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                                     <option value="interim">{t('半年', 'Interim')}</option>
                                     <option value="quarterly">{t('季度', 'Quarterly')}</option>
                                     <option value="unknown">{t('待确认', 'Unconfirmed')}</option>
-                                  </select>
+                                  </Select>
                                 </td>
                               )}
                               <td>
-                                <select
+                                <Select
                                   value={obs.scope}
                                   aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('范围', 'scope')}`}
-                                  onChange={(event) =>
+                                  onValueChange={(selectedValue) =>
                                     updateObservation(index, {
-                                      scope: event.target.value as Observation['scope'],
+                                      scope: selectedValue as Observation['scope'],
                                     })
                                   }
                                 >
                                   <option value="consolidated">{t('合并', 'Consolidated')}</option>
                                   <option value="parent">{t('母公司', 'Parent company')}</option>
                                   <option value="unknown">{t('待确认', 'Unconfirmed')}</option>
-                                </select>
+                                </Select>
                               </td>
                               {detailedColumns && (
                                 <td>
@@ -1180,8 +1147,8 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                     </button>
                     <span className="field-note">
                       {t(
-                        '保存材料后直接生成规则报告，不额外调用模型。',
-                        'Evidence is saved and a rules report is created without an additional model call.'
+                        '保存材料后生成财报核查，并自动进行 AI 解读。',
+                        'Evidence is saved and a financial review is created with automatic AI interpretation.'
                       )}
                     </span>
                   </div>
@@ -1299,16 +1266,16 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
             <span>{t('AI 解读', 'AI interpretation')}</span>
             <Tag>
               {activeRun(run) && run.model.requested
-                ? t('已授权，等待结果', 'Authorized; awaiting result')
+                ? t('等待解读结果', 'Awaiting interpretation')
                 : run.model.status === 'not-called'
-                  ? t('已授权，未调用', 'Authorized; not called')
+                  ? t('未生成解读', 'Interpretation not generated')
                   : run.model.status === 'completed'
                     ? t('已完成', 'Completed')
                     : run.model.status === 'failed'
                       ? t('未完成', 'Incomplete')
                       : run.model.status === 'not-configured'
                         ? t('暂不可用', 'Unavailable')
-                        : t('未授权调用', 'Not requested')}
+                        : t('未生成解读', 'Interpretation not generated')}
             </Tag>
             {run.model.error && <p>{t(run.model.error, translateRule(run.model.error))}</p>}
           </div>

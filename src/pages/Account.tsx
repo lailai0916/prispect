@@ -1,3 +1,4 @@
+import { Select } from '../Select';
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import QRCode from 'react-qr-code';
 import { Dialog } from '@base-ui/react/dialog';
@@ -783,9 +784,9 @@ export function AccountPage() {
                     </label>
                     <label>
                       {t('时区', 'Time zone')}
-                      <select
+                      <Select
                         value={timezone}
-                        onChange={(event) => setTimezone(event.target.value)}
+                        onValueChange={(selectedValue) => setTimezone(selectedValue)}
                       >
                         {[
                           ...new Set([
@@ -801,7 +802,7 @@ export function AccountPage() {
                         ].map((value) => (
                           <option key={value}>{value}</option>
                         ))}
-                      </select>
+                      </Select>
                     </label>
                   </div>
                   <div className="account-actions">

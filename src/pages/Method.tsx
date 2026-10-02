@@ -296,24 +296,14 @@ export function MethodPage({ section }: { section?: string | null }) {
             <summary>{t('第三方数据处理', 'Third-party data processing')}</summary>
             <p>
               {t(
-                'AI 解读使用第三方服务 TokenFlux。启用时，下列内容会发送至该服务。公开查询与个人财报任务分别选择，不互相继承。',
-                'AI interpretation uses the third-party service TokenFlux. When enabled, the content below is sent to that service. Public research and personal financial reviews have separate choices; neither inherits the other’s consent.'
+                'AI 自动参与公司查询、财报核查和企业问答。具体数据处理范围、外部服务与保存规则见隐私政策。',
+                'AI is an automatic part of company lookup, financial reviews and company questions. See the privacy policy for data-processing scope, external services and retention.'
               )}
             </p>
-            <h3>{t('公开企业查询', 'Public company research')}</h3>
-            <p>
-              {t(
-                '公开查询初始启用可用的 AI 解读，开始前可在检索选项中关闭。发送选定的公开公司主体、年度、候选页与公告的编号和标题、财表/附注/公告短摘录及规则财务信号，用于选择相关材料与整理解释。私人说明、上传文件、事项、备注和现金计划不进入公开查询请求。',
-                'Available AI interpretation is initially enabled for public research and can be turned off in retrieval options before starting. Selected public company identity, year, candidate page and announcement IDs and titles, short financial-table/note/announcement excerpts, and rule-based financial signals are sent to select relevant documents and organize explanations. Private descriptions, uploads, matters, notes and cash plans are excluded from public-research requests.'
-              )}
-            </p>
-            <h3>{t('个人财报任务', 'Personal financial reviews')}</h3>
-            <p>
-              {t(
-                '个人财报任务默认不启用 AI 解读。只有新建任务时主动选择，才发送本次采用指标的编号、类型、年度、金额、单位、币种、报表范围与短摘录，以及结论状态和非管理层规则分析的编号、名称、解释、依据类型。未采用的指标、原始文件、账号凭据、场景备注与收付款工作表不发送。复制或恢复证据的新任务需重新选择。',
-                'AI interpretation is off by default for personal financial reviews. An explicit choice when creating a review sends adopted metric IDs, types, years, amounts, units, currencies, reporting scope and short excerpts, plus the verdict and IDs, labels, explanations and basis types of non-management rule findings. Excluded metrics, original files, account credentials, scenario notes and cash worksheets are not sent. Copied or restored reviews require a new choice.'
-              )}
-            </p>
+            <a className="text-link" href="/privacy?section=ai">
+              {t('查看 AI 数据处理说明', 'Read the AI data-processing details')}
+              <ArrowRight size={14} />
+            </a>
           </details>
         </section>
       </div>

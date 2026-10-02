@@ -560,12 +560,12 @@ test('pending uploads expire after 24h, storage quota applies to real bytes, res
   }
 });
 
-test('task model consent defaults off, explicit calls and retries preserve the saved choice', async () => {
+test('task analysis always enables AI for omitted and legacy model choices, and upgrades old tasks only on retry', async () => {
   let calls = 0;
   const service = await setup({
     apiKey: 'test-only',
     baseUrl: 'https://provider.example/v1',
-    model: 'gpt-6.1-sol',
+    model: 'grok-4.7-fast',
     fetch: async (_url, request) => {
       calls++;
       const payload = JSON.parse(String(request?.body));
@@ -591,54 +591,97 @@ test('task model consent defaults off, explicit calls and retries preserve the s
     },
   });
   try {
-    const client = await register(service, 'consent@example.com');
+    const client = await register(service, 'automatic-ai@example.com');
     const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
     const defaultTask = await createTask(service, client, cases[0]!);
-    assert.equal(defaultTask.useModel, false);
-    assert.equal(defaultTask.report?.model.status, 'not-requested');
-    assert.equal(calls, 0);
-    const defaultExport = await (
-      await service.request(`/api/tasks/${defaultTask.id}/export?format=html`, options(client))
-    ).text();
-    assert.match(defaultExport, /本次未向模型服务发送材料/);
-    const chosen = await service.request(
-      '/api/tasks',
-      options(
-        client,
-        {
-          title: '显式选择智能解释',
-          company: cases[0]!.company,
-          year: 2025,
-          materialIds: cases[0]!.materialIds,
-          useModel: true,
-        },
-        'POST'
-      )
-    );
-    assert.equal(chosen.status, 202);
-    const pending = (await chosen.json()) as AnalysisTask;
-    await service.waitForIdle();
-    const task = (await (
-      await service.request(`/api/tasks/${pending.id}`, options(client))
-    ).json()) as AnalysisTask;
-    assert.equal(task.useModel, true);
-    assert.equal(task.report?.model.status, 'completed');
-    assert.equal(task.report?.model.provider, 'provider.example');
-    assert.equal(task.report?.model.name, 'gpt-6.1-sol');
+    assert.equal(defaultTask.useModel, true);
+    assert.equal(defaultTask.report?.model.status, 'completed');
     assert.equal(calls, 1);
-    assert.equal(
-      (await service.request(`/api/tasks/${task.id}/retry`, options(client, {}, 'POST'))).status,
-      202
+    for (const legacyChoice of [false, true]) {
+      const response = await service.request(
+        '/api/tasks',
+        options(
+          client,
+          {
+            title: '自动智能解释',
+            company: cases[0]!.company,
+            year: 2025,
+            materialIds: cases[0]!.materialIds,
+            useModel: legacyChoice,
+          },
+          'POST'
+        )
+      );
+      assert.equal(response.status, 202);
+      const pending = (await response.json()) as AnalysisTask;
+      assert.equal(pending.useModel, true);
+      await service.waitForIdle();
+      const task = (await (
+        await service.request(`/api/tasks/${pending.id}`, options(client))
+      ).json()) as AnalysisTask;
+      assert.equal(task.useModel, true);
+      assert.equal(task.report?.model.status, 'completed');
+      assert.equal(task.report?.model.provider, 'provider.example');
+      assert.equal(task.report?.model.name, 'grok-4.7-fast');
+    }
+    assert.equal(calls, 3);
+    const store = await service.workspaceForUser(client.user.id);
+    const historical = store.state.tasks.find((task) => task.id === defaultTask.id)!;
+    historical.useModel = false;
+    historical.report!.model = { enabled: false, status: 'not-requested' };
+    await store.persist();
+    const saved = (await (
+      await service.request(`/api/tasks/${historical.id}`, options(client))
+    ).json()) as AnalysisTask;
+    assert.equal(saved.useModel, false, 'opening history never rewrites a completed analysis');
+    assert.equal(saved.report?.model.status, 'not-requested');
+    assert.equal(calls, 3);
+    const retried = await service.request(
+      `/api/tasks/${historical.id}/retry`,
+      options(client, {}, 'POST')
     );
+    assert.equal(retried.status, 202);
+    assert.equal(((await retried.json()) as AnalysisTask).useModel, true);
     await service.waitForIdle();
-    assert.equal(calls, 2);
-    assert.equal(
-      (await service.request(`/api/tasks/${defaultTask.id}/retry`, options(client, {}, 'POST')))
-        .status,
-      202
+    assert.equal(calls, 4);
+    const updated = (await (
+      await service.request(`/api/tasks/${historical.id}`, options(client))
+    ).json()) as AnalysisTask;
+    assert.equal(updated.report?.model.status, 'completed');
+  } finally {
+    await service.close();
+  }
+});
+
+test('automatic AI preserves rule reports on failure and never claims a model call for conflicted evidence', async () => {
+  let calls = 0;
+  const service = await setup({
+    apiKey: 'test-only',
+    fetch: async () => {
+      calls++;
+      throw new Error('model unavailable fixture');
+    },
+  });
+  try {
+    const client = await register(service, 'ai-fallback@example.com');
+    const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
+    const failed = await createTask(service, client, cases[0]!);
+    assert.equal(failed.useModel, true);
+    assert.equal(failed.status, 'completed');
+    assert.equal(failed.report?.model.status, 'failed');
+    assert.ok(failed.report?.metrics.some((metric) => metric.value !== null));
+    assert.equal(calls, 1);
+    const conflicted = await createTask(
+      service,
+      client,
+      cases.find((item) => item.id === 'conflict')!
     );
-    await service.waitForIdle();
-    assert.equal(calls, 2);
+    assert.equal(conflicted.useModel, true);
+    assert.equal(conflicted.report?.verdict, 'conflict');
+    assert.equal(conflicted.status, 'completed');
+    assert.equal(calls, 1, 'conflicting evidence must not trigger unsupported model inference');
+    assert.match(conflicted.stages[3]!.message!, /未调用模型/);
+    assert.doesNotMatch(conflicted.stages[3]!.message!, /引用 ID 与格式已检查/);
   } finally {
     await service.close();
   }

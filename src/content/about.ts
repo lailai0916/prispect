@@ -32,8 +32,8 @@ export const aboutDocument: ProductDocument = {
           'Company lookup currently covers mainland A-share disclosures on CNINFO. After a code or company name is entered, Prispect checks the disclosure identity, reads the complete annual report for the selected year, and examines financial tables, notes and recent announcements that it can obtain. Ambiguous identities require your selection. Missing matches or restricted sources show their scope and stopping reason.',
         ],
         [
-          '结果优先展示取得的财务观察、对应来源和仍缺少的证据。AI 解读可辅助公开资料检索和解释，金额仍需核对原文及规则计算；候选字段由你确认采用后进入财报核查。',
-          'Results prioritize financial observations, their sources and evidence still missing. Optional AI interpretation can assist public-source retrieval and explanation. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
+          '结果优先展示取得的财务观察、对应来源和仍缺少的证据。AI 自动协助公开资料检索和解释，金额仍需核对原文及规则计算；候选字段由你确认采用后进入财报核查。',
+          'Results prioritize financial observations, their sources and evidence still missing. AI automatically assists public-source retrieval and explanation. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
         ],
       ],
       links: [{ label: ['查询公司', 'Look up a company'], href: '/company' }],
@@ -134,8 +134,8 @@ export const aboutDocument: ProductDocument = {
           'Prispect organizes material, traces evidence and calculates conditional results. It does not provide comprehensive corporate-registry, judicial or credit coverage, or replace checks of bank deposit products, legal due diligence, audits or professional financial advice. No matching disclosure does not mean no risk; a completed calculation does not establish that a payment is executable.',
         ],
         [
-          '请在当次 AI 选项中决定是否使用解读，并查看数据与隐私说明。私人事项、现金计划和备注不进入公开公司研究的模型请求。',
-          'Use the AI option on each submission to decide whether to enable interpretation, and read the data-use notice. Private reviews, cash plans and notes do not enter public-company research model requests.',
+          'AI 自动参与公司查询、财报核查和企业问答。数据处理范围与外部服务说明见隐私政策。',
+          'AI automatically participates in company lookup, financial reviews and company questions. See the privacy policy for data-processing scope and external services.',
         ],
       ],
       links: [

@@ -62,6 +62,10 @@
   --amber: var(--chart-total);
   --sidebar: 224px;
   --radius: 6px;
+  --control-height: 36px;
+  --radius-small: 5px;
+  --radius-popup: 9px;
+  --radius-dialog: 12px;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
@@ -172,8 +176,9 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not([type='r
 select,
 textarea {
   width: 100%;
-  min-height: 36px;
-  padding: 8px 11px;
+  min-height: var(--control-height);
+  padding: 7px 11px;
+  line-height: 20px;
   border: 1px solid var(--control-border);
   border-radius: var(--radius);
   background: var(--paper);
@@ -189,6 +194,10 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   color: var(--subtle);
+}
+input:not(:disabled):not(:focus):hover,
+textarea:not(:disabled):not(:focus):hover {
+  border-color: var(--control-hover);
 }
 input:focus,
 select:focus,
@@ -666,7 +675,7 @@ pre {
   gap: 7px;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
+  min-height: var(--control-height);
   padding: 8px 13px;
   border: 1px solid transparent;
   border-radius: var(--radius);
@@ -685,12 +694,12 @@ pre {
   color: var(--on-action);
   box-shadow: 0 1px 2px var(--shadow-button);
 }
-.button-primary:hover {
+.button-primary:not(:disabled):hover {
   background: var(--action-hover);
   border-color: var(--action-hover);
   color: var(--on-action);
 }
-.button-primary:active {
+.button-primary:not(:disabled):active {
   background: var(--action-pressed);
   border-color: var(--action-pressed);
   box-shadow: inset 0 1px 2px var(--shadow-pressed);
@@ -702,13 +711,14 @@ pre {
   color: var(--ink);
   box-shadow: 0 1px 2px var(--shadow-button);
 }
-.button-secondary:hover,
-.button-light:hover {
+.button-secondary:not(:disabled):hover,
+.button-light:not(:disabled):hover {
   background: var(--surface);
   border-color: var(--control-hover);
   color: var(--ink);
 }
-.button-secondary:active {
+.button-secondary:not(:disabled):active,
+.button-light:not(:disabled):active {
   background: var(--pressed);
   box-shadow: inset 0 1px 1px var(--shadow-pressed);
 }
@@ -717,7 +727,7 @@ pre {
   background: var(--danger-action);
   border-color: var(--danger-action);
 }
-.button-danger:hover {
+.button-danger:not(:disabled):hover {
   background: var(--danger-hover);
 }
 .icon-button {
@@ -725,18 +735,23 @@ pre {
   align-items: center;
   justify-content: center;
   padding: 6px;
-  min-width: 30px;
-  min-height: 30px;
+  min-width: 32px;
+  min-height: 32px;
   background: transparent;
   border: 1px solid transparent;
-  border-radius: 5px;
+  border-radius: var(--radius);
   color: var(--muted);
+  transition:
+    background 120ms,
+    color 120ms,
+    border-color 120ms;
 }
-.icon-button:hover {
+.icon-button:not(:disabled):hover,
+.icon-button[data-popup-open] {
   background: var(--hover);
   color: var(--ink);
 }
-.icon-button:active {
+.icon-button:not(:disabled):active {
   background: var(--pressed);
 }
 .text-link {
@@ -758,6 +773,15 @@ pre {
 }
 .text-danger {
   color: var(--red);
+}
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 500;
 }
 .inline-actions,
 .dialog-actions,
@@ -882,6 +906,13 @@ pre {
 .inline-error {
   color: var(--red);
   background: var(--danger-surface);
+}
+.field-error {
+  margin: 12px 0;
+  color: var(--red);
+  font-size: 13px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 .info-strip,
 .warning-box {
@@ -1079,7 +1110,7 @@ thead th {
   width: min(calc(100% - 48px), 520px);
   max-height: min(90dvh, 920px);
   border: 1px solid var(--control-border);
-  border-radius: 12px;
+  border-radius: var(--radius-dialog);
   background: var(--paper);
   box-shadow: 0 12px 60px var(--shadow-dialog);
   overflow: auto;
@@ -1249,8 +1280,13 @@ thead th {
   padding: 5px;
   background: var(--paper);
   border: 1px solid var(--control-border);
-  border-radius: 9px;
-  box-shadow: 0 8px 28px var(--shadow-menu);
+  border-radius: var(--radius-popup);
+  box-shadow:
+    0 2px 6px var(--shadow-menu),
+    0 8px 28px var(--shadow-menu);
+  max-height: min(400px, var(--available-height));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   transform-origin: var(--transform-origin);
   transition:
     opacity 100ms ease,
@@ -1272,8 +1308,8 @@ thead th {
   text-align: left;
   background: transparent;
   border: 0;
-  border-radius: 5px;
-  font-size: 12px;
+  border-radius: var(--radius-small);
+  font-size: 13px;
   color: var(--ink);
 }
 .action-menu-item > svg {
@@ -1290,6 +1326,146 @@ thead th {
 .menu-item-danger,
 .menu-item-danger > svg {
   color: var(--red);
+}
+
+/* Shared selects render their own menu, including on Safari. */
+.select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--select-min-height, var(--control-height));
+  padding: 7px 11px;
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: var(--select-font-size, 13px);
+  font-weight: 400;
+  line-height: 20px;
+  text-align: left;
+  transition:
+    border-color 120ms,
+    background 120ms,
+    box-shadow 120ms;
+}
+.select-trigger:not(:disabled):not([data-readonly]):hover {
+  border-color: var(--control-hover);
+  background: var(--surface-subtle);
+}
+.select-trigger[data-popup-open],
+.select-trigger:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.select-value {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.select-chevron {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--subtle);
+  transition: transform 120ms;
+}
+.select-trigger[data-popup-open] .select-chevron {
+  transform: rotate(180deg);
+}
+.select-positioner {
+  z-index: 110;
+  outline: none;
+}
+.select-popup {
+  display: flex;
+  width: max-content;
+  min-width: var(--anchor-width);
+  max-width: var(--available-width);
+  max-height: min(320px, var(--available-height));
+  border: 1px solid var(--control-border);
+  border-radius: var(--radius-popup);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow:
+    0 2px 6px var(--shadow-menu),
+    0 8px 28px var(--shadow-menu);
+  overflow: hidden;
+  outline: none;
+  transform-origin: var(--transform-origin);
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+.select-popup[data-starting-style],
+.select-popup[data-ending-style] {
+  opacity: 0;
+  transform: translateY(-3px);
+}
+.select-list {
+  flex: 1;
+  min-height: 0;
+  padding: 5px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  outline: none;
+}
+.select-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border-radius: var(--radius-small);
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 20px;
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+  outline: none;
+}
+.select-item[data-selected] {
+  background: var(--surface);
+  font-weight: 500;
+}
+.select-item[data-highlighted] {
+  background: var(--hover);
+}
+.select-item[data-disabled] {
+  color: var(--subtle);
+  opacity: 0.5;
+}
+.select-item-text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.select-item-indicator {
+  display: flex;
+  flex-shrink: 0;
+  width: 14px;
+  margin-left: auto;
+  color: var(--muted);
+}
+@media (max-width: 760px), (pointer: coarse) {
+  :root {
+    --select-min-height: 44px;
+    --select-font-size: 16px;
+  }
+  .select-trigger {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .select-item {
+    min-height: 44px;
+    padding: 10px;
+    font-size: 14px;
+  }
 }
 .tooltip-positioner {
   z-index: 120;
@@ -1645,6 +1821,7 @@ thead th {
   .evidence-drawer,
   .navigation-panel,
   .menu-positioner,
+  .select-positioner,
   .text-link,
   .report-content .button,
   .report-content .icon-button,
