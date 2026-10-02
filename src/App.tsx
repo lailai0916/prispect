@@ -29,6 +29,7 @@ import type {
 import { api, setCsrfToken, RequestError, requestErrorText } from './api';
 import { type Locale } from './format';
 import { changeComposerOwner } from './start-draft';
+import { RouteErrorBoundary } from './RouteErrorBoundary';
 
 import {
   AppContext,
@@ -456,69 +457,74 @@ export function App() {
           }
           tabIndex={-1}
         >
-          <Suspense
-            fallback={
-              <div className="loading-page">
-                <LoaderCircle className="spinner" />
-                <p>{t('正在打开页面…', 'Opening page…')}</p>
-              </div>
-            }
-          >
-            {loadError ? (
-              <div className="connection-error">
-                <CircleAlert />
-                <h1>{t('暂时无法连接工作区', 'Workspace is unavailable')}</h1>
-                <p>{loadError}</p>
-                <button
-                  className="button button-primary"
-                  onClick={() => void refresh().catch(() => {})}
-                >
-                  <RefreshCw size={16} />
-                  {t('重新连接', 'Reconnect')}
-                </button>
-              </div>
-            ) : !loaded ? (
-              <div className="loading-page">
-                <LoaderCircle className="spinner" />
-                <p>{t('正在读取工作区…', 'Loading your workspace…')}</p>
-              </div>
-            ) : page === '/' ? (
-              <Home />
-            ) : page === '/method' ? (
-              <MethodPage />
-            ) : page === '/login' || page === '/register' || !user || !workspace ? (
-              <AuthPage
-                mode={page === '/register' ? 'register' : 'login'}
-                next={new URLSearchParams(route.split('?')[1]).get('next') || '/'}
-              />
-            ) : page === '/account' ? (
-              <AccountPage />
-            ) : page === '/workspace' ? (
-              <WorkspacePage />
-            ) : page === '/decisions' ? (
-              <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
-            ) : page === '/company' ? (
-              <CompanyAgentPage key={route} query={new URLSearchParams(route.split('?')[1])} />
-            ) : page === '/new' ? (
-              <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
-            ) : page === '/materials' ? (
-              <MaterialsPage />
-            ) : page.startsWith('/tasks/') ? (
-              <TaskPage id={page.slice(7)} />
-            ) : page === '/compare' ? (
-              <ComparePage key={route} query={new URLSearchParams(route.split('?')[1])} />
-            ) : (
-              <EmptyState
-                title={t('页面不存在', 'Page not found')}
-                text={t('返回工作台继续核查。', 'Return to your workspace to continue.')}
-                action={
-                  <button className="button button-primary" onClick={() => navigate('/workspace')}>
-                    {t('返回工作台', 'Go to workspace')}
+          <RouteErrorBoundary resetKey={`${user?.id || 'anonymous'}:${route}`} t={t}>
+            <Suspense
+              fallback={
+                <div className="loading-page">
+                  <LoaderCircle className="spinner" />
+                  <p>{t('正在打开页面…', 'Opening page…')}</p>
+                </div>
+              }
+            >
+              {loadError ? (
+                <div className="connection-error">
+                  <CircleAlert />
+                  <h1>{t('暂时无法连接工作区', 'Workspace is unavailable')}</h1>
+                  <p>{loadError}</p>
+                  <button
+                    className="button button-primary"
+                    onClick={() => void refresh().catch(() => {})}
+                  >
+                    <RefreshCw size={16} />
+                    {t('重新连接', 'Reconnect')}
                   </button>
-                }
-              />
-            )}
-          </Suspense>
+                </div>
+              ) : !loaded ? (
+                <div className="loading-page">
+                  <LoaderCircle className="spinner" />
+                  <p>{t('正在读取工作区…', 'Loading your workspace…')}</p>
+                </div>
+              ) : page === '/' ? (
+                <Home />
+              ) : page === '/method' ? (
+                <MethodPage />
+              ) : page === '/login' || page === '/register' || !user || !workspace ? (
+                <AuthPage
+                  mode={page === '/register' ? 'register' : 'login'}
+                  next={new URLSearchParams(route.split('?')[1]).get('next') || '/'}
+                />
+              ) : page === '/account' ? (
+                <AccountPage />
+              ) : page === '/workspace' ? (
+                <WorkspacePage />
+              ) : page === '/decisions' ? (
+                <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
+              ) : page === '/company' ? (
+                <CompanyAgentPage key={route} query={new URLSearchParams(route.split('?')[1])} />
+              ) : page === '/new' ? (
+                <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
+              ) : page === '/materials' ? (
+                <MaterialsPage />
+              ) : page.startsWith('/tasks/') ? (
+                <TaskPage id={page.slice(7)} />
+              ) : page === '/compare' ? (
+                <ComparePage key={route} query={new URLSearchParams(route.split('?')[1])} />
+              ) : (
+                <EmptyState
+                  title={t('页面不存在', 'Page not found')}
+                  text={t('返回工作台继续核查。', 'Return to your workspace to continue.')}
+                  action={
+                    <button
+                      className="button button-primary"
+                      onClick={() => navigate('/workspace')}
+                    >
+                      {t('返回工作台', 'Go to workspace')}
+                    </button>
+                  }
+                />
+              )}
+            </Suspense>
+          </RouteErrorBoundary>
         </main>
         {!business && (
           <footer className="site-footer">

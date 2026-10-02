@@ -397,6 +397,20 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
       sha256: evidence.sha256,
     });
   const importOwn = () => navigate(`/new?case=custom&purpose=${run?.input.purpose || purpose}`);
+  const annualMaterialRequest = t(
+    '年度财务核查需同一主体、年度与合并口径的净利润和经营现金净额原表。',
+    'Provide the source tables for net profit and operating cash flow from the same company, annual period and consolidated scope.'
+  );
+  const purposeMaterialRequest =
+    (run?.input.purpose || purpose) === 'handover'
+      ? t(
+          '若要测算当前收付款，补充当期可用现金和收付款明细；历史年报不填作当前资金。',
+          'To calculate current receipts and payments, provide current available cash and transaction details. Historical annual-report amounts do not substitute for current funds.'
+        )
+      : t(
+          '交款前还需合同、收款账户全称和退款责任主体；年报不能确认本次收款与退款责任。',
+          'Before paying, also obtain the contract, full payee account name and entity responsible for refunds. Annual reports do not establish responsibility for this payment or refund.'
+        );
   const fileUrl = run ? `/api/company-runs/${run.id}/file` : '';
   const status = (item: CompanyResearchRun) =>
     item.agent?.cancelRequested
@@ -628,8 +642,10 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   'Check the name or code, or use your own documents. This search does not cover every company.'
                 )}
               </p>
+              <p>{annualMaterialRequest}</p>
+              <p>{purposeMaterialRequest}</p>
               <button type="button" className="button button-secondary" onClick={importOwn}>
-                {t('导入材料核查', 'Review imported evidence')}
+                {t('导入年度财务材料', 'Import annual financial evidence')}
               </button>
             </div>
           )}
@@ -750,8 +766,10 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                     'Unavailable evidence is not filled in as fact. Start another retrieval or import your own documents.'
                   )}
                 </p>
+                <p>{annualMaterialRequest}</p>
+                <p>{purposeMaterialRequest}</p>
                 <button type="button" className="button button-secondary" onClick={importOwn}>
-                  {t('导入材料核查', 'Review imported evidence')}
+                  {t('导入年度财务材料', 'Import annual financial evidence')}
                 </button>
               </div>
             </section>
@@ -1308,7 +1326,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
           </div>
         </>
       )}
-      {!run && !selected && !searching && !loadingRun && !historyLoading && (
+      {!run && !results && !selected && !searching && !loadingRun && !historyLoading && (
         <p className="company-import-link">
           {t('没有公开资料？', 'No public disclosure?')}{' '}
           <button className="text-link" onClick={importOwn}>

@@ -59,7 +59,7 @@ npm run data:samples
 
 主分支 CI 通过后，经受限 SSH 入口自动部署；包含归档与源码完整性检查、一致性状态备份和构建资产核对。仅当前认证数据库兼容旧版时允许失败回退。参见[自动部署说明](docs/actions-deployment.md)。
 
-参见[方案](docs/plan.md)、[方法与数据调研](docs/research.md)、[API 合同](docs/api.md)、[AI 使用披露](docs/ai-usage.md)及[赛事提交要求](docs/submission-checklist.md)。私有仓库徽章可能无法显示。
+参见[方案](docs/plan.md)、[方法与数据调研](docs/research.md)、[API 合同](docs/api.md)、[数据链路交接](docs/data-lineage.md)、[参考方案鉴别](docs/reference-data-review.md)、[AI 使用披露](docs/ai-usage.md)及[赛事提交要求](docs/submission-checklist.md)。私有仓库徽章可能无法显示。
 
 ## 项目结构
 

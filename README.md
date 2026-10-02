@@ -59,7 +59,7 @@ Accounts, sessions and each user's working papers persist in `CASHLENS_DATA_DIR`
 
 Main-branch CI gates deployment through a restricted SSH entry, with artifact/source integrity checks, a consistent state backup and asset verification. Rollback is allowed only when the previous release can read the current authentication schema. See [automatic deployment](docs/actions-deployment.md).
 
-See [the plan](docs/plan.md), [method and source research](docs/research.md), [API contract](docs/api.md), [AI-use disclosure](docs/ai-usage.md) and [competition submission requirements](docs/submission-checklist.md). Private-repository badges may be unavailable.
+See [the plan](docs/plan.md), [method and source research](docs/research.md), [API contract](docs/api.md), [data lineage](docs/data-lineage.md), [reference proposal review](docs/reference-data-review.md), [AI-use disclosure](docs/ai-usage.md) and [competition submission requirements](docs/submission-checklist.md). Private-repository badges may be unavailable.
 
 ## Project Structure
 
