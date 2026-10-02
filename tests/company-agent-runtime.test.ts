@@ -67,6 +67,8 @@ function publicSource(
     const address = String(url);
     calls.push(address);
     assert.equal(init?.redirect, 'error');
+    if (address.startsWith('https://datacenter.eastmoney.com/'))
+      return json({ success: true, result: { data: [] } });
     if (address.endsWith('/topSearch/query'))
       return json([
         {
@@ -133,7 +135,8 @@ test('real PDF parser, deterministic candidate extraction and actual tool lifecy
     },
   });
   assert.equal(modelRequests, 0);
-  assert.equal(source.calls.length, 4);
+  assert.equal(source.calls.filter((url) => !url.includes('datacenter.eastmoney.com')).length, 4);
+  assert.equal(source.calls.filter((url) => url.includes('datacenter.eastmoney.com')).length, 3);
   assert.equal(result.model.status, 'not-requested');
   assert.equal(result.preview?.material.observations.length, 12);
   assert.equal(result.preview?.material.sha256, createHash('sha256').update(buffer).digest('hex'));
@@ -143,12 +146,23 @@ test('real PDF parser, deterministic candidate extraction and actual tool lifecy
     'pass'
   );
   assert.ok(result.preview?.reviewRequired);
+  assert.equal(result.agent?.financialContext?.status, 'unavailable');
+  assert.deepEqual(result.agent?.financialContext?.years, []);
+  assert.ok(result.agent?.financialContext?.sources.every((source) => source.status === 'empty'));
+  assert.equal(
+    result.agent?.branches.find((branch) => branch.id === 'market-data')?.status,
+    'failed'
+  );
   for (const running of trace.records.filter((record) => record.status === 'running')) {
-    const completed = trace.records.find(
-      (record) => record.id === running.id && record.status === 'completed'
+    const expectedStatus = running.tool === 'eastmoney_financial_context' ? 'failed' : 'completed';
+    const finished = trace.records.find(
+      (record) => record.id === running.id && record.status === expectedStatus
     );
-    assert.ok(completed, `real tool ${running.tool} has a final record`);
-    assert.ok(Date.parse(completed.finishedAt!) >= Date.parse(running.startedAt));
+    assert.ok(
+      finished,
+      `real tool ${running.tool} has its expected ${expectedStatus} final record`
+    );
+    assert.ok(Date.parse(finished.finishedAt!) >= Date.parse(running.startedAt));
   }
   assert.equal(trace.records.at(-1)?.status, 'skipped');
 });
@@ -181,7 +195,7 @@ test('identity mismatch, normal missing annual data and source refusal stop with
   assert.equal(emptyModelCalls, 0);
   assert.match(stopped.stoppedReason!, /没有匹配2025/);
   assert.equal(stopped.buffer, undefined);
-  assert.equal(empty.calls.length, 3);
+  assert.equal(empty.calls.filter((url) => !url.includes('datacenter.eastmoney.com')).length, 3);
   const denied = publicSource(buffer, { annualFailure: true }),
     trace = traceLog();
   await assert.rejects(
@@ -189,7 +203,7 @@ test('identity mismatch, normal missing annual data and source refusal stop with
     /来源限制访问/
   );
   assert.equal(
-    denied.calls.length,
+    denied.calls.filter((url) => !url.includes('datacenter.eastmoney.com')).length,
     3,
     'annual and recent requests start in parallel; refusal is never retried'
   );

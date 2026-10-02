@@ -79,6 +79,10 @@ export const guideDocument: ProductDocument = {
           'Read financial observations first, then open their sources to check amounts, year, units and consolidated scope. After reviewing candidates, select “Adopt and review.” Prispect saves the material and creates a rule report without inheriting the lookup’s AI choice.',
         ],
         [
+          '历史财务图表并行读取东方财富公开网页的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',
+          'Historical charts read annual fields from Eastmoney’s public website in parallel, without an Eastmoney account or API key. Switch between profit and operating cash, revenue and profit, or year-end monetary funds and two liability items; select a year to inspect exact amounts, field names and response sources. Web fields are stored separately from annual-report candidates. Equal amounts indicate a matching comparison only; verify scope against the original. Missing values stay unknown. Monetary funds are not today’s available cash, and short-term loans plus non-current liabilities due within one year do not include all payment obligations.',
+        ],
+        [
           '公告标题不代表已读全文；附注与公告覆盖范围会注明。材料不足或原表加总有差额时，候选可以保留，但相关解释会停止并列出需要复核的项目。',
           'An announcement title does not mean its full text was read. Notes and announcement coverage are stated. Incomplete evidence or a source-table total difference may leave candidates available, but dependent explanations stop and identify what needs checking.',
         ],

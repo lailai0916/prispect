@@ -34,6 +34,7 @@ import {
   CompanyFinancialFindings,
   CompanyEvidenceResults,
 } from '../CompanyRunOverview';
+import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import type { CompanyPublicEvidence } from '../../shared/company-contracts';
 import { api, post, requestErrorText } from '../api';
 import { useApp } from '../context';
@@ -778,6 +779,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
             </div>
           )}
           {run.preview && <CompanyFinancialFindings run={run} onPage={openPage} />}
+          <CompanyFinancialTrends key={run.id} run={run} onPage={openPage} />
           {run.preview?.checks.some((check) => check.status === 'fail') && (
             <div className="company-check-stop" role="note">
               <CircleAlert size={16} />

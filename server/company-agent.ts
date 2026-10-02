@@ -42,6 +42,8 @@ import {
 } from './model.js';
 import { ApiFault } from './validation.js';
 import { extractAuditOpinion, pendingAuditOpinion } from './company-audit.js';
+import { retrieveCompanyFinancialContext } from './company-market.js';
+import type { CompanyFinancialContext } from '../shared/company-market.js';
 
 export { searchCompanies } from './company-sources.js';
 export interface CompanyResearchOptions {
@@ -604,6 +606,7 @@ const GraphState = Annotation.Root({
   finance: Annotation<Omit<CompanyResearchOutput, 'buffer'> | undefined>(),
   notes: Annotation<NarrativeResult | undefined>(),
   auditOpinion: Annotation<CompanyAuditOpinionResult | undefined>(),
+  financialContext: Annotation<CompanyFinancialContext | undefined>(),
   notices: Annotation<NarrativeResult | undefined>(),
   stop: Annotation<string | undefined>(),
 });
@@ -643,15 +646,31 @@ class PermitPool {
 }
 const publicRequests = new PermitPool(2);
 const modelRequests = new PermitPool(3);
-const branchIds: CompanyBranchId[] = ['identity', 'finance', 'notes', 'announcements', 'reconcile'];
-export function initialCompanyGraphProgress(previous?: CompanyGraphProgress): CompanyGraphProgress {
+const branchIds: CompanyBranchId[] = [
+  'identity',
+  'finance',
+  'market-data',
+  'notes',
+  'announcements',
+  'reconcile',
+];
+export function initialCompanyGraphProgress(
+  previous?: CompanyGraphProgress,
+  marketEnabled = previous ? previous.branches.some((branch) => branch.id === 'market-data') : true
+): CompanyGraphProgress {
+  const ids = branchIds.filter((id) => marketEnabled || id !== 'market-data');
   return previous
     ? {
         ...structuredClone(previous),
         cancelRequested: false,
         cancelledAt: undefined,
         recoverable: true,
-        branches: previous.branches.map((branch) =>
+        branches: [
+          ...previous.branches.filter((branch) => marketEnabled || branch.id !== 'market-data'),
+          ...ids
+            .filter((id) => !previous.branches.some((branch) => branch.id === id))
+            .map((id) => ({ id, status: 'pending' as const })),
+        ].map((branch) =>
           branch.status === 'running' || branch.status === 'failed'
             ? { ...branch, status: 'pending', summary: undefined }
             : branch
@@ -660,7 +679,7 @@ export function initialCompanyGraphProgress(previous?: CompanyGraphProgress): Co
     : {
         version: 'langgraph-v1',
         revision: 1,
-        branches: branchIds.map((id) => ({ id, status: 'pending' })),
+        branches: ids.map((id) => ({ id, status: 'pending' })),
         recoverable: false,
         cancelRequested: false,
         evidence: [],
@@ -702,7 +721,23 @@ export async function runCompanyResearch(
   const checkpoint = options.checkpoint;
   if (checkpoint && !/^[a-f0-9-]{36}$/.test(checkpoint.threadId))
     throw new ApiFault(400, 'COMPANY_CHECKPOINT_INVALID', '查询断点标识无效');
-  const progress = initialCompanyGraphProgress(options.previousProgress);
+  const savedScope = checkpoint?.resume
+    ? await readFile(path.join(checkpoint.directory, 'scope.json'), 'utf8').catch(() => '')
+    : undefined;
+  let graphScopeVersion: 'langgraph-v1' | 'langgraph-v2-market' = 'langgraph-v2-market';
+  if (savedScope !== undefined) {
+    let version: unknown;
+    try {
+      version = JSON.parse(savedScope).version;
+    } catch {
+      /* Invalid scope is rejected below. */
+    }
+    if (version !== 'langgraph-v1' && version !== 'langgraph-v2-market')
+      throw new ApiFault(409, 'COMPANY_RESUME_SCOPE', '断点主体、年度或模型选项不同，不能复用');
+    graphScopeVersion = version;
+  }
+  const marketEnabled = graphScopeVersion === 'langgraph-v2-market';
+  const progress = initialCompanyGraphProgress(options.previousProgress, marketEnabled);
   progress.auditOpinion ||= pendingAuditOpinion(input.year);
   progress.auditOpinion.requestedYear = input.year;
   const sourceBudget = {
@@ -718,11 +753,15 @@ export async function runCompanyResearch(
     requests: progress.providerDiagnostics?.requests || [],
     validationFailures: progress.providerDiagnostics?.validationFailures || [],
   };
+  let progressStorageFailed = false;
   const emit = async () => {
+    if (progressStorageFailed)
+      throw new ApiFault(503, 'COMPANY_PROGRESS_STORAGE', '查询进度保存失败，停止发送新的请求');
     progress.budget.sourceRequests = sourceBudget.used;
     try {
       await options.onProgress?.(structuredClone(progress));
     } catch {
+      progressStorageFailed = true;
       throw new ApiFault(503, 'COMPANY_PROGRESS_STORAGE', '查询进度保存失败，停止发送新的请求');
     }
   };
@@ -744,9 +783,12 @@ export async function runCompanyResearch(
     id: CompanyBranchId,
     name: string,
     label: string,
-    action: (
-      deps: CompanySourceDependencies
-    ) => Promise<{ value: T; summary: string; sources?: CompanyAgentTrace['sources'] }>
+    action: (deps: CompanySourceDependencies) => Promise<{
+      value: T;
+      summary: string;
+      sources?: CompanyAgentTrace['sources'];
+      status?: 'completed' | 'failed';
+    }>
   ): Promise<T> => {
     const trace: CompanyAgentTrace = {
       id: randomUUID(),
@@ -767,6 +809,12 @@ export async function runCompanyResearch(
           // Sources reserve their attempt before invoking fetch. Persist that
           // cumulative reservation before any request leaves this process.
           await emit();
+          if (progressStorageFailed)
+            throw new ApiFault(
+              503,
+              'COMPANY_PROGRESS_STORAGE',
+              '查询进度保存失败，停止发送新的请求'
+            );
           return (options.fetch || fetch)(url, init);
         }),
       onRetry: async (message) => {
@@ -778,7 +826,7 @@ export async function runCompanyResearch(
       const result = await action(deps);
       await options.onUpdate?.({
         ...trace,
-        status: 'completed',
+        status: result.status || 'completed',
         finishedAt: new Date().toISOString(),
         outputSummary: result.summary,
         sources: result.sources || [],
@@ -879,7 +927,7 @@ export async function runCompanyResearch(
       }
     });
   const scope = JSON.stringify({
-    version: 'langgraph-v1',
+    version: graphScopeVersion,
     input,
     model: config?.model || DEFAULT_MODEL,
     provider: new URL(config?.baseUrl || DEFAULT_MODEL_BASE_URL).hostname,
@@ -892,8 +940,7 @@ export async function runCompanyResearch(
     await mkdir(checkpoint.directory, { recursive: true, mode: 0o700 });
     const scopeFile = path.join(checkpoint.directory, 'scope.json');
     if (checkpoint.resume) {
-      const saved = await readFile(scopeFile, 'utf8').catch(() => '');
-      if (saved !== scope)
+      if (savedScope !== scope)
         throw new ApiFault(409, 'COMPANY_RESUME_SCOPE', '断点主体、年度或模型选项不同，不能复用');
     } else {
       await writeFile(scopeFile, scope, { mode: 0o600, flag: 'wx' });
@@ -1162,7 +1209,7 @@ export async function runCompanyResearch(
         pendingNodes.delete(pending);
       }
     };
-  const graph = new StateGraph(GraphState)
+  const graphBuilder = new StateGraph(GraphState)
     .addNode(
       'resolve',
       tracked(async () => {
@@ -1549,6 +1596,8 @@ export async function runCompanyResearch(
                 warnings: ['本次查询未取得可用于定位的年报原件；不能视为没有审计意见。'],
               });
         progress.evidence = [...(state.notes?.evidence || []), ...(state.notices?.evidence || [])];
+        if (marketEnabled && state.financialContext)
+          progress.financialContext = state.financialContext;
         progress.competingExplanations = [
           ...(state.notes?.explanations || []),
           ...(state.notices?.explanations || []),
@@ -1575,10 +1624,56 @@ export async function runCompanyResearch(
     .addEdge('annual_list', 'acquire')
     .addEdge('acquire', 'financial')
     .addEdge('acquire', 'annual_notes')
-    .addEdge(['recent_list', 'acquire'], 'recent_texts')
-    .addEdge(['financial', 'annual_notes', 'recent_texts'], 'reconcile')
-    .addEdge('reconcile', END)
-    .compile({ checkpointer: saver });
+    .addEdge(['recent_list', 'acquire'], 'recent_texts');
+  const marketNode = tracked(async (state) => {
+    await branch('market-data', 'running');
+    const financialContext = await traceTool(
+      'market-data',
+      'eastmoney_financial_context',
+      '并行读取网页年报字段',
+      async (deps) => {
+        const result = await retrieveCompanyFinancialContext(state.identity!, input.year, deps);
+        return {
+          value: result,
+          status: result.status === 'unavailable' ? ('failed' as const) : ('completed' as const),
+          summary: `网页字段${result.years.length}个年度；${result.sources.filter((source) => source.status === 'failed').length}个来源未完成。独立于原件金额采用和模型解释。`,
+          sources: result.sources.map((source) => ({
+            title: source.id,
+            url: source.requestUrl,
+            ...(source.sha256 ? { sha256: source.sha256 } : {}),
+          })),
+        };
+      }
+    );
+    if (options.signal?.aborted) throw new ApiFault(499, 'COMPANY_CANCELLED', '公开查询已中止');
+    progress.financialContext = financialContext;
+    await branch(
+      'market-data',
+      financialContext.status === 'unavailable'
+        ? 'failed'
+        : financialContext.status === 'unsupported'
+          ? 'skipped'
+          : 'completed',
+      financialContext.status === 'unsupported'
+        ? '当前网页字段范围不支持该主体。'
+        : financialContext.status === 'unavailable'
+          ? '网页字段暂不可用；继续官方原件核查。'
+          : `保留${financialContext.years.length}个年度的第三方网页字段，缺值不补零。`
+    );
+    return { financialContext };
+  });
+  // A v1 checkpoint never schedules this node or gains a new reconciliation barrier.
+  const graph = marketEnabled
+    ? graphBuilder
+        .addNode('market_data', marketNode)
+        .addEdge('resolve', 'market_data')
+        .addEdge(['financial', 'annual_notes', 'recent_texts', 'market_data'], 'reconcile')
+        .addEdge('reconcile', END)
+        .compile({ checkpointer: saver })
+    : graphBuilder
+        .addEdge(['financial', 'annual_notes', 'recent_texts'], 'reconcile')
+        .addEdge('reconcile', END)
+        .compile({ checkpointer: saver });
   const runnable = {
     configurable: { thread_id: checkpoint?.threadId || randomUUID() },
     signal: options.signal,
@@ -1587,6 +1682,7 @@ export async function runCompanyResearch(
   try {
     await emit();
     const state = await graph.invoke(checkpoint?.resume ? null : {}, runnable);
+    if (marketEnabled && state.financialContext) progress.financialContext = state.financialContext;
     const model = state.finance?.model || {
       requested: input.useModel === true,
       status: input.useModel

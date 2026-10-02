@@ -238,6 +238,10 @@ export const privacyDocument: ProductDocument = {
           'Company lookup sends your entered search terms and selected security code, entity identifier, year and other retrieval parameters to CNINFO’s public-disclosure service. Enter only a company name or security code in company search; avoid private transactions, personal names, account details or other unnecessary information.',
         ],
         [
+          '历史财务图表另向东方财富公开网页数据接口发送选定证券代码、交易所与财务表类别，取得公开字段，再筛选本次选择的年度及以前最多六个年度的年报记录。此步骤不发送私人事项、上传材料、现金计划、场景备注或析光账号资料，也不要求你配置东方财富账户或密钥。查询记录保存取得的字段、抓取时间与响应哈希；这些接口字段不会自动成为已确认的年报材料。',
+          'Historical charts separately send the selected security code, exchange and financial-table category to Eastmoney’s public website data service, then retain up to six annual periods ending with the year selected for this run. This step does not send private cases, uploaded materials, cash plans, context notes or Prispect account details, and requires no Eastmoney account or API key. Research records retain returned fields, retrieval times and response hashes. These web fields do not automatically become confirmed annual-report evidence.',
+        ],
+        [
           '账号与工作区由析光所用云服务器保存和处理，基础设施运营者可能按其服务规则处理网络和运维数据。必要维护、事故排查或处理你提出的数据请求时，获授权人员可能接触相应资料。应用中的账号隔离不等于对运营人员的端到端加密。',
           'Accounts and workspaces are stored and processed on the cloud server used by Prispect. Infrastructure operators may process network and operational data under their service rules. Authorized personnel may access relevant information for maintenance, incident investigation or your data requests. Application-level account separation is not end-to-end encryption against the operator.',
         ],

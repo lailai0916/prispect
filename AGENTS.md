@@ -9,13 +9,15 @@ Public product copy uses 析光 / Prispect, and explains the customer's evidence
 `prispect` is the private repository for Prispect (析光), a cash-conversion
 evidence and payment-decision product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
 It uses strict TypeScript, React/Vite and Express, Better Auth accounts/sessions, a LangGraph
-workflow with per-user SQLite checkpoints, and isolated
+workflow with per-user SQLite checkpoints, an independent anonymous financial-web branch, and isolated
 atomic per-user working-paper storage. The narrow financial task compares same-period
 consolidated annual net profit and operating cash and traces supported adjustments. It serves external money/trust decisions and internal
 operating handovers. Private decisions use immutable input/evidence versions and conditional
 prepayment exposure or dated cash-event calculations. Historical signals motivate inquiry;
 direct private records support their own fields. User-entered plans, statements and decision
 records are distinct from historical report facts and never enter public-model payloads.
+
+The financial-web branch retains up to six annual periods for supported general-industry issuers, with table-specific provenance and response hashes. Its fields remain separate from original-report candidates and are never automatically adopted as confirmed evidence.
 
 Keep the actual implementation, runtime, build, and test commands current here as the project develops.
 

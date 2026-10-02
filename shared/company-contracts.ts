@@ -1,5 +1,13 @@
 /** Safe client DTOs only. Graph checkpoints, raw text and runtime configuration stay on the server. */
-export type CompanyBranchId = 'identity' | 'finance' | 'notes' | 'announcements' | 'reconcile';
+import type { CompanyFinancialContext } from './company-market.js';
+
+export type CompanyBranchId =
+  | 'identity'
+  | 'finance'
+  | 'market-data'
+  | 'notes'
+  | 'announcements'
+  | 'reconcile';
 export interface CompanyBranchProgress {
   id: CompanyBranchId;
   status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
@@ -72,6 +80,8 @@ export interface CompanyGraphProgress {
   evidence: CompanyPublicEvidence[];
   /** Deterministic report-text location, separate from adopted amounts and model evidence. */
   auditOpinion?: CompanyAuditOpinionResult;
+  /** Independent third-party web context. Older runs did not retrieve it. */
+  financialContext?: CompanyFinancialContext;
   competingExplanations: CompanyCompetingExplanation[];
   coverage: {
     annualReports: number;

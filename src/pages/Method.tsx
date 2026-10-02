@@ -231,6 +231,12 @@ export function MethodPage() {
               </p>
               <p>
                 {t(
+                  '历史图表独立读取东方财富公开网页的年度财务字段，保留证券主体、期间、币种、接口字段与响应哈希。与年报候选的金额对照仅标识相同、不同或尚未核对，不代替原件与范围确认。资金存量、年度现金流和有限债务分项分别展示，不推导当前可用资金或付款安全。来源暂不可达或缺项时，保留明确状态。',
+                  'Historical charts separately read annual financial fields from Eastmoney’s public website, retaining the security identity, period, currency, field names and response hashes. Comparisons with annual-report candidates indicate equal, different or unchecked amounts; they do not replace source and scope confirmation. Cash stocks, annual cash flows and selected debt items are shown separately, without inferring current available funds or payment safety. Unavailable sources and missing fields retain explicit states.'
+                )}
+              </p>
+              <p>
+                {t(
                   '候选提取结果仍需核对原件后确认，才成为个人材料。天眼查等商业工商接口尚未取得授权接入，不将公开财报查询表述为全面公司信用调查。',
                   'Extracted candidates require review against the original and confirmation before becoming personal materials. Licensed commercial company-data services such as Tianyancha are not connected; public-report research is not a comprehensive company credit investigation.'
                 )}

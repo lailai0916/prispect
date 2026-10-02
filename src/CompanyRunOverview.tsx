@@ -10,6 +10,7 @@ import { CompanyAuditOpinion } from './CompanyAuditOpinion';
 const branchNames: Record<CompanyBranchId, [string, string]> = {
   identity: ['公司主体', 'Company identity'],
   finance: ['财务报表', 'Financial statements'],
+  'market-data': ['历史财务数据', 'Historical financial data'],
   notes: ['经营附注', 'Operating notes'],
   announcements: ['近期公告', 'Recent disclosures'],
   reconcile: ['交叉核对', 'Cross-check'],
@@ -58,7 +59,7 @@ export function CompanyRunOverview({ run }: { run: CompanyResearchRun }) {
                     : t('当前执行已停止', 'Execution has stopped')}
       </p>
       <ol className="company-branches">
-        {(['finance', 'notes', 'announcements'] as const).map((id) => {
+        {(['finance', 'market-data', 'notes', 'announcements'] as const).map((id) => {
           const branch = agent.branches.find((item) => item.id === id);
           if (!branch) return null;
           return (

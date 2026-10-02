@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   Activity,
   ArrowDown,
@@ -1568,9 +1568,27 @@ export function ChecksPanel({ report }: { report: Report }) {
 
 export function TrendChart({ report }: { report: Report }) {
   const { locale, t, showEvidence } = useApp();
+  const titleId = useId();
+  const [selectedIndex, setSelectedIndex] = useState(2);
   const profit = report.metrics.find((metric) => metric.key === 'netProfit');
   const cash = report.metrics.find((metric) => metric.key === 'operatingCashFlow');
   const values = [profit?.previousValue, cash?.previousValue, profit?.value, cash?.value];
+  const bars = values.map((value, index) => {
+    const key = index % 2 ? 'operatingCashFlow' : 'netProfit';
+    const year = index < 2 ? report.previousYear : report.year;
+    return {
+      value: value ?? null,
+      key,
+      year,
+      refs: report.checks.find((check) => check.id === `${year}-${key}`)?.sourceRefs || [],
+    } as const;
+  });
+  const selected = bars[selectedIndex];
+  const selectBar = (index: number, openSource = false) => {
+    setSelectedIndex(index);
+    const bar = bars[index];
+    if (openSource && bar.value !== null && bar.refs.length) showEvidence(bar.refs, report);
+  };
   const numbers = values.map((value) =>
     value === null || value === undefined ? null : Number(value)
   );
@@ -1582,8 +1600,8 @@ export function TrendChart({ report }: { report: Report }) {
   return (
     <div className="trend-block">
       <div className="chart-scroll">
-        <svg className="trend-chart" viewBox="0 0 760 280" role="img" aria-labelledby="trend-title">
-          <title id="trend-title">
+        <svg className="trend-chart" viewBox="0 0 760 280" role="group" aria-labelledby={titleId}>
+          <title id={titleId}>
             {t('两年利润与经营现金对比', 'Two-year profit and operating cash comparison')}
           </title>
           {[0, 1, 2, 3].map((i) => (
@@ -1603,17 +1621,64 @@ export function TrendChart({ report }: { report: Report }) {
           <text className="chart-unit" x="63" y="23" textAnchor="end">
             {axis.label}
           </text>
+          <line x1="74" x2="727" y1={y(0)} y2={y(0)} className="chart-zero" />
           {numbers.map((number, index) => {
             const x = [180, 262, 470, 552][index];
+            const bar = bars[index];
             return (
-              <g key={index}>
+              <g
+                key={index}
+                className={`trend-bar ${selectedIndex === index ? 'is-selected' : ''}`}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedIndex === index}
+                aria-label={`${bar.year} · ${metricName(bar.key, locale)} · ${bar.value === null ? t('未知', 'Unknown') : `${money(bar.value, locale, false)} CNY`} · ${t('选择并查看该期来源', 'Select and inspect this period’s sources')}`}
+                onFocus={() => selectBar(index)}
+                onClick={() => selectBar(index, true)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    selectBar(index, true);
+                  } else if (['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                    event.preventDefault();
+                    const next =
+                      event.key === 'Home'
+                        ? 0
+                        : event.key === 'End'
+                          ? bars.length - 1
+                          : Math.max(
+                              0,
+                              Math.min(
+                                bars.length - 1,
+                                index + (event.key === 'ArrowRight' ? 1 : -1)
+                              )
+                            );
+                    (
+                      event.currentTarget.parentElement?.querySelectorAll('.trend-bar')[next] as
+                        | SVGElement
+                        | undefined
+                    )?.focus();
+                  }
+                }}
+              >
+                <rect
+                  className="trend-hit-area"
+                  x={x - 8}
+                  y="35"
+                  width="76"
+                  height="183"
+                  fill="transparent"
+                  pointerEvents="all"
+                />
                 <rect
                   x={x}
                   y={number === null ? y(0) - 2 : Math.min(y(number), y(0))}
                   width="60"
                   height={number === null ? 3 : Math.max(3, Math.abs(y(0) - y(number)))}
                   rx="2"
-                  className={index % 2 ? 'bar-positive' : 'bar-total'}
+                  className={
+                    number === null ? 'trend-missing-bar' : index % 2 ? 'bar-positive' : 'bar-total'
+                  }
                 />
                 <text
                   className="bar-value"
@@ -1646,6 +1711,32 @@ export function TrendChart({ report }: { report: Report }) {
           <FileText size={13} />
         </button>
       </div>
+      <div className="trend-selection" aria-label={t('所选年度指标', 'Selected annual metric')}>
+        <div>
+          <span>
+            {selected.year} · {metricName(selected.key, locale)}
+          </span>
+          <strong className="mono">
+            {selected.value === null
+              ? t('未知', 'Unknown')
+              : `${money(selected.value, locale, false)} CNY`}
+          </strong>
+        </div>
+        <button
+          className="text-link"
+          disabled={selected.value === null || !selected.refs.length}
+          onClick={() => showEvidence(selected.refs, report)}
+        >
+          {t('查看该期原文', 'View this period’s source')}
+          <ArrowUpRight size={14} />
+        </button>
+      </div>
+      <p className="field-note">
+        {t(
+          '图形标签已舍入；所选项目保留精确金额。未知值显示为空缺，不作零值。',
+          'Plot labels are rounded; the selected item retains its exact amount. Unknown values are gaps, not zeros.'
+        )}
+      </p>
     </div>
   );
 }

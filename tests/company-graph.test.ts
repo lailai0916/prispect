@@ -7,6 +7,9 @@ import { fileURLToPath } from 'node:url';
 import { initialCompanyGraphProgress, runCompanyResearch } from '../server/company-agent.js';
 import type { CompanyGraphProgress } from '../shared/company-contracts.js';
 import { modelFailureDiagnostic } from '../server/model.js';
+import { Annotation, StateGraph, START, END } from '@langchain/langgraph';
+import { SqliteSaver } from '@langchain/langgraph-checkpoint-sqlite';
+import type { CompanyIdentity } from '../shared/contracts.js';
 function textPdf(pages: string[]): Buffer {
   const hex = (text: string) =>
     [...text].map((char) => char.charCodeAt(0).toString(16).padStart(4, '0')).join('');
@@ -62,7 +65,12 @@ const noticePdf = textPdf([
 ]);
 const json = (value: unknown) => new Response(JSON.stringify(value));
 function fixture(
-  options: { blockNotice?: boolean; requireParallel?: boolean; annual?: Buffer } = {}
+  options: {
+    blockNotice?: boolean;
+    requireParallel?: boolean;
+    annual?: Buffer;
+    market?: boolean;
+  } = {}
 ) {
   const calls: string[] = [];
   let releaseRecent!: () => void;
@@ -77,6 +85,37 @@ function fixture(
   const fetcher: typeof fetch = async (url, init) => {
     const address = String(url);
     calls.push(address);
+    if (address.startsWith('https://datacenter.eastmoney.com/'))
+      return options.market
+        ? json({
+            success: true,
+            result: {
+              data: [
+                {
+                  SECUCODE: '300750.SZ',
+                  SECURITY_CODE: '300750',
+                  ORG_CODE: '10000000001',
+                  ORG_TYPE: '通用',
+                  CURRENCY: 'CNY',
+                  REPORT_TYPE: '年报',
+                  REPORT_DATE: '2025-12-31 00:00:00',
+                  NETPROFIT: '100000.00',
+                  TOTAL_OPERATE_INCOME: '300000.00',
+                  NETCASH_OPERATE: '70000.00',
+                  NETCASH_INVEST: '-10000.00',
+                  NETCASH_FINANCE: '5000.00',
+                  MONETARYFUNDS: '40000.00',
+                  SHORT_LOAN: null,
+                  NONCURRENT_LIAB_1YEAR: '10000.00',
+                  ACCOUNTS_RECE: '20000.00',
+                  INVENTORY: '30000.00',
+                  TOTAL_ASSETS: '500000.00',
+                  TOTAL_LIABILITIES: '200000.00',
+                },
+              ],
+            },
+          })
+        : json({ success: true, result: { data: [] } });
     if (address.endsWith('/topSearch/query'))
       return json([
         { code: '300750', orgId: 'GD165627', zwjc: '测试公司', category: 'A股', delisted: 'false' },
@@ -137,6 +176,137 @@ function fixture(
   };
   return { fetch: fetcher, calls, started };
 }
+test('web context is saved separately, never adopted into PDF observations, and completed checkpoints do not refetch it', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-market-graph-'));
+  const source = fixture({ market: true });
+  const threadId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+  try {
+    const output = await runCompanyResearch(input, {
+      root,
+      fetch: source.fetch,
+      checkpoint: { directory, threadId },
+    });
+    assert.equal(output.agent?.financialContext?.status, 'partial');
+    assert.equal(output.agent?.financialContext?.years[0]?.amounts.netProfit, '100000.00');
+    assert.equal(output.agent?.financialContext?.years[0]?.amounts.shortLoans, null);
+    assert.equal(
+      output.agent?.branches.find((branch) => branch.id === 'market-data')?.status,
+      'completed'
+    );
+    assert.equal(source.calls.filter((url) => url.includes('datacenter.eastmoney.com')).length, 3);
+    assert.ok(
+      output.preview?.material.observations.every((row) =>
+        [
+          'netProfit',
+          'operatingCashFlow',
+          'inventoryAdjustment',
+          'receivablesAdjustment',
+          'payablesAdjustment',
+          'otherAdjustments',
+        ].includes(row.key)
+      )
+    );
+    assert.equal(
+      JSON.parse(await readFile(path.join(directory, 'scope.json'), 'utf8')).version,
+      'langgraph-v2-market'
+    );
+    const calls = source.calls.length;
+    const published = await runCompanyResearch(input, {
+      root,
+      fetch: source.fetch,
+      checkpoint: { directory, threadId, resume: true },
+      previousProgress: output.agent,
+    });
+    assert.equal(source.calls.length, calls);
+    assert.deepEqual(published.agent?.financialContext, output.agent?.financialContext);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('a real v1 SQLite checkpoint resumes the old reconciliation topology without scheduling market data', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-legacy-graph-'));
+  const threadId = 'cccccccc-cccc-cccc-cccc-cccccccccccc';
+  const identity: CompanyIdentity = {
+    securityCode: input.securityCode,
+    orgId: input.orgId,
+    shortName: '测试公司',
+    companyName: null,
+    exchange: 'szse',
+    sourceUrl: 'https://www.cninfo.com.cn/',
+  };
+  const oldState = Annotation.Root({ identity: Annotation<CompanyIdentity | undefined>() });
+  const saver = SqliteSaver.fromConnString(path.join(directory, 'checkpoints.sqlite'));
+  const oldGraph = new StateGraph(oldState)
+    .addNode('resolve', async () => ({ identity }))
+    .addNode('annual_list', async () => {
+      throw new Error('fixture v1 interruption');
+    })
+    .addNode('recent_list', async () => ({}))
+    .addNode('acquire', async () => ({}))
+    .addNode('financial', async () => ({}))
+    .addNode('annual_notes', async () => ({}))
+    .addNode('recent_texts', async () => ({}))
+    .addNode('reconcile', async () => ({}))
+    .addEdge(START, 'resolve')
+    .addEdge('resolve', 'annual_list')
+    .addEdge('resolve', 'recent_list')
+    .addEdge('annual_list', 'acquire')
+    .addEdge('acquire', 'financial')
+    .addEdge('acquire', 'annual_notes')
+    .addEdge(['recent_list', 'acquire'], 'recent_texts')
+    .addEdge(['financial', 'annual_notes', 'recent_texts'], 'reconcile')
+    .addEdge('reconcile', END)
+    .compile({ checkpointer: saver });
+  try {
+    await assert.rejects(
+      () => oldGraph.invoke({}, { configurable: { thread_id: threadId } }),
+      /fixture v1 interruption/
+    );
+  } finally {
+    saver.db.close();
+  }
+  try {
+    await writeFile(
+      path.join(directory, 'scope.json'),
+      JSON.stringify({
+        version: 'langgraph-v1',
+        input,
+        model: 'gpt-6.1-sol',
+        provider: 'api.openai.com',
+        tier: null,
+      })
+    );
+    const source = fixture();
+    const previous = initialCompanyGraphProgress(undefined, false);
+    previous.branches[0]!.status = 'completed';
+    const output = await runCompanyResearch(input, {
+      root,
+      fetch: source.fetch,
+      checkpoint: { directory, threadId, resume: true },
+      previousProgress: previous,
+      // Resume the historical scope explicitly even if runtime defaults change.
+      model: { model: 'gpt-6.1-sol', baseUrl: 'https://api.openai.com/v1' },
+    });
+    assert.equal(output.agent?.financialContext, undefined);
+    assert.equal(
+      output.agent?.branches.some((branch) => branch.id === 'market-data'),
+      false
+    );
+    assert.equal(
+      source.calls.some((url) => url.includes('datacenter.eastmoney.com')),
+      false
+    );
+    assert.equal(output.preview?.material.observations.length, 12);
+    assert.equal(
+      output.agent?.branches.find((branch) => branch.id === 'reconcile')?.status,
+      'completed'
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('LangGraph executes actual independent official searches in parallel and retains original amounts plus scope limitations', async () => {
   const source = fixture({ requireParallel: true });
   const output = await runCompanyResearch(input, { root, fetch: source.fetch });

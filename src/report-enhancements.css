@@ -4,6 +4,56 @@
   border-block: 1px solid var(--line);
 }
 
+.trend-bar {
+  cursor: pointer;
+}
+
+.trend-bar.is-selected .trend-hit-area {
+  fill: var(--hover);
+}
+
+.trend-bar:focus-visible {
+  outline: none;
+}
+
+.trend-bar:focus-visible .trend-hit-area {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+}
+
+.trend-missing-bar {
+  fill: none;
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+}
+
+.trend-selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.trend-selection > div {
+  display: grid;
+  gap: 0.375rem;
+  min-width: 0;
+}
+
+.trend-selection span {
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.trend-selection strong {
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+}
+
 .report-purpose-topline {
   display: flex;
   align-items: center;
