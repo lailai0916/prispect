@@ -218,7 +218,9 @@ not production account captures or a new live-source validation.
   were subsequently built, type-checked, formatted and inspected again.
 - Eight combinations (1440/390 width × dark/light × Chinese/English) cover eight signed-in
   pages plus command search and assistant: 80 captures, no body overflow or browser
-  exceptions. All eight overlay states were recaptured after portal-style repair.
+  exceptions. All eight overlay states were recaptured after portal-style repair. A separate 320-pixel
+  check covers query, materials, reviews, account and command; the compact header hides
+  only its English brand subtitle at the narrowest width, preserving every control.
 - Browser checks pass for keyboard/local-only command filtering, empty/reset/search-focus
   states, material targeting, sort selection, export byte identity, hover-paused success,
   persistent errors, return to top, reduced motion, anonymous navigation and Caps Lock.

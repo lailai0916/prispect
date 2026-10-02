@@ -740,6 +740,11 @@ kbd {
     translate: none;
   }
 }
+@media (max-width: 360px) {
+  .business-shell > .site-header .brand-name > span {
+    display: none;
+  }
+}
 @media print {
   .command-dialog,
   .operation-progress {
