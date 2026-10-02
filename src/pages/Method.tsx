@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { Activity, ArrowRight, ChevronRight } from 'lucide-react';
+import { ArrowRight, ChevronRight } from 'lucide-react';
 
 import { useApp } from '../context';
 import { PageHeading } from '../components';
 import '../review-pages.css';
 
 export function MethodPage() {
-  const { t, workspace, user, navigate } = useApp();
+  const { t, user, navigate } = useApp();
   useEffect(() => {
     const showPrivacy = () => {
       if (new URLSearchParams(location.hash.split('?')[1]).get('section') !== 'privacy') return;
@@ -36,7 +36,7 @@ export function MethodPage() {
             ['method-decision', t('付款事项', 'Payment matters')],
             ['method-math', t('计算公式', 'Calculations')],
             ['method-evidence', t('来源与冲突', 'Sources')],
-            ['method-ai', t('检索与模型', 'Research and models')],
+            ['method-ai', t('检索与 AI', 'Research and AI')],
             ['method-demo', t('数据管理', 'Data management')],
             ['method-privacy', t('数据与隐私', 'Data and privacy')],
           ].map(([id, label]) => (
@@ -120,8 +120,8 @@ export function MethodPage() {
               </p>
               <p>
                 {t(
-                  '每次输入或证据变更保存新版本，旧版本只读。恢复旧输入会新建版本并重新计算，不抹去已知未解冲突。付款事项、销售原话和收付款计划仅保存在当前账号，不进入公共 PDF 模型请求。',
-                  'Every input or evidence change creates a version; historical inputs are read-only. Restoring them creates and recalculates a new version while preserving known unresolved conflicts. Decisions, sales statements and cash plans remain within the current account and do not enter public-PDF model requests.'
+                  '每次输入或证据变更保存新版本，旧版本只读。恢复旧输入会新建版本并重新计算，不抹去已知未解冲突。',
+                  'Every input or evidence change creates a version; historical inputs are read-only. Restoring them creates and recalculates a new version while preserving known unresolved conflicts.'
                 )}
               </p>
             </details>
@@ -196,11 +196,11 @@ export function MethodPage() {
             </details>
           </section>
           <section id="method-ai">
-            <h2>{t('检索与模型', 'Research and models')}</h2>
+            <h2>{t('检索与 AI', 'Research and AI')}</h2>
             <p>
               {t(
-                '默认规则核查；每个任务主动选择后，才向第三方 TokenFlux 发送采用的指标、短摘录与规则分析。',
-                'Rules mode is the default. Only an explicit choice for each review sends adopted metrics, short excerpts, and rule-based analysis to third-party TokenFlux.'
+                'AI 协助查找相关材料与整理解释；金额和口径按原文核对。',
+                'AI helps find relevant documents and organize explanations. Amounts and reporting scope are checked against the source.'
               )}
             </p>
             <details>
@@ -213,8 +213,8 @@ export function MethodPage() {
               </p>
               <p>
                 {t(
-                  '公开查询初始启用已配置模型，开始前可关闭，独立于报告解释。选定公开主体、候选页或公告 ID 与标题、财表/附注/公告短摘录和规则信号可发送到第三方，用于受限证据规划与定性解释。模型不生成金额，也不能修补原表差额；原始私人说明、上传、备注与现金计划不发送。界面展示执行记录与依据，不展示私有模型思考过程。',
-                  'Public research initially enables the configured model; turn it off before starting if desired. This is separate from report explanation. Public identity, candidate page or announcement IDs and titles, short table/note/announcement excerpts and rule signals may be sent to the third party for constrained planning and qualitative explanation. The model cannot create amounts or repair differences. Private descriptions, uploads, notes and cash plans are excluded. The interface shows execution records and evidence rather than private model reasoning.'
+                  'AI 可根据财务线索选择需要继续阅读的附注与公告，并整理可能解释。金额只取自原文，原表差额不能由 AI 补数。',
+                  'AI can use financial signals to select notes and announcements for further reading and organize possible explanations. Amounts come from the source; AI cannot fill differences in the original tables.'
                 )}
               </p>
               <p>
@@ -225,47 +225,17 @@ export function MethodPage() {
               </p>
             </details>
             <details>
-              <summary>{t('运行状态与解释范围', 'Availability and explanation scope')}</summary>
-              <div className="method-provider">
-                <Activity size={20} />
-                <div>
-                  <strong>
-                    {!workspace
-                      ? t('登录后查看可用模式', 'Log in to view available modes')
-                      : workspace.provider.configured
-                        ? t('可选模型已配置', 'Optional model configured')
-                        : t('模型未配置', 'Model not configured')}
-                  </strong>
-                  <span>
-                    {t(
-                      '具体调用与成功、失败状态见每份报告。',
-                      'Each report records whether a model was called and its success or failure.'
-                    )}
-                  </span>
-                </div>
-              </div>
+              <summary>{t('解释范围', 'Explanation scope')}</summary>
               <p>
                 {t(
-                  '报告金额、口径检查、现金桥、来源定位与问题选择由规则完成。未选择、未配置或调用失败时保留规则报告，仍可比较、跟进问题与导出。复制或恢复证据的新任务不会自动继承模型外发同意。',
-                  'Rules handle report amounts, scope checks, bridge calculations, source references, and follow-up selection. Without model selection or configuration, or if a call fails, the rules report remains available for comparisons, follow-up, and export. Copied or restored reviews do not automatically inherit consent to send evidence to a model.'
+                  '报告金额、口径检查与现金桥由规则计算。AI 解读不可用或未完成时，已有规则报告仍可阅读、比较、跟进和导出。',
+                  'Rules calculate report amounts, scope checks and cash bridges. If AI interpretation is unavailable or incomplete, the existing rules report remains readable and available for comparison, follow-up and export.'
                 )}
               </p>
               <p>
                 {t(
-                  'TokenFlux（tokenflux.dev）是第三方兼容接口；服务型号与实际结果以报告记录为准，不代表已独立验证上游型号或使用官方直连。',
-                  'TokenFlux (tokenflux.dev) is a third-party compatible API. Service identifiers and actual results are recorded in each report; they do not establish an independently verified upstream model or a direct official connection.'
-                )}
-              </p>
-              <p>
-                {t(
-                  '指标字段为编号（id）、类型（key）、年度（year）、金额（value）、单位（unit）、币种（currency）、合并范围（scope）和短摘录（quote）。同时发送结论状态（verdict），以及非管理层规则分析（deterministicFindings）的编号、名称、解释和依据类型（id / label / explanation / basis）。账号密码和会话不包含在分析请求中。',
-                  'Adopted metric fields are id, key, year, value, unit, currency, scope, and quote. The request also includes the verdict and non-management deterministicFindings with id, label, explanation, and basis. Account passwords and sessions are not included in the analysis request.'
-                )}
-              </p>
-              <p>
-                {t(
-                  '输出检查覆盖引用 ID、格式和允许金额；解释含义仍需人工复核，模型文字不是新增证据。',
-                  'Output checks cover citation IDs, format, and permitted amounts. Explanation meanings still require human review, and model text is not new evidence.'
+                  '解释保留引用与依据，但仍需人工复核；AI 文字不是新增证据。',
+                  'Explanations retain their references and basis, but still need human review. AI text is not new evidence.'
                 )}
               </p>
             </details>
@@ -302,7 +272,7 @@ export function MethodPage() {
           </section>
           <section id="method-privacy">
             <h2>{t('数据与隐私', 'Data and privacy')}</h2>
-            <p>{t('照见 CashLens 由析光团队运营。', 'CashLens is operated by the 析光 team.')}</p>
+            <p>{t('照见 CashLens 由析光运营。', 'CashLens is operated by 析光.')}</p>
             <p>
               {t(
                 '账号、上传文件与核查保存在网站服务器；账号内文件下载需登录相应账号。',
@@ -310,14 +280,12 @@ export function MethodPage() {
               )}
             </p>
             <details>
-              <summary>
-                {t('账号、保留期限与第三方发送', 'Accounts, retention, and third-party sending')}
-              </summary>
+              <summary>{t('账号与记录', 'Accounts and records')}</summary>
               <h3>{t('账号', 'Account')}</h3>
               <p>
                 {t(
-                  '服务器保存账号资料、密码哈希与登录会话。验证、找回和其他登录方式以账号页当前可用服务为准；邮件或短信功能需相应服务配置。',
-                  'The server retains account details, password hashes and sessions. Verification, recovery and other sign-in methods depend on the services currently available on the account page; email and SMS need configured providers.'
+                  '服务器保存账号资料、密码哈希与登录会话。验证、找回和其他登录方式以账号页当前可用功能为准。',
+                  'The server retains account details, password hashes and sessions. Verification, recovery and other sign-in methods depend on the features currently available on the account page.'
                 )}
               </p>
               <h3>{t('文件与记录', 'Files and records')}</h3>
@@ -327,11 +295,34 @@ export function MethodPage() {
                   'Confirmed materials, original uploads, reviews, notes, cash worksheets and follow-up states remain until deletion or workspace reset. Unconfirmed uploads and temporary checkpoints/public-file caches for recoverable failed research expire after 24 hours and are cleaned on subsequent access. Historical research records remain. Cleanup is not guaranteed at an exact scheduled time.'
                 )}
               </p>
-              <h3>{t('访问与模型外发', 'Access and model sending')}</h3>
+              <h3>{t('访问', 'Access')}</h3>
               <p>
                 {t(
-                  '网站不生成公开工作区链接。只有在每次新建任务时主动选择模型解释，本次采用的财务指标、短摘录与规则分析才发送至第三方 TokenFlux；未选择时不向模型发送材料。场景备注与收付款工作表不发送模型。',
-                  'The website does not generate public workspace links. Adopted financial indicators, short excerpts, and rule-based analysis are sent to third-party TokenFlux only when you explicitly choose model explanation for each new review. Without that choice, evidence is not sent to a model. Scenario notes and cash worksheets are not sent to the model.'
+                  '网站不生成公开工作区链接；账号内记录与文件仅供相应账号访问。',
+                  'The website does not generate public workspace links. Records and files are restricted to their owning account.'
+                )}
+              </p>
+            </details>
+            <details>
+              <summary>{t('第三方数据处理', 'Third-party data processing')}</summary>
+              <p>
+                {t(
+                  'AI 解读使用第三方服务 TokenFlux。启用时，下列内容会发送至该服务。公开查询与个人财报任务分别选择，不互相继承。',
+                  'AI interpretation uses the third-party service TokenFlux. When enabled, the content below is sent to that service. Public research and personal financial reviews have separate choices; neither inherits the other’s consent.'
+                )}
+              </p>
+              <h3>{t('公开企业查询', 'Public company research')}</h3>
+              <p>
+                {t(
+                  '公开查询初始启用可用的 AI 解读，开始前可在检索选项中关闭。发送选定的公开公司主体、年度、候选页与公告的编号和标题、财表/附注/公告短摘录及规则财务信号，用于选择相关材料与整理解释。私人说明、上传文件、事项、备注和现金计划不进入公开查询请求。',
+                  'Available AI interpretation is initially enabled for public research and can be turned off in retrieval options before starting. Selected public company identity, year, candidate page and announcement IDs and titles, short financial-table/note/announcement excerpts, and rule-based financial signals are sent to select relevant documents and organize explanations. Private descriptions, uploads, matters, notes and cash plans are excluded from public-research requests.'
+                )}
+              </p>
+              <h3>{t('个人财报任务', 'Personal financial reviews')}</h3>
+              <p>
+                {t(
+                  '个人财报任务默认不启用 AI 解读。只有新建任务时主动选择，才发送本次采用指标的编号、类型、年度、金额、单位、币种、报表范围与短摘录，以及结论状态和非管理层规则分析的编号、名称、解释、依据类型。未采用的指标、原始文件、账号凭据、场景备注与收付款工作表不发送。复制或恢复证据的新任务需重新选择。',
+                  'AI interpretation is off by default for personal financial reviews. An explicit choice when creating a review sends adopted metric IDs, types, years, amounts, units, currencies, reporting scope and short excerpts, plus the verdict and IDs, labels, explanations and basis types of non-management rule findings. Excluded metrics, original files, account credentials, scenario notes and cash worksheets are not sent. Copied or restored reviews require a new choice.'
                 )}
               </p>
             </details>

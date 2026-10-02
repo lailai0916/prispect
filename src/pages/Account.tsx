@@ -508,8 +508,8 @@ export function AccountPage() {
                     <Mail size={17} />
                     <p>
                       {t(
-                        '邮件服务尚未配置，验证、换绑与密码找回暂不可用。没有发送验证邮件。',
-                        'Email delivery is not configured. Verification, email changes and password recovery are unavailable. No verification email has been sent.'
+                        '邮箱验证暂不可用。当前无法发送验证邮件、换绑邮箱或通过邮件找回密码。',
+                        'Email verification is temporarily unavailable. We cannot currently send verification emails, change your email or recover your password by email.'
                       )}
                     </p>
                   </div>
@@ -556,7 +556,9 @@ export function AccountPage() {
                       </p>
                     )}
                   </div>
-                  <span className="account-badge">{t('短信服务未配置', 'SMS not configured')}</span>
+                  <span className="account-badge">
+                    {t('短信验证暂不可用', 'SMS verification unavailable')}
+                  </span>
                 </div>
                 <form className="account-form" onSubmit={(event) => event.preventDefault()}>
                   <label>
@@ -576,8 +578,8 @@ export function AccountPage() {
                 </form>
                 <p className="account-muted">
                   {t(
-                    '需要配置短信供应商后才能发送、验证或换绑。',
-                    'A configured SMS provider is required to send, verify or change a binding.'
+                    '当前无法发送验证码、验证或更换绑定手机号。',
+                    'We cannot currently send codes, verify or change your linked phone number.'
                   )}
                 </p>
               </Section>

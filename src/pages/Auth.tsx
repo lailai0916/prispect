@@ -239,8 +239,8 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               <ShieldCheck size={18} />
               <p>
                 {t(
-                  '邮件找回尚未开放。邮件服务未配置，因此不会发送重置链接。若忘记密码，请保留已登录设备；恢复码用于两步验证，不能重置密码。',
-                  'Email recovery is unavailable because email delivery is not configured. Keep a signed-in device if you forgot your password. Recovery codes replace a second factor; they do not reset your password.'
+                  '密码找回暂不可用。当前无法发送密码重置邮件。请保留已登录的设备；两步验证恢复码不能重置密码。',
+                  'Password recovery is temporarily unavailable. We cannot currently send a password reset email. Keep any signed-in device. Two-step recovery codes cannot reset your password.'
                 )}
               </p>
             </div>

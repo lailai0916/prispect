@@ -4,6 +4,8 @@
 
 Company/team name: 析光. Product name: 照见 / CashLens. Keep the operator and product names distinct; do not invent a legal entity name or an English translation for the team.
 
+Public product copy speaks as 析光 operating 照见, and explains the customer's evidence and decisions. Keep competition rules, development process, SDK/provider implementation details and validation claims in repository documentation rather than business flows. Necessary data-use disclosures belong in privacy details linked from explicit AI choices. Preserve truthful uncertainty, hypothetical-plan labels, source coverage and unavailable-feature states.
+
 `xuejun-hackathon` is the private repository for CashLens (照见), a cash-conversion
 evidence and payment-decision product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
 It uses strict TypeScript, React/Vite and Express, Better Auth accounts/sessions, a LangGraph

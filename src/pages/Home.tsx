@@ -199,7 +199,7 @@ function CashPreview() {
           {t('采购付款', 'Procurement')}
         </span>
         <span className="preview-label">
-          {t('交互演示 · 合成交易数据', 'Interactive preview · synthetic transaction data')}
+          {t('情景演算 · 假设收付款计划', 'Scenario analysis · hypothetical cash plan')}
         </span>
       </div>
       <div className="product-preview-body">
@@ -582,8 +582,8 @@ export function Home() {
           </h2>
           <p>
             {t(
-              '下面使用独立的合成现金计划。改变付款日期查看缺口，再撤回依据观察结果变化。',
-              'The independent synthetic plan below shows payment timing. Change the date to locate a gap, then withdraw an input to inspect the effect.'
+              '按下列收付款假设，调整付款日期查看资金缺口；撤回余额依据后，相关计算随之暂停。',
+              'Adjust the payment date under the cash assumptions below to inspect funding gaps. Withdrawing the opening-balance evidence pauses the dependent calculation.'
             )}
           </p>
         </div>

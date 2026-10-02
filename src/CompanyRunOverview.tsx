@@ -41,13 +41,13 @@ export function CompanyRunOverview({ run }: { run: CompanyResearchRun }) {
           : activity
             ? t(...branchNames[activity.id])
             : running.length
-              ? t('正在并行读取公开材料', 'Reading public documents in parallel')
+              ? t('正在读取公开材料', 'Reading public documents')
               : run.status === 'queued'
                 ? t('等待开始核查', 'Waiting to start the review')
                 : run.status === 'adopted'
                   ? t(
-                      '材料已采用，规则报告保留原始来源',
-                      'Evidence adopted; the rules report retains original sources'
+                      '材料已采用，报告保留原始来源',
+                      'Evidence adopted; the report retains original sources'
                     )
                   : complete
                     ? t(
@@ -89,7 +89,7 @@ export function CompanyRunOverview({ run }: { run: CompanyResearchRun }) {
               </span>
               {branch.summary && (
                 <details>
-                  <summary>{t('执行摘要', 'Execution summary')}</summary>
+                  <summary>{t('检索记录', 'Retrieval record')}</summary>
                   <p>
                     {locale === 'en' &&
                       translateRule(branch.summary) === branch.summary &&

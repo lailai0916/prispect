@@ -472,17 +472,6 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
       )}
       {!run && !creating && (
         <>
-          <p className="company-public-model-note">
-            {useModel
-              ? t(
-                  '模型处理公开披露内容，服务提供方为 TokenFlux；不发送私人说明。',
-                  'Models process public disclosures through TokenFlux; private descriptions are excluded.'
-                )
-              : t(
-                  '仅用规则读取公开披露，不调用模型。',
-                  'Rules read public disclosures without a model call.'
-                )}
-          </p>
           <details className="company-options">
             <summary>
               {t('检索选项', 'Retrieval options')} · {year} · {purposeName(purpose, t)}
@@ -535,18 +524,20 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                 onChange={(event) => setUseModel(event.target.checked)}
               />
               <span>
-                <strong>{t('用模型辅助读公开材料', 'Use a model for public documents')}</strong>
+                <strong>{t('使用 AI 解读', 'Use AI interpretation')}</strong>
                 <small>
                   {t(
-                    '将公开主体、公告信息、表格短文及规则财务字段发送至第三方 TokenFlux，辅助读取披露材料；不发送私人说明、备注或现金工作表。金额仍以原件为据。',
-                    'Public company identity, announcement metadata, relevant table excerpts and rule-checked financial facts are sent to third-party TokenFlux for evidence-page selection and explanation. Private descriptions, notes and cash plans are not sent. Amounts remain based on the original documents.'
+                    '相关公开材料将交由 AI 处理。',
+                    'Relevant public documents are sent for AI processing.'
                   )}
+                  {' '}
+                  <a href="#/method?section=privacy">{t('数据使用', 'Data use')}</a>
                 </small>
                 {!workspace?.provider.configured && (
                   <small>
                     {t(
-                      '当前未配置模型，可继续规则检索。',
-                      'No model is configured; rules retrieval remains available.'
+                      'AI 解读暂不可用，仍可查询和核对原文。',
+                      'AI interpretation is unavailable. You can still search and check the source documents.'
                     )}
                   </small>
                 )}
@@ -684,16 +675,6 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               {creating ? <LoaderCircle className="spinner" size={16} /> : <ArrowRight size={16} />}{' '}
               {t('开始核查', 'Start review')}
             </button>
-            <span className="field-note">
-              {t(
-                useModel
-                  ? '模型处理公开披露内容，服务提供方为 TokenFlux。'
-                  : '仅用规则读取公开披露，不调用模型。',
-                useModel
-                  ? 'Models process public disclosures through TokenFlux.'
-                  : 'Rules read public disclosures without a model call.'
-              )}
-            </span>
           </div>
         </form>
       )}
@@ -1303,25 +1284,20 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
             </details>
           )}
           <div className="company-model-status">
-            <span>{t('公开材料模型辅助', 'Public-document model assistance')}</span>
+            <span>{t('AI 解读', 'AI interpretation')}</span>
             <Tag>
               {activeRun(run) && run.model.requested
                 ? t('已授权，等待结果', 'Authorized; awaiting result')
                 : run.model.status === 'not-called'
                   ? t('已授权，未调用', 'Authorized; not called')
                   : run.model.status === 'completed'
-                    ? t('已调用', 'Called')
+                    ? t('已完成', 'Completed')
                     : run.model.status === 'failed'
-                      ? t('模型辅助未完成', 'Model assistance incomplete')
+                      ? t('未完成', 'Incomplete')
                       : run.model.status === 'not-configured'
-                        ? t('未配置', 'Not configured')
+                        ? t('暂不可用', 'Unavailable')
                         : t('未授权调用', 'Not requested')}
             </Tag>
-            {run.model.provider && (
-              <small>
-                {run.model.provider} · {run.model.name}
-              </small>
-            )}
             {run.model.error && <p>{t(run.model.error, translateRule(run.model.error))}</p>}
           </div>
         </>

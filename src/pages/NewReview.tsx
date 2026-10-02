@@ -221,17 +221,18 @@ export function NewReview({ query }: { query: URLSearchParams }) {
               onChange={(event) => setUseModel(event.target.checked)}
             />
             <span>
-              <strong>{t('添加模型解释', 'Add model explanation')}</strong>
+              <strong>{t('使用 AI 解读', 'Add AI interpretation')}</strong>
               <small>
                 {workspace!.provider.configured
                   ? t(
-                      '主动选中后，将采用指标、短摘录与规则分析发送至第三方 TokenFlux。解释需复核。',
-                      'Selecting this sends adopted values, short excerpts and rule findings to third-party TokenFlux. Review the explanation.'
+                      '分析本次采用的财务数据与原文摘录。',
+                      'Interpret the adopted financial data and source excerpts.'
                     )
                   : t(
-                      '模型未配置，仍可运行规则核查。',
-                      'Model unavailable; rules-based reviews remain available.'
-                    )}
+                      'AI 解读暂不可用，仍可核对财务数据。',
+                      'AI interpretation is unavailable. Financial checks remain available.'
+                    )}{' '}
+                <a href="#/method?section=privacy">{t('数据使用', 'Data use')}</a>
               </small>
             </span>
           </label>

@@ -528,7 +528,7 @@ export function App() {
         </main>
         {!business && (
           <footer className="site-footer">
-            <span>{t('析光团队 · 照见 CashLens', '析光 team · CashLens')}</span>
+            <span>{t('析光 · 照见 CashLens', '析光 · CashLens')}</span>
             <div>
               <a href="#/method">{t('方法', 'Method')}</a>
               <a href="#/method?section=privacy">{t('数据与隐私', 'Data and privacy')}</a>

@@ -672,39 +672,27 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
             <p className="model-status">
               <Activity size={15} />
               {report.model.status === 'not-requested'
-                ? t('模型未启用', 'Model off')
+                ? t('未使用 AI 解读', 'AI interpretation not requested')
                 : report.model.status === 'not-configured'
-                  ? t('模型未配置', 'Model not configured')
+                  ? t('AI 解读暂不可用', 'AI interpretation unavailable')
                   : report.model.status === 'failed'
                     ? report.model.error?.includes('未调用')
-                      ? t(
-                          '证据条件不足，未调用模型',
-                          'Evidence conditions not met; model not called'
-                        )
+                      ? t('材料不足，未生成 AI 解读', 'Insufficient evidence for AI interpretation')
                       : t(
-                          '模型调用或检查未完成，规则结果保留',
-                          'Model call or checks incomplete; rule results retained'
+                          '解读未完成，核对结果已保留',
+                          'Interpretation incomplete; financial checks retained'
                         )
-                    : t('模型解释已完成', 'Model explanation complete')}
-              {report.model.provider && (
-                <span>
-                  {t('第三方服务', 'Third-party service')}: {report.model.provider} ·{' '}
-                  {report.model.name}
-                </span>
-              )}
-              {report.model.error && (
-                <span>{t(report.model.error, translateRule(report.model.error))}</span>
-              )}
+                    : t('AI 解读已完成', 'AI interpretation complete')}
             </p>
             {report.model.text && (
               <details className="model-explanation">
-                <summary>{t('查看可选模型解释', 'View optional model explanation')}</summary>
+                <summary>{t('查看 AI 解读', 'View AI interpretation')}</summary>
                 <div className="info-strip">
                   <CircleAlert size={16} />
                   <p>
                     {t(
-                      '只检查引用、格式与允许金额，不认证解释含义。模型文字不是新增证据。',
-                      'Citation, format and permitted-number checks do not verify meaning. Model text is not new evidence.'
+                      '解读不是新增证据，可沿引用核对原始材料。',
+                      'Interpretation is not new evidence. Follow its references to inspect the source.'
                     )}
                   </p>
                 </div>
@@ -1180,12 +1168,13 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
           onChange={(event) => setUseModel(event.target.checked)}
         />
         <span>
-          <strong>{t('添加模型解释', 'Add model explanation')}</strong>
+          <strong>{t('使用 AI 解读', 'Add AI interpretation')}</strong>
           <small>
             {t(
-              '默认不向模型发送材料；选中后将采用的指标、短摘录与规则分析发送至第三方 TokenFlux。解释含义需人工复核。',
-              'No evidence is sent to a model by default. Selecting this sends adopted metrics, short excerpts and rule findings to third-party TokenFlux. Meaning requires human review.'
-            )}
+              '分析本次采用的财务数据与原文摘录。',
+              'Interpret the adopted financial data and source excerpts.'
+            )}{' '}
+            <a href="#/method?section=privacy">{t('数据使用', 'Data use')}</a>
           </small>
         </span>
       </label>
