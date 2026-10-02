@@ -669,6 +669,70 @@ test('a public request reservation must persist before the request leaves the pr
   assert.equal(reserved, 1);
 });
 
+test('a late model reservation cannot send after a parallel progress persistence failure', async () => {
+  const source = fixture();
+  let releaseFirst!: () => void;
+  const delayed = new Promise<void>((resolve) => {
+    releaseFirst = resolve;
+  });
+  let reportFailure!: () => void;
+  const failed = new Promise<void>((resolve) => {
+    reportFailure = resolve;
+  });
+  let firstBlocked = false;
+  let storageFailed = false;
+  let modelSent = 0;
+  const running = runCompanyResearch(
+    { ...input, useModel: true },
+    {
+      root,
+      fetch: source.fetch,
+      model: {
+        apiKey: 'synthetic-not-real',
+        fetch: async () => {
+          modelSent++;
+          return json({ choices: [] });
+        },
+      },
+      onProgress: async (progress) => {
+        if (progress.budget.modelRequests === 1 && !firstBlocked) {
+          firstBlocked = true;
+          await delayed;
+        } else if (firstBlocked && progress.budget.modelRequests >= 2 && !storageFailed) {
+          storageFailed = true;
+          reportFailure();
+          throw new Error('fixture parallel storage failure');
+        }
+      },
+    }
+  );
+  void running.catch(() => undefined);
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      failed,
+      new Promise<void>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error('fixture second model reservation did not arrive')),
+          1500
+        );
+      }),
+    ]);
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    releaseFirst();
+    await assert.rejects(running, /进度保存失败/);
+    assert.equal(
+      modelSent,
+      0,
+      'neither the failed reservation nor the late successful emit sends a model request'
+    );
+  } finally {
+    if (timer) clearTimeout(timer);
+    releaseFirst();
+    await running.catch(() => undefined);
+  }
+});
+
 test('parallel public branches cannot exceed a cumulative recovered request budget', async () => {
   const source = fixture();
   const previous = initialCompanyGraphProgress();

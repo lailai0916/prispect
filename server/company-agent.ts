@@ -870,8 +870,10 @@ export async function runCompanyResearch(
       } as import('../shared/company-contracts.js').CompanyModelRequestDiagnostic;
       progress.providerDiagnostics!.requests!.push(request);
       const started = performance.now();
-      await emit();
       try {
+        await emit();
+        if (progressStorageFailed)
+          throw new ApiFault(503, 'COMPANY_PROGRESS_STORAGE', '查询进度保存失败，停止发送新的请求');
         const response = await (config?.fetch || options.fetch || fetch)(url, {
           ...init,
           redirect: 'error',
