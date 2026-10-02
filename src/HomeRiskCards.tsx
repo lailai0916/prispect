@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import type { AnalysisTask } from '../shared/contracts';
 import { useApp } from './context';
 import { deriveRiskPerspective, riskStatusText, type RiskStatus } from './riskDimensions';
+import './risk-perspective.css';
 
 const statusColor: Record<RiskStatus, string> = {
   good: '#34d399',
