@@ -85,6 +85,16 @@
   text-align: center;
   margin: 0 0 28px;
 }
+.company-query-inner:has(.company-query-description) > h1 {
+  margin-bottom: 10px;
+}
+.company-query-description {
+  margin: 0 0 28px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.8;
+  text-align: center;
+}
 .start-input {
   position: relative;
 }

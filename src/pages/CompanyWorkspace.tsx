@@ -1,6 +1,14 @@
 import { Select } from '../Select';
 import { useContext, useEffect, useRef, useState, lazy, Suspense } from 'react';
-import { ArrowUpRight, FileSearch, LoaderCircle, RefreshCw, Trash2 } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ChevronDown,
+  FileSearch,
+  LoaderCircle,
+  Printer,
+  RefreshCw,
+  Trash2,
+} from 'lucide-react';
 import type { CompanyResearchRun } from '../../shared/contracts';
 import { companyPath, companySections, type CompanySection } from '../../shared/company-workspace';
 import type { CompanyReadingBasis } from '../../shared/company-analysis';
@@ -21,6 +29,7 @@ import { CompanyAssistantContext } from '../company-assistant-context';
 import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
+import { CompanyReview } from '../CompanyReview';
 const OriginalReview = lazy(() =>
   import('./CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
 );
@@ -36,7 +45,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const [run, setRun] = useState<CompanyResearchRun | null>(null);
   const [error, setError] = useState('');
   const [version, setVersion] = useState(0);
-  const [basis, setBasis] = useState<CompanyReadingBasis>('parent');
+  const [basis, setBasis] = useState<CompanyReadingBasis>('consolidated');
   const [view, setView] = useState<'public' | 'manager'>('public');
   const [updating, setUpdating] = useState(false);
   const request = useRef<AbortController | null>(null);
@@ -94,8 +103,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     return () => window.removeEventListener('prispect:company-run-updated', update);
   }, [id]);
   useEffect(() => {
-    if (run && user) publish({ owner: user.id, run, basis, changeBasis: setBasis });
-  }, [run, basis, user?.id, publish]);
+    if (run?.id === id && user) publish({ owner: user.id, run, basis, changeBasis: setBasis });
+  }, [run, id, basis, user?.id, publish]);
   const refresh = async () => {
     if (!run || updating) return;
     setUpdating(true);
@@ -137,7 +146,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     ) : (
       <CompanyQueryPage />
     );
-  if (!run)
+  if (!run || run.id !== id)
     return (
       <div className="loading-page">
         {error ? (
@@ -176,26 +185,70 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       );
     else navigate(companyPath(run.id, 'evidence'));
   };
+  const readingControls = (
+    <div className="context-reading-controls">
+      <label>
+        {t('阅读视角', 'Reading view')}
+        <Select
+          value={view}
+          onValueChange={(selectedValue) => setView(selectedValue as 'public' | 'manager')}
+        >
+          <option value="public">{t('公众视图', 'Public view')}</option>
+          <option value="manager">{t('管理者尽调', 'Management diligence')}</option>
+        </Select>
+      </label>
+      <label>
+        {t('网页指标利润口径', 'Web profit basis')}
+        <Select
+          value={basis}
+          onValueChange={(selectedValue) => setBasis(selectedValue as CompanyReadingBasis)}
+        >
+          <option value="parent">{t('归母净利润', 'Attributable profit')}</option>
+          <option value="consolidated">{t('合并净利润', 'Consolidated profit')}</option>
+        </Select>
+      </label>
+    </div>
+  );
   return (
-    <div className="company-workspace">
+    <div
+      className={'company-workspace' + (section === 'overview' ? ' company-workspace-report' : '')}
+    >
       <header className="context-page-heading">
         <div>
           <p className="context-eyebrow">
-            {run.informationGap?.name ||
-              run.identity?.companyName ||
-              snapshot?.companyName ||
-              run.input.securityCode}
+            {section === 'overview'
+              ? t('核查报告', 'Review report')
+              : run.informationGap?.name ||
+                run.identity?.companyName ||
+                snapshot?.companyName ||
+                run.input.securityCode}
           </p>
-          <h1>{title}</h1>
+          <h1>
+            {section === 'overview'
+              ? run.informationGap?.name ||
+                run.identity?.shortName ||
+                snapshot?.companyName ||
+                run.input.securityCode
+              : title}
+          </h1>
           <p className="context-data-note">
             {run.input.securityCode || t('主体待定位', 'Entity unconfirmed')} · {run.input.year}{' '}
-            {t('年报原件', 'annual original')} ·{' '}
+            {section === 'overview'
+              ? t('年度核查 · 合并口径', 'annual review · consolidated scope')
+              : t('年报原件', 'annual original')}{' '}
+            ·{' '}
             {run.input.purpose === 'handover'
               ? t('内部交接', 'Internal handover')
               : t('外部付款', 'External payment')}
           </p>
         </div>
         <div className="context-page-actions">
+          {section === 'overview' && (
+            <button className="button button-secondary" onClick={() => window.print()}>
+              <Printer size={14} />
+              {t('打印摘要', 'Print summary')}
+            </button>
+          )}
           {!run.informationGap && (
             <button
               className="button button-secondary"
@@ -203,7 +256,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               onClick={() => void refresh()}
             >
               <RefreshCw size={14} />
-              {t('更新公开数据', 'Refresh public data')}
+              {section === 'overview'
+                ? t('更新', 'Refresh')
+                : t('更新公开数据', 'Refresh public data')}
             </button>
           )}
           <button
@@ -221,7 +276,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           {error}
         </p>
       )}
-      {!run.informationGap && (
+      {!run.informationGap && section !== 'overview' && (
         <div className="context-original-status">
           {active && <LoaderCircle size={14} className="spinner" />}
           <span>
@@ -247,30 +302,77 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         <Suspense fallback={<LoaderCircle className="spinner" />}>
           <OriginalReview key={run.id} query={new URLSearchParams({ run: run.id })} />
         </Suspense>
+      ) : section === 'overview' ? (
+        <>
+          {run.contextError && (
+            <p role="alert" className="context-data-note">
+              {run.contextError}
+              <button
+                className="text-link"
+                disabled={updating || run.contextStatus === 'loading'}
+                onClick={() => void refresh()}
+              >
+                {t('重试', 'Retry')}
+              </button>
+            </p>
+          )}
+          <CompanyReview key={run.id} run={run} />
+          <details className="company-review-details">
+            <summary>
+              <ChevronDown size={14} />
+              {t('详细数据与分析', 'Detailed data and analysis')}
+            </summary>
+            <nav
+              className="company-review-detail-links"
+              aria-label={t('详细分析入口', 'Detailed analysis')}
+            >
+              {companySections
+                .filter(([key]) => key !== 'overview')
+                .map(([key, zh, en]) => (
+                  <a key={key} href={companyPath(run.id, key)}>
+                    {t(zh, en)}
+                  </a>
+                ))}
+              <a href={companyPath(run.id, 'evidence')}>
+                {t('原件与核查过程', 'Originals and review process')}
+              </a>
+            </nav>
+            {snapshot ? (
+              <>
+                {readingControls}
+                <p className="context-data-note">
+                  {t('公开数据获取于', 'Public data retrieved at')}{' '}
+                  {date(snapshot.fetchedAt, locale)}
+                  {run.contextStatus === 'loading'
+                    ? ' · ' + t('更新进行中', 'Refresh in progress')
+                    : ''}
+                </p>
+                {snapshot.warnings.length > 0 && (
+                  <details className="context-warnings">
+                    <summary>
+                      {t('数据范围与缺口', 'Scope and gaps')} · {snapshot.warnings.length}
+                    </summary>
+                    {snapshot.warnings.map((warning, index) => (
+                      <p key={index}>{warning}</p>
+                    ))}
+                  </details>
+                )}
+                <CompanyContextOverview snapshot={snapshot} run={run} basis={basis} view={view} />
+                <CompanyFinancialFindings run={run} onPage={originalPage} />
+              </>
+            ) : (
+              <p className="context-data-note">
+                {t(
+                  '尚未取得公开数据；原件核查记录和材料入口仍可查看。',
+                  'Public data is not available; original-review records and evidence tools remain accessible.'
+                )}
+              </p>
+            )}
+          </details>
+        </>
       ) : (
         <>
-          <div className="context-reading-controls">
-            <label>
-              {t('阅读视角', 'Reading view')}
-              <Select
-                value={view}
-                onValueChange={(selectedValue) => setView(selectedValue as 'public' | 'manager')}
-              >
-                <option value="public">{t('公众视图', 'Public view')}</option>
-                <option value="manager">{t('管理者尽调', 'Management diligence')}</option>
-              </Select>
-            </label>
-            <label>
-              {t('网页指标利润口径', 'Web profit basis')}
-              <Select
-                value={basis}
-                onValueChange={(selectedValue) => setBasis(selectedValue as CompanyReadingBasis)}
-              >
-                <option value="parent">{t('归母净利润', 'Attributable profit')}</option>
-                <option value="consolidated">{t('合并净利润', 'Consolidated profit')}</option>
-              </Select>
-            </label>
-          </div>
+          {readingControls}
           <p className="context-data-note">
             {snapshot
               ? `${t('公开数据获取于', 'Public data retrieved at')} ${date(snapshot.fetchedAt, locale)}`
@@ -306,12 +408,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                     <p key={index}>{warning}</p>
                   ))}
                 </details>
-              )}
-              {section === 'overview' && (
-                <>
-                  <CompanyContextOverview snapshot={snapshot} run={run} basis={basis} view={view} />
-                  <CompanyFinancialFindings run={run} onPage={originalPage} />
-                </>
               )}
               {section === 'trends' && (
                 <>
