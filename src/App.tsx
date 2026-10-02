@@ -35,6 +35,8 @@ import { ThemeControl } from './ThemeControl';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
 import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
 import type { DocumentPath } from './pages/Documentation';
+import { CompanySidebar } from './CompanySidebar';
+import './company-workspace.css';
 
 import {
   AppContext,
@@ -56,8 +58,11 @@ const Home = lazy(() => import('./pages/Home').then((module) => ({ default: modu
 const Decisions = lazy(() =>
   import('./pages/Decisions').then((module) => ({ default: module.Decisions }))
 );
-const CompanyAgentPage = lazy(() =>
-  import('./pages/CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
+const CompanyWorkspacePage = lazy(() =>
+  import('./pages/CompanyWorkspace').then((module) => ({ default: module.CompanyWorkspacePage }))
+);
+const CompanyQueryPage = lazy(() =>
+  import('./pages/CompanyQuery').then((module) => ({ default: module.CompanyQueryPage }))
 );
 const AuthPage = lazy(() =>
   import('./pages/Auth').then((module) => ({ default: module.AuthPage }))
@@ -305,8 +310,8 @@ export function App() {
         ? t('账号', 'Account')
         : page === '/method'
           ? t('方法', 'Method')
-          : page === '/'
-            ? t('开始', 'Start')
+          : page === '/' || page === '/query'
+            ? t('新建查询', 'New query')
             : navigation.find(([path]) => path === page)?.[1];
   const accountItems = [
     {
@@ -339,51 +344,43 @@ export function App() {
   ];
   const renderNavigation = () => (
     <>
-      <nav className="sidebar-navigation" aria-label={t('主导航', 'Main navigation')}>
-        <a
-          href="/"
-          className={page === '/' ? 'active' : ''}
-          aria-current={page === '/' ? 'page' : undefined}
-          onClick={() => setMenuOpen(false)}
-        >
-          <Eye size={16} />
-          <span>{t('开始', 'Start')}</span>
-        </a>
-        <div className="sidebar-group">
-          {primaryNavigation.map(([path, label, Icon]) => (
-            <a
-              key={path}
-              href={path}
-              className={page === path ? 'active' : ''}
-              aria-current={page === path ? 'page' : undefined}
-              onClick={() => setMenuOpen(false)}
-            >
-              <Icon size={16} />
-              <span>{label}</span>
-            </a>
-          ))}
-        </div>
-        <div className="sidebar-group sidebar-secondary">
-          <span className="sidebar-group-label">{t('财务工具', 'Financial tools')}</span>
-          {secondaryNavigation.map(([path, label, Icon]) => {
-            const active =
-              page === path ||
-              (path === '/workspace' && (page.startsWith('/tasks/') || page === '/new'));
-            return (
-              <a
-                key={path}
-                href={path}
-                className={active ? 'active' : ''}
-                aria-current={active ? 'page' : undefined}
-                onClick={() => setMenuOpen(false)}
-              >
-                <Icon size={16} />
-                <span>{label}</span>
-              </a>
-            );
-          })}
-        </div>
-      </nav>
+      <CompanySidebar
+        route={route}
+        onClose={() => setMenuOpen(false)}
+        tools={
+          <ActionMenu
+            label={t('核查工具', 'Review tools')}
+            className="sidebar-tools"
+            align="start"
+            items={[
+              {
+                label: t('财报工作台', 'Financial workbench'),
+                icon: <Activity size={16} />,
+                onSelect: () => navigate('/workspace'),
+              },
+              {
+                label: t('材料中心', 'Materials'),
+                icon: <FolderOpen size={16} />,
+                onSelect: () => navigate('/materials'),
+              },
+              {
+                label: t('付款与交接', 'Payments and handovers'),
+                icon: <ListChecks size={16} />,
+                onSelect: () => navigate('/decisions'),
+              },
+              {
+                label: t('核查比较', 'Compare reviews'),
+                icon: <Columns3 size={16} />,
+                onSelect: () => navigate('/compare'),
+              },
+            ]}
+          >
+            <ListChecks size={16} />
+            <span>{t('核查工具', 'Review tools')}</span>
+            <ChevronDown size={13} />
+          </ActionMenu>
+        }
+      />
       <div className="sidebar-bottom">
         <a href="/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
           <BookOpen size={16} />
@@ -395,7 +392,7 @@ export function App() {
           onClick={() => setMenuOpen(false)}
         >
           <ShieldCheck size={16} />
-          {t('方法与隐私', 'Method and privacy')}
+          {t('方法', 'Method')}
         </a>
         {user && (
           <ActionMenu
@@ -505,10 +502,10 @@ export function App() {
             </a>
             <button
               className="button button-secondary sidebar-create"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/query')}
             >
               <Plus size={16} />
-              {t('新建事项', 'New matter')}
+              {t('新建查询', 'New query')}
             </button>
             {renderNavigation()}
           </aside>
@@ -517,10 +514,10 @@ export function App() {
           <NavigationPanel title={t('析光', 'Prispect')} onClose={() => setMenuOpen(false)}>
             <button
               className="button button-secondary sidebar-create"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/query')}
             >
               <Plus size={16} />
-              {t('新建事项', 'New matter')}
+              {t('新建查询', 'New query')}
             </button>
             {renderNavigation()}
           </NavigationPanel>
@@ -572,7 +569,11 @@ export function App() {
                   <p>{t('正在读取工作区…', 'Loading your workspace…')}</p>
                 </div>
               ) : page === '/' ? (
-                <Home />
+                user ? (
+                  <CompanyQueryPage />
+                ) : (
+                  <Home />
+                )
               ) : page === '/login' || page === '/register' || !user || !workspace ? (
                 <AuthPage
                   mode={page === '/register' ? 'register' : 'login'}
@@ -584,8 +585,13 @@ export function App() {
                 <WorkspacePage />
               ) : page === '/decisions' ? (
                 <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
+              ) : page === '/query' ? (
+                <CompanyQueryPage />
               ) : page === '/company' ? (
-                <CompanyAgentPage key={route} query={new URLSearchParams(route.split('?')[1])} />
+                <CompanyWorkspacePage
+                  key={new URLSearchParams(route.split('?')[1]).get('run') || 'query'}
+                  query={new URLSearchParams(route.split('?')[1])}
+                />
               ) : page === '/new' ? (
                 <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
               ) : page === '/materials' ? (

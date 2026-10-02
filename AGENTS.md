@@ -21,6 +21,8 @@ The financial-web branch retains up to six annual periods for supported general-
 
 Keep the actual implementation, runtime, build, and test commands current here as the project develops.
 
+Version C keeps the eight company pages and the original private workflows in one React/Express application. `shared/company-workspace.ts` and `shared/company-analysis.ts` define public snapshots and exact amount calculations; `server/company-context-*.ts`, `server/company-industry.ts` and `server/company-questions.ts` own retrieval and account-scoped extensions. These public-web snapshots are separate from original-report evidence. Context retrieval has its own 90-second / 50-request budget, and high-attention disclosure excerpts are capped at six PDFs, 8 MB each, with a shared 45-second deadline and first-three-page excerpt scope. Industry snapshots require complete same-year pagination and at least five valid peers excluding the target. Company questions default to rules and retain at most fifty answers, each tied to its public snapshot. See `docs/version-c-integration.md` for mapping and acceptance scope.
+
 ## Standards
 
 Follow the canonical [repository standards](https://github.com/lailai0916/lailai-template/blob/main/SETUP.md).

@@ -1,19 +1,105 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Menu } from '@base-ui/react/menu';
 import { ArrowUp, Building2, Check, ChevronDown, HandCoins, Wallet, Sparkles } from 'lucide-react';
 import { useApp } from './context';
 import { interpretStart, type StartKind } from '../shared/start-intent';
 import { clearComposerDraft, readComposerDraft, writeComposerDraft } from './start-draft';
+import type { CompanyIdentity, CompanySearchResponse } from '../shared/contracts';
+import { api, requestErrorText } from './api';
+import './home.css';
 
 type StartMode = StartKind | 'auto';
 
-export function StartInput({ compact = false }: { compact?: boolean }) {
-  const { t, navigate, user } = useApp();
+export function StartInput({
+  compact = false,
+  onCompanyChoice,
+  companyOnly = false,
+  toolbar,
+  disabled = false,
+  onInformationGap,
+}: {
+  compact?: boolean;
+  onCompanyChoice?: (identity: CompanyIdentity, text: string) => void;
+  companyOnly?: boolean;
+  toolbar?: ReactNode;
+  disabled?: boolean;
+  onInformationGap?: (name: string) => void;
+}) {
+  const { t, navigate, user, locale } = useApp();
   const owner = user?.id || null;
   const [draft] = useState(() => readComposerDraft(owner));
-  const [mode, setMode] = useState<StartMode>(draft?.mode || 'auto');
+  const [mode, setMode] = useState<StartMode>(companyOnly ? 'company' : draft?.mode || 'auto');
   const [text, setText] = useState(draft?.text || '');
   const [error, setError] = useState('');
+  const [candidates, setCandidates] = useState<CompanyIdentity[]>([]);
+  const [finding, setFinding] = useState(false);
+  const [searched, setSearched] = useState(false);
+  const [completionOpen, setCompletionOpen] = useState(false);
+  const [activeCandidate, setActiveCandidate] = useState(-1);
+  const composer = useRef<HTMLFormElement>(null);
+  const selectionText = useRef('');
+  const safeQuery = interpretStart(text, mode).companyQuery;
+  const companyIntent = interpretStart(text, mode).kind === 'company';
+  useEffect(() => {
+    setCandidates([]);
+    setSearched(false);
+    setActiveCandidate(-1);
+    if (
+      !user ||
+      !companyIntent ||
+      !safeQuery ||
+      safeQuery.length < 2 ||
+      selectionText.current === text
+    ) {
+      setFinding(false);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      setFinding(true);
+      void api<CompanySearchResponse>(`/companies/search?q=${encodeURIComponent(safeQuery)}`, {
+        signal: controller.signal,
+      })
+        .then((response) => {
+          if (!controller.signal.aborted) {
+            setCandidates(response.candidates);
+            setSearched(true);
+          }
+        })
+        .catch((cause) => {
+          if (!controller.signal.aborted) setError(requestErrorText(cause, locale));
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setFinding(false);
+        });
+    }, 400);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [safeQuery, companyIntent, user?.id, locale, text]);
+  const chooseCompany = (identity: CompanyIdentity) => {
+    selectionText.current = identity.shortName;
+    setText(identity.shortName);
+    setCompletionOpen(false);
+    setActiveCandidate(-1);
+    setError('');
+    if (onCompanyChoice) {
+      clearComposerDraft();
+      onCompanyChoice(identity, text.trim());
+    } else
+      navigate(
+        `/company?query=${encodeURIComponent(identity.shortName)}&code=${identity.securityCode}`
+      );
+  };
+  useEffect(() => {
+    const outside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !composer.current?.contains(event.target))
+        setCompletionOpen(false);
+    };
+    document.addEventListener('pointerdown', outside);
+    return () => document.removeEventListener('pointerdown', outside);
+  }, []);
   useEffect(() => writeComposerDraft({ owner, text, mode }), [owner, text, mode]);
   const choices = [
     { id: 'auto' as const, label: t('自动识别', 'Automatic'), Icon: Sparkles },
@@ -28,6 +114,26 @@ export function StartInput({ compact = false }: { compact?: boolean }) {
     if (!value) return;
     const intent = interpretStart(value, mode);
     if (intent.kind === 'company') {
+      if (onCompanyChoice && (!searched || finding)) {
+        setCompletionOpen(true);
+        setError(
+          t('请等待公司检索完成，再选择主体。', 'Wait for the search, then select an entity.')
+        );
+        return;
+      }
+      if (onCompanyChoice && searched && !candidates.length) {
+        onInformationGap?.(value);
+        return;
+      }
+      if (onCompanyChoice && candidates.length === 1) {
+        chooseCompany(candidates[0]!);
+        return;
+      }
+      if (onCompanyChoice && candidates.length > 1) {
+        setCompletionOpen(true);
+        setActiveCandidate(0);
+        return;
+      }
       if (!intent.companyQuery) {
         setError(
           t(
@@ -61,7 +167,11 @@ export function StartInput({ compact = false }: { compact?: boolean }) {
     }
   };
   return (
-    <form className={`start-input ${compact ? 'start-input-compact' : ''}`} onSubmit={submit}>
+    <form
+      ref={composer}
+      className={`start-input ${compact ? 'start-input-compact' : ''}`}
+      onSubmit={submit}
+    >
       <label className="sr-only" htmlFor="start-query">
         {mode === 'auto'
           ? t('公司或要核查的事情', 'Company or matter to review')
@@ -76,6 +186,7 @@ export function StartInput({ compact = false }: { compact?: boolean }) {
         rows={2}
         maxLength={1000}
         value={text}
+        disabled={disabled}
         placeholder={
           mode === 'auto'
             ? t(
@@ -96,11 +207,49 @@ export function StartInput({ compact = false }: { compact?: boolean }) {
         }
         aria-describedby={error ? 'start-error' : undefined}
         aria-invalid={Boolean(error)}
+        role="combobox"
+        aria-autocomplete="list"
+        aria-expanded={completionOpen && (finding || searched)}
+        aria-controls="company-completion-list"
+        aria-activedescendant={
+          completionOpen && activeCandidate >= 0
+            ? `company-completion-${activeCandidate}`
+            : undefined
+        }
+        onFocus={() => setCompletionOpen(true)}
         onChange={(event) => {
+          selectionText.current = '';
           setText(event.target.value);
           setError('');
+          setCompletionOpen(true);
         }}
         onKeyDown={(event) => {
+          if (event.nativeEvent.isComposing) return;
+          if (event.key === 'Escape') {
+            setCompletionOpen(false);
+            return;
+          }
+          if (['ArrowDown', 'ArrowUp'].includes(event.key) && candidates.length) {
+            event.preventDefault();
+            setCompletionOpen(true);
+            setActiveCandidate(
+              (value) =>
+                (value + (event.key === 'ArrowDown' ? 1 : -1) + candidates.length) %
+                candidates.length
+            );
+            return;
+          }
+          if (
+            event.key === 'Enter' &&
+            !event.shiftKey &&
+            completionOpen &&
+            activeCandidate >= 0 &&
+            candidates[activeCandidate]
+          ) {
+            event.preventDefault();
+            chooseCompany(candidates[activeCandidate]!);
+            return;
+          }
           if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
             event.preventDefault();
             event.currentTarget.form?.requestSubmit();
@@ -108,42 +257,89 @@ export function StartInput({ compact = false }: { compact?: boolean }) {
         }}
       />
       <div className="start-input-toolbar">
-        <Menu.Root>
-          <Menu.Trigger className="start-mode" type="button">
-            <selected.Icon size={15} />
-            <span>{selected.label}</span>
-            <ChevronDown size={13} />
-          </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Positioner sideOffset={8} align="start">
-              <Menu.Popup className="start-mode-popup">
-                {choices.map(({ id, label, Icon }) => (
-                  <Menu.Item
-                    className="start-mode-item"
-                    key={id}
-                    onClick={() => {
-                      setMode(id);
-                      setError('');
-                    }}
-                  >
-                    <Icon size={16} />
-                    <span>{label}</span>
-                    {id === mode && <Check size={14} />}
-                  </Menu.Item>
-                ))}
-              </Menu.Popup>
-            </Menu.Positioner>
-          </Menu.Portal>
-        </Menu.Root>
+        {!companyOnly && (
+          <Menu.Root>
+            <Menu.Trigger className="start-mode" type="button">
+              <selected.Icon size={15} />
+              <span>{selected.label}</span>
+              <ChevronDown size={13} />
+            </Menu.Trigger>
+            <Menu.Portal>
+              <Menu.Positioner sideOffset={8} align="start">
+                <Menu.Popup className="start-mode-popup">
+                  {choices.map(({ id, label, Icon }) => (
+                    <Menu.Item
+                      className="start-mode-item"
+                      key={id}
+                      onClick={() => {
+                        setMode(id);
+                        setError('');
+                      }}
+                    >
+                      <Icon size={16} />
+                      <span>{label}</span>
+                      {id === mode && <Check size={14} />}
+                    </Menu.Item>
+                  ))}
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
+        )}
+        {companyOnly && (
+          <span className="start-mode">
+            <Building2 size={15} />
+            {t('公司查询', 'Company research')}
+          </span>
+        )}
+        {toolbar}
         <button
           type="submit"
           className="start-submit"
           aria-label={t('开始核查', 'Start review')}
-          disabled={!text.trim()}
+          disabled={disabled || !text.trim()}
         >
           <ArrowUp size={19} />
         </button>
       </div>
+      {completionOpen && (finding || searched) && (
+        <div
+          id="company-completion-list"
+          className="company-completions"
+          role="listbox"
+          aria-label={t('匹配企业', 'Matching companies')}
+        >
+          {finding && (
+            <p className="company-completions-state">
+              {t('正在检索公司…', 'Searching companies…')}
+            </p>
+          )}
+          {!finding &&
+            candidates.map((identity, index) => (
+              <button
+                id={`company-completion-${index}`}
+                key={`${identity.orgId}:${identity.securityCode}`}
+                type="button"
+                role="option"
+                aria-selected={activeCandidate === index}
+                onPointerDown={(event) => event.preventDefault()}
+                onClick={() => chooseCompany(identity)}
+              >
+                <Building2 size={15} />
+                <span>{identity.shortName}</span>
+                <small>{identity.securityCode}</small>
+              </button>
+            ))}
+          {!finding && !candidates.length && (
+            <p className="company-completions-state">
+              {t(
+                '未匹配到支持的上市主体。未匹配不代表没有风险。',
+                'No supported listed entity matched. No match does not mean no risk.'
+              )}
+            </p>
+          )}
+        </div>
+      )}
       {error && (
         <p id="start-error" className="start-input-error" role="alert">
           {error}

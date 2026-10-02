@@ -15,6 +15,10 @@ import { seeds, WorkspaceStore } from './store.js';
 import { AuthStore, authentication, type AuthContext } from './auth.js';
 import { installDecisionRoutes } from './decision-routes.js';
 import { installCompanyRoutes, type CompanyService } from './company-routes.js';
+import {
+  installCompanyContextRoutes,
+  type CompanyContextService,
+} from './company-context-routes.js';
 import { ApiFault, taskContextSchema, taskInputSchema, validateMaterial } from './validation.js';
 
 export interface AppOptions {
@@ -22,6 +26,7 @@ export interface AppOptions {
   dataDir?: string;
   model?: ModelConfig;
   companyService?: CompanyService;
+  companyContextService?: CompanyContextService;
 }
 export async function createApp(options: AppOptions = {}) {
   const root = options.root || process.cwd();
@@ -360,6 +365,11 @@ export async function createApp(options: AppOptions = {}) {
   });
   installDecisionRoutes(app, { auth });
   const company = installCompanyRoutes(app, { root, auth, model, service: options.companyService });
+  const companyContext = installCompanyContextRoutes(app, {
+    auth,
+    model,
+    service: options.companyContextService,
+  });
   let uploads = 0;
   const limitUpload = (
     _req: express.Request,
@@ -691,7 +701,7 @@ export async function createApp(options: AppOptions = {}) {
         throw new ApiFault(400, 'CONFIRM_REQUIRED', '重置需明确确认 RESET_DEMO');
       if (store.state.tasks.some((task) => running.has(task.id) || scheduled.has(task.id)))
         throw new ApiFault(409, 'TASK_RUNNING', '存在执行中的任务，暂时不能重置');
-      if (company.busy(store))
+      if (company.busy(store) || companyContext.busy(store))
         throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '公开证据查询或保存中，暂时不能重置');
       await store.reset();
       res.json(store.workspace(provider));
@@ -755,6 +765,7 @@ export async function createApp(options: AppOptions = {}) {
     workspaceForUser,
     waitForIdle: async () => {
       await company.waitForIdle();
+      await companyContext.waitForIdle();
       while (running.size || scheduled.size)
         await new Promise((resolve) => setTimeout(resolve, 10));
     },

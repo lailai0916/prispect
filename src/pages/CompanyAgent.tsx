@@ -92,6 +92,10 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
   const autoStarted = useRef(new Set<string>());
   const runKeys = useRef(new Map<string, string>());
   const [run, setRun] = useState<CompanyResearchRun | null>(null);
+  useEffect(() => {
+    if (run)
+      window.dispatchEvent(new CustomEvent('prispect:company-run-updated', { detail: run.id }));
+  }, [run?.id, run?.updatedAt, run?.status]);
   const [history, setHistory] = useState<CompanyResearchRun[]>([]);
   const [historyError, setHistoryError] = useState('');
   const [historyLoading, setHistoryLoading] = useState(true);

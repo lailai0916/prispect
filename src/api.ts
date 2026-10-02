@@ -14,6 +14,24 @@ export class RequestError extends Error {
 }
 
 const errorMessages: Record<string, string> = {
+  CONTEXT_INPUT: 'Enter a supported company name, year and refresh options.',
+  CONTEXT_BUSY: 'Public sources are busy. Please retry shortly.',
+  CONTEXT_IDENTITY: 'Select a supported listed entity before continuing.',
+  CONTEXT_NOT_READY: 'Company context has not been retrieved yet.',
+  CONTEXT_STALE: 'The public snapshot changed while answering. Please ask again.',
+  CONTEXT_SUBJECT_CONFLICT:
+    'The public source did not match this company. Conflicting fields were withheld.',
+  INDUSTRY_SCOPE: 'A listed entity is needed for industry comparison.',
+  INDUSTRY_TARGET_MISSING: 'No matching same-year industry record was retrieved.',
+  INDUSTRY_CLASSIFICATION: 'A verifiable industry classification was unavailable.',
+  INDUSTRY_SAMPLE_LIMIT:
+    'The source exceeded the coverage limit; truncated averages were withheld.',
+  INDUSTRY_INPUT: 'Choose a completed annual period for a Shanghai or Shenzhen listed company.',
+  INDUSTRY_SOURCE_FORMAT: 'The industry source response could not be verified.',
+  INDUSTRY_PAGE_MISSING: 'Industry pagination was interrupted; incomplete averages were withheld.',
+  INDUSTRY_COUNT_CONFLICT: 'The source total did not match the retrieved sample count.',
+  COMPANY_QUESTION_INPUT: 'Enter a question of up to 500 characters and select the profit basis.',
+
   AUTH_REQUIRED: 'Log in to open your personal workspace.',
   INVALID_CREDENTIALS: 'The email or password is incorrect. Please try again.',
   EMAIL_EXISTS: 'An account already uses this email. Please log in.',

@@ -119,6 +119,10 @@ export class WorkspaceStore {
       if (!Array.isArray(this.state.decisions)) throw new Error('决定记录格式无效');
       if (!Array.isArray(this.state.companyRuns)) throw new Error('企业查询记录格式无效');
       for (const run of this.state.companyRuns) {
+        if (run.contextStatus === 'loading') {
+          run.contextStatus = 'failed';
+          run.contextError = '服务重启中断了企业概览更新；已有快照保留，可以重新读取。';
+        }
         if (run.status === 'queued' || run.status === 'running') {
           run.status = 'failed';
           run.error = '服务重启中断了公开证据查询，可重新查询；已有原件与任务保留。';

@@ -1,4 +1,5 @@
 import type { CompanyGraphProgress, CompanyBranchId } from './company-contracts.js';
+import type { CompanyWorkspaceExtension } from './company-workspace.js';
 
 export type MetricKey =
   | 'netProfit'
@@ -340,7 +341,7 @@ export interface CompanyRunInput {
   purpose?: ReviewPurpose;
   useModel?: boolean;
 }
-export interface CompanyResearchRun {
+export interface CompanyResearchRun extends CompanyWorkspaceExtension {
   agent?: CompanyGraphProgress;
   id: string;
   input: CompanyRunInput;

@@ -468,7 +468,7 @@ export function installCompanyRoutes(
     wrap(async (req, res) => {
       const store = res.locals.store as WorkspaceStore;
       const run = byId(store, String(req.params.id));
-      if (active.has(run.id) || adopting.has(run.id))
+      if (active.has(run.id) || adopting.has(run.id) || run.contextStatus === 'loading')
         throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '查询或保存中不能删除');
       if (run.preview?.material.uploadId)
         await store.discardUnconfirmedUpload(run.preview.material.uploadId);

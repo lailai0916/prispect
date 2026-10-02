@@ -234,6 +234,10 @@ export const privacyDocument: ProductDocument = {
       title: ['外部服务与访问', 'External services and access'],
       paragraphs: [
         [
+          '企业概览还通过东方财富与新浪公开接口读取财务、行业、资料与新闻。企业记录、公开快照、来源比对和最多五十条问答按账号保存，删除查询时一并移除。主动启用企业问答模型时，发送问题与已取得的公开快照，不发送账号标识、私有材料、付款安排或服务端密钥配置。',
+          'Company context also retrieves financial, industry, profile and news data through Eastmoney and Sina public interfaces. Company records, public snapshots, comparisons and up to fifty answers are stored per account and removed with the query. Optional company-question model calls send the question and retrieved public snapshot, excluding account identifiers, private evidence, payment plans and server-key configuration.',
+        ],
+        [
           '公司查询把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',
           'Company lookup sends your entered search terms and selected security code, entity identifier, year and other retrieval parameters to CNINFO’s public-disclosure service. Enter only a company name or security code in company search; avoid private transactions, personal names, account details or other unnecessary information.',
         ],

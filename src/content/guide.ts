@@ -53,7 +53,7 @@ export const guideDocument: ProductDocument = {
         ],
       },
       links: [
-        { label: ['查询公司', 'Company lookup'], href: '/company' },
+        { label: ['查询公司', 'Company lookup'], href: '/query' },
         { label: ['核查事项', 'Reviews'], href: '/decisions' },
         { label: ['材料', 'Materials'], href: '/materials' },
       ],
@@ -62,6 +62,22 @@ export const guideDocument: ProductDocument = {
       id: 'company',
       title: ['查询公司与确认候选', 'Look up a company and confirm candidates'],
       bullets: [
+        [
+          '登录后点击“新建查询”，默认只显示公司搜索框；输入时展开候选列表，选择主体后进入详情。概览先显示已取得字段，年报原件继续在后台核查；执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。',
+          'After signing in, New query shows a single company composer. Suggestions appear while typing; choose an entity to open its details. Retrieved context appears first while annual originals continue in the background. Loaded companies remain in the sidebar, with only the history list scrolling.',
+        ],
+        [
+          '侧边栏提供公司概览、历史财务走势、行业对比、公告线索、扩展核查、企业问答、数据覆盖和来源比对。财报工作台、材料中心、付款与交接、核查比较位于“核查工具”菜单。',
+          'The sidebar opens Company overview, Financial history, Industry comparison, Announcements, Further checks, Company questions, Data coverage and Source comparison. The financial workbench, Materials, Payments and handovers, and Compare reviews remain in Review tools.',
+        ],
+        [
+          '公众与管理者视角只改变阅读方式；外部付款与内部交接是独立的核查目的。网页概览保留归母与合并两种利润口径，并注明近三年合计；原件现金桥继续使用同年度合并净利润。行业均值只比较同年度同行、剔除本企业；有效同行不足五家时不输出均值。',
+          'Public and management views change presentation only; external payment and internal handover remain separate review purposes. Web context retains attributable and consolidated profit bases and labels three-year totals. The original cash bridge uses same-year consolidated profit. Industry averages use same-year peers, excluding the target, and are withheld below five valid peers.',
+        ],
+        [
+          '企业问答默认按当前公开快照生成规则回答，回答与来源随企业记录保存。可主动选择服务端模型辅助解释；失败时回落规则。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
+          'Company questions default to rules over the current public snapshot, saving answers and sources with the company record. Server-side model assistance is optional and falls back to rules on failure. Missing fields stay unknown. Failed refreshes retain earlier timestamps and do not imply no risk.',
+        ],
         [
           '输入准确公司名称或证券代码。准确唯一匹配可直接开始；简称有歧义时选择披露主体。当前覆盖巨潮大陆 A 股披露，未匹配不等于公司不存在或没有风险。',
           'Enter an exact company name or security code. An exact unique match can start directly; ambiguous names require choosing a disclosure identity. Coverage is currently mainland A-share disclosures on CNINFO. No match does not establish that a company does not exist or has no risk.',
@@ -87,7 +103,7 @@ export const guideDocument: ProductDocument = {
           'An announcement title does not mean its full text was read. Notes and announcement coverage are stated. Incomplete evidence or a source-table total difference may leave candidates available, but dependent explanations stop and identify what needs checking.',
         ],
       ],
-      links: [{ label: ['打开公司查询', 'Open company lookup'], href: '/company' }],
+      links: [{ label: ['打开公司查询', 'Open company lookup'], href: '/query' }],
     },
     {
       id: 'import',

@@ -15,6 +15,7 @@ const pages = new Set([
   '/new',
   '/materials',
   '/company',
+  '/query',
   '/decisions',
   '/compare',
 ]);
