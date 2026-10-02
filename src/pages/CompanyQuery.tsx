@@ -6,11 +6,14 @@ import { companyPath } from '../../shared/company-workspace';
 import { StartInput } from '../StartInput';
 import { Dialog } from '../components';
 import { useApp } from '../context';
+import { useViewMode } from '../ViewModeContext';
+import { HomeRiskCards } from '../HomeRiskCards';
 import { api, requestErrorText } from '../api';
 import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
 
 export function CompanyQueryPage() {
-  const { t, locale, navigate } = useApp();
+  const { t, locale, navigate, workspace } = useApp();
+  const { viewMode } = useViewMode();
   const latest = new Date().getFullYear() - 1;
   const [year, setYear] = useState(latest);
   const [purpose, setPurpose] = useState<ReviewPurpose>('external');
@@ -67,11 +70,20 @@ export function CompanyQueryPage() {
   return (
     <div className="company-query-page">
       <div className="company-query-inner">
-        <h1>{t('开始一项核查', 'Start a review')}</h1>
+        <h1>
+          {t(
+            viewMode === 'simple' ? '一眼看出公司有没有风险' : '开始一项核查',
+            viewMode === 'simple' ? 'See company risk at a glance' : 'Start a review'
+          )}
+        </h1>
         <p className="company-query-description">
           {t(
-            '输入公司名称或证券代码，查看核查报告。',
-            'Enter a company name or ticker to open its review report.'
+            viewMode === 'simple'
+              ? '输入公司名称或证券代码，先看风险，再决定要不要深入研究。'
+              : '输入公司名称或证券代码，查看核查报告。',
+            viewMode === 'simple'
+              ? 'Enter a company name or ticker to check its risk before digging deeper.'
+              : 'Enter a company name or ticker to open its review report.'
           )}
         </p>
         <StartInput
@@ -102,6 +114,7 @@ export function CompanyQueryPage() {
           </p>
         )}
       </div>
+      {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
       {options && (
         <Dialog title={t('查询选项', 'Query options')} onClose={() => setOptions(false)}>
           <div className="query-options-form">

@@ -740,7 +740,31 @@ kbd {
     translate: none;
   }
 }
-@media (max-width: 360px) {
+@media (max-width: 640px) {
+  .business-shell > .site-header {
+    gap: 8px;
+  }
+  .business-shell > .site-header .header-actions {
+    gap: 0;
+  }
+  .business-shell > .site-header .view-toggle button {
+    min-width: 30px;
+    padding-inline: 4px;
+    font-size: 12px;
+  }
+  .business-shell
+    > .site-header
+    .header-actions
+    :is(.icon-button, .language-button, .theme-button, .account-link) {
+    width: 32px;
+    min-width: 32px;
+    padding-inline: 0;
+  }
+}
+@media (max-width: 420px) {
+  .business-shell > .site-header {
+    padding-inline: 12px;
+  }
   .business-shell > .site-header .brand-name > span {
     display: none;
   }

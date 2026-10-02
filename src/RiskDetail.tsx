@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { ExternalLink, FileText } from 'lucide-react';
 
-import type { EvidenceRef, Report } from '../shared/contracts';
+import type { BridgeStep, EvidenceRef, Report } from '../shared/contracts';
 import { useApp } from './context';
 import {
   deriveRiskPerspective,
@@ -25,10 +25,38 @@ const statusColor: Record<RiskStatus, string> = {
 export function RiskDetail({ report }: { report: Report }) {
   const { t, locale, showEvidence } = useApp();
   const perspective = useMemo(() => deriveRiskPerspective(report, locale), [report, locale]);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const openRefs = (refs: EvidenceRef[]) => {
     if (refs.length > 0) showEvidence(refs, report);
   };
+
+  /* 滚动入场：详情卡进入视口时依次浮现 */
+  useEffect(() => {
+    const root = gridRef.current;
+    if (!root) return;
+    const reduceMotion =
+      typeof window !== 'undefined' &&
+      Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>('.risk-card'));
+    if (reduceMotion || typeof IntersectionObserver === 'undefined') {
+      nodes.forEach((node) => node.classList.add('is-visible'));
+      return;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const index = nodes.indexOf(entry.target as HTMLElement);
+          window.setTimeout(() => entry.target.classList.add('is-visible'), index * 90);
+          io.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.15 }
+    );
+    nodes.forEach((node) => io.observe(node));
+    return () => io.disconnect();
+  }, []);
 
   return (
     <section className="risk-detail" aria-label={t('第二部分 · 详细状况', 'Part 2 · Details')}>
@@ -38,7 +66,7 @@ export function RiskDetail({ report }: { report: Report }) {
           {t('每条数据可点击回溯原文', 'Each figure links back to its source')}
         </span>
       </div>
-      <div className="risk-detail-grid">
+      <div className="risk-detail-grid" ref={gridRef}>
         {perspective.dimensions.map((dimension) => {
           const color = statusColor[dimension.status];
           return (
@@ -66,6 +94,9 @@ export function RiskDetail({ report }: { report: Report }) {
               <p className="risk-card-summary">{t(dimension.summary.zh, dimension.summary.en)}</p>
 
               {dimension.key === 'finance' && <FinanceBars report={report} />}
+              {dimension.key === 'finance' && report.bridge && (
+                <MiniCashBridge steps={report.bridge} />
+              )}
 
               <div className="risk-metrics">
                 {dimension.metrics.map((metric, index) => (
@@ -181,6 +212,50 @@ function FinanceBars({ report }: { report: Report }) {
           {t('收到的现金', 'Cash')}（{cash.value}）
         </span>
       </div>
+    </div>
+  );
+}
+
+/** 财务卡迷你现金桥：净利润 → 各项调整 → 经营现金，绿正红负 */
+function MiniCashBridge({ steps }: { steps: BridgeStep[] }) {
+  let running = 0;
+  const bars = steps.map((step) => {
+    const value = Number(step.value) || 0;
+    const start = step.kind === 'total' ? 0 : running;
+    const end = step.kind === 'total' ? value : running + value;
+    running = end;
+    return { step, start, end, value };
+  });
+  const low = Math.min(0, ...bars.flatMap((bar) => [bar.start, bar.end]));
+  const high = Math.max(0, ...bars.flatMap((bar) => [bar.start, bar.end]));
+  const span = high - low || 1;
+  const toPct = (value: number) => ((value - low) / span) * 100;
+  return (
+    <div className="risk-bridge-mini" aria-hidden="true">
+      {bars.map((bar, index) => {
+        const left = toPct(bar.start);
+        const width = Math.max(toPct(bar.end) - left, 0.6);
+        const positive = bar.value > 0;
+        const negative = bar.value < 0;
+        const color = negative ? '#ef4444' : positive ? '#34d399' : '#8a8f98';
+        const isTotal = bar.step.kind === 'total';
+        return (
+          <div className="risk-bridge-row" key={index}>
+            <span className="risk-bridge-label" title={bar.step.label}>
+              {bar.step.label}
+            </span>
+            <span className="risk-bridge-track">
+              <i
+                className={`risk-bridge-bar${isTotal ? ' is-total' : ''}`}
+                style={{ left: `${left}%`, width: `${width}%`, background: color }}
+              />
+            </span>
+            <span className="risk-bridge-value" style={{ color }}>
+              {bar.step.value}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
