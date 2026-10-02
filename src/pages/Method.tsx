@@ -302,6 +302,7 @@ export function MethodPage() {
           </section>
           <section id="method-privacy">
             <h2>{t('数据与隐私', 'Data and privacy')}</h2>
+            <p>{t('照见 CashLens 由析光团队运营。', 'CashLens is operated by the 析光 team.')}</p>
             <p>
               {t(
                 '账号、上传文件与核查保存在网站服务器；账号内文件下载需登录相应账号。',

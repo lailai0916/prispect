@@ -13,7 +13,7 @@
 
 ## Website Introduction
 
-CashLens (照见) starts from a company or a matter to investigate. Its public-evidence Agent checks annual profit, operating cash, relevant notes and recent disclosures, then identifies supported observations and unresolved questions. An external user can continue into a prepayment review; an incoming operator can examine a dated cash plan. Private records support their own conditional calculations. Historical financial signals never fill current cash or future receipts.
+CashLens (照见), a product by the 析光 team, starts from a company or a matter to investigate. Its public-evidence Agent checks annual profit, operating cash, relevant notes and recent disclosures, then identifies supported observations and unresolved questions. An external user can continue into a prepayment review; an incoming operator can examine a dated cash plan. Private records support their own conditional calculations. Historical financial signals never fill current cash or future receipts.
 
 Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction. The core analytical question is deliberately narrow. Historical cash ratios are not company ratings, credit decisions, or investment advice. Customer demand and willingness to pay remain research assumptions.
 

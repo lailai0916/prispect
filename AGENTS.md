@@ -2,6 +2,8 @@
 
 ## Project
 
+Company/team name: 析光. Product name: 照见 / CashLens. Keep the operator and product names distinct; do not invent a legal entity name or an English translation for the team.
+
 `xuejun-hackathon` is the private repository for CashLens (照见), a cash-conversion
 evidence and payment-decision product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
 It uses strict TypeScript, React/Vite and Express, Better Auth accounts/sessions, a LangGraph
