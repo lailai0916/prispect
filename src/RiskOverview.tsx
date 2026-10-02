@@ -20,6 +20,7 @@ export function RiskOverview({ report }: { report: Report }) {
   const { t, locale } = useApp();
   const perspective = useMemo(() => deriveRiskPerspective(report, locale), [report, locale]);
   const [entered, setEntered] = useState(false);
+  const [activeDim, setActiveDim] = useState<string | null>(null);
   const reduceMotion =
     typeof window !== 'undefined' &&
     Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
@@ -36,6 +37,8 @@ export function RiskOverview({ report }: { report: Report }) {
   const overall = perspective.overall;
   const color = statusColor[overall.status];
   const ringLength = 2 * Math.PI * 96;
+  const arc = ringLength / 4;
+  const dash = arc - 5;
 
   const scrollTo = (key: string) => {
     const node = document.getElementById(`risk-detail-${key}`);
@@ -62,20 +65,27 @@ export function RiskOverview({ report }: { report: Report }) {
             aria-label={t(overall.title.zh, overall.title.en)}
           >
             <circle className="risk-ring-track" cx="110" cy="110" r="96" />
-            <circle
-              className="risk-ring-fill"
-              cx="110"
-              cy="110"
-              r="96"
-              style={{
-                stroke: color,
-                strokeDasharray: ringLength,
-                strokeDashoffset: entered ? 0 : ringLength,
-                transition: reduceMotion
-                  ? 'none'
-                  : 'stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
-              }}
-            />
+            {perspective.dimensions.map((dimension, index) => {
+              const dimColor = statusColor[dimension.status];
+              const active = activeDim === dimension.key;
+              return (
+                <circle
+                  key={dimension.key}
+                  className="risk-ring-seg"
+                  cx="110"
+                  cy="110"
+                  r="96"
+                  style={{
+                    stroke: dimColor,
+                    strokeDasharray: `${dash} ${ringLength}`,
+                    transform: `rotate(${index * 90 - 90} 110 110)`,
+                    opacity: entered ? (active ? 1 : 0.92) : 0,
+                    transition: reduceMotion ? 'none' : `opacity 300ms ${index * 120}ms ease`,
+                    filter: active ? 'brightness(1.25)' : 'brightness(0.85)',
+                  }}
+                />
+              );
+            })}
           </svg>
           <div className="risk-ring-center">
             <strong style={{ color }}>{t(overall.title.zh, overall.title.en)}</strong>
@@ -86,17 +96,20 @@ export function RiskOverview({ report }: { report: Report }) {
         <div className="risk-dims">
           {perspective.dimensions.map((dimension, index) => {
             const dimColor = statusColor[dimension.status];
+            const active = activeDim === dimension.key;
             return (
               <button
                 key={dimension.key}
                 type="button"
-                className="risk-dim-pill"
+                className={`risk-dim-pill${active ? ' is-active' : ''}`}
                 style={{
                   transitionDelay: reduceMotion ? '0ms' : `${200 + index * 90}ms`,
                   opacity: entered ? 1 : 0,
                   transform: entered ? 'none' : 'translateY(6px)',
                 }}
                 onClick={() => scrollTo(dimension.key)}
+                onMouseEnter={() => setActiveDim(dimension.key)}
+                onMouseLeave={() => setActiveDim(null)}
                 aria-label={`${t(dimension.label.zh, dimension.label.en)} · ${t(dimension.plain.zh, dimension.plain.en)}`}
               >
                 <span

@@ -79,12 +79,10 @@
   stroke: #232a38;
   stroke-width: 12;
 }
-.risk-ring-fill {
+.risk-ring-seg {
   fill: none;
   stroke-width: 12;
-  stroke-linecap: round;
-  transform: rotate(-90deg);
-  transform-origin: 50% 50%;
+  stroke-linecap: butt;
 }
 .risk-ring-center {
   position: absolute;
@@ -132,6 +130,10 @@
 .risk-dim-pill:hover {
   border-color: #3a4456;
   background: #202532;
+}
+.risk-dim-pill.is-active {
+  border-color: #4a5a74;
+  background: #232a3a;
 }
 .risk-dim-dot {
   width: 9px;
@@ -354,10 +356,320 @@
   margin-top: 2px;
 }
 
+/* ---------- 详情卡滚动入场 ---------- */
+.risk-card {
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 480ms ease,
+    transform 480ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease,
+    background 200ms ease;
+}
+.risk-card.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---------- 财务卡迷你现金桥瀑布 ---------- */
+.risk-bridge-mini {
+  margin: 12px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+}
+.risk-bridge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.risk-bridge-label {
+  flex: 0 0 92px;
+  font-size: 11.5px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.risk-bridge-track {
+  position: relative;
+  flex: 1;
+  height: 16px;
+  background: var(--bg-soft, #f1f2f4);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.risk-bridge-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  opacity: 0.85;
+  transition:
+    width 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    left 600ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 200ms ease;
+}
+.risk-bridge-bar.is-total {
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+.risk-bridge-value {
+  flex: 0 0 auto;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .risk-ring-fill,
+  .risk-ring-seg,
   .risk-finance-bar-fill,
   .risk-dim-pill {
     transition: none !important;
+  }
+  .risk-card {
+    opacity: 1;
+    transform: none;
+    transition: none !important;
+  }
+  .risk-bridge-bar {
+    transition: none !important;
+  }
+}
+
+/* ---------- 多公司风险对比矩阵（易懂版） ---------- */
+.risk-matrix {
+  margin-bottom: 24px;
+}
+.risk-matrix-head {
+  border: 1px solid var(--line);
+  border-radius: 10px 10px 0 0;
+  background: var(--surface);
+}
+.risk-matrix-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+.risk-matrix-row {
+  display: grid;
+  grid-template-columns: 1.5fr repeat(4, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.risk-matrix-title-row {
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.risk-matrix-dim-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: 12px;
+  min-width: 0;
+}
+.risk-matrix-dim-col small {
+  font-size: 10.5px;
+  color: var(--muted);
+  font-weight: 400;
+  line-height: 1.4;
+}
+.risk-matrix-data-row {
+  width: 100%;
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 10px 14px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  animation: risk-row-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition:
+    border-color 180ms ease,
+    background 180ms ease;
+}
+.risk-matrix-data-row:hover {
+  border-color: #c9d2e0;
+  background: var(--bg-soft, #eef0f4);
+}
+.risk-matrix-company-col {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.risk-matrix-company-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.risk-matrix-company-text strong {
+  font-size: 13.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.risk-matrix-company-text small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.risk-matrix-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.risk-matrix-dim-col em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 600;
+}
+.risk-matrix-ring {
+  flex: 0 0 auto;
+}
+.risk-matrix-ring-track {
+  fill: none;
+  stroke: #e2e6ec;
+  stroke-width: 2;
+}
+.risk-matrix-ring-seg {
+  fill: none;
+  stroke-width: 2;
+}
+@keyframes risk-row-in {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .risk-matrix-data-row {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+}
+
+/* ---------- 易懂版首页状态卡 ---------- */
+.home-risk-cards {
+  margin-top: 26px;
+}
+.home-risk-cards-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.home-risk-cards-head h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+.home-risk-cards-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+.home-risk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
+}
+.home-risk-card {
+  appearance: none;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 14px 16px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: risk-row-in 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+.home-risk-card:hover {
+  border-color: #c9d2e0;
+  box-shadow: 0 6px 18px rgba(30, 41, 59, 0.08);
+  transform: translateY(-2px);
+}
+.home-risk-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.home-risk-card-title {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.home-risk-card-title strong {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.home-risk-card-title small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.home-risk-card-verdict {
+  font-size: 16px;
+  font-weight: 750;
+  margin: 4px 0 0;
+}
+.home-risk-card-sub {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+  min-height: 34px;
+}
+.home-risk-card-dims {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+.home-risk-card-dim {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.home-risk-card-dim i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-risk-card {
+    opacity: 1;
+    transform: none;
+    animation: none;
+  }
+  .home-risk-card:hover {
+    transform: none;
   }
 }
