@@ -248,6 +248,10 @@ export const guideDocument: ProductDocument = {
       },
       paragraphs: [
         [
+          '经营解释分别显示历史财务信号和区分材料。区分材料需匹配本次主体、基准日期及保存原文；“材料可供核对”只表示可以检查，不证明哪种解释正确。新增、撤回或恢复会改变材料状态及下一项核查，不会自动填入现金。',
+          'Operating explanations separate the historical financial signal from distinguishing material. Material must match the entity, baseline date and saved source text. “Material available for review” means it can be inspected, not that either explanation is correct. Adding, withdrawing or restoring it changes the review state and next inquiry without supplying cash values.',
+        ],
+        [
           '记录证据时填写适用主体、日期、字段和原文，并按需要关联已保存材料。金额、收付方向与日期必须在相关文本中能定位；把旧年报的元数据改成今天不能让它成为当天现金证据。',
           'For evidence, enter the applicable entity, date, fields and source text, linking saved material where appropriate. Amounts, flow direction and dates must be locatable in the relevant text. Changing old-report metadata to today does not create evidence of today’s cash.',
         ],

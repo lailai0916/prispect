@@ -557,6 +557,40 @@
 .decision-explanations > div {
   padding-top: 20px;
 }
+.decision-explanation + .decision-explanation {
+  margin-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.decision-explanation-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 12px;
+}
+.decision-explanation-status > span:first-child {
+  color: var(--muted);
+}
+.decision-explanation-evidence {
+  border-top: 1px solid var(--line-soft);
+  margin-top: 18px;
+  padding-top: 4px;
+}
+.decision-explanation-evidence > p,
+.decision-explanation-next {
+  font-size: 13px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  margin: 12px 0;
+}
+.decision-explanation-evidence > .field-note {
+  font-size: 12px;
+  color: var(--muted);
+}
+.decision-explanation-next {
+  color: var(--muted);
+}
 .decision-explanations h4 {
   font-size: 14px;
   font-weight: 550;

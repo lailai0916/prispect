@@ -136,6 +136,182 @@ function evidence(materialId: string, quote: string, amount: string): DecisionEv
 const gate = (detail: DecisionDetail, id: string) =>
   detail.evaluation.gates.find((gate) => gate.id === id)!;
 
+test('distinguishing material review persists through actual HTTP revisions, owner boundaries, withdrawal, restoration and restart without a private model request', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-distinction-api-'));
+  let calls = 0;
+  let service: Awaited<ReturnType<typeof openService>> | undefined = await openService(
+    directory,
+    () => calls++
+  );
+  try {
+    const alice = await account(service, 'distinction-alice@example.com');
+    const bob = await account(service, 'distinction-bob@example.com');
+    const demos = (await (await service.request('/api/cases')).json()) as DemoCase[];
+    const demo = demos.find((row) => row.id === 'songyuan')!;
+    assert.equal(
+      (await service.request(`/api/cases/${demo.id}/import`, options(alice, {}, 'POST'))).status,
+      201
+    );
+    const taskResponse = await service.request(
+      '/api/tasks',
+      options(
+        alice,
+        {
+          title: '真实年度背景',
+          company: demo.company,
+          year: demo.year,
+          materialIds: demo.materialIds,
+          useModel: false,
+        },
+        'POST'
+      )
+    );
+    assert.equal(taskResponse.status, 202);
+    const task = (await taskResponse.json()) as AnalysisTask;
+    await service.waitForIdle();
+    const decisionInput: DecisionInput = {
+      ...input(),
+      purpose: 'handover',
+      transactionEntity: demo.company,
+      reportTaskId: task.id,
+      external: null,
+      datedCash: {
+        asOf: '2026-10-02',
+        openingCash: null,
+        cashFloor: '0',
+        proposedAmount: null,
+        proposedDay: null,
+        alternativeDay: null,
+        flows: [],
+      },
+    };
+    const created = await service.request('/api/decisions', options(alice, decisionInput, 'POST'));
+    assert.equal(created.status, 201);
+    let detail = (await created.json()) as DecisionDetail;
+    const url = `/api/decisions/${detail.decision.id}`;
+    const baselineCash = detail.evaluation.cash;
+    const quote = `${demo.company}截至2026-10-02，虚构账龄测试字段100元，不是该公司当前事实。`;
+    const contraryQuote = `${demo.company}截至2026-10-02，虚构账龄测试字段200元，不是该公司当前事实。`;
+    const saved = await material(service, alice, [quote, contraryQuote]);
+    const payload = {
+      ...evidence(saved.id, quote, '100'),
+      entity: demo.company,
+      slot: 'collections',
+    };
+    assert.equal(
+      (
+        await service.request(
+          url + '/evidence',
+          options(bob, { baseRevision: 1, evidence: payload }, 'POST')
+        )
+      ).status,
+      404
+    );
+    assert.equal(
+      (
+        await service.request(url + '/evidence', {
+          ...options(alice, { baseRevision: 1, evidence: payload }, 'POST'),
+          headers: { Cookie: alice.cookie, 'Content-Type': 'application/json' },
+        })
+      ).status,
+      403
+    );
+    const add = await service.request(
+      url + '/evidence',
+      options(alice, { baseRevision: 1, evidence: payload }, 'POST')
+    );
+    assert.equal(add.status, 200);
+    detail = (await add.json()) as DecisionDetail;
+    const firstEvidenceId = detail.version.evidence[0]!.id;
+    assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'ready');
+    assert.match(
+      detail.evaluation.nextActions.find((row) => row.id === 'request-collections')!
+        .requestedEvidence,
+      /核对已有/
+    );
+    assert.ok(
+      detail.evaluation.explanations[0]!.evidenceReview?.dependencies.some(
+        (dep) =>
+          dep.id === firstEvidenceId &&
+          dep.materialId === saved.id &&
+          dep.binding === 'source-located'
+      )
+    );
+    const withdraw = await service.request(
+      url + `/evidence/${firstEvidenceId}`,
+      options(alice, { baseRevision: 2, state: 'withdrawn' }, 'PATCH')
+    );
+    assert.equal(withdraw.status, 200);
+    detail = (await withdraw.json()) as DecisionDetail;
+    assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'withdrawn');
+    assert.deepEqual(detail.evaluation.cash, baselineCash);
+    const restore = await service.request(
+      url + '/restore',
+      options(alice, { baseRevision: 3, revision: 2 }, 'POST')
+    );
+    assert.equal(restore.status, 200);
+    detail = (await restore.json()) as DecisionDetail;
+    assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'ready');
+    const contrary = await service.request(
+      url + '/evidence',
+      options(
+        alice,
+        {
+          baseRevision: 4,
+          evidence: { ...payload, quote: contraryQuote, values: { amount: '200' } },
+        },
+        'POST'
+      )
+    );
+    assert.equal(contrary.status, 200);
+    detail = (await contrary.json()) as DecisionDetail;
+    assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'conflict');
+    const secondEvidenceId = detail.version.evidence[1]!.id;
+    const withdrawContrary = await service.request(
+      url + `/evidence/${secondEvidenceId}`,
+      options(alice, { baseRevision: 5, state: 'withdrawn' }, 'PATCH')
+    );
+    assert.equal(withdrawContrary.status, 200);
+    detail = (await withdrawContrary.json()) as DecisionDetail;
+    assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'conflict');
+    const restoreBeforeConflict = await service.request(
+      url + '/restore',
+      options(alice, { baseRevision: 6, revision: 2 }, 'POST')
+    );
+    assert.equal(restoreBeforeConflict.status, 200);
+    detail = (await restoreBeforeConflict.json()) as DecisionDetail;
+    assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'conflict');
+    assert.deepEqual(detail.evaluation.cash, baselineCash);
+    assert.equal(detail.evaluation.recordedCash?.primary.status, 'unknown');
+    await service.stop();
+    service = await openService(directory, () => calls++);
+    const restarted = await account(service, 'distinction-alice@example.com', true);
+    const current = (await (
+      await service.request(url, options(restarted))
+    ).json()) as DecisionDetail;
+    assert.equal(current.version.revision, 7);
+    assert.equal(current.evaluation.explanations[0]!.evidenceReview?.status, 'conflict');
+    const historical = (await (
+      await service.request(url + '?revision=2', options(restarted))
+    ).json()) as DecisionDetail;
+    assert.equal(historical.version.revision, 2);
+    assert.equal(historical.evaluation.explanations[0]!.evidenceReview?.status, 'ready');
+    assert.equal(
+      (await service.request(`/api/materials/${saved.id}`, options(restarted, undefined, 'DELETE')))
+        .status,
+      409
+    );
+    assert.equal(
+      calls,
+      0,
+      'private evidence and cash records never enter a configured external model'
+    );
+  } finally {
+    await service?.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('private decisions enforce owner and CSRF boundaries, serialize revision writes, preserve historical references and survive a service restart without any model call', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-decision-api-'));
   let calls = 0;

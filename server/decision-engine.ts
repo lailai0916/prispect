@@ -239,7 +239,15 @@ function fieldsMatch(record: DecisionEvidence, baselineDate?: string | null): bo
   if (value.terms && !normalizedText(record.quote).includes(normalizedText(value.terms)))
     return false;
   if (
-    ['paid', 'delivered', 'refunded', 'opening-cash', 'cash-flow'].includes(record.slot) &&
+    [
+      'paid',
+      'delivered',
+      'refunded',
+      'opening-cash',
+      'cash-flow',
+      'collections',
+      'inventory',
+    ].includes(record.slot) &&
     (!record.asOf || !dateInQuote(record.quote, record.asOf))
   )
     return false;
@@ -401,6 +409,8 @@ export function evaluateDecision(
     role?: 'contract' | 'payee' | 'refund',
     direction?: 'in' | 'out'
   ): SlotResult => {
+    const distinguishing = slot === 'collections' || slot === 'inventory';
+    const exactScope = distinguishing || (slot === 'terms' && input.purpose === 'handover');
     const entries = version.evidence.filter(
       (record) =>
         record.slot === slot &&
@@ -412,6 +422,11 @@ export function evaluateDecision(
         record.state === 'active' &&
         record.kind !== 'assumption' &&
         normalizeEntity(record.entity) === normalizeEntity(expectedEntity) &&
+        (!exactScope ||
+          ((!record.values.entity ||
+            normalizeEntity(record.values.entity) === normalizeEntity(expectedEntity)) &&
+            !!asOf &&
+            record.asOf === asOf)) &&
         (!asOf ||
           (!!record.asOf && (slot === 'opening-cash' ? record.asOf === asOf : record.asOf <= asOf)))
     );
@@ -422,7 +437,9 @@ export function evaluateDecision(
     const current = eligible.filter((record) => (record.asOf || '') === latestDate);
     const comparable = current.filter(
       (record) =>
-        fieldsMatch(record, asOf) && (!direction || quoteDirection(record.quote) === direction)
+        fieldsMatch(record, asOf) &&
+        (!exactScope || (!!record.asOf && dateInQuote(record.quote, record.asOf))) &&
+        (!direction || quoteDirection(record.quote) === direction)
     );
     const sourceRecords = comparable.filter(
       (record) =>
@@ -470,6 +487,7 @@ export function evaluateDecision(
           asOf: latestDate || null,
         });
     }
+    const issueDate = exactScope ? (asOf ?? undefined) : latestDate;
     const unresolved = knownConflicts.some(
       (issue) =>
         issue.slot === slot &&
@@ -477,7 +495,7 @@ export function evaluateDecision(
         issue.flowId === flowId &&
         issue.role === role &&
         issueUnresolved(issue, version.revision) &&
-        (latestDate === undefined || issue.asOf === undefined || (issue.asOf || '') === latestDate)
+        (issueDate === undefined || issue.asOf === undefined || (issue.asOf || '') === issueDate)
     );
     const matched = comparable.filter(
       (record) =>
@@ -504,9 +522,11 @@ export function evaluateDecision(
                   (record) =>
                     record.state === 'active' &&
                     (normalizeEntity(record.entity) !== normalizeEntity(expectedEntity) ||
-                      (slot === 'identity' &&
+                      ((slot === 'identity' || exactScope) &&
                         !!record.values.entity &&
-                        normalizeEntity(record.values.entity) !== normalizeEntity(expectedEntity)))
+                        normalizeEntity(record.values.entity) !==
+                          normalizeEntity(expectedEntity)) ||
+                      (exactScope && !!asOf && record.asOf !== asOf))
                 )
               ? 'out-of-scope'
               : 'unknown';
@@ -521,7 +541,12 @@ export function evaluateDecision(
               ? 'matched'
               : record.kind === 'assumption'
                 ? 'assumption'
-                : normalizeEntity(record.entity) !== normalizeEntity(expectedEntity)
+                : normalizeEntity(record.entity) !== normalizeEntity(expectedEntity) ||
+                    (exactScope &&
+                      ((!!asOf && record.asOf !== asOf) ||
+                        (!!record.values.entity &&
+                          normalizeEntity(record.values.entity) !==
+                            normalizeEntity(expectedEntity))))
                   ? 'out-of-scope'
                   : 'missing'
       )
@@ -541,7 +566,7 @@ export function evaluateDecision(
         issue.flowId === flowId &&
         issue.role === role &&
         issueUnresolved(issue, version.revision) &&
-        (latestDate === undefined || issue.asOf === undefined || (issue.asOf || '') === latestDate)
+        (issueDate === undefined || issue.asOf === undefined || (issue.asOf || '') === issueDate)
     ))
       for (const id of issue.evidenceIds)
         if (!dependencies.some((dependency) => dependency.id === id))
@@ -757,10 +782,25 @@ export function evaluateDecision(
           id: 'external.exposureLimit',
           path: 'external.exposureLimit',
           label: '用户自设暴露上限',
-          state: 'assumption',
+          state: payment.exposureLimit === null ? 'missing' : 'assumption',
+        },
+        {
+          kind: 'input',
+          id: 'external.proposedAmount',
+          path: 'external.proposedAmount',
+          label: '本次拟付金额',
+          state: payment.proposedAmount === null ? 'missing' : 'assumption',
         },
       ],
-      neededSlots: ['paid', 'delivered', 'refunded'],
+      neededSlots: (
+        [
+          ['paid', paid],
+          ['delivered', delivered],
+          ['refunded', refunded],
+        ] as const
+      )
+        .filter(([, result]) => result.status !== 'matched')
+        .map(([slot]) => slot),
     });
   } else if (input.purpose === 'handover' && input.datedCash) {
     const plan = input.datedCash;
@@ -813,13 +853,23 @@ export function evaluateDecision(
       ],
       neededSlots: ['opening-cash', 'cash-flow'],
     });
+    const alternativeTerms = resolve('terms', input.transactionEntity, plan.asOf);
     gates.push({
       id: 'alternative-terms',
       label: '延期方案的可行条件',
-      status: 'unknown',
+      status: alternativeTerms.status === 'matched' ? 'unknown' : alternativeTerms.status,
       summary:
-        '改付款日假设供应商同意延期，交付及相关回款均不受影响；需核查这些条件，不能推荐延期。',
+        alternativeTerms.status === 'matched'
+          ? '已有延期条款字段在同主体、同日期的保存文本中定位，仍需核对延期同意及交付、回款影响；不认证同意或履行。'
+          : alternativeTerms.status === 'conflict'
+            ? '延期条款的同范围提供字段存在未解冲突，需核对已有来源及纠正依据；延期现金方案仍是独立假设。'
+            : alternativeTerms.status === 'withdrawn'
+              ? '延期条款记录已撤回，需重新提供可核对材料；延期现金方案仍是独立假设。'
+              : alternativeTerms.status === 'out-of-scope'
+                ? '延期条款主体或适用日期不符，需提供本次范围材料；延期现金方案仍是独立假设。'
+                : '改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。',
       dependencies: [
+        ...alternativeTerms.dependencies,
         {
           kind: 'input',
           id: 'datedCash.alternativeDay',
@@ -844,6 +894,49 @@ export function evaluateDecision(
       value != null &&
       moneyToFen(value, 'yuan') < 0n &&
       dependencies.length > 0;
+    const asOf =
+      input.purpose === 'handover' ? input.datedCash?.asOf || null : input.external?.asOf || null;
+    const entries = version.evidence.filter((record) => record.slot === id);
+    const review = resolve(id, input.transactionEntity, asOf);
+    const activeSources = entries.filter(
+      (record) => record.state === 'active' && record.kind === 'source-record'
+    );
+    const reviewStatus: NonNullable<
+      DecisionEvaluation['explanations'][number]['evidenceReview']
+    >['status'] =
+      review.status === 'conflict'
+        ? 'conflict'
+        : review.status === 'matched'
+          ? 'ready'
+          : review.status === 'withdrawn'
+            ? 'withdrawn'
+            : review.status === 'out-of-scope'
+              ? 'out-of-scope'
+              : !entries.length || !asOf
+                ? 'missing'
+                : activeSources.length
+                  ? 'unlocated'
+                  : 'context-only';
+    const reviewSummary = {
+      missing: '尚无同主体、同适用日期的区分材料依据。',
+      withdrawn: '区分材料已撤回，相关材料核对暂停；历史财务信号和独立现金假设分别保留。',
+      'out-of-scope': '区分材料主体或适用日期不符，不能用于本次解释核对。',
+      conflict: '区分材料的同范围提供字段存在未解冲突；撤回反证不能视为已解决。',
+      unlocated: '区分材料尚未在绑定的保存文本中定位适用字段；用户转录不当作原件记录依据。',
+      'context-only': '对方陈述或假设仅作核查线索，不当作区分解释的原件记录依据。',
+      ready: '区分材料字段已在保存文本中定位，可供核对两种解释；未鉴真，也未证实任何经营原因。',
+    }[reviewStatus];
+    const needed =
+      id === 'collections' ? '账龄、票据结算和期后回款记录' : '订单覆盖、库龄和期后出库记录';
+    const scope = `${input.transactionEntity}截至${asOf || '待补适用日期'}`;
+    const nextEvidence =
+      reviewStatus === 'ready'
+        ? `核对已有${needed}，区分两种可能解释；逐项确认${scope}的记录范围、完整性与内容，不自动裁定经营原因。`
+        : reviewStatus === 'conflict'
+          ? `核对${scope}的区分材料冲突及纠正依据；保留所有来源，不以撤回反证代替解释。`
+          : reviewStatus === 'out-of-scope'
+            ? `补充${scope}的${needed}，或提供适用范围更正依据；其他主体或日期的材料不替代。`
+            : `提供${scope}的${needed}及对应原文；${reviewStatus === 'withdrawn' ? '已撤回材料需重新提交核对，' : ''}用于区分两种可能解释。`;
     return {
       id,
       state: open ? 'open' : 'withheld',
@@ -851,11 +944,16 @@ export function evaluateDecision(
         id === 'collections'
           ? ['业务扩张或结算结构变化', '回款困难或收款延期']
           : ['扩张备货与订单增长', '去化困难或库存积压'],
-      dependencies,
-      nextEvidence:
-        id === 'collections'
-          ? '账龄、票据结算和期后回款记录，用于区分两种可能解释。'
-          : '订单覆盖、库龄和期后出库记录，用于区分两种可能解释。',
+      dependencies: [...dependencies, ...review.dependencies],
+      nextEvidence: open
+        ? nextEvidence
+        : '历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。',
+      evidenceReview: {
+        status: reviewStatus,
+        asOf,
+        summary: reviewSummary,
+        dependencies: review.dependencies,
+      },
     };
   });
   const historicalGate = gates.find((gate) => gate.id === 'historical-scope');
@@ -865,10 +963,20 @@ export function evaluateDecision(
   }
   const nextActions = gates
     .filter((gate) => gate.status !== 'matched' && gate.id !== 'historical-scope')
-    .slice(0, 8)
     .map((gate) => ({
       id: `request-${gate.id}`,
-      title: gate.status === 'conflict' ? `核对${gate.label}的冲突` : `补充${gate.label}`,
+      title:
+        gate.status === 'conflict'
+          ? `核对${gate.label}的冲突`
+          : gate.id === 'alternative-terms' &&
+              gate.dependencies.some((dep) => dep.kind === 'evidence' && dep.state === 'matched')
+            ? '核对已有延期条款及影响'
+            : gate.id === 'exposure-condition' &&
+                gate.dependencies.some(
+                  (dep) => dep.path === 'external.exposureLimit' && dep.state === 'missing'
+                )
+              ? '填写用户自设暴露上限'
+              : `补充${gate.label}`,
       reason: gate.summary,
       requestedEvidence: requestFor(gate),
       gateIds: [gate.id],
@@ -877,8 +985,8 @@ export function evaluateDecision(
   for (const explanation of explanations.filter((item) => item.state === 'open'))
     nextActions.push({
       id: `request-${explanation.id}`,
-      title: `区分${explanation.id === 'collections' ? '应收' : '存货'}的两种解释`,
-      reason: '同一财务信号支持继续核查，不裁定经营原因。',
+      title: `${explanation.evidenceReview?.status === 'ready' ? '核对已有材料区分' : explanation.evidenceReview?.status === 'conflict' ? '核对材料冲突后区分' : '补充材料区分'}${explanation.id === 'collections' ? '应收' : '存货'}的两种解释`,
+      reason: `${explanation.evidenceReview?.summary || ''}同一财务信号仅促使核查，不裁定经营原因。`,
       requestedEvidence: explanation.nextEvidence,
       gateIds: [],
       dependencies: explanation.dependencies,
@@ -898,7 +1006,8 @@ export function evaluateDecision(
           dependencies: [
             ...explanation.dependencies.map((dependency) => ({
               ...dependency,
-              relation: 'motivates' as const,
+              relation:
+                dependency.kind === 'financial' ? ('motivates' as const) : dependency.relation,
             })),
             ...(flowGate?.dependencies || []),
             {
@@ -973,13 +1082,35 @@ function scenarios(input: ExternalPaymentInput, invalid: boolean): ExternalPayme
 function requestFor(gate: DecisionGate): string {
   if (gate.id.startsWith('identity'))
     return '签约、收款和退款责任主体的原件；如主体不同，提供授权书、合同付款指引及责任说明。';
+  if (
+    gate.id === 'alternative-terms' &&
+    gate.dependencies.some((dep) => dep.kind === 'evidence' && dep.state === 'matched')
+  )
+    return '核对已有延期条款中的供应商同意、适用付款日期及对交付和回款的影响；文本定位不认证同意，不能据此批准付款。';
   if (gate.id === 'terms' || gate.id === 'alternative-terms')
     return '明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。';
   if (gate.id === 'opening-cash')
     return '与起点日期一致的银行账户对账、受限资金和可用余额记录；不能以年报金额代替。';
   if (gate.id.startsWith('flow-') || gate.id === 'cash-floor')
     return '该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。';
-  if (['paid', 'delivered', 'refunded', 'exposure-condition'].includes(gate.id))
+  if (gate.id === 'exposure-condition') {
+    const missingInputs = gate.dependencies.filter(
+      (dep) => dep.kind === 'input' && dep.state === 'missing'
+    );
+    const requests: string[] = [];
+    if (missingInputs.some((dep) => dep.path === 'external.exposureLimit'))
+      requests.push('填写你自行设定的未交付暴露上限；本产品不推荐上限，也不自动补零');
+    if (missingInputs.some((dep) => dep.path === 'external.proposedAmount'))
+      requests.push('填写本次拟付金额');
+    if (gate.neededSlots.length)
+      requests.push(
+        `提供截至所选日期的${gate.neededSlots.map((slot) => ({ paid: '实际付款', delivered: '交付对应金额', refunded: '实际退款' })[slot as 'paid' | 'delivered' | 'refunded']).join('、')}凭据；承诺不替代发生记录`
+      );
+    return requests.length
+      ? requests.join('；') + '。'
+      : '核对已有发生记录、本次拟付金额与用户自设上限；算术条件不代表付款批准。';
+  }
+  if (['paid', 'delivered', 'refunded'].includes(gate.id))
     return '截至所选日期的实际付款、交付对应金额和实际退款凭据；承诺退款不替代发生记录。';
   return '同交易主体的资料及明确适用范围；集团历史报表仅作背景，不能代替当前交易证据。';
 }

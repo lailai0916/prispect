@@ -629,18 +629,18 @@ export function Home() {
         </div>
         <div className="landing-perspective">
           <span className="landing-section-number">02</span>
-          <h2>{t('接手后的资金安排', 'After taking over a company')}</h2>
+          <h2>{t('接手公司', 'Company handover')}</h2>
           <p>
             {t(
-              '从当前可用现金和已列收付款出发。核对到账时点，比较付款安排，保留每次材料变更的影响。',
-              'Start with available cash and listed transactions. Check receipt timing, compare payment schedules, and retain the impact of evidence changes.'
+              '先读财务资料，核对需要向前任追问的问题。需要安排收付款时，再补充当前现金与日期，比较不同条件。',
+              'Review the financial material and questions for the previous operator. Add current cash and dates when you need to compare payment arrangements.'
             )}
           </p>
           <button
             className="landing-text-action"
             onClick={() => navigate('/decisions?new=handover')}
           >
-            {t('建立付款事项', 'Plan a payment')}
+            {t('开始接手核查', 'Start a handover review')}
             <ArrowUpRight size={15} />
           </button>
           <div className="perspective-versions">

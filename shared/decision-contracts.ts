@@ -162,6 +162,19 @@ export interface ExternalPaymentScenario {
   status: 'known' | 'unknown';
   missingFields: string[];
 }
+export interface DecisionExplanationEvidenceReview {
+  status:
+    | 'missing'
+    | 'withdrawn'
+    | 'out-of-scope'
+    | 'conflict'
+    | 'unlocated'
+    | 'context-only'
+    | 'ready';
+  asOf: string | null;
+  summary: string;
+  dependencies: DecisionDependency[];
+}
 export interface DecisionEvaluation {
   evaluatedAt: string;
   knownConflicts: DecisionKnownConflict[];
@@ -179,6 +192,7 @@ export interface DecisionEvaluation {
     alternatives: [string, string];
     dependencies: DecisionDependency[];
     nextEvidence: string;
+    evidenceReview?: DecisionExplanationEvidenceReview;
   }[];
   limitations: string[];
 }

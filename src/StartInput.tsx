@@ -67,7 +67,9 @@ export function StartInput({ compact = false }: { compact?: boolean }) {
           ? t('公司或要核查的事情', 'Company or matter to review')
           : mode === 'company'
             ? t('公司名称或证券代码', 'Company name or security code')
-            : t('付款事项', 'Payment matter')}
+            : mode === 'handover'
+              ? t('接手核查', 'Company handover review')
+              : t('付款事项', 'Payment matter')}
       </label>
       <textarea
         id="start-query"
@@ -82,10 +84,15 @@ export function StartInput({ compact = false }: { compact?: boolean }) {
               )
             : mode === 'company'
               ? t('公司名称或证券代码', 'Company name or security code')
-              : t(
-                  '写下付款对象、金额或需要核对的约定',
-                  'Describe the company, amount, or terms to review'
-                )
+              : mode === 'handover'
+                ? t(
+                    '写下公司或交接中需要核对的事，收付款安排可选',
+                    'Describe the company or a handover question; payment arrangements are optional'
+                  )
+                : t(
+                    '写下付款对象、金额或需要核对的约定',
+                    'Describe the company, amount, or terms to review'
+                  )
         }
         aria-describedby={error ? 'start-error' : undefined}
         aria-invalid={Boolean(error)}

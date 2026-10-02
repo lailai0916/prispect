@@ -1,6 +1,6 @@
 # API contract
 
-The canonical types live in `shared/contracts.ts`, `shared/company-contracts.ts` and `shared/decision-contracts.ts`. Success responses are direct JSON objects; failures use `{ error, code }` and a non-2xx status. Exports and source PDFs return files. The browser and API share an origin.
+The canonical types live in `shared/contracts.ts`, `shared/account-contracts.ts`, `shared/company-contracts.ts` and `shared/decision-contracts.ts`. Success responses are direct JSON objects; failures use `{ error, code }` and a non-2xx status. Exports and source PDFs return files. The browser and API share an origin.
 
 ## Accounts and access
 
@@ -8,7 +8,7 @@ The canonical types live in `shared/contracts.ts`, `shared/company-contracts.ts`
 | ------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------ |
 | GET /api/auth/session                      | —                                  | `AuthSession`; anonymous returns null user and token               |
 | POST /api/auth/register                    | `{ email, password, name }`        | New account, session cookie, user and CSRF token                   |
-| POST /api/auth/login                       | `{ email, password }`              | Session cookie, user and CSRF token                                |
+| POST /api/auth/login                       | `{ email, password }`              | AuthSession, or an explicit two-factor challenge                   |
 | POST /api/auth/logout                      | —                                  | Revokes the current session                                        |
 | PATCH /api/auth/profile                    | `{ name }`                         | Updates the current user's profile                                 |
 | POST /api/auth/password                    | `{ currentPassword, newPassword }` | Changes password, revokes old sessions, issues new current session |
@@ -16,9 +16,35 @@ The canonical types live in `shared/contracts.ts`, `shared/company-contracts.ts`
 | GET /api/public/input-template?format=json | —                                  | A downloadable structured JSON example                             |
 | GET /api/public/input-template?format=csv  | —                                  | A downloadable CSV example                                         |
 
-Authenticated writes send `X-CSRF-Token` returned by the session endpoint. Authentication uses a server-side session with an HttpOnly cookie; no password or session bearer is placed in browser localStorage. The user ID comes from the session, never from a client-provided tenant selector. Workspace, materials, tasks, questions, exports, local PDF sources and reset require login and are scoped to that user where applicable. Public health, cases and examples do not expose private workspace records.
+Project compatibility, account and workspace writes send `X-CSRF-Token` returned by the session endpoint. Native identity endpoints have separate library protections, described below. Authentication uses a server-side session with an HttpOnly cookie; no password or session bearer is placed in browser localStorage. The user ID comes from the session, never from a client-provided tenant selector. Workspace, materials, tasks, questions, exports, local PDF sources and reset require login and are scoped to that user where applicable. Public health, cases and examples do not expose private workspace records.
 
-There is no fake password-reset email service. Email is a login identifier; this version does not claim email-address verification or deliverability. Production configuration and operational limitations are documented separately.
+Email verification and native password-reset interfaces exist, but require an actual SMTP provider. While unconfigured, requests explicitly return `EMAIL_UNAVAILABLE`; email remains an unverified login identifier. The compatibility `/api/auth/password-reset` route remains unavailable even if SMTP is later enabled; configured delivery uses the native identity flow. SMS currently has no sending adapter, and its send/verify/remove interfaces return `SMS_UNAVAILABLE`; adding environment values alone does not implement a supplier. No codes or delivery results are fabricated.
+
+## Account profile and security
+
+Project account writes require owner session, Origin and CSRF. Operations requiring recent authentication additionally return `FRESH_AUTH_REQUIRED` until re-authenticated. Common failures are 401 `AUTH_REQUIRED`, 403 `CSRF_INVALID` or `INVALID_ORIGIN`, and endpoint-specific non-2xx errors.
+
+| Method and path                               | Input                             | Response / boundary                                                                                               |
+| --------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| GET /api/account                              | —                                 | `AccountOverview`: profile, provider capabilities, fresh-auth expiry and auth schema 2                            |
+| PATCH /api/account/profile                    | `{name,bio?,company?,timezone?}`  | Validated profile; name 1–80, bio ≤500, company ≤120, valid IANA timezone                                         |
+| POST /api/account/re-auth                     | `{password,code?}`                | Five-minute fresh-auth expiry; six-digit TOTP when required; rate limited                                         |
+| POST /api/account/avatar                      | Multipart `file`                  | Single-frame PNG/JPEG/WebP, ≤2 MiB and 16 megapixels; actual decoding/re-encoding to ≤512px WebP; 10 uploads/hour |
+| GET /api/account/avatar                       | —                                 | Current owner only, private/no-store WebP; 404 when absent                                                        |
+| DELETE /api/account/avatar                    | —                                 | Updated account overview                                                                                          |
+| GET /api/account/sessions                     | —                                 | Current owner's session summaries                                                                                 |
+| POST /api/account/sessions/:id/revoke         | —                                 | `{revoked:true,current}`; foreign/unknown session 404                                                             |
+| GET /api/account/passkeys                     | —                                 | Current owner's passkey summaries                                                                                 |
+| POST /api/account/email/verify                | `{}`; recent authentication       | Sends only when configured; `accepted:true` is not verified or delivered status                                   |
+| POST /api/account/email/change                | `{email}`; recent authentication  | Validates address, configured verification flow; unavailable SMTP returns 503                                     |
+| POST /api/account/phone/send                  | `{phoneNumber}` with country code | Invalid number 400 `INVALID_PHONE`; otherwise 503 `SMS_UNAVAILABLE`                                               |
+| POST /api/account/phone/verify, /phone/remove | —                                 | Explicitly unavailable, 503; no successful binding/removal claimed                                                |
+
+Avatar invalid files return `INVALID_AVATAR`; oversized multipart input returns 413 `LIMIT_FILE_SIZE`. Source filenames and image bytes are not accepted as proof of profile identity.
+
+The pinned Better Auth identity service is mounted at `/api/identity/*`, using the project's two-factor/passkey client in `src/auth-client.ts` and server policy in `server/auth.ts`. Its endpoints use global Origin/Sec-Fetch-Site checks plus the library's cookie/origin protections and a 64 KiB request limit, rather than the compatibility CSRF header. Password login for a two-factor account returns `{user:null,csrfToken:null,twoFactorRequired:true,methods:['totp','backup-code']}` until the native TOTP or single-use backup-code challenge succeeds. Trusted-device bypass is disabled.
+
+Two-factor enrollment/disable, TOTP URI and backup-code regeneration require recent authentication. Passkey registration/update/deletion require owner session and recent authentication; registration and login require device user verification. A verified passkey can be the strong login alternative for a two-factor account. The tested virtual verifier is not a physical Touch ID claim. Native profile updates are redirected to the project profile endpoint; social/phone login and account deletion are disabled. Password change revokes other sessions. Unconfigured mail/SMS and invalid challenges never mark an address or phone verified.
 
 ## Evidence workflow
 
@@ -45,7 +71,7 @@ Task title names the working paper. The analytical question is fixed: compare sa
 
 Duplication, comparison and evidence stress tests create a new task with explicit `excludedMetrics`; originals remain unchanged. Excluded observations must not be used by the rule engine or passed to the optional model. Processing stages reflect actual work and timestamps, with no decorative delays or synthetic progress percentages.
 
-`useModel` is an explicit per-task opt-in, default false. A configured service without opt-in returns `model.status=not-requested`; no evidence is sent. Opt-in sends only actually adopted annual consolidated evidence to the configured third-party provider. Retry retains that choice, and conflict/no-usable-evidence cases do not call the model. Provider hostname and requested model ID are shown separately from deterministic calculations. Citation-ID, format and numeric checks do not prove semantic accuracy.
+`useModel` is an explicit per-task opt-in, default false. A configured service without opt-in returns `model.status=not-requested`; no evidence is sent. Opt-in sends only actually adopted annual consolidated evidence to the configured third-party provider. Retry retains that choice, and conflict/no-usable-evidence cases do not call the model. Provider hostname and requested model ID are retained in the API result separately from deterministic calculations. Citation-ID, format and numeric checks do not prove semantic accuracy.
 
 ## Public company evidence Agent
 
@@ -97,7 +123,7 @@ Every endpoint requires the owning session. Writes require CSRF and the same-ori
 
 There is no individual decision DELETE endpoint in this release. Account workspace reset removes decisions as part of that explicit reset. Financial tasks and materials referenced by any decision version cannot be individually deleted. Limits are 50 decisions per account, 100 versions and 50 evidence records per decision, and 60 decision creations per account per hour.
 
-`DecisionInput` carries a title, `purpose=external|handover`, user-provided transaction entity, optional owning financial `reportTaskId`, a private statement and exactly the applicable input group. External inputs specify the as-of date, total transaction, proposed A/B payment, already-paid amount, delivered value, actual refund, payee/refund entities and a user-set exposure limit. Any unprovided monetary amount stays `null`; explicit zero is a distinct value. A minimum-input decision can be saved before the calculations have enough inputs.
+`DecisionInput` carries a title, `purpose=external|handover`, user-provided transaction entity, optional owning financial `reportTaskId`, a private statement and nullable purpose-specific input groups; evaluation reads the group for the selected purpose. External inputs specify the as-of date, total transaction, proposed A/B payment, already-paid amount, delivered value, actual refund, payee/refund entities and a user-set exposure limit. Any unprovided monetary amount stays `null`; explicit zero is a distinct value. A minimum-input decision can be saved before the calculations have enough inputs.
 
 Internal inputs contain a current opening balance, as-of calendar date, a user cash floor, proposed amount/day, optional alternative day and up to 100 named cash events. Days are integers 1–90 relative to day 0 (`asOf`); event dates and amounts may be unknown. Known amounts are nonnegative CNY strings with at most 20 integer digits and two decimal places. Duplicate event IDs are rejected. `shared/decision-cash.ts` uses integer fen, compares event balances and 30/60/90-day endpoints, and discloses an outflows-first bound for unconfirmed same-day ordering. Reverse thresholds are conditional on the listed events and cannot certify completeness or approve payment.
 
@@ -108,6 +134,10 @@ The evaluation separates independent assumption calculations from calculations u
 Known unresolved source conflicts are retained when evidence is withdrawn or an older input is restored. Scope correction allows only subject and date plus a reason of 1–1,000 characters, for a source record whose unchanged quote remains located and contains the corrected subject/date. Values, quote, source, role and event ID cannot be edited through this endpoint. A conflict can cease to share a scope after correction; the issue and resolution history remain recorded. Restoring its conflicting input reopens the issue. Historical replay uses the selected input and the issues/resolution events known at that revision; restoring it is a new version, not erasure of later knowledge.
 
 Dependencies mark `relation=motivates|supports`. An adopted negative historical receivables or inventory adjustment motivates a specific follow-up inquiry; it does not supply a current balance or future cash date. Direct transaction/cash records support their corresponding private fields. Optional annual-report scope is background and never the mandatory first evidence gate. JSON export in the browser includes the selected version, evidence labels, evaluation and limitations, not account credentials.
+
+`explanations[].evidenceReview` is an optional output for compatibility with earlier clients and output shapes. The store retains input/evidence versions; retrieving a version evaluates that input using the current rules, rather than loading an immutable historical algorithm result. It separately reports `missing`, `withdrawn`, `out-of-scope`, `conflict`, `unlocated`, `context-only` or `ready`, plus `asOf`, `summary` and actual record dependencies. Collections/inventory distinguishing records must be active, source-located `source-record` entries for the same transaction entity and exact scenario as-of date. `ready` means fields are available for inspection, never that either operating cause is proven. The historical explanation state remains independently `open|withheld`; distinguishing material cannot restore a missing financial signal or fill current cash. Known field conflicts persist through contrary-record withdrawal and old-input restoration.
+
+Handover `terms` now participate in the alternative-terms gate with entity/date and provenance dependencies. Even located terms leave the gate unknown: supplier consent and effects on delivery/receipts remain to be checked. Next actions inspect the existing terms instead of repeatedly demanding the same material. An external missing exposure limit is an input dependency, not missing payment evidence; the UI opens that field. Needed evidence slots list only actual missing transaction records. Gate next actions are not silently truncated when a plan contains several events.
 
 ## Imports
 

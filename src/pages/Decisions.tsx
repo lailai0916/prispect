@@ -84,6 +84,21 @@ const slotNames: Record<DecisionEvidenceSlot, [string, string]> = {
   inventory: ['存货解释材料', 'Inventory evidence'],
 };
 const evidenceName = (slot: DecisionEvidenceSlot, t: Translate) => t(...slotNames[slot]);
+const explanationEvidenceState = (
+  state: NonNullable<
+    DecisionDetail['evaluation']['explanations'][number]['evidenceReview']
+  >['status'],
+  t: Translate
+) =>
+  ({
+    missing: t('尚缺材料', 'Material missing'),
+    withdrawn: t('材料已撤回', 'Material withdrawn'),
+    'out-of-scope': t('主体或日期不符', 'Entity or date differs'),
+    conflict: t('材料存在冲突', 'Evidence conflict'),
+    unlocated: t('字段尚未定位', 'Fields not located'),
+    'context-only': t('仅有陈述或假设', 'Statements or assumptions only'),
+    ready: t('材料可供核对', 'Material available for review'),
+  })[state];
 const gateState = (state: DecisionGate['status'], t: Translate) =>
   ({
     matched: t('字段匹配', 'Fields match'),
@@ -150,6 +165,16 @@ export function Decisions({ query }: { query: URLSearchParams }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(Boolean(id));
   const [editing, setEditing] = useState(isNew);
+  const [focusInput, setFocusInput] = useState<string | null>(null);
+  useEffect(() => {
+    if (!editing || !focusInput) return;
+    const field = document.getElementById(focusInput);
+    if (field instanceof HTMLInputElement) {
+      field.focus();
+      field.scrollIntoView({ block: 'center', behavior: 'instant' });
+    }
+    setFocusInput(null);
+  }, [editing, focusInput]);
   const [evidenceSlot, setEvidenceSlot] = useState<DecisionEvidenceSlot | null>(null);
   const [scopeEvidence, setScopeEvidence] = useState<DecisionEvidence | null>(null);
   const [section, setSection] = useState<
@@ -222,7 +247,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               }),
             })
           : post<DecisionDetail>('/decisions', normalized),
-      t('事项已保存', 'Payment matter saved')
+      t('事项已保存', 'Review saved')
     );
     if (result) {
       setDetail(result);
@@ -319,6 +344,25 @@ export function Decisions({ query }: { query: URLSearchParams }) {
     (gate) => gate.status !== 'matched' && gate.id !== 'historical-scope'
   );
   const nextAction = detail?.evaluation.nextActions[0];
+  const nextExistingRecord =
+    nextAction &&
+    ['request-alternative-terms', 'request-collections', 'request-inventory'].includes(
+      nextAction.id
+    )
+      ? nextAction.dependencies.find(
+          (dependency) =>
+            dependency.kind === 'evidence' &&
+            dependency.state === 'matched' &&
+            dependency.binding === 'source-located' &&
+            detail?.version.evidence.some(
+              (record) => record.id === dependency.id && record.state === 'active'
+            )
+        )
+      : undefined;
+  const nextNeedsExposureLimit = Boolean(
+    nextAction?.gateIds.includes('exposure-condition') &&
+      detail?.version.input.external?.exposureLimit === null
+  );
   const nextSlot =
     nextAction &&
     detail?.evaluation.gates.find((gate) => nextAction.gateIds.includes(gate.id))?.neededSlots[0];
@@ -353,11 +397,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               onClick={() => navigate('/decisions?new=external')}
             >
               <Plus size={15} />
-              {t('新建事项', 'New payment')}
+              {t('新建事项', 'New review')}
             </button>
           ) : id ? (
             <button className="text-link" onClick={() => navigate('/decisions')}>
-              {t('全部事项', 'All payments')}
+              {t('全部事项', 'All reviews')}
             </button>
           ) : undefined
         }
@@ -600,7 +644,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               </p>
             </div>
             <ActionMenu
-              label={t('事项操作', 'Payment actions')}
+              label={t('事项操作', 'Review actions')}
               items={[
                 {
                   label: t('导出当前版本', 'Export this version'),
@@ -618,7 +662,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               ]}
             />
           </div>
-          <nav className="decision-local-nav" aria-label={t('事项内容', 'Payment sections')}>
+          <nav className="decision-local-nav" aria-label={t('事项内容', 'Review sections')}>
             {(
               [
                 ['overview', t('下一步', 'Next step')],
@@ -826,13 +870,26 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                         const gate = detail.evaluation.gates.find((g) =>
                           nextAction.gateIds.includes(g.id)
                         );
-                        if (gate?.neededSlots[0]) setEvidenceSlot(gate.neededSlots[0]);
+                        if (nextNeedsExposureLimit) {
+                          setFocusInput('decision-exposure-limit');
+                          setEditing(true);
+                        } else if (nextExistingRecord) setViewedEvidenceId(nextExistingRecord.id);
+                        else if (gate?.neededSlots[0]) setEvidenceSlot(gate.neededSlots[0]);
+                        else if (nextAction.id === 'request-collections')
+                          setEvidenceSlot('collections');
+                        else if (nextAction.id === 'request-inventory')
+                          setEvidenceSlot('inventory');
                         else setEditing(true);
                       }}
                     >
-                      {nextSlot
-                        ? t('添加这项材料', 'Add this evidence')
-                        : t('补充输入', 'Complete inputs')}
+                      {nextNeedsExposureLimit
+                        ? t('设置上限', 'Set your limit')
+                        : nextExistingRecord
+                          ? t('核对已有材料', 'Review provided material')
+                          : nextSlot ||
+                              ['request-collections', 'request-inventory'].includes(nextAction.id)
+                            ? t('添加这项材料', 'Add this evidence')
+                            : t('补充输入', 'Complete inputs')}
                       <ArrowRight size={15} />
                     </button>
                   )}
@@ -919,18 +976,22 @@ export function Decisions({ query }: { query: URLSearchParams }) {
             </section>
             {detail.version.input.reportTaskId && detail.evaluation.explanations.length > 0 && (
               <section className="decision-explanations">
-                <h3>{t('保留两个解释', 'Keep two explanations')}</h3>
+                <h3>{t('待区分的经营解释', 'Operating explanations to distinguish')}</h3>
                 {detail.evaluation.explanations.map((item) => (
-                  <div key={item.id}>
+                  <div key={item.id} className="decision-explanation">
                     <h4>
                       {item.id === 'collections'
                         ? t('回款', 'Collections')
-                        : t('存货', 'Inventory')}{' '}
-                      ·{' '}
-                      {item.state === 'withheld'
-                        ? t('依据不足，暂不归因', 'Evidence insufficient; attribution withheld')
-                        : t('尚待区分', 'Needs distinction')}
+                        : t('存货', 'Inventory')}
                     </h4>
+                    <div className="decision-explanation-status">
+                      <span>{t('历史财务信号', 'Historical financial signal')}</span>
+                      <Tag>
+                        {item.state === 'withheld'
+                          ? t('依据不足，暂不归因', 'Insufficient evidence; attribution withheld')
+                          : t('可提示核查', 'Available for follow-up')}
+                      </Tag>
+                    </div>
                     {item.state === 'open' && (
                       <ol>
                         {item.alternatives.map((text, i) => (
@@ -938,8 +999,41 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                         ))}
                       </ol>
                     )}
-                    <Dependencies detail={detail} dependencies={item.dependencies} />
-                    <p className="field-note">{translated(item.nextEvidence)}</p>
+                    <Dependencies
+                      detail={detail}
+                      dependencies={item.dependencies.filter(
+                        (dependency) => dependency.kind === 'financial'
+                      )}
+                    />
+                    {item.evidenceReview ? (
+                      <div
+                        className="decision-explanation-evidence"
+                        data-state={item.evidenceReview.status}
+                      >
+                        <div className="decision-explanation-status">
+                          <span>{t('区分材料', 'Distinguishing evidence')}</span>
+                          <Tag>{explanationEvidenceState(item.evidenceReview.status, t)}</Tag>
+                        </div>
+                        <p className="field-note">
+                          {detail.version.input.transactionEntity} ·{' '}
+                          {item.evidenceReview.asOf ||
+                            t('适用日期未提供', 'Applicable date missing')}
+                        </p>
+                        <p>{translated(item.evidenceReview.summary)}</p>
+                        <Dependencies
+                          detail={detail}
+                          dependencies={item.evidenceReview.dependencies}
+                        />
+                      </div>
+                    ) : (
+                      <Dependencies
+                        detail={detail}
+                        dependencies={item.dependencies.filter(
+                          (dependency) => dependency.kind !== 'financial'
+                        )}
+                      />
+                    )}
+                    <p className="decision-explanation-next">{translated(item.nextEvidence)}</p>
                     {detail.evaluation.nextActions.some((action) =>
                       action.id.startsWith(`investigate-${item.id}-`)
                     ) && (
@@ -962,8 +1056,23 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                     )}
 
                     {!readOnly && (
-                      <button className="text-link" onClick={() => setEvidenceSlot(item.id)}>
-                        {t('记录区分材料', 'Record distinguishing evidence')}
+                      <button
+                        className="text-link"
+                        onClick={() => {
+                          const record =
+                            item.evidenceReview?.status === 'ready'
+                              ? item.evidenceReview.dependencies.find(
+                                  (dependency) =>
+                                    dependency.kind === 'evidence' && dependency.state === 'matched'
+                                )
+                              : undefined;
+                          if (record) setViewedEvidenceId(record.id);
+                          else setEvidenceSlot(item.id);
+                        }}
+                      >
+                        {item.evidenceReview?.status === 'ready'
+                          ? t('核对已有材料', 'Review provided material')
+                          : t('记录区分材料', 'Record distinguishing evidence')}
                         <ArrowRight size={14} />
                       </button>
                     )}
@@ -1275,7 +1384,9 @@ function MoneyField({
   value,
   onChange,
   required = false,
+  id,
 }: {
+  id?: string;
   label: string;
   value: string | null;
   onChange: (value: string | null) => void;
@@ -1289,6 +1400,7 @@ function MoneyField({
         <small> CNY</small>
       </span>
       <input
+        id={id}
         required={required}
         inputMode="decimal"
         pattern="[0-9]{1,20}([.][0-9]{1,2})?"
@@ -1394,6 +1506,7 @@ function DecisionInputs({
           onChange={(value) => updateExternal({ actualRefund: value })}
         />
         <MoneyField
+          id="decision-exposure-limit"
           label={t('自设未交付暴露上限', 'Your undelivered-exposure limit')}
           value={ext.exposureLimit}
           onChange={(value) => updateExternal({ exposureLimit: value })}
@@ -1983,9 +2096,13 @@ function Dependencies({
       {dependencies.map((dependency, index) => (
         <li key={`${dependency.kind}-${dependency.id}-${index}`}>
           <span>
-            {locale === 'en' && dependency.kind !== 'evidence'
-              ? decisionText(dependency.label)
-              : dependency.label}
+            {dependency.kind === 'financial' && dependency.metric
+              ? [dependency.label.match(/^(\d{4})\s/)?.[1], metricName(dependency.metric, locale)]
+                  .filter(Boolean)
+                  .join(' ')
+              : locale === 'en' && dependency.kind !== 'evidence'
+                ? decisionText(dependency.label)
+                : dependency.label}
           </span>
           <Tag>
             {dependency.state === 'matched'
@@ -2017,14 +2134,15 @@ function Dependencies({
               {t('财务原文', 'Financial source')}
               <ArrowUpRight size={12} />
             </a>
-          ) : dependency.materialId ? (
-            <SourceLink materialId={dependency.materialId} page={dependency.page} />
           ) : dependency.kind === 'evidence' &&
             detail.version.evidence.some((item) => item.id === dependency.id) ? (
             <button className="text-link" onClick={() => openRecord(dependency.id)}>
               {t('查看记录', 'View record')}
             </button>
           ) : null}
+          {dependency.kind !== 'financial' && dependency.materialId && (
+            <SourceLink materialId={dependency.materialId} page={dependency.page} />
+          )}
         </li>
       ))}
     </ul>

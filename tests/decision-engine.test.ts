@@ -616,3 +616,347 @@ test('actual historical adjustment evidence motivates a named inflow investigati
   assert.ok(!unrelated.nextActions.some((item) => item.id.startsWith('investigate-')));
   assert.equal(gate(unrelated, 'historical-scope').status, 'out-of-scope');
 });
+
+async function distinctionFixture() {
+  const source: Material = {
+    ...JSON.parse(await readFile('data/cases/songyuan-2025.json', 'utf8')),
+    id: 'historical-distinction',
+    createdAt: '2026-10-02T00:00:00Z',
+  };
+  const taskInput = {
+    title: '真实历史，私人材料为虚构测试',
+    company: source.company,
+    year: 2025,
+    materialIds: [source.id],
+  };
+  const task: AnalysisTask = {
+    ...taskInput,
+    id: 'distinction-task',
+    excludedMetrics: [],
+    status: 'completed',
+    createdAt: source.createdAt,
+    updatedAt: source.createdAt,
+    stages: [],
+    report: analyze(taskInput, [source]),
+  };
+  const input: DecisionInput = {
+    ...external(),
+    purpose: 'handover',
+    transactionEntity: source.company,
+    reportTaskId: task.id,
+    external: null,
+    datedCash: dated(),
+  };
+  const collection = evidence(
+    'distinction-collections',
+    'collections',
+    `${source.company}截至${date}，虚构账龄测试字段100元，材料待核，不是公司事实。`,
+    { amount: '100' },
+    { entity: source.company }
+  );
+  const inventory = evidence(
+    'distinction-inventory',
+    'inventory',
+    `${source.company}截至${date}，虚构库龄测试字段200元，材料待核，不是公司事实。`,
+    { amount: '200' },
+    { entity: source.company }
+  );
+  const materials = (records: DecisionEvidence[]) => [
+    source,
+    { ...material(records), company: source.company },
+  ];
+  const context = (records: DecisionEvidence[]) => ({
+    tasks: [task],
+    materials: materials(records),
+  });
+  return { source, task, taskInput, input, collection, inventory, context };
+}
+
+test('distinguishing material changes review, source dependencies and next inquiry on add/withdraw/restore without proving causes or changing cash', async () => {
+  const f = await distinctionFixture();
+  const evidence = [f.collection, f.inventory];
+  const baselineVersion = version(f.input);
+  const baseline = evaluateDecision(baselineVersion, f.context(evidence));
+  const addedVersion = version(f.input, evidence, 2);
+  const originalSnapshot = structuredClone(addedVersion);
+  const added = evaluateDecision(addedVersion, f.context(evidence));
+  for (const item of added.explanations) {
+    assert.equal(item.state, 'open');
+    assert.equal(item.evidenceReview?.status, 'ready');
+    const recordId = item.id === 'collections' ? f.collection.id : f.inventory.id;
+    assert.ok(
+      item.evidenceReview.dependencies.some(
+        (dep) =>
+          dep.id === recordId &&
+          dep.state === 'matched' &&
+          dep.binding === 'source-located' &&
+          dep.relation === 'supports'
+      )
+    );
+    assert.match(item.evidenceReview.summary, /未鉴真.*未证实/);
+    const action = added.nextActions.find((action) => action.id === `request-${item.id}`)!;
+    assert.match(action.title, /核对已有材料/);
+    assert.match(action.requestedEvidence, /核对已有/);
+    assert.ok(action.dependencies.some((dep) => dep.id === recordId));
+    assert.notDeepEqual(
+      item,
+      baseline.explanations.find((row) => row.id === item.id)
+    );
+  }
+  const investigation = added.nextActions.find(
+    (row) => row.id === 'investigate-collections-collect25'
+  )!;
+  assert.ok(
+    investigation.dependencies.some(
+      (dep) => dep.id === f.collection.id && dep.relation === 'supports'
+    )
+  );
+  assert.ok(
+    investigation.dependencies
+      .filter((dep) => dep.kind === 'financial')
+      .every((dep) => dep.relation === 'motivates')
+  );
+  const removed = evidence.map((row) => ({ ...row, state: 'withdrawn' as const }));
+  const withdrawn = evaluateDecision(version(f.input, removed, 3), f.context(evidence));
+  assert.ok(withdrawn.explanations.every((row) => row.evidenceReview?.status === 'withdrawn'));
+  assert.ok(
+    withdrawn.explanations.every((row) =>
+      row.evidenceReview?.dependencies.some((dep) => dep.state === 'withdrawn')
+    )
+  );
+  assert.match(
+    withdrawn.nextActions.find((row) => row.id === 'request-collections')!.requestedEvidence,
+    /重新提交/
+  );
+  const restored = evaluateDecision(version(f.input, evidence, 4), f.context(evidence));
+  assert.deepEqual(restored.explanations, added.explanations);
+  for (const result of [added, withdrawn, restored]) {
+    assert.deepEqual(result.cash, baseline.cash);
+    assert.deepEqual(result.recordedCash, baseline.recordedCash);
+    assert.equal(result.recordedCash?.primary.status, 'unknown');
+  }
+  assert.deepEqual(
+    addedVersion,
+    originalSnapshot,
+    'evaluation never mutates a persisted input version'
+  );
+  assert.equal(baselineVersion.evidence.length, 0);
+});
+
+test('distinguishing materials require matching entity/date, actual saved text and record kind; transcripts and statements cannot become evidence', async () => {
+  const f = await distinctionFixture();
+  const variants: { evidence: DecisionEvidence; status: string }[] = [
+    { evidence: { ...f.collection, entity: '另一公司' }, status: 'out-of-scope' },
+    { evidence: { ...f.collection, asOf: '2026-10-01' }, status: 'out-of-scope' },
+    { evidence: { ...f.collection, asOf: '2026-10-03' }, status: 'out-of-scope' },
+    { evidence: { ...f.collection, asOf: null }, status: 'out-of-scope' },
+    { evidence: { ...f.collection, values: { entity: '另一公司' } }, status: 'out-of-scope' },
+    { evidence: { ...f.collection, materialId: undefined }, status: 'unlocated' },
+    { evidence: { ...f.collection, quote: '未在保存文本中的虚构转录' }, status: 'unlocated' },
+    {
+      evidence: { ...f.collection, quote: `${f.source.company}，金额100元但没有适用日期` },
+      status: 'unlocated',
+    },
+    { evidence: { ...f.collection, kind: 'assumption' }, status: 'context-only' },
+    { evidence: { ...f.collection, kind: 'counterparty-statement' }, status: 'context-only' },
+  ];
+  for (const { evidence, status } of variants) {
+    const result = evaluateDecision(
+      version(f.input, [evidence], 2),
+      f.context([f.collection, evidence])
+    );
+    const item = result.explanations.find((row) => row.id === 'collections')!;
+    assert.equal(item.evidenceReview?.status, status, JSON.stringify({ status, evidence }));
+    assert.ok(!item.evidenceReview.dependencies.some((dep) => dep.state === 'matched'));
+    assert.equal(
+      item.state,
+      'open',
+      'historical signal is separate from submitted material status'
+    );
+  }
+  const transcribed = evaluateDecision(
+    version(f.input, [{ ...f.collection, materialId: undefined }]),
+    f.context([f.collection])
+  );
+  assert.equal(
+    transcribed.explanations[0]!.evidenceReview?.dependencies[0]?.binding,
+    'user-transcribed'
+  );
+});
+
+test('same-range distinguishing fields keep unresolved conflict after withdrawal/restore, while historical signal withholding cannot be reversed by a record', async () => {
+  const f = await distinctionFixture();
+  const other = {
+    ...f.collection,
+    id: 'contrary-distinction',
+    values: { amount: '200' },
+    quote: `${f.source.company}截至${date}，虚构账龄测试字段200元，不是公司事实。`,
+  };
+  const evidence = [f.collection, other];
+  const conflicted = evaluateDecision(version(f.input, evidence, 2), f.context(evidence));
+  const item = conflicted.explanations.find((row) => row.id === 'collections')!;
+  assert.equal(item.evidenceReview?.status, 'conflict');
+  assert.ok(item.evidenceReview.dependencies.every((dep) => dep.state === 'conflict'));
+  assert.match(
+    conflicted.nextActions.find((row) => row.id === 'request-collections')!.requestedEvidence,
+    /冲突.*保留所有来源/
+  );
+  const withdrawn = evaluateDecision(
+    version(f.input, [f.collection, { ...other, state: 'withdrawn' }], 3),
+    { ...f.context(evidence), knownConflicts: conflicted.knownConflicts }
+  );
+  assert.equal(withdrawn.explanations[0]!.evidenceReview?.status, 'conflict');
+  assert.ok(
+    withdrawn.explanations[0]!.evidenceReview?.dependencies.some(
+      (dep) => dep.id === other.id && dep.state === 'withdrawn'
+    )
+  );
+  const restoredOld = evaluateDecision(version(f.input, [f.collection], 4), {
+    ...f.context(evidence),
+    knownConflicts: conflicted.knownConflicts,
+  });
+  assert.equal(restoredOld.explanations[0]!.evidenceReview?.status, 'conflict');
+  const historical = evaluateDecision(version(f.input, [f.collection], 1), {
+    ...f.context(evidence),
+    knownConflicts: conflicted.knownConflicts,
+  });
+  assert.equal(
+    historical.explanations[0]!.evidenceReview?.status,
+    'ready',
+    'later conflicts do not rewrite earlier knowledge'
+  );
+  const laterInput = { ...f.input, datedCash: { ...f.input.datedCash!, asOf: '2026-10-03' } };
+  const laterScope = evaluateDecision(version(laterInput, [f.collection], 5), {
+    ...f.context(evidence),
+    knownConflicts: conflicted.knownConflicts,
+  });
+  assert.equal(laterScope.explanations[0]!.evidenceReview?.status, 'out-of-scope');
+  assert.ok(
+    laterScope.knownConflicts.length > 0,
+    'older-date conflict is retained, not borrowed into a different scope'
+  );
+  const withheldTask = {
+    ...f.task,
+    excludedMetrics: ['receivablesAdjustment', 'inventoryAdjustment'] as const,
+    report: analyze(
+      { ...f.taskInput, excludedMetrics: ['receivablesAdjustment', 'inventoryAdjustment'] },
+      [f.source]
+    ),
+  };
+  const withheld = evaluateDecision(version(f.input, [f.collection]), {
+    ...f.context(evidence),
+    tasks: [{ ...withheldTask, excludedMetrics: [...withheldTask.excludedMetrics] }],
+  });
+  assert.equal(withheld.explanations[0]!.state, 'withheld');
+  assert.equal(withheld.explanations[0]!.evidenceReview?.status, 'ready');
+  assert.ok(
+    !withheld.nextActions.some(
+      (row) => row.id === 'request-collections' || row.id.startsWith('investigate-')
+    )
+  );
+  assert.equal(withheld.recordedCash?.primary.status, 'unknown');
+});
+
+test('handover postponement terms change source inquiry, not hypothetical option B or consent truth, on add/withdraw and wrong scope', () => {
+  const input: DecisionInput = {
+    ...external(),
+    purpose: 'handover',
+    external: null,
+    datedCash: dated(),
+  };
+  const terms = evidence(
+    'postponement',
+    'terms',
+    `${entity}截至${date}，采购付款可延期至D26，交付及回款计划不变。`,
+    { terms: '采购付款可延期至D26，交付及回款计划不变' }
+  );
+  const context = { tasks: [], materials: [material([terms])] };
+  const baseline = evaluateDecision(version(input), context);
+  const added = evaluateDecision(version(input, [terms], 2), context);
+  const termsGate = gate(added, 'alternative-terms');
+  assert.equal(termsGate.status, 'unknown', 'saved wording is not verified supplier agreement');
+  assert.ok(
+    termsGate.dependencies.some(
+      (dep) => dep.id === terms.id && dep.state === 'matched' && dep.binding === 'source-located'
+    )
+  );
+  assert.match(termsGate.summary, /已有延期条款.*不认证同意/);
+  assert.match(
+    added.nextActions.find((row) => row.id === 'request-alternative-terms')!.requestedEvidence,
+    /核对已有延期条款/
+  );
+  const withdrawn = evaluateDecision(
+    version(input, [{ ...terms, state: 'withdrawn' }], 3),
+    context
+  );
+  assert.equal(gate(withdrawn, 'alternative-terms').status, 'withdrawn');
+  assert.ok(
+    gate(withdrawn, 'alternative-terms').dependencies.some(
+      (dep) => dep.id === terms.id && dep.state === 'withdrawn'
+    )
+  );
+  for (const invalid of [
+    { ...terms, entity: '另一公司' },
+    { ...terms, asOf: '2026-10-01' },
+  ]) {
+    const result = evaluateDecision(version(input, [invalid]), context);
+    assert.equal(gate(result, 'alternative-terms').status, 'out-of-scope');
+    assert.deepEqual(result.cash, added.cash);
+  }
+  for (const result of [added, withdrawn]) {
+    assert.deepEqual(result.cash, baseline.cash);
+    assert.deepEqual(result.recordedCash, baseline.recordedCash);
+  }
+  const unbound = evaluateDecision(version(input, [{ ...terms, materialId: undefined }]), context);
+  assert.ok(
+    !gate(unbound, 'alternative-terms').dependencies.some((dep) => dep.state === 'matched')
+  );
+});
+
+test('missing self-set exposure limit directs to user input and never re-requests already located paid/delivered/refund records', () => {
+  const input = external();
+  input.external!.exposureLimit = null;
+  const records = [
+    evidence('paid-zero', 'paid', `${entity}截至${date}已付0元。`, { amount: '0' }),
+    evidence('delivery-zero', 'delivered', `${entity}截至${date}实际交付对应金额0元。`, {
+      amount: '0',
+    }),
+    evidence('refund-zero', 'refunded', `${entity}截至${date}实际退款0元。`, { amount: '0' }),
+  ];
+  const result = evaluateDecision(version(input, records), {
+    tasks: [],
+    materials: [material(records)],
+  });
+  assert.deepEqual(
+    result.external!.recordScenarios.map((row) => [row.exposure, row.withinLimit]),
+    [
+      ['100000.00', null],
+      ['20000.00', null],
+    ]
+  );
+  assert.equal(gate(result, 'exposure-condition').status, 'unknown');
+  assert.deepEqual(gate(result, 'exposure-condition').neededSlots, []);
+  assert.ok(
+    gate(result, 'exposure-condition').dependencies.some(
+      (dep) => dep.path === 'external.exposureLimit' && dep.state === 'missing'
+    )
+  );
+  const action = result.nextActions.find((row) => row.id === 'request-exposure-condition')!;
+  assert.equal(action.title, '填写用户自设暴露上限');
+  assert.match(action.requestedEvidence, /自行设定.*不推荐上限.*不自动补零/);
+  assert.ok(!action.requestedEvidence.includes('凭据'));
+  const withdrawn = evaluateDecision(
+    version(
+      input,
+      records.map((row) => (row.slot === 'refunded' ? { ...row, state: 'withdrawn' } : row)),
+      2
+    ),
+    { tasks: [], materials: [material(records)] }
+  );
+  assert.deepEqual(gate(withdrawn, 'exposure-condition').neededSlots, ['refunded']);
+  assert.match(
+    withdrawn.nextActions.find((row) => row.id === 'request-exposure-condition')!.requestedEvidence,
+    /实际退款凭据/
+  );
+  assert.equal(withdrawn.external!.recordScenarios[0]!.exposure, null);
+});
