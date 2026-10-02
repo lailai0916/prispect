@@ -1148,7 +1148,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               {detail.version.input.reportTaskId ? (
                 <a
                   className="button button-secondary"
-                  href={`#/tasks/${detail.version.input.reportTaskId}`}
+                  href={`/tasks/${detail.version.input.reportTaskId}`}
                 >
                   <FileText size={15} />
                   {t('打开关联财务核查', 'Open linked financial review')}
@@ -2130,7 +2130,7 @@ function Dependencies({
             </Tag>
           )}
           {dependency.kind === 'financial' && dependency.taskId ? (
-            <a className="text-link" href={`#/tasks/${dependency.taskId}`}>
+            <a className="text-link" href={`/tasks/${dependency.taskId}`}>
               {t('财务原文', 'Financial source')}
               <ArrowUpRight size={12} />
             </a>

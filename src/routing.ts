@@ -1,0 +1,75 @@
+export const ROUTE_CHANGE_EVENT = 'prispect:routechange';
+
+const pages = new Set([
+  '/',
+  '/about',
+  '/docs',
+  '/privacy',
+  '/terms',
+  '/copyright',
+  '/method',
+  '/login',
+  '/register',
+  '/account',
+  '/workspace',
+  '/new',
+  '/materials',
+  '/company',
+  '/decisions',
+  '/compare',
+]);
+
+/** Accept only local application pages, never server endpoints or external URLs. */
+export function appPath(value: string, origin: string): string | null {
+  if (!value.startsWith('/') || value.startsWith('//') || /[\\\u0000-\u0020\u007f]/.test(value))
+    return null;
+  try {
+    const url = new URL(value, origin);
+    const pathname = url.pathname.replace(/\/+$/, '') || '/';
+    if (url.origin !== origin || (!pages.has(pathname) && !/^\/tasks\/[^/]+$/.test(pathname)))
+      return null;
+    return pathname + url.search + url.hash;
+  } catch {
+    return null;
+  }
+}
+
+export function legacyRoute(hash: string, origin: string): string | null {
+  return hash.startsWith('#/') ? appPath(hash.slice(1), origin) : null;
+}
+
+export function readBrowserRoute(): string {
+  const legacy = legacyRoute(location.hash, location.origin);
+  const current = location.pathname + location.search + location.hash;
+  const canonical = legacy || appPath(current, location.origin);
+  if (canonical && canonical !== current) history.replaceState(history.state, '', canonical);
+  return location.pathname + location.search;
+}
+
+export function writeBrowserRoute(value: string, replace = false): boolean {
+  const path = appPath(value, location.origin);
+  if (!path) return false;
+  const current = location.pathname + location.search + location.hash;
+  if (current !== path) {
+    if (replace) history.replaceState(history.state, '', path);
+    else history.pushState(history.state, '', path);
+  }
+  window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
+  return true;
+}
+
+export function appLinkPath(href: string, origin: string): string | null {
+  if (href.startsWith('#')) return null;
+  try {
+    const url = new URL(href, origin);
+    if (url.origin !== origin || url.hash) return null;
+    return appPath(url.pathname + url.search, origin);
+  } catch {
+    return null;
+  }
+}
+
+export function loginDestination(value: string, origin: string): string {
+  const path = appPath(value, origin);
+  return path && !['/login', '/register'].includes(path.split(/[?#]/)[0]!) ? path : '/workspace';
+}

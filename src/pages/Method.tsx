@@ -3,21 +3,33 @@ import { ArrowRight, ChevronRight } from 'lucide-react';
 
 import { useApp } from '../context';
 import { PageHeading } from '../components';
+import { ROUTE_CHANGE_EVENT } from '../routing';
 import '../review-pages.css';
 
 export function MethodPage() {
   const { t, user, navigate } = useApp();
   useEffect(() => {
     const showPrivacy = () => {
-      if (new URLSearchParams(location.hash.split('?')[1]).get('section') !== 'privacy') return;
+      if (location.hash && !location.hash.startsWith('#/')) return;
+      if (
+        location.pathname !== '/method' ||
+        new URLSearchParams(location.search).get('section') !== 'privacy'
+      )
+        return;
       const section = document.getElementById('method-privacy');
       const details = section?.querySelector('details');
       if (details) details.open = true;
       section?.scrollIntoView({ block: 'start' });
     };
     showPrivacy();
+    window.addEventListener('popstate', showPrivacy);
     window.addEventListener('hashchange', showPrivacy);
-    return () => window.removeEventListener('hashchange', showPrivacy);
+    window.addEventListener(ROUTE_CHANGE_EVENT, showPrivacy);
+    return () => {
+      window.removeEventListener('popstate', showPrivacy);
+      window.removeEventListener('hashchange', showPrivacy);
+      window.removeEventListener(ROUTE_CHANGE_EVENT, showPrivacy);
+    };
   }, []);
 
   return (
@@ -262,7 +274,7 @@ export function MethodPage() {
                   <ArrowRight size={16} />
                 </button>
                 {user && (
-                  <a className="text-link" href="#/account">
+                  <a className="text-link" href="/account">
                     {t('管理账号数据', 'Manage account data')}
                     <ArrowRight size={14} />
                   </a>
@@ -272,7 +284,7 @@ export function MethodPage() {
           </section>
           <section id="method-privacy">
             <h2>{t('数据与隐私', 'Data and privacy')}</h2>
-            <a className="text-link" href="#/privacy">
+            <a className="text-link" href="/privacy">
               {t('阅读完整隐私政策', 'Read the full privacy policy')}
               <ArrowRight size={14} />
             </a>

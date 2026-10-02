@@ -137,7 +137,7 @@ export function WorkspacePage() {
                 {tasks.map((task) => (
                   <tr key={task.id}>
                     <td>
-                      <a href={`#/tasks/${task.id}`} className="table-title">
+                      <a href={`/tasks/${task.id}`} className="table-title">
                         {task.title}
                       </a>
                       <span className="table-subtitle">
@@ -210,7 +210,7 @@ export function WorkspacePage() {
             <span>
               {tasks.length} {t('份核查', 'reviews')}
             </span>
-            <a href="#/materials" className="text-link">
+            <a href="/materials" className="text-link">
               {t('管理材料', 'Manage materials')}
               <ArrowRight size={14} />
             </a>

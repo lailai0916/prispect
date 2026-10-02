@@ -53,9 +53,9 @@ export const guideDocument: ProductDocument = {
         ],
       },
       links: [
-        { label: ['查询公司', 'Company lookup'], href: '#/company' },
-        { label: ['核查事项', 'Reviews'], href: '#/decisions' },
-        { label: ['材料', 'Materials'], href: '#/materials' },
+        { label: ['查询公司', 'Company lookup'], href: '/company' },
+        { label: ['核查事项', 'Reviews'], href: '/decisions' },
+        { label: ['材料', 'Materials'], href: '/materials' },
       ],
     },
     {
@@ -83,7 +83,7 @@ export const guideDocument: ProductDocument = {
           'An announcement title does not mean its full text was read. Notes and announcement coverage are stated. Incomplete evidence or a source-table total difference may leave candidates available, but dependent explanations stop and identify what needs checking.',
         ],
       ],
-      links: [{ label: ['打开公司查询', 'Open company lookup'], href: '#/company' }],
+      links: [{ label: ['打开公司查询', 'Open company lookup'], href: '/company' }],
     },
     {
       id: 'import',
@@ -110,7 +110,7 @@ export const guideDocument: ProductDocument = {
           'Unconfirmed uploads expire after 24 hours and are cleaned on later access or uploads. Confirmed originals remain with their materials; the account original-file quota is 250 MB. Edited metrics and original files are retained separately. Manual confirmation does not alter or authenticate the original.',
         ],
       ],
-      links: [{ label: ['打开材料', 'Open materials'], href: '#/materials' }],
+      links: [{ label: ['打开材料', 'Open materials'], href: '/materials' }],
     },
     {
       id: 'report',
@@ -129,7 +129,7 @@ export const guideDocument: ProductDocument = {
           'A passed scope check only means adopted fields meet that rule. Missing fields, conflicts or a difference between original-row totals and reported cash stop the relevant calculation. The system does not plug a residual. Possible causes remain hypotheses; questions identify the customer, settlement, inventory or other evidence needed next.',
         ],
       ],
-      links: [{ label: ['查看核查方法', 'Read the review method'], href: '#/method' }],
+      links: [{ label: ['查看核查方法', 'Read the review method'], href: '/method' }],
     },
     {
       id: 'external',
@@ -286,7 +286,7 @@ export const guideDocument: ProductDocument = {
           'After a save error or revision conflict, read the latest state before continuing. Loading errors do not present an older workspace as current. After retrying successfully, recheck unsaved changes.',
         ],
       ],
-      links: [{ label: ['比较财报核查', 'Compare financial reviews'], href: '#/compare' }],
+      links: [{ label: ['比较财报核查', 'Compare financial reviews'], href: '/compare' }],
     },
     {
       id: 'exports',
@@ -327,7 +327,7 @@ export const guideDocument: ProductDocument = {
           'Workspace reset clears review data for the current account; it is not sign-out or account deletion. Export needed working papers first and read the confirmation scope carefully.',
         ],
       ],
-      links: [{ label: ['管理账号', 'Manage account'], href: '#/account' }],
+      links: [{ label: ['管理账号', 'Manage account'], href: '/account' }],
     },
     {
       id: 'ai-and-appearance',
@@ -342,7 +342,7 @@ export const guideDocument: ProductDocument = {
           'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Appearance offers System, Light and Dark; System follows your device preference.',
         ],
       ],
-      links: [{ label: ['数据与隐私', 'Data and privacy'], href: '#/privacy?section=ai' }],
+      links: [{ label: ['数据与隐私', 'Data and privacy'], href: '/privacy?section=ai' }],
     },
     {
       id: 'troubleshooting',

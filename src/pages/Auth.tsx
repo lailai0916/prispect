@@ -12,6 +12,7 @@ import type { LoginResult } from '../../shared/account-contracts';
 import { post } from '../api';
 import { useApp } from '../context';
 import { identityClient, identityResult } from '../auth-client';
+import { loginDestination } from '../routing';
 import '../account.css';
 export { AccountPage } from './Account';
 
@@ -82,10 +83,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     [validation, setValidation] = useState(''),
     [forgot, setForgot] = useState(false);
   const register = mode === 'register';
-  const destination =
-    next.startsWith('/') && !next.startsWith('//') && !/^\/(login|register)/.test(next)
-      ? next
-      : '/workspace';
+  const destination = loginDestination(next, location.origin);
   useEffect(() => {
     if (user) navigate(destination);
   }, [user, navigate, destination]);
@@ -163,7 +161,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
   return (
     <section className="account-auth-shell">
       <div className="account-auth-card">
-        <a className="account-back-link" href="#/">
+        <a className="account-back-link" href="/">
           <ArrowLeft size={16} />
           {t('回到首页', 'Back home')}
         </a>
@@ -354,7 +352,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 ? t('已有账号？', 'Already have an account?')
                 : t('第一次使用析光？', 'New to Prispect?')}{' '}
               <a
-                href={`#/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
+                href={`/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
               >
                 {register ? t('登录', 'Log in') : t('创建账号', 'Create account')}
               </a>
@@ -364,7 +362,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 <span>{t('创建账号前，请阅读', 'Before creating an account, read')} </span>
               )}
               <a
-                href="#/terms"
+                href="/terms"
                 target="_blank"
                 rel="noreferrer"
                 aria-label={t('用户协议（新标签页）', 'Terms of service (new tab)')}
@@ -373,7 +371,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               </a>
               <span> · </span>
               <a
-                href="#/privacy"
+                href="/privacy"
                 target="_blank"
                 rel="noreferrer"
                 aria-label={t('隐私政策（新标签页）', 'Privacy policy (new tab)')}

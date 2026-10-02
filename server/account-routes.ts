@@ -192,7 +192,7 @@ export function installAccountRoutes(app: Express, auth: AuthStore, dataDir: str
       auth.requireFresh(context(res));
       auth.rateLimit(`email:${context(res).user.id}`, 3, 3600000);
       const result = await auth.identity.api.sendVerificationEmail({
-        body: { email: context(res).user.email, callbackURL: auth.origin + '/#/account' },
+        body: { email: context(res).user.email, callbackURL: auth.origin + '/account' },
         headers: new Headers({ cookie: req.headers.cookie || '', origin: auth.origin }),
         asResponse: true,
       });
@@ -208,7 +208,7 @@ export function installAccountRoutes(app: Express, auth: AuthStore, dataDir: str
       if (typeof req.body?.email !== 'string')
         throw new ApiFault(400, 'INVALID_ACCOUNT', '邮箱无效');
       const result = await auth.identity.api.changeEmail({
-        body: { newEmail: req.body.email, callbackURL: auth.origin + '/#/account' },
+        body: { newEmail: req.body.email, callbackURL: auth.origin + '/account' },
         headers: new Headers({ cookie: req.headers.cookie || '', origin: auth.origin }),
         asResponse: true,
       });

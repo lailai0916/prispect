@@ -78,7 +78,7 @@ export function TaskPage({ id }: { id: string }) {
   return (
     <>
       <div className="breadcrumb">
-        <a href="#/workspace">{t('财报核查', 'Financial reviews')}</a>
+        <a href="/workspace">{t('财报核查', 'Financial reviews')}</a>
         <ChevronRight size={14} />
         <span>{t('核查报告', 'Review')}</span>
         <code>{task.id.slice(0, 8)}</code>
@@ -840,7 +840,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
               <Columns3 size={16} />
               {t('与历史任务比较', 'Compare with history')}
             </button>
-            <a href="#/method" className="text-link">
+            <a href="/method" className="text-link">
               {t('阅读方法说明', 'Read the methodology')}
               <ArrowUpRight size={15} />
             </a>
@@ -1296,7 +1296,7 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
               'Interpret the adopted financial data and source excerpts.'
             )}{' '}
             <a
-              href="#/privacy?section=ai"
+              href="/privacy?section=ai"
               target="_blank"
               rel="noreferrer"
               aria-label={t('数据使用（新标签页）', 'Data use (new tab)')}

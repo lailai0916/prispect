@@ -113,8 +113,8 @@ export const copyrightDocument: ProductDocument = {
         ],
       ],
       links: [
-        { label: ['材料使用与服务约定', 'Terms for materials and service use'], href: '#/terms' },
-        { label: ['私人数据处理', 'Private-data processing'], href: '#/privacy' },
+        { label: ['材料使用与服务约定', 'Terms for materials and service use'], href: '/terms' },
+        { label: ['私人数据处理', 'Private-data processing'], href: '/privacy' },
       ],
     },
     {

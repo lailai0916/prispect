@@ -163,7 +163,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                         <th key={`${side}-${task.id}`}>
                           <span>{task.company}</span>
                           <strong>{task.title}</strong>
-                          <a href={`#/tasks/${task.id}`} className="text-link">
+                          <a href={`/tasks/${task.id}`} className="text-link">
                             {t('打开报告', 'Open report')}
                             <ArrowUpRight size={15} />
                           </a>

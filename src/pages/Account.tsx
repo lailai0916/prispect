@@ -25,6 +25,7 @@ import { api, post, RequestError, requestErrorText } from '../api';
 import { identityClient, identityResult } from '../auth-client';
 import { useApp } from '../context';
 import { date } from '../format';
+import { ROUTE_CHANGE_EVENT } from '../routing';
 import { PasswordMeter } from './Auth';
 import { useFileDrop, validateFileSelection, type FileSelectionError } from '../useFileDrop';
 import '../account.css';
@@ -246,7 +247,7 @@ export function AccountPage() {
     setAvatarFeedback(null);
     setAvatarRetry(null);
     const leaveAccount = () => {
-      if ((location.hash.slice(1) || '/').split('?')[0] === '/account') return;
+      if (location.pathname === '/account') return;
       // A lazy next page may briefly keep this component mounted after navigation.
       avatarRequest.current?.abort();
       avatarRequest.current = null;
@@ -254,9 +255,13 @@ export function AccountPage() {
       setAvatarBusy(null);
       setAvatarRetry(null);
     };
+    window.addEventListener('popstate', leaveAccount);
     window.addEventListener('hashchange', leaveAccount);
+    window.addEventListener(ROUTE_CHANGE_EVENT, leaveAccount);
     return () => {
+      window.removeEventListener('popstate', leaveAccount);
       window.removeEventListener('hashchange', leaveAccount);
+      window.removeEventListener(ROUTE_CHANGE_EVENT, leaveAccount);
       avatarAlive.current = false;
       avatarRequest.current?.abort();
       avatarRequest.current = null;
@@ -533,7 +538,7 @@ export function AccountPage() {
   if (!user)
     return (
       <div className="account-page">
-        <a href="#/login">{t('登录以打开账号设置', 'Log in to open account settings')}</a>
+        <a href="/login">{t('登录以打开账号设置', 'Log in to open account settings')}</a>
       </div>
     );
   return (
@@ -1275,7 +1280,7 @@ export function AccountPage() {
                 </div>
                 <p className="account-muted">
                   {t('注册于', 'Joined')} {date(overview.user.createdAt, locale)} ·{' '}
-                  <a href="#/privacy">
+                  <a href="/privacy">
                     {t('查看数据与来源边界', 'Read data and source boundaries')}
                   </a>
                 </p>

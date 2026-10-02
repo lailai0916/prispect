@@ -531,7 +531,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                     'Relevant public documents are sent for AI processing.'
                   )}{' '}
                   <a
-                    href="#/privacy?section=ai"
+                    href="/privacy?section=ai"
                     target="_blank"
                     rel="noreferrer"
                     aria-label={t('数据使用（新标签页）', 'Data use (new tab)')}

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { ArrowUpRight, ChevronRight, Mail, Printer } from 'lucide-react';
 import { useApp } from '../context';
+import { ROUTE_CHANGE_EVENT } from '../routing';
 import type { ProductDocument } from '../content/document';
 import { aboutDocument } from '../content/about';
 import { guideDocument } from '../content/guide';
@@ -34,14 +35,27 @@ export function DocumentationPage({
     document.title = `${t(...documentContent.title)} · ${t('析光', 'Prispect')}`;
   }, [documentContent, t]);
   useEffect(() => {
-    if (!section) return;
-    document.getElementById(`document-${section}`)?.scrollIntoView({ block: 'start' });
+    const showSection = () => {
+      if (location.hash && !location.hash.startsWith('#/')) return;
+      if (location.pathname !== path) return;
+      const target = new URLSearchParams(location.search).get('section');
+      if (target) document.getElementById(`document-${target}`)?.scrollIntoView({ block: 'start' });
+    };
+    showSection();
+    window.addEventListener('popstate', showSection);
+    window.addEventListener('hashchange', showSection);
+    window.addEventListener(ROUTE_CHANGE_EVENT, showSection);
+    return () => {
+      window.removeEventListener('popstate', showSection);
+      window.removeEventListener('hashchange', showSection);
+      window.removeEventListener(ROUTE_CHANGE_EVENT, showSection);
+    };
   }, [path, section]);
   return (
     <article className="document-page">
       <header className="document-heading">
         <div className="document-breadcrumb">
-          <a href="#/">{t('析光', 'Prispect')}</a>
+          <a href="/">{t('析光', 'Prispect')}</a>
           <ChevronRight size={13} aria-hidden="true" />
           <span>{t(...documentContent.title)}</span>
         </div>
@@ -67,11 +81,11 @@ export function DocumentationPage({
         <nav className="document-contents" aria-label={t('本页目录', 'On this page')}>
           <span>{t('本页目录', 'On this page')}</span>
           {documentContent.sections.map((item) => (
-            <a key={item.id} href={`#${path}?section=${encodeURIComponent(item.id)}`}>
+            <a key={item.id} href={`${path}?section=${encodeURIComponent(item.id)}`}>
               {t(...item.title)}
             </a>
           ))}
-          <a href={`#${path}?section=contact`}>{t('联系析光', 'Contact Prispect')}</a>
+          <a href={`${path}?section=contact`}>{t('联系析光', 'Contact Prispect')}</a>
         </nav>
         <div className="document-body">
           {documentContent.sections.map((item) => (
@@ -162,7 +176,7 @@ export function DocumentationPage({
             {Object.entries(documents)
               .filter(([href]) => href !== path)
               .map(([href, content]) => (
-                <a key={href} href={`#${href}`}>
+                <a key={href} href={href}>
                   {t(...content.title)}
                   <ChevronRight size={14} aria-hidden="true" />
                 </a>

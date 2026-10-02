@@ -511,7 +511,7 @@ export function Home() {
           <section className="home-recent">
             <div className="home-recent-heading">
               <h2>{t('最近的核查事项', 'Recent reviews')}</h2>
-              <a href="#/decisions">
+              <a href="/decisions">
                 {t('查看全部', 'View all')}
                 <ArrowUpRight size={13} />
               </a>
@@ -520,7 +520,7 @@ export function Home() {
               <p role="alert">{recentError}</p>
             ) : (
               recent.map((item) => (
-                <a className="home-recent-row" key={item.id} href={`#/decisions?id=${item.id}`}>
+                <a className="home-recent-row" key={item.id} href={`/decisions?id=${item.id}`}>
                   <span className="home-recent-icon">
                     <Wallet size={16} />
                   </span>
@@ -675,7 +675,7 @@ export function Home() {
             'Review profit and operating cash from public annual reports, then create checks from specific line items. Historical reports explain the past; current payments need their own evidence.'
           )}
         </p>
-        <a href="#/method">
+        <a href="/method">
           {t('查看方法与范围', 'Methods and scope')}
           <ArrowRight size={15} />
         </a>

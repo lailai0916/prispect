@@ -58,6 +58,10 @@ acceptance separate from unit-test success. `npm start` serves the production bu
 - `shared/contracts.ts`, `shared/decision-contracts.ts`, `shared/company-contracts.ts` and `shared/account-contracts.ts` define API contracts; `shared/start-intent.ts` handles local entry routing. Coordinate changes before concurrent edits.
 - `server/` owns auth, tenant-scoped access, validation, computation, imports and exports.
 - `src/` owns the bilingual product flow; all visible actions must have actual behavior.
+- Use clean History paths for application navigation. Keep legacy Hash links compatible,
+  preserve real document anchors and native download/new-tab behavior, and restrict login
+  return URLs to local application pages. The server must serve the SPA for deep-page refreshes
+  without replacing API errors with HTML.
 - Production deployment uses main CI-gated `.github/workflows/deploy.yml` and fixed root-owned helpers. Never execute received archive maintenance scripts as root.
 - `data/source-manifest.json` and `data/cases/` retain reproducible facts and short excerpts.
 - Do not commit `.env`, `.cashlens`, raw financial reports, browser profiles or credentials.

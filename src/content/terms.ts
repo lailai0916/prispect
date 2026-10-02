@@ -46,7 +46,7 @@ export const termsDocument: ProductDocument = {
           'Private cases use your payment, delivery, refund or dated cash-plan inputs to calculate conditional exposure and shortfalls, retaining versions of input and evidence changes.',
         ],
       ],
-      links: [{ label: ['查看使用文档', 'Read the user guide'], href: '#/docs' }],
+      links: [{ label: ['查看使用文档', 'Read the user guide'], href: '/docs' }],
     },
     {
       id: 'accounts',
@@ -87,7 +87,7 @@ export const termsDocument: ProductDocument = {
           'Provide only content you are authorized to process and need for the review. Check authorization and restrictions for others’ personal information, trade secrets or restricted materials, and remove unnecessary details. Public accessibility is not automatic permission to republish.',
         ],
       ],
-      links: [{ label: ['查看版权说明', 'Read copyright information'], href: '#/copyright' }],
+      links: [{ label: ['查看版权说明', 'Read copyright information'], href: '/copyright' }],
     },
     {
       id: 'privacy',
@@ -102,7 +102,7 @@ export const termsDocument: ProductDocument = {
           'Reading or accepting these terms does not replace data-use notices or consent required for a particular feature. You may choose not to use optional AI. Processing already performed and subsequent retention are governed by the privacy policy and applicable law.',
         ],
       ],
-      links: [{ label: ['查看隐私政策', 'Read the privacy policy'], href: '#/privacy' }],
+      links: [{ label: ['查看隐私政策', 'Read the privacy policy'], href: '/privacy' }],
     },
     {
       id: 'conduct',

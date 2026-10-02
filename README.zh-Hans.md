@@ -17,7 +17,7 @@
 
 本项目参加学军中学「回响·48H 青年创造营」X-Ray 方向，聚焦一个明确问题。历史现金比例不代表企业评级、授信决策或投资建议。用户需求与付费意愿仍属于研究假设。
 
-产品信息见[使用文档](https://prispect.com/#/docs)、[产品介绍](https://prispect.com/#/about)、[隐私政策](https://prispect.com/#/privacy)、[用户协议](https://prispect.com/#/terms)与[版权说明](https://prispect.com/#/copyright)。政策描述已实现的服务，不等于法律合规认证。联系邮箱：`lailai0x394@gmail.com`。
+产品信息见[使用文档](https://prispect.com/docs)、[产品介绍](https://prispect.com/about)、[隐私政策](https://prispect.com/privacy)、[用户协议](https://prispect.com/terms)与[版权说明](https://prispect.com/copyright)。政策描述已实现的服务，不等于法律合规认证。联系邮箱：`lailai0x394@gmail.com`。
 
 ## 网站特性
 

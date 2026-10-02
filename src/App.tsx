@@ -33,6 +33,7 @@ import { changeComposerOwner } from './start-draft';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { ThemeControl } from './ThemeControl';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
+import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
 import type { DocumentPath } from './pages/Documentation';
 
 import {
@@ -90,7 +91,7 @@ const publicPages = ['/', '/method', '/login', '/register', ...documentPaths];
 
 export function App() {
   const [locale, setLocale] = useState<Locale>(storedLocale);
-  const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
+  const [route, setRoute] = useState(readBrowserRoute);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
   const [examples, setExamples] = useState<PublicExample[]>([]);
@@ -107,12 +108,9 @@ export function App() {
   const committedOwner = useRef<string | null>(null);
   const t: Translate = useCallback((zh, en) => (locale === 'en' ? en : zh), [locale]);
   const navigate = useCallback((path: string, options?: { replace?: boolean }) => {
-    if (options?.replace) {
-      history.replaceState(history.state, '', `#${path}`);
-      setRoute(path);
-    } else location.hash = path;
-    setMenuOpen(false);
     window.scrollTo(0, 0);
+    if (!writeBrowserRoute(path, options?.replace)) return;
+    setMenuOpen(false);
   }, []);
   const refresh = useCallback(async () => {
     const generation = ++refreshGeneration.current;
@@ -191,10 +189,44 @@ export function App() {
     void refresh().catch(() => {});
   }, [refresh]);
   useEffect(() => {
-    const onHash = () => setRoute(location.hash.slice(1) || '/');
-    window.addEventListener('hashchange', onHash);
-    return () => window.removeEventListener('hashchange', onHash);
-  }, []);
+    const sync = () => {
+      setRoute(readBrowserRoute());
+      setMenuOpen(false);
+    };
+    const followLink = (event: MouseEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.button !== 0 ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.shiftKey ||
+        event.altKey
+      )
+        return;
+      const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (
+        !(link instanceof HTMLAnchorElement) ||
+        link.hasAttribute('download') ||
+        (link.target && link.target !== '_self') ||
+        link.rel.split(/\s+/).includes('external')
+      )
+        return;
+      const path = appLinkPath(link.getAttribute('href')!, location.origin);
+      if (!path) return;
+      event.preventDefault();
+      navigate(path);
+    };
+    window.addEventListener('popstate', sync);
+    window.addEventListener('hashchange', sync);
+    window.addEventListener(ROUTE_CHANGE_EVENT, sync);
+    document.addEventListener('click', followLink);
+    return () => {
+      window.removeEventListener('popstate', sync);
+      window.removeEventListener('hashchange', sync);
+      window.removeEventListener(ROUTE_CHANGE_EVENT, sync);
+      document.removeEventListener('click', followLink);
+    };
+  }, [navigate]);
   useEffect(() => {
     if (
       loadError ||
@@ -304,7 +336,7 @@ export function App() {
     <>
       <nav className="sidebar-navigation" aria-label={t('主导航', 'Main navigation')}>
         <a
-          href="#/"
+          href="/"
           className={page === '/' ? 'active' : ''}
           aria-current={page === '/' ? 'page' : undefined}
           onClick={() => setMenuOpen(false)}
@@ -316,7 +348,7 @@ export function App() {
           {primaryNavigation.map(([path, label, Icon]) => (
             <a
               key={path}
-              href={`#${path}`}
+              href={path}
               className={page === path ? 'active' : ''}
               aria-current={page === path ? 'page' : undefined}
               onClick={() => setMenuOpen(false)}
@@ -335,7 +367,7 @@ export function App() {
             return (
               <a
                 key={path}
-                href={`#${path}`}
+                href={path}
                 className={active ? 'active' : ''}
                 aria-current={active ? 'page' : undefined}
                 onClick={() => setMenuOpen(false)}
@@ -348,12 +380,12 @@ export function App() {
         </div>
       </nav>
       <div className="sidebar-bottom">
-        <a href="#/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
+        <a href="/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
           <BookOpen size={16} />
           {t('使用文档', 'Documentation')}
         </a>
         <a
-          href="#/method"
+          href="/method"
           className={`sidebar-method ${page === '/method' ? 'active' : ''}`}
           onClick={() => setMenuOpen(false)}
         >
@@ -392,21 +424,21 @@ export function App() {
           {t('跳至主要内容', 'Skip to content')}
         </a>
         <header className="site-header">
-          <a className="brand-link" href="#/" aria-label={t('析光首页', 'Prispect home')}>
+          <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
             <Logo />
           </a>
           {business && <span className="header-context">{currentSection}</span>}
           {!business && (
             <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
               <a
-                href="#/docs"
+                href="/docs"
                 className={page === '/docs' ? 'active' : ''}
                 aria-current={page === '/docs' ? 'page' : undefined}
               >
                 {t('文档', 'Docs')}
               </a>
               <a
-                href="#/method"
+                href="/method"
                 className={page === '/method' ? 'active' : ''}
                 aria-current={page === '/method' ? 'page' : undefined}
               >
@@ -444,7 +476,7 @@ export function App() {
                 <ChevronDown size={13} />
               </ActionMenu>
             ) : sessionAvailable ? (
-              <a className="login-link" href="#/login">
+              <a className="login-link" href="/login">
                 {t('登录', 'Log in')}
               </a>
             ) : null}
@@ -462,7 +494,7 @@ export function App() {
         </header>
         {business && (
           <aside className="workspace-sidebar">
-            <a className="sidebar-brand" href="#/" aria-label={t('析光首页', 'Prispect home')}>
+            <a className="sidebar-brand" href="/" aria-label={t('析光首页', 'Prispect home')}>
               <Logo />
             </a>
             <button
@@ -573,12 +605,12 @@ export function App() {
           <footer className="site-footer">
             <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
             <div>
-              <a href="#/about">{t('产品介绍', 'About')}</a>
-              <a href="#/docs">{t('使用文档', 'Documentation')}</a>
-              <a href="#/method">{t('方法', 'Method')}</a>
-              <a href="#/privacy">{t('隐私政策', 'Privacy')}</a>
-              <a href="#/terms">{t('用户协议', 'Terms')}</a>
-              <a href="#/copyright">{t('版权声明', 'Copyright')}</a>
+              <a href="/about">{t('产品介绍', 'About')}</a>
+              <a href="/docs">{t('使用文档', 'Documentation')}</a>
+              <a href="/method">{t('方法', 'Method')}</a>
+              <a href="/privacy">{t('隐私政策', 'Privacy')}</a>
+              <a href="/terms">{t('用户协议', 'Terms')}</a>
+              <a href="/copyright">{t('版权声明', 'Copyright')}</a>
             </div>
           </footer>
         )}

@@ -36,7 +36,7 @@ export const aboutDocument: ProductDocument = {
           'Results prioritize financial observations, their sources and evidence still missing. Optional AI interpretation can assist public-source retrieval and explanation. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
         ],
       ],
-      links: [{ label: ['查询公司', 'Look up a company'], href: '#/company' }],
+      links: [{ label: ['查询公司', 'Look up a company'], href: '/company' }],
     },
     {
       id: 'financial-review',
@@ -52,8 +52,8 @@ export const aboutDocument: ProductDocument = {
         ],
       ],
       links: [
-        { label: ['导入财务材料', 'Import financial material'], href: '#/materials' },
-        { label: ['了解核查方法', 'Read the method'], href: '#/method' },
+        { label: ['导入财务材料', 'Import financial material'], href: '/materials' },
+        { label: ['了解核查方法', 'Read the method'], href: '/method' },
       ],
     },
     {
@@ -90,7 +90,7 @@ export const aboutDocument: ProductDocument = {
           ],
         ],
       },
-      links: [{ label: ['新建核查事项', 'Create a review'], href: '#/decisions?new=external' }],
+      links: [{ label: ['新建核查事项', 'Create a review'], href: '/decisions?new=external' }],
     },
     {
       id: 'evidence-and-scenarios',
@@ -123,7 +123,7 @@ export const aboutDocument: ProductDocument = {
           'Financial reviews can be compared and exported as HTML or JSON working papers. Private reviews can export the current version. Exports retain applicable conditions and do not create public sharing links.',
         ],
       ],
-      links: [{ label: ['阅读使用文档', 'Read the guide'], href: '#/docs' }],
+      links: [{ label: ['阅读使用文档', 'Read the guide'], href: '/docs' }],
     },
     {
       id: 'limits-and-data',
@@ -139,8 +139,8 @@ export const aboutDocument: ProductDocument = {
         ],
       ],
       links: [
-        { label: ['数据与隐私', 'Data and privacy'], href: '#/privacy' },
-        { label: ['服务条款', 'Terms of service'], href: '#/terms' },
+        { label: ['数据与隐私', 'Data and privacy'], href: '/privacy' },
+        { label: ['服务条款', 'Terms of service'], href: '/terms' },
       ],
     },
   ],

@@ -17,7 +17,7 @@ Prispect (析光), operated by the Prispect team, starts from a company or a mat
 
 Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction. The core analytical question is deliberately narrow. Historical cash ratios are not company ratings, credit decisions, or investment advice. Customer demand and willingness to pay remain research assumptions.
 
-Product information is available in the [user guide](https://prispect.com/#/docs), [product introduction](https://prispect.com/#/about), [privacy policy](https://prispect.com/#/privacy), [terms](https://prispect.com/#/terms) and [copyright notice](https://prispect.com/#/copyright). Policies describe the implemented service rather than certifying legal compliance. Contact: `lailai0x394@gmail.com`.
+Product information is available in the [user guide](https://prispect.com/docs), [product introduction](https://prispect.com/about), [privacy policy](https://prispect.com/privacy), [terms](https://prispect.com/terms) and [copyright notice](https://prispect.com/copyright). Policies describe the implemented service rather than certifying legal compliance. Contact: `lailai0x394@gmail.com`.
 
 ## Website Features
 

@@ -395,7 +395,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
                       'AI interpretation is unavailable. Financial checks remain available.'
                     )}{' '}
                 <a
-                  href="#/privacy?section=ai"
+                  href="/privacy?section=ai"
                   target="_blank"
                   rel="noreferrer"
                   aria-label={t('数据使用（在新标签页打开）', 'Data use (opens in a new tab)')}
