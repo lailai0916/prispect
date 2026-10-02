@@ -13,7 +13,7 @@ import { useApp } from './context';
 
 type ChallengeResponse = { challenge: CompanyChallengeState | null; stale: boolean };
 const POLL_INTERVAL = 1500;
-const POLL_WINDOW = 5 * 60 * 1000;
+const POLL_WINDOW = 10 * 60 * 1000;
 const REQUEST_TIMEOUT = 25_000;
 const challengeErrors: Record<string, readonly [string, string]> = {
   CHALLENGE_INPUT: ['请选择要挑战的解释。', 'Select the explanation to challenge.'],

@@ -10,7 +10,11 @@ import {
   type CompanyIndustrySnapshot,
 } from '../shared/company-workspace.js';
 import type { ModelConfig } from '../server/model.js';
-import { runCompanyResearchAgent } from '../server/company-research-agent.js';
+import { runCompanyResearchAgent as researchAgent } from '../server/company-research-agent.js';
+
+// Isolate existing targeted-tool tests; the default full collection is covered separately.
+const runCompanyResearchAgent = (...args: Parameters<typeof researchAgent>) =>
+  researchAgent(args[0], args[1], { ...args[2], collectPublicSignals: false });
 
 function company(): CompanyResearchRun {
   const time = '2026-10-02T00:00:00.000Z';
@@ -223,7 +227,21 @@ test('Grok performs a real multi-turn research loop with source-bound news, exac
         const request = JSON.parse(String(init?.body));
         assert.equal(request.model, 'grok-4.7-fast');
         assert.equal(request.service_tier, 'default');
-        assert.equal(request.tools.length, 5);
+        assert.deepEqual(
+          request.tools.map((tool: { function: { name: string } }) => tool.function.name).sort(),
+          [
+            'collect_public_signals',
+            'fetch_industry',
+            'get_financial_history',
+            'get_market_quote',
+            'read_disclosure',
+            'read_discussion',
+            'read_news',
+            'search_disclosures',
+            'search_discussions',
+            'search_news',
+          ].sort()
+        );
         assert.equal(request.tool_choice, 'auto');
         for (const secret of [...secrets, 'private-key-sentinel'])
           assert.ok(!String(init?.body).includes(secret));
@@ -528,9 +546,9 @@ test('unsupported or mismatched issuers and missing context never trigger planni
   assert.equal(calls, 0);
 });
 
-test('research enforces eight tool executions and six PDF attempts independently of provider instructions', async () => {
+test('research enforces twenty-four tool executions and six PDF attempts independently of provider instructions', async () => {
   const run = company();
-  run.context!.announcements = Array.from({ length: 8 }, (_, index) => ({
+  run.context!.announcements = Array.from({ length: 24 }, (_, index) => ({
     ...run.context!.announcements[0]!,
     id: `cninfo-${index}`,
     url: `https://static.cninfo.com.cn/finalpage/2026-09-29/${10000 + index}.pdf`,
@@ -555,18 +573,30 @@ test('research enforces eight tool executions and six PDF attempts independently
   );
   assert.equal(modelCalls, 1);
   assert.equal(result.modelCalls, 1);
-  assert.equal(result.toolCalls, 8);
+  assert.equal(result.toolCalls, 24);
   assert.equal(reads, 6);
   assert.equal(
     result.steps.filter((step) => step.tool === 'read_disclosure' && step.status === 'failed')
       .length,
-    8
+    24
+  );
+  assert.equal(result.steps.length, 25);
+  assert.equal(
+    result.steps.filter((step) => step.tool === 'read_disclosure' && /上限/.test(step.summary))
+      .length,
+    18,
+    'eighteen planned reads are blocked after six actual PDF attempts'
+  );
+  assert.equal(
+    result.run.context!.sources.filter((source) => source.id.startsWith('agent-disclosure-'))
+      .length,
+    6
   );
   assert.ok(result.steps.slice(-2).every((step) => /上限/.test(step.summary)));
   assert.ok(result.run.context!.announcements.every((row) => !row.excerpt));
 });
 
-test('planning stops after three actual model turns and passes correctly paired tool call IDs on follow-ups', async () => {
+test('planning stops after six actual model turns and passes correctly paired tool call IDs on follow-ups', async () => {
   let calls = 0;
   const result = await runCompanyResearchAgent(
     company(),
@@ -589,9 +619,19 @@ test('planning stops after three actual model turns and passes correctly paired 
     }),
     { industry: async () => industry() }
   );
-  assert.equal(calls, 3);
-  assert.equal(result.modelCalls, 3);
-  assert.equal(result.toolCalls, 3);
+  assert.equal(calls, 6);
+  assert.equal(result.modelCalls, 6);
+  assert.equal(result.toolCalls, 6);
+  assert.equal(
+    result.steps.filter((step) => step.tool === 'planning' && step.status === 'completed').length,
+    6
+  );
+  assert.equal(
+    result.steps.filter(
+      (step) => step.tool === 'get_financial_history' && step.status === 'completed'
+    ).length,
+    6
+  );
 });
 
 test('malformed model responses, excessive bodies and HTTP failure preserve public records without exposing provider secrets', async () => {
@@ -751,26 +791,53 @@ test('disclosure search covers the complete retained archive including relevant 
   assert.equal(result.steps[1]?.status, 'completed');
 });
 
-test('real topic searches retain at most 48 unique company news items and report actual response hashes', async () => {
+test('real topic searches retain up to 180 unique company news items and report actual response hashes', async () => {
   const run = company();
   let models = 0,
     searches = 0;
+  const topics = ['回款', '债务', '经营'];
+  const pages: { topic: string; page: number }[] = [];
+  const responseHashes = new Map<string, string[]>();
   const result = await runCompanyResearchAgent(
     run,
-    config(async () =>
-      ++models === 1
-        ? plan([
-            call('search_news', { topic: '回款' }, 'collections'),
-            call('search_news', { topic: '债务' }, 'debt'),
-            call('search_news', { topic: '经营' }, 'operations'),
-          ])
-        : done()
-    ),
+    config(async (_url, init) => {
+      if (++models === 1)
+        return plan([
+          call('search_news', { topic: '回款' }, 'collections'),
+          call('search_news', { topic: '债务' }, 'debt'),
+          call('search_news', { topic: '经营' }, 'operations'),
+        ]);
+      const request = JSON.parse(String(init?.body));
+      const tools = request.messages
+        .filter((message: { role: string }) => message.role === 'tool')
+        .map((message: { content: string }) => JSON.parse(message.content));
+      assert.equal(tools.length, 3);
+      for (const [index, tool] of tools.entries()) {
+        assert.equal(tool.ok, true);
+        assert.equal(tool.result.news.length, 90);
+        assert.equal(tool.result.receipt.accepted, 90);
+        assert.equal(tool.result.receipt.pagesRead, 3);
+        assert.deepEqual(tool.result.receipt.responseHashes, responseHashes.get(topics[index]!));
+      }
+      return done();
+    }),
     {
       industry: async () => industry(),
-      fetch: async () => {
-        const offset = searches++ * 20;
-        return Response.json({
+      fetch: async (url) => {
+        searches++;
+        const target = new URL(String(url));
+        assert.equal(target.hostname, 'search-api-web.eastmoney.com');
+        const request = JSON.parse(target.searchParams.get('param')!);
+        const topic = String(request.keyword).slice('测试公司 '.length);
+        const topicIndex = topics.indexOf(topic);
+        assert.ok(topicIndex >= 0);
+        const page = request.param.cmsArticleWebOld.pageIndex;
+        assert.equal(request.param.cmsArticleWebOld.pageSize, 30);
+        assert.ok(page >= 1 && page <= 3);
+        pages.push({ topic, page });
+        const offset = topicIndex * 90 + (page - 1) * 30;
+        const response = {
+          hitsTotal: 90,
           result: {
             cmsArticleWebOld: Array.from({ length: 30 }, (_, index) => ({
               title: `测试公司公开新闻 ${offset + index}`,
@@ -780,20 +847,33 @@ test('real topic searches retain at most 48 unique company news items and report
               url: `https://finance.sina.com.cn/news-${offset + index}`,
             })),
           },
-        });
+        };
+        const hash = createHash('sha256').update(JSON.stringify(response)).digest('hex');
+        responseHashes.set(topic, [...(responseHashes.get(topic) || []), hash]);
+        return Response.json(response);
       },
     }
   );
-  assert.equal(searches, 3);
-  assert.equal(result.run.context!.news.length, 48);
-  assert.equal(new Set(result.run.context!.news.map((row) => row.title)).size, 48);
+  assert.equal(models, 2);
+  assert.equal(result.modelCalls, 2);
+  assert.equal(result.toolCalls, 3);
+  assert.equal(searches, 9);
+  assert.deepEqual(
+    pages,
+    topics.flatMap((topic) => [1, 2, 3].map((page) => ({ topic, page })))
+  );
+  assert.equal(result.run.context!.news.length, 180);
+  assert.equal(new Set(result.run.context!.news.map((row) => row.title)).size, 180);
+  assert.equal(new Set(result.run.context!.news.map((row) => row.url)).size, 180);
   const receipts = result.run.context!.sources.filter((source) =>
     source.id.startsWith('agent-news-')
   );
   assert.equal(receipts.length, 3);
-  assert.ok(
-    receipts.every((source) => source.count === 30 && source.responseHashes[0]?.length === 64)
-  );
+  assert.ok(receipts.every((source) => source.count === 90 && source.responseHashes.length === 3));
+  for (const [index, source] of receipts.entries()) {
+    assert.deepEqual(source.responseHashes, responseHashes.get(topics[index]!));
+    assert.equal(source.status, 'available');
+  }
 });
 
 test('an optional diagnostic callback failure cannot turn a model failure into a rejected research job', async () => {

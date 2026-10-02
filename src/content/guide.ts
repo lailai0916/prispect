@@ -110,11 +110,23 @@ export const guideDocument: ProductDocument = {
       title: ['阅读公司分析与继续研究', 'Read company analysis and research further'],
       paragraphs: [
         [
-          '公司分析使用所选年度合并财务、最多六个年度的历史资料、同年度同行、公告和新闻。AI 根据现有资料与研究目标选择补查方向，给出总体判断、优势、风险、后续核查及判断变化条件。研究有范围和使用频率限制，页面显示实际执行过程与资料覆盖。',
-          'Company analysis uses selected-year consolidated financials, up to six annual periods of history, same-year peers, disclosures and news. AI chooses further research based on available information and the research goal, then reports an overall judgment, strengths, risks, next checks and conditions for reassessment. Research has scope and usage limits; the page shows actual steps and coverage.',
+          '公司分析使用所选年度合并财务、最多六个年度的历史资料、同年度同行、公告、新闻和公开讨论。系统先分页收集资料，再由 AI 根据已有证据和研究目标选择主题补查、核对原文，并检查反向线索，形成总体判断、优势、风险、后续核查及判断变化条件。页面显示实际执行过程与资料覆盖；研究可能持续数分钟，未取得内容保持未知。',
+          'Company analysis uses selected-year consolidated financials, up to six annual periods of history, same-year peers, disclosures, news and public discussions. It first collects paginated sources; AI then chooses focused follow-ups and source-text checks and considers contrary evidence before reporting judgments, strengths, risks, next checks and reassessment conditions. The page shows actual steps and coverage. Research may take several minutes; missing material stays unknown.',
         ],
       ],
       bullets: [
+        [
+          '新闻来自东方财富与新浪的有限目录，公开讨论来自所选公司的股吧，最多保留 180 条去重新闻与 240 条帖子。自动收集会尝试读取最多 8 条新闻和 8 篇帖子正文，之后可按研究需要继续核对。查看来源日期、媒体和“标题／摘要／正文节选”标记：目录条数不等于读过全文的数量，模型收到的节选也可能因文本上限而缩短。一个平台的帖子不代表整体舆论，转载不等于多份独立证据。',
+          'News comes from bounded Eastmoney and Sina catalogs; discussions come from the selected issuer’s Guba board, retaining up to 180 deduplicated news records and 240 posts. Automatic collection attempts up to eight news bodies and eight post bodies, with focused follow-ups when needed. Check dates, media and title/digest/body-excerpt labels. Catalog counts do not mean all bodies were read, and model excerpts may be shortened by text limits. One board is not representative of public opinion; reposts are not independent evidence.',
+        ],
+        [
+          '公开帖子属于未核实观点，即使读到正文也不能证明公司违法、违约或没有风险。媒体报道、公司自述和官方披露需分别看待。综合判断应同时考虑支持与反向线索，优先打开关键来源核对主体、时间与原文。新闻和讨论数量不会自动改变财务评级。',
+          'Public posts are unverified opinions; reading a body does not prove misconduct, default or absence of risk. Distinguish media reports, company statements and official disclosures. Consider supporting and contrary clues together, and open key sources to check the actor, date and wording. News and discussion counts do not automatically change the financial grade.',
+        ],
+        [
+          '企业简报汇集主体资料，并尝试取得价格、涨跌、市值和来源报价时间。抓取时间与报价时间分别保留；休市时可能显示上一交易日，来源受限或字段缺失时显示不可用，不补零或伪称实时。行情不参与所选年度财务评分。',
+          'The company brief collects issuer details and attempts to retrieve price, change, market cap and the source quote time. Retrieval and quote times remain separate; a market holiday may leave a previous trading day’s quote. Blocked or missing fields remain unavailable, without invented zeros or real-time claims. Quotes do not enter the selected-year financial score.',
+        ],
         [
           '六个维度分别是盈利成长、经营现金质量、偿付杠杆、营运占用、同行位置、事件与治理。前四个核心财务维度各占综合分的 25%；同行与事件提供定性判断，不因一条新闻标题自动扣分。',
           'The six dimensions are profitability and growth, operating-cash quality, solvency and leverage, working-capital pressure, industry position, and events and governance. The first four each contribute 25% of the score. Peers and events add qualitative context; a news headline does not automatically deduct points.',
@@ -132,8 +144,8 @@ export const guideDocument: ProductDocument = {
           'For a focused follow-up, open Research further, enter a goal such as “compare cash quality with peers and review major events over the past year,” and select Start research. The goal is sent to the analysis model; include public-company questions only. Leaving it blank restores the standard scope. A goal is not required for the default analysis.',
         ],
         [
-          '研究过程区分执行中、完成与未完成。模型未配置或失败时保留规则评级与指标，缺失项保持未知；重试未完成时保留上一份分析，并注明对应的资料快照与生成时间。没有查到新闻或公告，不代表没有风险。',
-          'Research steps distinguish running, completed and failed states. An unconfigured or failed model retains rule-based grades and metrics, with missing fields left unknown. An incomplete retry retains the previous analysis and its data-snapshot and generation times. Finding no news or disclosure does not establish absence of risk.',
+          '研究过程区分执行中、完成与未完成。模型未配置或失败时保留规则评级与指标，缺失项保持未知；反向审视未完成时，已通过检查的初稿会保留并提示该阶段未完成。重试未完成时保留上一份分析，并注明对应的资料快照与生成时间。没有查到新闻或公告，不代表没有风险；已有结果也不代表刚刚重新检索过。',
+          'Research steps distinguish running, completed and failed states. An unconfigured or failed model retains rule-based grades and metrics with missing fields left unknown. If counterargument review fails, an already validated draft is retained with that limitation stated. An incomplete retry retains the prior analysis and its snapshot and generation times. No news or disclosure does not establish absence of risk; a saved result does not mean a fresh search occurred.',
         ],
       ],
       links: [{ label: ['开始公司研究', 'Start company research'], href: '/query' }],

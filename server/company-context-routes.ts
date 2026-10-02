@@ -131,7 +131,7 @@ export function installCompanyContextRoutes(
               const index = steps.findIndex((item) => item.id === step.id);
               if (index < 0) steps.push(step);
               else steps[index] = step;
-              run.assessmentTrace = steps.slice(-16);
+              run.assessmentTrace = steps.slice(-40);
               await store.persist();
             },
           }
@@ -147,10 +147,35 @@ export function installCompanyContextRoutes(
         };
         run.assessmentTrace = [...researched.steps, synthesis];
         await store.persist();
+        let reviewStartedAt: string | undefined;
         const result = await (service.assessment || analyzeCompanyWithModel)(
           researched.run,
           options.model,
-          controller.signal
+          controller.signal,
+          {
+            onReviewStart: async () => {
+              if (!stillCurrent()) throw new ApiFault(409, 'ASSESSMENT_STALE', '公开快照已变化');
+              reviewStartedAt = new Date().toISOString();
+              run.assessmentTrace = [
+                ...researched.steps,
+                {
+                  ...synthesis,
+                  status: 'completed',
+                  finishedAt: reviewStartedAt,
+                  summary: '已形成初稿，开始独立核查反向依据与来源。',
+                },
+                {
+                  id: `assessment-review-${revision}`,
+                  tool: 'review',
+                  label: '交叉核查与反向复核',
+                  status: 'running',
+                  startedAt: reviewStartedAt,
+                  summary: '检查支持与反向依据、报道冲突和仍缺失的材料。',
+                },
+              ];
+              await store.persist();
+            },
+          }
         );
         if (!stillCurrent()) return;
         if (
@@ -170,7 +195,23 @@ export function installCompanyContextRoutes(
                 ? 'AI 尚未配置，已生成公开数据的规则评级与判断。'
                 : 'AI 未返回有效分析，已保留规则评级与判断。',
         };
-        const completedSteps = [...researched.steps, completedSynthesis];
+        const completedSteps = [
+          ...researched.steps,
+          completedSynthesis,
+          ...(reviewStartedAt
+            ? [
+                {
+                  id: `assessment-review-${revision}`,
+                  tool: 'review',
+                  label: '交叉核查与反向复核',
+                  status: result.model.warning ? ('failed' as const) : ('completed' as const),
+                  startedAt: reviewStartedAt,
+                  finishedAt: new Date().toISOString(),
+                  summary: result.model.warning || '已完成独立反向复核，正文数字与引用通过检查。',
+                },
+              ]
+            : []),
+        ];
         result.research = {
           goal: run.assessmentFocus || '综合分析经营、现金、偿付与公开重大事项',
           steps: completedSteps,
@@ -183,17 +224,20 @@ export function installCompanyContextRoutes(
           assessment: run.assessment,
           inputHash: run.assessmentInputHash,
           industry: run.industry ? { ...run.industry } : undefined,
-          news: expected.news,
-          announcements: expected.announcements,
-          sources: expected.sources,
         };
         if (peer && peer.securityCode === run.input.securityCode && peer.period === period)
           (run.industry ||= {})[period] = peer;
         // Public research supplements never become adopted original evidence.
         if (researched.run.context) {
-          expected.news = researched.run.context.news;
-          expected.announcements = researched.run.context.announcements;
-          expected.sources = researched.run.context.sources;
+          run.context = {
+            ...expected,
+            news: researched.run.context.news,
+            discussions: researched.run.context.discussions,
+            publicSignals: researched.run.context.publicSignals,
+            market: researched.run.context.market,
+            announcements: researched.run.context.announcements,
+            sources: researched.run.context.sources,
+          };
         }
         run.assessment = result;
         run.assessmentTrace = completedSteps;
@@ -206,9 +250,7 @@ export function installCompanyContextRoutes(
           run.assessment = priorPublication.assessment;
           run.assessmentInputHash = priorPublication.inputHash;
           run.industry = priorPublication.industry;
-          expected.news = priorPublication.news;
-          expected.announcements = priorPublication.announcements;
-          expected.sources = priorPublication.sources;
+          run.context = expected;
           throw error;
         }
       } catch (error) {

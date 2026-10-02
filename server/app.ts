@@ -222,12 +222,24 @@ export async function createApp(options: AppOptions = {}) {
       modelName: model.model || DEFAULT_MODEL,
       tools: [
         'get_financial_history',
+        'collect_public_signals',
+        'get_market_quote',
+        'search_discussions',
+        'read_news',
+        'read_discussion',
         'fetch_industry',
         'search_disclosures',
         'search_news',
         'read_disclosure',
       ],
-      limits: { planningTurns: 3, toolCalls: 8, supplementaryRequests: 12, retainedNews: 48 },
+      limits: {
+        planningTurns: 6,
+        toolCalls: 24,
+        supplementaryRequests: 72,
+        retainedNews: 180,
+        retainedDiscussions: 240,
+        researchSeconds: 300,
+      },
     });
   });
   app.get('/api/cases', (_req, res) => {

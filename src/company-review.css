@@ -2,6 +2,48 @@
   max-width: 1280px;
   padding: 12px 0 48px;
 }
+
+.company-research-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  margin: -8px 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-subtle);
+  color: var(--muted);
+  font-size: 12px;
+}
+.company-research-status > div {
+  flex: 1;
+  min-width: 0;
+}
+.company-research-status strong,
+.company-research-status span {
+  display: block;
+  line-height: 1.7;
+}
+.company-research-status strong {
+  color: var(--ink);
+  font-weight: 500;
+}
+.company-research-status .text-link {
+  flex-shrink: 0;
+}
+@media (max-width: 480px) {
+  .company-research-status {
+    flex-wrap: wrap;
+  }
+  .company-research-status .text-link {
+    margin-left: 27px;
+  }
+}
+@media print {
+  .company-research-status {
+    display: none;
+  }
+}
 .company-workspace-report .context-page-heading {
   margin-bottom: 28px;
 }

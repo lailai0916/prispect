@@ -109,16 +109,76 @@ export interface CompanyContextSnapshot {
     url: string;
   }[];
   announcements: CompanyDisclosure[];
-  news: {
-    title: string;
-    date: string;
-    media: string;
-    url: string;
-    provider: string;
-    digest: string;
-  }[];
+  news: CompanyNews[];
+  discussions?: CompanyDiscussion[];
+  publicSignals?: CompanyPublicSignalsCoverage;
+  market?: CompanyMarketQuote;
   verificationLinks: { label: string; url: string; purpose: string; instruction: string }[];
   warnings: string[];
+}
+export interface CompanyPublicExcerpt {
+  text: string;
+  url: string;
+  sha256: string;
+  readAt: string;
+}
+export interface CompanyNews {
+  id?: string;
+  title: string;
+  date: string;
+  media: string;
+  url: string;
+  provider: string;
+  digest: string;
+  contentScope?: 'headline' | 'digest' | 'media-excerpt';
+  excerpt?: CompanyPublicExcerpt;
+  clusterId?: string;
+}
+export interface CompanyDiscussion {
+  id: string;
+  securityCode: string;
+  title: string;
+  date: string;
+  updatedAt?: string;
+  url: string;
+  provider: string;
+  textScope: 'title' | 'post-excerpt';
+  excerpt?: CompanyPublicExcerpt;
+}
+export type PublicSignalStopReason =
+  | 'complete'
+  | 'page-limit'
+  | 'request-budget'
+  | 'deadline'
+  | 'source-failure';
+export interface PublicSignalCoverage {
+  raw: number;
+  accepted: number;
+  unique: number;
+  pages: number;
+  hitsTotal: number | null;
+  bodyRead: number;
+  oldest: string | null;
+  latest: string | null;
+  stopReason: PublicSignalStopReason;
+}
+export interface CompanyPublicSignalsCoverage {
+  fetchedAt: string;
+  news: PublicSignalCoverage;
+  discussions: PublicSignalCoverage;
+}
+export interface CompanyMarketQuote {
+  securityCode: string;
+  status: 'available' | 'partial' | 'unavailable';
+  price: string | null;
+  change: string | null;
+  changePercent: number | null;
+  high: string | null;
+  low: string | null;
+  marketCap: string | null;
+  quotedAt: string | null;
+  fetchedAt: string;
+  sourceUrl: string;
 }
 export const industryMetricKeys = [
   'grossMargin',

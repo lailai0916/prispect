@@ -1951,53 +1951,55 @@ thead th {
 }
 
 /* ================= 易懂版 · 金融科技深色（FinTech） ================= */
-body.view-plain-shell {
-  color-scheme: dark;
-  background:
-    radial-gradient(1100px 520px at 12% -6%, rgba(56, 132, 255, 0.12), transparent 62%),
-    radial-gradient(900px 460px at 88% 6%, rgba(34, 211, 238, 0.08), transparent 60%), #0a0e16;
-  --paper: #0a0e16;
-  --sidebar-surface: #0d1220;
-  --ink: #eef2f9;
-  --muted: #9aa5b8;
-  --subtle: #8a95a9;
-  --line: rgba(148, 163, 184, 0.16);
-  --line-soft: rgba(148, 163, 184, 0.1);
-  --control-border: rgba(148, 163, 184, 0.3);
-  --control-hover: rgba(148, 163, 184, 0.5);
-  --surface: rgba(17, 24, 39, 0.66);
-  --surface-subtle: rgba(13, 18, 32, 0.82);
-  --hover: rgba(56, 132, 255, 0.09);
-  --pressed: rgba(56, 132, 255, 0.15);
-  --selected: rgba(56, 132, 255, 0.13);
-  --accent: #5aa7ff;
-  --accent-hover: #79b8ff;
-  --accent-soft: rgba(56, 132, 255, 0.13);
-  --accent-border: rgba(90, 167, 255, 0.36);
-  --accent-selected: rgba(56, 132, 255, 0.17);
-  --accent-pressed: rgba(56, 132, 255, 0.22);
-  --action: #e6e9f0;
-  --action-hover: #ffffff;
-  --action-pressed: #c6ccd8;
-  --on-action: #0b0f18;
-  --inverse-text: #0b0f18;
-  --focus-ring: rgba(90, 167, 255, 0.3);
-  --selection: rgba(90, 167, 255, 0.28);
-  --red: #ff8d9d;
-  --danger-action: #e5484d;
-  --danger-hover: #f2555a;
-  --danger-surface: rgba(229, 72, 77, 0.12);
-  --danger-border: rgba(229, 72, 77, 0.32);
-  --chart-total: #aab3c9;
-  --chart-negative: #6d7a92;
-  --chart-grid: rgba(148, 163, 184, 0.14);
-  --chart-zero: #5f6b80;
-  --chart-connector: #55617a;
-  --chart-value: #dbe0ed;
-  --progress: #7e8aa1;
-  --scrim: rgba(4, 8, 16, 0.72);
-  --shadow-toast: rgba(0, 0, 0, 0.55);
-  --shadow-dialog: rgba(0, 0, 0, 0.78);
-  --shadow-drawer: rgba(0, 0, 0, 0.5);
-  --shadow-menu: rgba(0, 0, 0, 0.42);
+@media screen {
+  :root[data-theme='dark'] body.view-plain-shell {
+    color-scheme: dark;
+    background:
+      radial-gradient(1100px 520px at 12% -6%, rgba(56, 132, 255, 0.12), transparent 62%),
+      radial-gradient(900px 460px at 88% 6%, rgba(34, 211, 238, 0.08), transparent 60%), #0a0e16;
+    --paper: #0a0e16;
+    --sidebar-surface: #0d1220;
+    --ink: #eef2f9;
+    --muted: #9aa5b8;
+    --subtle: #8a95a9;
+    --line: rgba(148, 163, 184, 0.16);
+    --line-soft: rgba(148, 163, 184, 0.1);
+    --control-border: rgba(148, 163, 184, 0.3);
+    --control-hover: rgba(148, 163, 184, 0.5);
+    --surface: rgba(17, 24, 39, 0.66);
+    --surface-subtle: rgba(13, 18, 32, 0.82);
+    --hover: rgba(56, 132, 255, 0.09);
+    --pressed: rgba(56, 132, 255, 0.15);
+    --selected: rgba(56, 132, 255, 0.13);
+    --accent: #5aa7ff;
+    --accent-hover: #79b8ff;
+    --accent-soft: rgba(56, 132, 255, 0.13);
+    --accent-border: rgba(90, 167, 255, 0.36);
+    --accent-selected: rgba(56, 132, 255, 0.17);
+    --accent-pressed: rgba(56, 132, 255, 0.22);
+    --action: #e6e9f0;
+    --action-hover: #ffffff;
+    --action-pressed: #c6ccd8;
+    --on-action: #0b0f18;
+    --inverse-text: #0b0f18;
+    --focus-ring: rgba(90, 167, 255, 0.3);
+    --selection: rgba(90, 167, 255, 0.28);
+    --red: #ff8d9d;
+    --danger-action: #e5484d;
+    --danger-hover: #f2555a;
+    --danger-surface: rgba(229, 72, 77, 0.12);
+    --danger-border: rgba(229, 72, 77, 0.32);
+    --chart-total: #aab3c9;
+    --chart-negative: #6d7a92;
+    --chart-grid: rgba(148, 163, 184, 0.14);
+    --chart-zero: #5f6b80;
+    --chart-connector: #55617a;
+    --chart-value: #dbe0ed;
+    --progress: #7e8aa1;
+    --scrim: rgba(4, 8, 16, 0.72);
+    --shadow-toast: rgba(0, 0, 0, 0.55);
+    --shadow-dialog: rgba(0, 0, 0, 0.78);
+    --shadow-drawer: rgba(0, 0, 0, 0.5);
+    --shadow-menu: rgba(0, 0, 0, 0.42);
+  }
 }

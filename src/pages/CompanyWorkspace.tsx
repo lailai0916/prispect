@@ -33,6 +33,8 @@ import { CompanyReview } from '../CompanyReview';
 import { resolveCompanySection } from '../routing';
 import { CompanyAssessment } from '../CompanyAssessment';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
+import { CompanyBrief } from '../CompanyBrief';
+import { CompanyPublicInformation } from '../CompanyPublicInformation';
 import { PageLoading } from '../Experience';
 const OriginalReview = lazy(() =>
   import('./CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
@@ -379,12 +381,77 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               </button>
             </p>
           )}
+          <CompanyBrief
+            run={run}
+            onOpenReport={() => {
+              const report = document.getElementById('company-full-report');
+              if (report instanceof HTMLDetailsElement) {
+                report.open = true;
+                report.scrollIntoView({
+                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                    ? 'instant'
+                    : 'smooth',
+                  block: 'start',
+                });
+              }
+            }}
+          />
+          {run.assessmentStatus === 'loading' && (
+            <div className="company-research-status" role="status">
+              <LoaderCircle size={15} className="spinner" />
+              <div>
+                <strong>{t('正在研究公司', 'Researching the company')}</strong>
+                <span>
+                  {locale === 'en'
+                    ? 'Collecting sources and checking competing explanations'
+                    : [...(run.assessmentTrace || [])]
+                        .reverse()
+                        .find((step) => step.status === 'running')?.label || '准备公开资料'}{' '}
+                  · {run.assessmentTrace?.filter((step) => step.status === 'completed').length || 0}{' '}
+                  {t('项已完成', 'steps completed')}
+                </span>
+              </div>
+              <button
+                className="text-link"
+                onClick={() => {
+                  const report = document.getElementById('company-full-report');
+                  if (report instanceof HTMLDetailsElement) report.open = true;
+                  requestAnimationFrame(() =>
+                    document
+                      .querySelector('.assessment-research-process')
+                      ?.scrollIntoView({ behavior: 'instant', block: 'center' })
+                  );
+                }}
+              >
+                {t('查看研究过程', 'View research process')}
+              </button>
+            </div>
+          )}
+          {!snapshot?.publicSignals && (
+            <p className="context-data-note">
+              {t(
+                '这份记录尚未补查公开讨论。',
+                'Public discussions have not been collected for this record.'
+              )}
+              <button
+                className="text-link"
+                disabled={assessmentUpdating || run.assessmentStatus === 'loading'}
+                onClick={() =>
+                  void refreshAssessment(
+                    '补查公司新闻与公开讨论，比较支持和反向线索；公众帖子保留未核实观点标记。'
+                  )
+                }
+              >
+                {t('补查新闻与讨论', 'Research news and discussions')}
+              </button>
+            </p>
+          )}
           <CompanyEvidenceLab
             key={'lab-' + run.id}
             run={run}
             updating={updating || assessmentUpdating}
           />
-          <details className="company-review-details company-lab-report">
+          <details id="company-full-report" className="company-review-details company-lab-report">
             <summary>
               <ChevronDown size={14} />
               {t('核查报告与综合评级', 'Review report and financial grade')}
@@ -396,6 +463,16 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               refreshing={assessmentUpdating}
             />
             <CompanyReview key={run.id} run={run} />
+          </details>
+          <details className="company-review-details">
+            <summary>
+              <ChevronDown size={14} />
+              {t('新闻与公开讨论', 'News and public discussions')}
+              {snapshot && (
+                <span> · {snapshot.news.length + (snapshot.discussions?.length || 0)}</span>
+              )}
+            </summary>
+            <CompanyPublicInformation run={run} />
           </details>
           <details className="company-review-details">
             <summary>
@@ -512,7 +589,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                 </>
               )}
               {section === 'industry' && <CompanyIndustryView run={run} />}
-              {section === 'disclosures' && <CompanyDisclosuresView snapshot={snapshot} />}
+              {section === 'disclosures' && (
+                <>
+                  <CompanyPublicInformation run={run} />
+                  <CompanyDisclosuresView snapshot={snapshot} />
+                </>
+              )}
               {section === 'profile' && <CompanyProfileView snapshot={snapshot} />}
               {section === 'coverage' && <CompanyCoverageView snapshot={snapshot} run={run} />}
               {section === 'sources' && <CompanySourcesView snapshot={snapshot} />}

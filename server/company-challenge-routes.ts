@@ -120,7 +120,7 @@ export function installCompanyChallengeRoutes(
               const index = state.trace.findIndex((item) => item.id === step.id);
               if (index < 0) state.trace.push(step);
               else state.trace[index] = step;
-              state.trace = state.trace.slice(-20);
+              state.trace = state.trace.slice(-40);
               await store.persist();
             },
           }

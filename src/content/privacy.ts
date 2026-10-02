@@ -112,8 +112,8 @@ export const privacyDocument: ProductDocument = {
           [
             ['公开公司研究', 'Public-company research'],
             [
-              '所选公司与年度、你填写的研究目标、公开财务与同行资料、公告和新闻及来源、实际研究步骤、规则分数与分析评级、模型判断、缺口及生成时间。',
-              'Selected company and year, your research goal, public financial and peer data, disclosures and news with sources, actual research steps, rule scores and analysis grades, model judgments, gaps and generation times.',
+              '所选公司与年度、你填写的研究目标、公开财务与同行资料、公告、新闻和公开讨论的标题、日期、来源及已取得的节选，行情与报价时间、实际研究步骤和读取范围、规则分数与分析评级、模型判断、缺口及生成时间。',
+              'Selected company and year, your research goal, public financial and peer data, disclosure/news/public-discussion titles, dates, sources and retrieved excerpts, quotes and quote times, actual research steps and reading scope, rule scores and analysis grades, model judgments, gaps and generation times.',
             ],
             [
               '自动分析公开资料，按研究目标补查，并保存有来源的判断、风险、后续核查与实际处理状态。',
@@ -209,8 +209,8 @@ export const privacyDocument: ProductDocument = {
           [
             ['自动公司研究与进一步研究', 'Automatic company research and follow-up research'],
             [
-              '你填写的研究目标、确定主体与年度、公开财务历史及计算指标、同行统计、公告与新闻的来源和已取得的短摘录、研究过程中的公开检索结果。目标按你填写的内容发送，请勿包含私人信息。',
-              'Your research goal, confirmed company and year, public financial history and calculated metrics, peer statistics, disclosure and news sources with retrieved short excerpts, and public retrieval results from the research. Goals are sent as entered; do not include private information.',
+              '你填写的研究目标、确定主体与年度、公开财务历史及计算指标、同行统计、公告、新闻和公开讨论的标题、日期、来源、摘要及已取得的正文节选，以及研究过程中的公开检索结果和读取范围。节选可能因文本上限而缩短；公开帖子按未核实观点处理。目标按你填写的内容发送，请勿包含私人信息。',
+              'Your research goal, confirmed company and year, public financial history and calculated metrics, peer statistics, disclosure/news/public-discussion titles, dates, sources, digests and retrieved body excerpts, plus public retrieval results and reading scope. Text limits may shorten excerpts; public posts are treated as unverified opinions. Goals are sent as entered; do not include private information.',
             ],
             [
               '账号标识与资料、安全凭据、私人核查事项和计划、付款安排、交易原话、原始上传文件及未确认预览、私人材料与备注，以及其他账号的数据。',
@@ -243,8 +243,8 @@ export const privacyDocument: ProductDocument = {
       },
       bullets: [
         [
-          '公司研究中，模型可根据公开资料选择财务阅读、同行比较、新闻检索和公告阅读。相应来源网站接收确定的公司名称、证券代码、年度或公开检索主题；取得的公开结果再提供给模型形成判断。公开研究不读取私人工作区来补齐这些资料，也不会自动采用原件候选。',
-          'During company research, the model can select financial review, peer comparison, news searches and disclosure reading. Source websites receive the confirmed company name, security code, year or public search topic; retrieved public results are then provided to the model for analysis. Public research does not read private workspace data to fill these gaps or automatically adopt original-report candidates.',
+          '公司研究先分页读取新闻和对应公司的公开讨论目录，并尝试获取行情；模型可继续选择财务阅读、同行比较、主题新闻检索，以及已取得 ID 对应的新闻、帖子和公告节选。相应来源网站接收确定的公司名称、证券代码、年度、公开主题或已知文章／帖子 ID；取得的公开结果再提供给模型作分析与反向审视。此流程不登录股吧账号、不读取私人帖子或评论，不用私人工作区补齐资料，也不会自动采用原件候选。',
+          'Company research first reads paginated news and the issuer’s public-discussion catalog and attempts a quote. The model may select financial review, peer comparisons, focused news searches and news/post/disclosure excerpts for acquired IDs. Source websites receive the confirmed company name, security code, year, public topic or known article/post ID. Retrieved public results then go to the model for analysis and counterargument review. This does not sign into a Guba account, read private posts or comments, fill gaps from private workspace data, or automatically adopt original-report candidates.',
         ],
         [
           'AI 请求当前由 TokenFlux.dev 外部接口处理。经该接口处理不代表已确定由某一模型厂商直接接收数据。',
@@ -255,8 +255,8 @@ export const privacyDocument: ProductDocument = {
           'We have not completed verification of this service’s operating entity, downstream recipients, storage regions, retention, training use or contractual safeguards. We do not promise zero retention, no training or processing only within mainland China. Keep sensitive personal information, trade secrets and unauthorized material out of research goals, externally sent excerpts and company questions. AI processing is part of these features. Do not submit the relevant lookup, research, review or question if you cannot accept this processing scope.',
         ],
         [
-          '外发摘录没有自动脱敏功能。公开披露资料也可能含有人员姓名等个人信息；公开可访问不等于可以任意使用。我们不以私人核查事项或现金计划训练自有模型，也没有把这些私人输入接入公开查询模型。',
-          'Externally sent excerpts are not automatically redacted. Public disclosures may contain names or other personal information; public availability does not permit unrestricted use. We do not train our own models on private reviews or cash plans, and these private inputs are not connected to the public lookup model.',
+          '外发摘录没有自动脱敏功能。公开披露、媒体文章和帖子正文也可能含有人员姓名等个人信息；公开可访问不等于可以任意使用。公开讨论不采集发帖者的账号资料、头像或身份属性，但正文中自行写出的信息仍可能出现在节选中。我们不以私人核查事项或现金计划训练自有模型，也没有把这些私人输入接入公开查询模型。',
+          'Externally sent excerpts are not automatically redacted. Public disclosures, media articles and post text may contain names or other personal information; public availability does not permit unrestricted use. Public-discussion collection excludes poster account profiles, avatars and identity attributes, but information written in post text may still appear in excerpts. We do not train our own models on private reviews or cash plans, and those private inputs are not connected to the public lookup model.',
         ],
         [
           'AI 不提供单独关闭选项。查询运行中取消，可停止后续步骤，但不能追回已经发送的数据。规则报告与返回的解释分别保存；核查来源标识、格式或数值不代表已认证解释的含义，也不会自动决定是否付款。',
@@ -275,8 +275,8 @@ export const privacyDocument: ProductDocument = {
       title: ['外部服务与访问', 'External services and access'],
       paragraphs: [
         [
-          '公司分析通过东方财富、新浪与巨潮公开来源读取财务、同行、资料、新闻和公告。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按账号保存，删除查询时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
-          'Company analysis retrieves financials, peers, profiles, news and disclosures from Eastmoney, Sina and CNINFO public sources. Company records, public snapshots, research goals and steps, analyses, source comparisons and up to fifty answers are stored per account and removed with the query. Public research and company questions exclude account identifiers, private materials, payment plans and security credentials from model requests.',
+          '公司分析通过东方财富、新浪与巨潮公开来源读取财务、同行、企业资料、新闻、公告、公开股吧帖子及行情。目录与正文节选的读取范围分别保存，来源失败时保留未取得状态。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按账号保存，删除查询时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
+          'Company analysis retrieves financials, peers, issuer profiles, news, disclosures, public Guba posts and quotes from Eastmoney, Sina and CNINFO public sources. Catalog and body-excerpt scope are retained separately; source failures remain unavailable. Company records, public snapshots, research goals and steps, analyses, source comparisons and up to fifty answers are stored per account and removed with the query. Public research and company questions exclude account identifiers, private materials, payment plans and security credentials from model requests.',
         ],
         [
           '公司查询把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',

@@ -7,6 +7,7 @@ import type { AddressInfo } from 'node:net';
 import type { AuthSession, CompanyResearchRun } from '../shared/contracts.js';
 import { createApp } from '../server/app.js';
 import { answerCompanyQuestion } from '../server/company-questions.js';
+import { runCompanyResearchAgent } from '../server/company-research-agent.js';
 import { contextAmountFields, type CompanyContextSnapshot } from '../shared/company-workspace.js';
 
 const identity = {
@@ -95,6 +96,9 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
       industry: async () => {
         throw Error('not available');
       },
+      // Account/context behavior is isolated from the separately tested full public collector.
+      research: (run, model, options) =>
+        runCompanyResearchAgent(run, model, { ...options, collectPublicSignals: false }),
       question: async (run, q, basis, useModel, model) => {
         questionChoices.push(useModel);
         return answerCompanyQuestion(run, q, basis, useModel, model);

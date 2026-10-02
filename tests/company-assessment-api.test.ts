@@ -15,6 +15,7 @@ import {
 import { createApp } from '../server/app.js';
 import type { CompanyContextService } from '../server/company-context-routes.js';
 import { answerCompanyQuestion } from '../server/company-questions.js';
+import { runCompanyResearchAgent } from '../server/company-research-agent.js';
 
 const identity = {
   securityCode: '600519',
@@ -83,6 +84,58 @@ const industry = (): CompanyIndustrySnapshot => ({
   sources: [],
   warnings: ['Fixture industry metrics are incomplete.'],
 });
+const supplements = (version: number, newsCount = 1) =>
+  ({
+    discussions: [
+      {
+        id: `guba-${1000 + version}`,
+        securityCode: identity.securityCode,
+        title: `Public opinion fixture ${version}`,
+        date: '2026-01-02',
+        url: `https://guba.eastmoney.com/news,${identity.securityCode},${1000 + version}.html`,
+        provider: '东方财富股吧',
+        textScope: 'title' as const,
+      },
+    ],
+    publicSignals: {
+      fetchedAt: `2026-01-0${version + 2}T12:00:00.000Z`,
+      news: {
+        raw: newsCount,
+        accepted: newsCount,
+        unique: newsCount,
+        pages: newsCount,
+        hitsTotal: newsCount,
+        bodyRead: 0,
+        oldest: newsCount ? '2026-01-02' : null,
+        latest: newsCount ? '2026-01-02' : null,
+        stopReason: 'complete' as const,
+      },
+      discussions: {
+        raw: 1,
+        accepted: 1,
+        unique: 1,
+        pages: 1,
+        hitsTotal: 1,
+        bodyRead: 0,
+        oldest: '2026-01-02',
+        latest: '2026-01-02',
+        stopReason: 'complete' as const,
+      },
+    },
+    market: {
+      securityCode: identity.securityCode,
+      status: 'available' as const,
+      price: `${version * 100}.00`,
+      change: '1.00',
+      changePercent: 1,
+      high: `${version * 100 + 2}.00`,
+      low: `${version * 100 - 2}.00`,
+      marketCap: '1000000.00',
+      quotedAt: '2026-01-02T07:00:00.000Z',
+      fetchedAt: `2026-01-0${version + 2}T12:00:00.000Z`,
+      sourceUrl: 'https://push2.eastmoney.com/api/qt/stock/get?secid=1.600519',
+    },
+  }) satisfies Pick<CompanyContextSnapshot, 'discussions' | 'publicSignals' | 'market'>;
 const assessment = (run: CompanyResearchRun): CompanyAssessment => ({
   version: 1,
   year: run.input.year,
@@ -141,6 +194,10 @@ async function harness(overrides: Partial<CompanyContextService> = {}) {
     industry: async () => industry(),
     question: answerCompanyQuestion,
     assessment: async (run) => assessment(run),
+    // This suite isolates the account/publishing flow. Full automatic public collection
+    // has its own integration coverage and must not make external requests here.
+    research: (run, model, options) =>
+      runCompanyResearchAgent(run, model, { ...options, collectPublicSignals: false }),
     ...overrides,
   };
   const app = await createApp({
@@ -639,6 +696,7 @@ test('research streams its actual steps, feeds sourced additions into analysis a
           digest: 'Headline only; not an established adverse event.',
         },
       ];
+      Object.assign(enriched.context!, supplements(researchCalls));
       await options?.onStep?.(completed);
       return { run: enriched, steps: [completed], modelCalls: 1, toolCalls: 1 };
     },
@@ -653,12 +711,18 @@ test('research streams its actual steps, feeds sourced additions into analysis a
     await h.app.waitForIdle();
     assert.equal(researchCalls, 1);
     assert.equal(inputs[0]?.context?.news[0]?.title, 'Fixture public headline');
+    assert.deepEqual(inputs[0]?.context?.discussions, supplements(1).discussions);
+    assert.deepEqual(inputs[0]?.context?.publicSignals, supplements(1).publicSignals);
+    assert.deepEqual(inputs[0]?.context?.market, supplements(1).market);
     const focus = '优先分析经营现金与利润差异';
     assert.equal((await h.call(`/company-runs/${run.id}/assessment`, { focus })).status, 202);
     await waitUntil(() => researchCalls === 2);
     const loading = await h.getRun(run.id);
     assert.equal(loading.assessmentFocus, focus);
     assert.equal(loading.assessmentTrace?.[0]?.status, 'running');
+    assert.deepEqual(loading.context?.discussions, supplements(1).discussions);
+    assert.deepEqual(loading.context?.publicSignals, supplements(1).publicSignals);
+    assert.deepEqual(loading.context?.market, supplements(1).market);
     assert.equal(
       (await h.call(`/company-runs/${run.id}/assessment`, { focus: 'replace the active goal' }))
         .status,
@@ -684,6 +748,14 @@ test('research streams its actual steps, feeds sourced additions into analysis a
     );
     assert.equal(finished.assessment?.research?.modelCalls, 2);
     assert.equal(finished.assessment?.research?.toolCalls, 1);
+    assert.deepEqual(finished.context?.discussions, supplements(2).discussions);
+    assert.deepEqual(finished.context?.publicSignals, supplements(2).publicSignals);
+    assert.deepEqual(finished.context?.market, supplements(2).market);
+    assert.deepEqual(inputs[1]?.context?.discussions, supplements(2).discussions);
+    const durable = JSON.parse(await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8'));
+    assert.deepEqual(durable.companyRuns[0].context.discussions, finished.context?.discussions);
+    assert.deepEqual(durable.companyRuns[0].context.publicSignals, finished.context?.publicSignals);
+    assert.deepEqual(durable.companyRuns[0].context.market, finished.context?.market);
     assert.equal(inputs[1]?.assessmentFocus, focus);
     assert.equal((await h.call(`/company-runs/${run.id}/assessment`, { focus })).status, 200);
     assert.equal((await h.call(`/company-runs/${run.id}/assessment`, {})).status, 200);
@@ -732,6 +804,118 @@ test('fresh cached reads avoid model work while manual analysis obeys its separa
     assert.equal((await h.getRun(run.id)).assessmentStatus, 'ready');
     assert.equal((await h.call(`/company-runs/${run.id}/assessment`, {})).status, 200);
   } finally {
+    await h.dispose();
+  }
+});
+
+test('an answer from the prior public context cannot publish after research adds sources with the same financial timestamp', async () => {
+  const releaseQuestion = deferred();
+  let researchCalls = 0;
+  let questionInput: CompanyResearchRun | undefined;
+  const h = await harness({
+    research: async (run) => {
+      const working = structuredClone(run);
+      if (++researchCalls > 1) {
+        working.context!.news = [
+          {
+            title: 'New public source after the old question began',
+            date: '2026-01-02',
+            media: 'Fixture media',
+            url: 'https://finance.eastmoney.com/a/202601020000000001.html',
+            provider: 'fixture',
+            digest: 'A public lead, not an established event.',
+          },
+        ];
+        Object.assign(working.context!, supplements(2));
+        working.context!.sources.push({
+          id: 'question-race-new-source',
+          provider: 'fixture',
+          dimension: '公开新闻',
+          url: working.context!.news[0]!.url,
+          status: 'available',
+          fetchedAt: new Date().toISOString(),
+          latestDate: '2026-01-02',
+          count: 1,
+          note: 'An actual source result in this isolated API fixture.',
+          responseHashes: ['c'.repeat(64)],
+        });
+      }
+      return { run: working, steps: [], modelCalls: 0, toolCalls: 1 };
+    },
+    question: async (run, question) => {
+      questionInput = structuredClone(run);
+      const before = structuredClone(run.context);
+      await releaseQuestion.promise;
+      assert.deepEqual(
+        run.context,
+        before,
+        'the answer input stays isolated from newly published public sources'
+      );
+      return {
+        question,
+        text: 'Answer generated from the earlier public context.',
+        citations: [],
+        mode: 'rules' as const,
+        createdAt: new Date().toISOString(),
+        snapshotFetchedAt: run.context!.fetchedAt,
+      };
+    },
+  });
+  let pendingQuestion: Promise<Response> | undefined;
+  try {
+    const run = await h.createRun();
+    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.app.waitForIdle();
+    const first = await h.getRun(run.id);
+    const store = await h.app.workspaceForUser(h.owner.userId);
+    const stored = store.state.companyRuns!.find((item) => item.id === run.id)!;
+    const originalContext = stored.context!;
+    const originalPublicSnapshot = structuredClone(originalContext);
+    pendingQuestion = h.call(`/company-runs/${run.id}/questions`, {
+      question: '哪些公开线索支持现金判断？',
+      basis: 'consolidated',
+    });
+    await waitUntil(() => !!questionInput);
+    assert.deepEqual(questionInput?.context, originalPublicSnapshot);
+    assert.equal(
+      (await h.call(`/company-runs/${run.id}/assessment`, { refresh: true })).status,
+      202
+    );
+    await h.app.waitForIdle();
+    const refreshed = await h.getRun(run.id);
+    assert.equal(refreshed.assessmentStatus, 'ready');
+    assert.notEqual(
+      stored.context,
+      originalContext,
+      'publication replaces the public snapshot boundary'
+    );
+    assert.equal(refreshed.context?.fetchedAt, first.context?.fetchedAt);
+    assert.equal(originalContext.news.length, 0);
+    assert.equal(originalContext.discussions, undefined);
+    assert.equal(originalContext.sources.length, 0);
+    assert.deepEqual(originalContext, originalPublicSnapshot);
+    assert.equal(refreshed.context?.news.length, 1);
+    assert.equal(refreshed.context?.sources[0]?.id, 'question-race-new-source');
+    assert.deepEqual(refreshed.context?.discussions, supplements(2).discussions);
+    assert.deepEqual(refreshed.context?.financials, first.context?.financials);
+    assert.equal(refreshed.assessment?.year, first.assessment?.year);
+    assert.equal(refreshed.assessment?.grade, first.assessment?.grade);
+    assert.equal(refreshed.assessment?.score, first.assessment?.score);
+    releaseQuestion.resolve();
+    const rejected = await pendingQuestion;
+    assert.equal(rejected.status, 409);
+    assert.equal((await rejected.json()).code, 'CONTEXT_STALE');
+    const completed = await h.getRun(run.id);
+    assert.deepEqual(completed.questions || [], []);
+    const durable = JSON.parse(await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8'));
+    assert.deepEqual(durable.companyRuns[0].questions || [], []);
+    assert.deepEqual(durable.companyRuns[0].context.discussions, refreshed.context?.discussions);
+    assert.deepEqual(durable.companyRuns[0].context.news, refreshed.context?.news);
+    assert.deepEqual(durable.companyRuns[0].context.financials, first.context?.financials);
+    assert.equal(durable.companyRuns[0].assessment.grade, first.assessment?.grade);
+  } finally {
+    releaseQuestion.resolve();
+    await pendingQuestion?.catch(() => undefined);
     await h.dispose();
   }
 });
@@ -795,6 +979,11 @@ test('a failed final save rolls back the new analysis, public supplements, peers
   let researchCalls = 0;
   let modelCalls = 0;
   const h = await harness({
+    context: async (_identity, options) => {
+      const value = { ...snapshot(), ...supplements(1, 0) };
+      await options?.onSnapshot?.(structuredClone(value));
+      return value;
+    },
     research: async (run) => {
       researchCalls++;
       const working = structuredClone(run);
@@ -832,6 +1021,7 @@ test('a failed final save rolls back the new analysis, public supplements, peers
           note: 'Source-backed fixture receipt.',
           responseHashes: ['a'.repeat(64)],
         });
+        Object.assign(working.context!, supplements(researchCalls));
       }
       return { run: working, steps: [], modelCalls: 0, toolCalls: 1 };
     },
@@ -876,6 +1066,12 @@ test('a failed final save rolls back the new analysis, public supplements, peers
       await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8')
     );
     assert.deepEqual(beforeFailure.companyRuns[0].assessment, first.assessment);
+    assert.deepEqual(beforeFailure.companyRuns[0].context.discussions, first.context?.discussions);
+    assert.deepEqual(
+      beforeFailure.companyRuns[0].context.publicSignals,
+      first.context?.publicSignals
+    );
+    assert.deepEqual(beforeFailure.companyRuns[0].context.market, first.context?.market);
     releaseSave.resolve();
     await h.app.waitForIdle();
     const failed = await h.getRun(run.id);
@@ -884,11 +1080,17 @@ test('a failed final save rolls back the new analysis, public supplements, peers
     assert.deepEqual(failed.assessment, first.assessment);
     assert.equal(failed.assessmentInputHash, first.assessmentInputHash);
     assert.deepEqual(failed.context, first.context);
+    assert.deepEqual(failed.context?.discussions, supplements(1, 0).discussions);
+    assert.deepEqual(failed.context?.publicSignals, supplements(1, 0).publicSignals);
+    assert.deepEqual(failed.context?.market, supplements(1, 0).market);
     assert.deepEqual(failed.industry, first.industry);
     const saved = JSON.parse(await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8'));
     assert.equal(saved.companyRuns[0].assessmentStatus, 'failed');
     assert.deepEqual(saved.companyRuns[0].assessment, first.assessment);
     assert.deepEqual(saved.companyRuns[0].context, first.context);
+    assert.deepEqual(saved.companyRuns[0].context.discussions, first.context?.discussions);
+    assert.deepEqual(saved.companyRuns[0].context.publicSignals, first.context?.publicSignals);
+    assert.deepEqual(saved.companyRuns[0].context.market, first.context?.market);
     assert.deepEqual(saved.companyRuns[0].industry, first.industry);
     restorePersist();
     assert.equal((await h.call(`/company-runs/${run.id}/assessment`, {})).status, 202);
@@ -898,6 +1100,21 @@ test('a failed final save rolls back the new analysis, public supplements, peers
     assert.equal(recovered.context?.news.length, 1);
     assert.equal(recovered.context?.sources.length, 1);
     assert.equal(recovered.context?.announcements.length, 1);
+    assert.deepEqual(recovered.context?.discussions, supplements(3).discussions);
+    assert.deepEqual(recovered.context?.publicSignals, supplements(3).publicSignals);
+    assert.deepEqual(recovered.context?.market, supplements(3).market);
+    const durableRecovery = JSON.parse(
+      await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8')
+    );
+    assert.deepEqual(
+      durableRecovery.companyRuns[0].context.discussions,
+      recovered.context?.discussions
+    );
+    assert.deepEqual(
+      durableRecovery.companyRuns[0].context.publicSignals,
+      recovered.context?.publicSignals
+    );
+    assert.deepEqual(durableRecovery.companyRuns[0].context.market, recovered.context?.market);
     assert.equal(recovered.industry?.['2025-12-31']?.peerCount, 5);
     assert.equal(recovered.assessment?.model.provider, 'fixture-result-3');
     assert.equal(recovered.assessment?.research?.modelCalls, 2);

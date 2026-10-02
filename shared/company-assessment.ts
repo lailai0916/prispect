@@ -1,6 +1,11 @@
 /** Public-data analysis. This never adopts report candidates or sends private working papers. */
 import type { CompanyResearchRun } from './contracts.js';
-import type { ContextAmountField } from './company-workspace.js';
+import type {
+  CompanyDiscussion,
+  CompanyNews,
+  CompanyPublicExcerpt,
+  ContextAmountField,
+} from './company-workspace.js';
 import { contextAmountFields } from './company-workspace.js';
 import { contextFen, contextYuan, contextFieldLabels } from './company-analysis.js';
 
@@ -31,13 +36,13 @@ export interface AssessmentMetric {
 }
 export interface AssessmentEvidence {
   id: string;
-  kind: 'financial' | 'industry' | 'disclosure' | 'news' | 'profile';
+  kind: 'financial' | 'industry' | 'disclosure' | 'news' | 'discussion' | 'profile';
   label: string;
   url: string;
   period?: string;
   quote?: string;
   page?: number;
-  sourceQuality: 'web' | 'excerpt' | 'headline';
+  sourceQuality: 'web' | 'excerpt' | 'headline' | 'opinion';
 }
 export interface AssessmentDimension {
   id: AssessmentDimensionId;
@@ -88,6 +93,9 @@ export interface CompanyAssessment {
     years: number;
     sources: number;
     news: number;
+    discussions?: number;
+    mediaBodies?: number;
+    discussionBodies?: number;
     disclosures: number;
     excerpts: number;
     peers: number;
@@ -216,6 +224,143 @@ const safeUrl = (value: unknown): string | null => {
     return null;
   }
 };
+
+/** These Chinese public providers publish zone-less dates in Asia/Shanghai. */
+const publicDateInstant = (value: string): number => {
+  const normalized = value.replace(' ', 'T');
+  return Date.parse(
+    normalized.length === 10
+      ? `${normalized}T00:00:00+08:00`
+      : /(?:Z|[+-]\d{2}:?\d{2})$/.test(normalized)
+        ? normalized
+        : `${normalized}+08:00`
+  );
+};
+const validPublicDate = (value: unknown): value is string => {
+  if (typeof value !== 'string' || value.length > 40) return false;
+  const match =
+    /^(20\d{2})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:?\d{2})?)?$/.exec(
+      value
+    );
+  if (!match) return false;
+  const year = Number(match[1]),
+    month = Number(match[2]),
+    day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day &&
+    (!match[4] || Number(match[4]) < 24) &&
+    (!match[5] || Number(match[5]) < 60) &&
+    (!match[6] || Number(match[6]) < 60) &&
+    Number.isFinite(publicDateInstant(value)) &&
+    date.getTime() <= Date.now() + 24 * 60 * 60 * 1000
+  );
+};
+const articleUrl = (value: unknown): URL | null => {
+  const safe = safeUrl(value);
+  if (!safe) return null;
+  const url = new URL(safe);
+  if (url.port || url.search || url.hash) return null;
+  url.protocol = 'https:';
+  return url;
+};
+function validExcerpt(
+  row: { date: string; url: string; excerpt?: CompanyPublicExcerpt },
+  expectedUrl: URL
+): CompanyPublicExcerpt | null {
+  const excerpt = row.excerpt;
+  if (
+    !excerpt ||
+    typeof excerpt.text !== 'string' ||
+    !excerpt.text.trim() ||
+    !/^[a-f\d]{64}$/i.test(excerpt.sha256) ||
+    typeof excerpt.readAt !== 'string' ||
+    !/^20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(
+      excerpt.readAt
+    ) ||
+    !validPublicDate(excerpt.readAt) ||
+    !validPublicDate(row.date) ||
+    !Number.isFinite(Date.parse(excerpt.readAt)) ||
+    Date.parse(excerpt.readAt) > Date.now() + 5 * 60 * 1000 ||
+    Date.parse(excerpt.readAt) < publicDateInstant(row.date) - 5 * 60 * 1000
+  )
+    return null;
+  const actual = safeUrl(excerpt.url);
+  if (!actual || new URL(actual).protocol !== 'https:' || actual !== expectedUrl.href) return null;
+  return {
+    text: excerpt.text.trim().slice(0, 12_000),
+    url: actual,
+    sha256: excerpt.sha256,
+    readAt: excerpt.readAt,
+  };
+}
+
+/** Only the two media sources whose article readers are implemented count as read bodies. */
+export function readNewsMediaExcerpt(row: CompanyNews): CompanyPublicExcerpt | null {
+  if (row.contentScope !== 'media-excerpt') return null;
+  const url = articleUrl(row.url);
+  if (
+    !url ||
+    (!(url.hostname === 'finance.eastmoney.com' && /^\/a\/\d{14,24}\.html$/.test(url.pathname)) &&
+      !(
+        url.hostname === 'finance.sina.com.cn' &&
+        /^\/(?:stock|roll)\/(?:[a-zA-Z0-9_-]+\/)*doc-[a-zA-Z0-9]+\.shtml$/.test(url.pathname)
+      ))
+  )
+    return null;
+  return validExcerpt(row, url);
+}
+
+/** Stable source IDs reuse collector URL hashes; legacy snapshots keep their numeric news IDs. */
+export function assessmentNewsEvidenceId(row: CompanyNews, index: number): string {
+  const id = row.id;
+  if (!id || !/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,95}$/.test(id)) return `news-${index + 1}`;
+  const hash = /^public-news-([a-f\d]{24})$/i.exec(id)?.[1];
+  if (hash) return `news-${hash}`;
+  return id.startsWith('news-') ? id : `news-${/^\d+$/.test(id) ? 'id-' : ''}${id}`;
+}
+
+/** A forum source must belong to this exact board and its URL-bound public post ID. */
+export function assessmentDiscussionEvidenceId(
+  row: CompanyDiscussion,
+  securityCode: string
+): string | null {
+  if (
+    !/^\d{6}$/.test(securityCode) ||
+    row.securityCode !== securityCode ||
+    !validPublicDate(row.date) ||
+    typeof row.title !== 'string' ||
+    !row.title.trim()
+  )
+    return null;
+  const safe = safeUrl(row.url);
+  if (!safe) return null;
+  const url = new URL(safe);
+  const path = /^\/news,(\d{6}),(\d{1,20})\.html$/.exec(url.pathname);
+  if (
+    url.protocol !== 'https:' ||
+    url.hostname !== 'guba.eastmoney.com' ||
+    url.port ||
+    url.search ||
+    url.hash ||
+    !path ||
+    path[1] !== securityCode ||
+    (row.id !== path[2] && row.id !== `guba-${path[2]}`)
+  )
+    return null;
+  return `guba-${path[2]}`;
+}
+
+export function readDiscussionPostExcerpt(
+  row: CompanyDiscussion,
+  securityCode: string
+): CompanyPublicExcerpt | null {
+  if (row.textScope !== 'post-excerpt' || !assessmentDiscussionEvidenceId(row, securityCode))
+    return null;
+  return validExcerpt(row, new URL(row.url));
+}
 interface Fraction {
   numerator: bigint;
   denominator: bigint;
@@ -280,6 +425,8 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
   if (sameEntity) {
     for (const source of snapshot!.sources.slice(0, 40)) {
       if (source.status === 'manual') continue;
+      // Forum listing receipts are coverage metadata, not individually validated public posts.
+      if (/股吧|公开讨论|帖子/.test(source.dimension)) continue;
       const kind = /财务/.test(source.dimension)
         ? 'financial'
         : /公告/.test(source.dimension)
@@ -973,18 +1120,69 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
         : { quote: `${row.meaning.slice(0, 500)}；仅标题线索，未据此认定事实。` }),
       sourceQuality: row.excerpt ? 'excerpt' : 'headline',
     });
-  const news = sameEntity ? snapshot!.news.filter((row) => safeUrl(row.url)).slice(0, 48) : [];
-  news.forEach((row, index) =>
+  const news: { row: CompanyNews; sourceId: string; body: CompanyPublicExcerpt | null }[] = [];
+  const signalIds = new Set<string>(),
+    signalUrls = new Set<string>();
+  if (sameEntity) {
+    const candidates = snapshot!.news.filter((row) => safeUrl(row.url));
+    for (const [index, row] of candidates.entries()) {
+      if (news.length >= 180) break;
+      if (!validPublicDate(row.date) || typeof row.title !== 'string' || !row.title.trim())
+        continue;
+      const url = new URL(row.url);
+      url.protocol = 'https:';
+      url.hash = '';
+      const sourceId = assessmentNewsEvidenceId(row, index);
+      if (signalIds.has(sourceId) || signalUrls.has(url.href)) continue;
+      signalIds.add(sourceId);
+      signalUrls.add(url.href);
+      news.push({ row, sourceId, body: readNewsMediaExcerpt(row) });
+    }
+  }
+  for (const { row, sourceId, body } of news) {
     addEvidence({
-      id: `news-${index + 1}`,
+      id: sourceId,
       kind: 'news',
       label: `${row.date} · ${row.title.slice(0, 300)} · ${row.media.slice(0, 100)}`,
       url: row.url,
       period: row.date,
-      ...(row.digest ? { quote: row.digest.slice(0, 1600) } : {}),
+      ...(body ? { quote: body.text } : row.digest ? { quote: row.digest.slice(0, 1600) } : {}),
+      // A read media body remains a research lead, never an official-disclosure excerpt.
       sourceQuality: 'headline',
-    })
-  );
+    });
+  }
+  const discussions: {
+    row: CompanyDiscussion;
+    sourceId: string;
+    body: CompanyPublicExcerpt | null;
+  }[] = [];
+  if (sameEntity) {
+    for (const row of snapshot!.discussions || []) {
+      if (discussions.length >= 240) break;
+      const sourceId = assessmentDiscussionEvidenceId(row, run.input.securityCode);
+      if (!sourceId || signalIds.has(sourceId) || signalUrls.has(row.url)) continue;
+      signalIds.add(sourceId);
+      signalUrls.add(row.url);
+      discussions.push({
+        row,
+        sourceId,
+        body: readDiscussionPostExcerpt(row, run.input.securityCode),
+      });
+    }
+  }
+  for (const { row, sourceId, body } of discussions) {
+    addEvidence({
+      id: sourceId,
+      kind: 'discussion',
+      label: `${row.date} · ${row.title.slice(0, 300)} · 股吧公开观点`,
+      url: row.url,
+      period: row.date,
+      quote: body
+        ? `未核实的公开讨论观点：${body.text}`
+        : `仅公开讨论标题，观点尚未核实：${row.title.slice(0, 300)}`,
+      sourceQuality: 'opinion',
+    });
+  }
   dimensions.push(
     dimension(
       'events',
@@ -992,12 +1190,12 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
       [],
       disclosures.some((row) => row.excerpt)
         ? [
-            '已读公告片段可用于判断具体事项，标题和媒体报道仅提供核查线索；不按条数扣分。',
-            'Read disclosure excerpts support assessment of specific events; headlines and media reports provide leads only, without count-based penalties.',
+            '已读公告片段可用于判断具体事项，新闻仅提供核查线索，公开讨论始终是未经核实的观点；不按条数或舆论扣分。',
+            'Read disclosure excerpts support assessment of specific events. News provides leads, and public discussions remain unverified opinions; counts and sentiment do not reduce scores.',
           ]
         : [
-            '公告和新闻仅提供线索，未取得的司法、监管记录不视为没有风险。',
-            'Announcements and news provide leads; unavailable legal or regulatory records do not indicate absence of risk.',
+            '公告和新闻仅提供线索，公开讨论不构成事实认定；未取得的司法、监管记录不视为没有风险，不按舆论扣分。',
+            'Announcements and news provide leads; public discussions cannot establish facts. Missing legal or regulatory records do not indicate absence of risk, and sentiment does not reduce scores.',
           ]
     )
   );
@@ -1014,6 +1212,9 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
         ).length
       : 0,
     news: news.length,
+    discussions: discussions.length,
+    mediaBodies: news.filter((item) => item.body).length,
+    discussionBodies: discussions.filter((item) => item.body).length,
     disclosures: disclosures.length,
     excerpts: disclosures.filter((row) => !!row.excerpt).length,
     peers: industryIds.length ? validIndustry!.peerCount : 0,
@@ -1088,8 +1289,8 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
       'Same-year valid peers in the same industry are unavailable.',
     ]);
   gaps.push([
-    '历史资金余额未扣除受限资金；新闻与已读片段不构成完整司法、监管或审计核查。',
-    'Historical funds are not adjusted for restrictions; news and read excerpts are not comprehensive legal, regulatory or audit checks.',
+    '历史资金余额未扣除受限资金；新闻与已读片段不构成完整司法、监管或审计核查，公开讨论是未经核实的观点。',
+    'Historical funds are not adjusted for restrictions; news and read excerpts are not comprehensive legal, regulatory or audit checks, and public discussions are unverified opinions.',
   ]);
   const core = dimensions.slice(0, 4);
   const score =
@@ -1149,6 +1350,12 @@ export function buildAssessmentPublicPayload(
       latestNewsDate:
         assessment.evidence
           .filter((item) => item.kind === 'news')
+          .map((item) => item.period || '')
+          .sort()
+          .at(-1) || null,
+      latestDiscussionDate:
+        assessment.evidence
+          .filter((item) => item.kind === 'discussion')
           .map((item) => item.period || '')
           .sort()
           .at(-1) || null,

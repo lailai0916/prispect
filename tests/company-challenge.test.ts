@@ -13,7 +13,7 @@ import {
   deriveChallengeResult,
   publicChallengeRun,
 } from '../server/company-challenge.js';
-import type { runCompanyResearchAgent } from '../server/company-research-agent.js';
+import { runCompanyResearchAgent } from '../server/company-research-agent.js';
 
 const time = '2026-10-02T00:00:00.000Z';
 function annual(year: number): CompanyContextPeriod {
@@ -286,11 +286,17 @@ test('unconfigured Grok still performs real fixed topic searches and records act
       },
     }
   );
-  assert.deepEqual(requests, ['测试公司 订单 产能', '测试公司 存货 减值']);
+  assert.ok(requests.includes('测试公司'));
+  assert.deepEqual(
+    requests.filter((keyword) => keyword !== '测试公司'),
+    ['测试公司 订单 产能', '测试公司 存货 减值']
+  );
   assert.equal(result.model.status, 'not-configured');
   assert.equal(result.model.calls, 0);
   assert.equal(result.research.modelCalls, 0);
-  assert.equal(result.research.toolCalls, 6);
+  assert.equal(result.research.toolCalls, 8);
+  assert.ok(result.research.steps.some((step) => step.tool === 'collect_public_signals'));
+  assert.ok(result.research.steps.some((step) => step.tool === 'get_market_quote'));
   assert.ok(
     result.research.steps.some((step) => step.tool === 'search_news' && step.status === 'completed')
   );
@@ -551,11 +557,17 @@ test('unrelated background metrics and profile sources cannot manufacture target
 test('failed real topic retrieval preserves source failures and never invents new support', async () => {
   const source = run();
   const requests: string[] = [];
+  let receipts: NonNullable<CompanyResearchRun['context']>['sources'] = [];
   const result = await challengeCompanyExplanation(
     source,
     'expansion',
     {},
     {
+      research: async (publicSource, config, options) => {
+        const value = await runCompanyResearchAgent(publicSource, config, options);
+        receipts = value.run.context!.sources;
+        return value;
+      },
       industry: async () => {
         throw Error('Unavailable industry');
       },
@@ -565,7 +577,20 @@ test('failed real topic retrieval preserves source failures and never invents ne
       },
     }
   );
-  assert.equal(requests.length, 2);
+  assert.ok(requests.length > 2);
+  const topicKeywords = requests.flatMap((url) => {
+    const target = new URL(url);
+    if (target.hostname !== 'search-api-web.eastmoney.com') return [];
+    const keyword = JSON.parse(target.searchParams.get('param')!).keyword as string;
+    return keyword === '测试公司' ? [] : [keyword];
+  });
+  assert.deepEqual(topicKeywords, ['测试公司 订单 产能', '测试公司 存货 减值']);
+  assert.ok(result.research.steps.some((step) => step.tool === 'collect_public_signals'));
+  assert.ok(result.research.steps.some((step) => step.tool === 'get_market_quote'));
+  assert.ok(receipts.length > 2 && receipts.every((item) => item.status === 'error'));
+  assert.ok(receipts.some((item) => item.provider.includes('新浪')));
+  assert.equal(receipts.filter((item) => item.dimension.includes('公开讨论')).length, 3);
+  assert.ok(receipts.every((item) => item.responseHashes.length === 0));
   assert.equal(result.model.status, 'not-configured');
   assert.equal(
     result.research.steps.filter((step) => step.tool === 'search_news' && step.status === 'failed')

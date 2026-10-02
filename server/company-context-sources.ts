@@ -31,6 +31,10 @@ const allowedHosts = new Set([
   'static.cninfo.com.cn',
   'quotes.sina.cn',
   'vip.stock.finance.sina.com.cn',
+  'guba.eastmoney.com',
+  'finance.eastmoney.com',
+  'finance.sina.com.cn',
+  'push2.eastmoney.com',
 ]);
 export const objectValue = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' && !Array.isArray(value)

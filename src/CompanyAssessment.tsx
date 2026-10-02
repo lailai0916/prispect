@@ -382,6 +382,12 @@ export function CompanyAssessment({
               )}
         </p>
       )}
+      {assessment.model.warning && assessment.model.status === 'completed' && (
+        <p className="assessment-model-note" role="status">
+          {t('部分复核未完成：', 'Some review steps were incomplete: ')}
+          {assessment.model.warning}
+        </p>
+      )}
       <div
         className="assessment-dimensions"
         aria-label={t('六个分析维度', 'Six analysis dimensions')}
@@ -477,6 +483,12 @@ export function CompanyAssessment({
         <span>
           {assessment.coverage.news} {t('条新闻', 'news items')}
         </span>
+        {assessment.coverage.discussions !== undefined && (
+          <span>
+            {assessment.coverage.discussions}{' '}
+            {t('条公开讨论 · 未核实观点', 'public discussions · unverified opinions')}
+          </span>
+        )}
       </div>
       <div className="assessment-audit-actions">
         <button
@@ -568,11 +580,20 @@ export function CompanyAssessment({
                     </div>
                     <p className="assessment-source-scope">
                       {evidence.period ? evidence.period + ' · ' : ''}
-                      {evidence.sourceQuality === 'headline'
-                        ? t('标题线索，未取得正文', 'Headline lead; full text unavailable')
-                        : evidence.sourceQuality === 'excerpt'
-                          ? t('已取得原文节选', 'Source excerpt retrieved')
-                          : t('公开网页字段', 'Public web fields')}
+                      {evidence.sourceQuality === 'opinion'
+                        ? t('公开讨论 · 未核实观点', 'Public discussion · unverified opinion')
+                        : evidence.kind === 'news' &&
+                            evidence.sourceQuality === 'headline' &&
+                            evidence.quote
+                          ? t(
+                              '媒体线索，需与官方披露核对',
+                              'Media lead; corroborate with official disclosures'
+                            )
+                          : evidence.sourceQuality === 'headline'
+                            ? t('标题线索，未取得正文', 'Headline lead; full text unavailable')
+                            : evidence.sourceQuality === 'excerpt'
+                              ? t('已取得原文节选', 'Source excerpt retrieved')
+                              : t('公开网页字段', 'Public web fields')}
                       {evidence.page
                         ? ' · ' + t('第 ', 'Page ') + evidence.page + t(' 页', '')
                         : ''}
