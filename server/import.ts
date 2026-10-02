@@ -9,7 +9,12 @@ export interface UploadMeta {
   documentDate?: string;
 }
 function filenameOnly(filename: string) {
-  return path.basename(filename.replace(/\\/g, '/')).slice(0, 240) || 'upload';
+  const name = path.basename(filename.replace(/\\/g, '/')) || 'upload';
+  if (name.length <= 240) return name;
+  const extension = path.extname(name);
+  const stem = name.slice(0, Math.max(0, 240 - extension.length));
+  // Keep the format suffix and do not split an emoji's UTF-16 surrogate pair.
+  return stem.replace(/[\uD800-\uDBFF]$/, '') + extension;
 }
 function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
@@ -42,9 +47,13 @@ function parseCsv(text: string): string[][] {
 function fromCsv(text: string, filename: string, hash: string, meta: UploadMeta): UploadPreview {
   const rows = parseCsv(text.replace(/^\uFEFF/, ''));
   const header = rows.shift()?.map((cell) => cell.trim()) || [];
+  if (new Set(header).size !== header.length)
+    throw new ApiFault(400, 'INVALID_CSV', 'CSV 列名重复，请为每个字段只保留一列');
   const required = ['company', 'year', 'key', 'value', 'unit', 'currency', 'scope'];
   if (required.some((key) => !header.includes(key)))
     throw new ApiFault(400, 'INVALID_CSV', `CSV 缺少必需列：${required.join(', ')}`);
+  if (rows.some((row) => row.length !== header.length))
+    throw new ApiFault(400, 'INVALID_CSV', 'CSV 数据行与表头列数不一致，请检查逗号和引号');
   const records = rows.map((row) =>
     Object.fromEntries(header.map((column, index) => [column, (row[index] || '').trim()]))
   );
@@ -311,7 +320,12 @@ export async function previewUpload(
   if (extension === '.pdf') return fromPdf(buffer, filename, hash, meta, signal);
   if (!['.json', '.csv'].includes(extension))
     throw new ApiFault(415, 'UNSUPPORTED_FILE', '仅支持 JSON、CSV 与文本型 PDF');
-  const text = buffer.toString('utf8');
+  let text: string;
+  try {
+    text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+  } catch {
+    throw new ApiFault(400, 'INVALID_TEXT', '结构化文件必须是有效的 UTF-8 文本');
+  }
   if (text.includes('\0')) throw new ApiFault(400, 'INVALID_TEXT', '结构化文件必须是 UTF-8 文本');
   if (extension === '.csv') return fromCsv(text, filename, hash, meta);
   try {

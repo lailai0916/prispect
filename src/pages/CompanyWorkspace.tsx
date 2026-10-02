@@ -10,7 +10,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { CompanyResearchRun } from '../../shared/contracts';
-import { companyPath, companySections, type CompanySection } from '../../shared/company-workspace';
+import { companyPath, companySections } from '../../shared/company-workspace';
 import type { CompanyReadingBasis } from '../../shared/company-analysis';
 import { useApp } from '../context';
 import { api, requestErrorText } from '../api';
@@ -30,6 +30,7 @@ import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
 import { CompanyReview } from '../CompanyReview';
+import { resolveCompanySection } from '../routing';
 const OriginalReview = lazy(() =>
   import('./CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
 );
@@ -38,10 +39,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const { t, locale, navigate, confirm, user } = useApp();
   const { publish } = useContext(CompanyAssistantContext);
   const id = query.get('run');
-  const section: CompanySection =
-    query.get('section') === 'evidence'
-      ? 'evidence'
-      : companySections.find(([key]) => key === query.get('section'))?.[0] || 'overview';
+  const section = resolveCompanySection(query.get('section'));
   const [run, setRun] = useState<CompanyResearchRun | null>(null);
   const [error, setError] = useState('');
   const [version, setVersion] = useState(0);
@@ -61,6 +59,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
+        setRun(next);
+        setError('');
         if (
           !contextRequested &&
           !next.informationGap &&
@@ -107,21 +107,22 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   }, [run, id, basis, user?.id, publish]);
   const refresh = async () => {
     if (!run || updating) return;
+    const signal = request.current?.signal;
     setUpdating(true);
     try {
       const next = await api<CompanyResearchRun>(`/company-runs/${run.id}/context`, {
         method: 'POST',
         body: JSON.stringify({ refresh: true }),
-        signal: request.current?.signal,
+        signal,
       });
-      if (!request.current?.signal.aborted) {
+      if (!signal?.aborted) {
         setRun(next);
         setVersion((value) => value + 1);
       }
     } catch (cause) {
-      if (!request.current?.signal.aborted) setError(requestErrorText(cause, locale));
+      if (!signal?.aborted) setError(requestErrorText(cause, locale));
     } finally {
-      if (!request.current?.signal.aborted) setUpdating(false);
+      setUpdating(false);
     }
   };
   const remove = () =>
@@ -274,6 +275,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       {error && (
         <p role="alert" className="field-error">
           {error}
+          <button className="text-link" onClick={() => setVersion((value) => value + 1)}>
+            {t('重试', 'Retry')}
+          </button>
         </p>
       )}
       {!run.informationGap && section !== 'overview' && (
@@ -376,13 +380,19 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <p className="context-data-note">
             {snapshot
               ? `${t('公开数据获取于', 'Public data retrieved at')} ${date(snapshot.fetchedAt, locale)}`
-              : t('正在读取企业公开数据', 'Retrieving public company data')}
+              : run.contextStatus === 'loading'
+                ? t('正在读取企业公开数据', 'Retrieving public company data')
+                : t('尚未取得企业公开数据', 'Public company data is unavailable')}
             {run.contextStatus === 'loading' ? ` · ${t('更新进行中', 'Refresh in progress')}` : ''}
           </p>
           {run.contextError && (
             <p role="alert" className="context-data-note">
               {run.contextError}
-              <button className="text-link" onClick={() => void refresh()}>
+              <button
+                className="text-link"
+                disabled={updating || run.contextStatus === 'loading'}
+                onClick={() => void refresh()}
+              >
                 {t('重试', 'Retry')}
               </button>
             </p>

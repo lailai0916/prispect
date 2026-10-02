@@ -112,7 +112,7 @@ export class WorkspaceStore {
         !this.state.inputs
       )
         throw new Error('不支持的工作区格式');
-      for (const material of this.state.materials) validateMaterial(material);
+      for (const material of this.state.materials) validateMaterial(material, { saved: true });
       this.state.uploads ||= {};
       this.state.companyRuns ||= [];
       this.state.decisions ||= [];

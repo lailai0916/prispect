@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
   KeyRound,
@@ -12,7 +12,7 @@ import type { LoginResult } from '../../shared/account-contracts';
 import { post } from '../api';
 import { useApp } from '../context';
 import { identityClient, identityResult } from '../auth-client';
-import { loginDestination } from '../routing';
+import { loginDestination, ROUTE_CHANGE_EVENT } from '../routing';
 import '../account.css';
 export { AccountPage } from './Account';
 
@@ -70,80 +70,130 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     [code, setCode] = useState(''),
     [validation, setValidation] = useState(''),
     [forgot, setForgot] = useState(false);
+  const submitLock = useRef(false);
+  const submitScope = useRef(0);
+  const [submitting, setSubmitting] = useState(false);
+  const pending = busy || submitting;
+  const submitOnce = async (action: (current: () => boolean) => Promise<void>) => {
+    if (busy || submitLock.current) return;
+    submitLock.current = true;
+    setSubmitting(true);
+    const scope = submitScope.current,
+      route = location.pathname + location.search + location.hash;
+    const current = () =>
+      scope === submitScope.current &&
+      route === location.pathname + location.search + location.hash;
+    try {
+      await action(current);
+    } finally {
+      submitLock.current = false;
+      setSubmitting(false);
+    }
+  };
   const register = mode === 'register';
   const destination = loginDestination(next, location.origin);
+  useEffect(() => {
+    const invalidate = () => {
+      submitScope.current++;
+    };
+    window.addEventListener('popstate', invalidate);
+    window.addEventListener('hashchange', invalidate);
+    window.addEventListener(ROUTE_CHANGE_EVENT, invalidate);
+    return () => {
+      invalidate();
+      window.removeEventListener('popstate', invalidate);
+      window.removeEventListener('hashchange', invalidate);
+      window.removeEventListener(ROUTE_CHANGE_EVENT, invalidate);
+    };
+  }, []);
   useEffect(() => {
     if (user) navigate(destination);
   }, [user, navigate, destination]);
   useEffect(() => {
+    submitScope.current++;
     setPassword('');
     setConfirmation('');
+    setVisible(false);
     setChallenge(false);
+    setBackup(false);
     setCode('');
     setValidation('');
     setForgot(false);
   }, [mode]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    setValidation('');
-    if (register && password !== confirmation) {
-      setValidation(t('两次输入的密码不一致。', 'The passwords do not match.'));
-      return;
-    }
-    let passwordIsWeak = false;
-    if (register) {
-      try {
-        passwordIsWeak = !(await import('../../shared/password-strength')).validNewPassword(
-          password,
-          [email, name]
-        );
-      } catch {
+    await submitOnce(async (current) => {
+      setValidation('');
+      if (register && !name.trim()) {
+        setValidation(t('请填写姓名或昵称。', 'Enter your name.'));
+        return;
+      }
+      if (register && password !== confirmation) {
+        setValidation(t('两次输入的密码不一致。', 'The passwords do not match.'));
+        return;
+      }
+      let passwordIsWeak = false;
+      if (register) {
+        try {
+          passwordIsWeak = !(await import('../../shared/password-strength')).validNewPassword(
+            password,
+            [email, name]
+          );
+        } catch {
+          if (current())
+            setValidation(
+              t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
+            );
+          return;
+        }
+      }
+      if (!current()) return;
+      if (passwordIsWeak) {
         setValidation(
-          t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
+          t(
+            '请使用至少8字符且不易猜测的密码。',
+            'Choose a hard-to-guess password with at least 8 characters.'
+          )
         );
         return;
       }
-    }
-    if (passwordIsWeak) {
-      setValidation(
-        t(
-          '请使用至少8字符且不易猜测的密码。',
-          'Choose a hard-to-guess password with at least 8 characters.'
+      const result = await execute(() =>
+        post<LoginResult>(
+          `/auth/${mode}`,
+          register ? { email, password, name: name.trim() } : { email, password }
         )
       );
-      return;
-    }
-    const result = await execute(() =>
-      post<LoginResult>(
-        `/auth/${mode}`,
-        register ? { email, password, name: name.trim() } : { email, password }
-      )
-    );
-    if (result?.twoFactorRequired) {
-      setPassword('');
-      setChallenge(true);
-      setCode('');
-    } else if (result?.user) navigate(destination);
+      if (!current()) return;
+      if (result?.twoFactorRequired) {
+        setPassword('');
+        setChallenge(true);
+        setCode('');
+      } else if (result?.user) navigate(destination);
+    });
   };
   const verify = async (event: FormEvent) => {
     event.preventDefault();
-    const result = await execute(async () => {
-      const response = backup
-        ? await identityClient.twoFactor.verifyBackupCode({ code, trustDevice: false })
-        : await identityClient.twoFactor.verifyTotp({ code, trustDevice: false });
-      identityResult(response);
-      await refresh();
-      return true;
+    await submitOnce(async (current) => {
+      const result = await execute(async () => {
+        const response = backup
+          ? await identityClient.twoFactor.verifyBackupCode({ code, trustDevice: false })
+          : await identityClient.twoFactor.verifyTotp({ code, trustDevice: false });
+        identityResult(response);
+        await refresh();
+        return true;
+      });
+      if (result && current()) navigate(destination);
     });
-    if (result) navigate(destination);
   };
   const passkeyLogin = async () => {
-    const result = await execute(async () => {
-      identityResult(await identityClient.signIn.passkey());
-      await refresh();
-      return true;
+    await submitOnce(async (current) => {
+      const result = await execute(async () => {
+        identityResult(await identityClient.signIn.passkey());
+        await refresh();
+        return true;
+      });
+      if (result && current()) navigate(destination);
     });
-    if (result) navigate(destination);
   };
   return (
     <section className="account-auth-shell">
@@ -191,13 +241,14 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 onChange={(event) => setCode(event.target.value.trim())}
               />
             </label>
-            <button className="account-action" disabled={busy}>
-              {busy ? <LoaderCircle className="spinner" size={17} /> : <ArrowRight size={17} />}{' '}
+            <button className="account-action" disabled={pending}>
+              {pending ? <LoaderCircle className="spinner" size={17} /> : <ArrowRight size={17} />}{' '}
               {t('验证并登录', 'Verify and log in')}
             </button>
             <button
               className="account-link-button"
               type="button"
+              disabled={pending}
               onClick={() => {
                 setBackup(!backup);
                 setCode('');
@@ -210,6 +261,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
             <button
               className="account-link-button"
               type="button"
+              disabled={pending}
               onClick={() => {
                 setChallenge(false);
                 setCode('');
@@ -279,6 +331,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                   <button
                     type="button"
                     onClick={() => setVisible(!visible)}
+                    aria-pressed={visible}
                     aria-label={
                       visible ? t('隐藏密码', 'Hide password') : t('显示密码', 'Show password')
                     }
@@ -308,8 +361,12 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                   {validation}
                 </p>
               )}
-              <button className="account-action" type="submit" disabled={busy}>
-                {busy ? <LoaderCircle size={18} className="spinner" /> : <ArrowRight size={18} />}{' '}
+              <button className="account-action" type="submit" disabled={pending}>
+                {pending ? (
+                  <LoaderCircle size={18} className="spinner" />
+                ) : (
+                  <ArrowRight size={18} />
+                )}{' '}
                 {register ? t('创建账号', 'Create account') : t('登录', 'Log in')}
               </button>
             </form>
@@ -321,13 +378,14 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 <button
                   className="account-secondary account-full"
                   onClick={passkeyLogin}
-                  disabled={busy || !window.PublicKeyCredential}
+                  disabled={pending || !window.PublicKeyCredential}
                 >
                   <KeyRound size={17} />
                   {t('使用通行密钥', 'Use a passkey')}
                 </button>
                 <button
                   className="account-link-button account-full"
+                  disabled={pending}
                   onClick={() => setForgot(true)}
                 >
                   {t('忘记密码？', 'Forgot password?')}

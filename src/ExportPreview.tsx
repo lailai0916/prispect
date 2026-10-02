@@ -206,7 +206,7 @@ export function ExportPreview({
               className="button button-secondary"
               onClick={() => {
                 onClose();
-                void refresh();
+                void refresh().catch(() => {});
               }}
             >
               <RefreshCw size={15} />

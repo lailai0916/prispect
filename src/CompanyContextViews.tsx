@@ -132,7 +132,9 @@ export function CompanyContextOverview({
       ? t('利润数据待补', 'Profit data unavailable')
       : profit < 0n
         ? t('最近完整年度利润为负', 'Latest full-year profit is negative')
-        : t('最近完整年度利润为正', 'Latest full-year profit is positive');
+        : profit === 0n
+          ? t('最近完整年度利润为零', 'Latest full-year profit is zero')
+          : t('最近完整年度利润为正', 'Latest full-year profit is positive');
   const cashTitle = !analysis.threeYear.complete
     ? t('连续三年数据待补', 'Three consecutive years are incomplete')
     : analysis.threeYear.thinProfit
@@ -478,15 +480,17 @@ export function CompanyContextOverview({
           '网页概览与原件核查分别展示。',
           'Web context and original-report verification are shown separately.'
         )}{' '}
-        {run.preview
-          ? t(
-              '已取得原件候选，仍需确认后采用。',
-              'Original candidates are available and still require confirmation.'
-            )
-          : t(
-              '原件读取尚未完成或资料不足，概览不替代原件核查。',
-              'Original reading is incomplete or insufficient; context does not replace original verification.'
-            )}
+        {run.status === 'adopted'
+          ? t('原件材料已确认采用。', 'Original evidence has been confirmed and adopted.')
+          : run.preview
+            ? t(
+                '已取得原件候选，仍需确认后采用。',
+                'Original candidates are available and still require confirmation.'
+              )
+            : t(
+                '原件读取尚未完成或资料不足，概览不替代原件核查。',
+                'Original reading is incomplete or insufficient; context does not replace original verification.'
+              )}
       </p>
     </>
   );
@@ -770,9 +774,11 @@ export function CompanyCoverageView({
     ],
     [
       t('年报原件与附注', 'Annual originals and notes'),
-      run.preview
-        ? t('已有候选，待确认采用', 'Candidates awaiting confirmation')
-        : t('尚未形成候选', 'No candidates yet'),
+      run.status === 'adopted'
+        ? t('原件材料已确认采用', 'Original evidence adopted')
+        : run.preview
+          ? t('已有候选，待确认采用', 'Candidates awaiting confirmation')
+          : t('尚未形成候选', 'No candidates yet'),
       t(
         '页码、摘录、单位与合并口径逐项核对',
         'Pages, excerpts, units and consolidated scope checked individually'

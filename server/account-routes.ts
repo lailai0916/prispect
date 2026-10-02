@@ -55,6 +55,7 @@ export function installAccountRoutes(app: Express, auth: AuthStore, dataDir: str
   );
   const upload = multer({
     storage: multer.memoryStorage(),
+    defParamCharset: 'utf8',
     limits: { fileSize: 2 * 1024 * 1024, files: 1, fields: 0 },
   });
   app.post(

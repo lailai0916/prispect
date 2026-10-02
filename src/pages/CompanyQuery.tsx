@@ -19,6 +19,7 @@ export function CompanyQueryPage() {
   const [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null);
   const locked = useRef(false);
+  const pendingRequest = useRef<{ signature: string; key: string } | null>(null);
   useEffect(() => () => controller.current?.abort(), []);
   const begin = async (identity?: CompanyIdentity, name?: string) => {
     if (locked.current) return;
@@ -27,24 +28,30 @@ export function CompanyQueryPage() {
     setError('');
     const request = new AbortController();
     controller.current = request;
+    const path = identity ? '/company-runs' : '/company-gaps';
+    const body = JSON.stringify(
+      identity
+        ? {
+            securityCode: identity.securityCode,
+            orgId: identity.orgId,
+            year,
+            purpose,
+            useModel: true,
+          }
+        : { name, year, purpose }
+    );
+    const signature = `${path}:${body}`;
+    if (pendingRequest.current?.signature !== signature)
+      pendingRequest.current = { signature, key: crypto.randomUUID() };
     try {
-      const run = await api<CompanyResearchRun>(identity ? '/company-runs' : '/company-gaps', {
+      const run = await api<CompanyResearchRun>(path, {
         method: 'POST',
-        headers: { 'Idempotency-Key': crypto.randomUUID() },
+        headers: { 'Idempotency-Key': pendingRequest.current.key },
         signal: request.signal,
-        body: JSON.stringify(
-          identity
-            ? {
-                securityCode: identity.securityCode,
-                orgId: identity.orgId,
-                year,
-                purpose,
-                useModel: true,
-              }
-            : { name, year, purpose }
-        ),
+        body,
       });
       if (!request.signal.aborted) {
+        pendingRequest.current = null;
         window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
         navigate(companyPath(run.id));
       }

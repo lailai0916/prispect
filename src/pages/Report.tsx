@@ -56,7 +56,7 @@ import '../company-review.css';
 type ReviewExportFormat = 'html' | 'json' | 'checklist';
 
 export function TaskPage({ id }: { id: string }) {
-  const { t, locale, workspace, execute, navigate, refresh } = useApp();
+  const { t, locale, workspace, execute, navigate, refresh, busy } = useApp();
   const task = workspace!.tasks.find((item) => item.id === id);
   const [stressOpen, setStressOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<ReviewExportFormat | null>(null);
@@ -82,6 +82,7 @@ export function TaskPage({ id }: { id: string }) {
       />
     );
   const retry = async () => {
+    if (busy) return;
     await execute(() => post<AnalysisTask>(`/tasks/${task.id}/retry`, {}));
   };
   const report = task.report;
@@ -178,7 +179,7 @@ export function TaskPage({ id }: { id: string }) {
           )}
           {task.status === 'failed' && (
             <div className="inline-actions">
-              <button className="button button-primary" onClick={retry}>
+              <button className="button button-primary" disabled={busy} onClick={retry}>
                 <RefreshCw size={16} />
                 {t('重试', 'Retry')}
               </button>
@@ -196,7 +197,7 @@ export function TaskPage({ id }: { id: string }) {
             '任务已完成但报告缺失，请重试处理。',
             'The task completed but no report is available. Please retry.'
           )}
-          <button className="button button-secondary" onClick={retry}>
+          <button className="button button-secondary" disabled={busy} onClick={retry}>
             {t('重试', 'Retry')}
           </button>
         </div>
@@ -1998,6 +1999,7 @@ export function StressDialog({
     initialExcluded ?? (task.excludedMetrics.length ? task.excludedMetrics : adjustments)
   );
   const run = async () => {
+    if (busy) return;
     const next = await execute(() =>
       post<AnalysisTask>('/tasks', {
         title: reviewVariantTitle(
@@ -2027,6 +2029,7 @@ export function StressDialog({
           : t('调整证据', 'Adjust evidence')
       }
       onClose={onClose}
+      closeDisabled={busy}
     >
       {focusedMetric && (
         <p className="field-note">
@@ -2043,7 +2046,7 @@ export function StressDialog({
         )}
       </p>
       <div className="stress-option-group">
-        <button className="text-link" onClick={() => setExcluded(adjustments)}>
+        <button className="text-link" disabled={busy} onClick={() => setExcluded(adjustments)}>
           {t('排除全部调整项', 'Exclude all adjustments')}
           <ArrowRight size={15} />
         </button>
@@ -2051,6 +2054,7 @@ export function StressDialog({
           <label className="stress-option" key={key}>
             <input
               type="checkbox"
+              disabled={busy}
               checked={excluded.includes(key)}
               onChange={() =>
                 setExcluded((previous) =>
@@ -2076,7 +2080,7 @@ export function StressDialog({
         </p>
       </div>
       <div className="dialog-actions">
-        <button className="button button-secondary" onClick={onClose}>
+        <button className="button button-secondary" disabled={busy} onClick={onClose}>
           {t('取消', 'Cancel')}
         </button>
         <button

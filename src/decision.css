@@ -60,7 +60,7 @@
   border-radius: 14px;
   background: var(--paper);
 }
-.decision-input-form > .form-field {
+.decision-input-form > .decision-save-fields > .form-field {
   margin: 22px 0;
 }
 .decision-input-form .new-purpose {
@@ -86,7 +86,7 @@
 .decision-input-form textarea {
   min-height: 88px;
 }
-.decision-input-form > .field-note {
+.decision-input-form > .decision-save-fields > .field-note {
   margin: 18px 0 0;
   font-size: 12px;
   line-height: 1.7;
@@ -745,6 +745,9 @@
 .decision-evidence-form {
   display: grid;
   gap: 20px;
+}
+.decision-save-fields {
+  display: contents;
 }
 .decision-evidence-binding summary {
   color: var(--muted);

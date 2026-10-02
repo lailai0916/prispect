@@ -674,7 +674,7 @@
 .context-chart-panel {
   padding: 20px 0;
 }
-.context-chart-panel > span {
+.context-chart-plot > span {
   font-size: 11px;
 }
 .context-chart-scroll {
@@ -734,6 +734,9 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+.context-chart-multiples > section {
+  min-width: 0;
 }
 .context-chart-multiples h3 {
   font-size: 12px;

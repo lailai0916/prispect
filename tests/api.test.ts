@@ -298,6 +298,107 @@ test('real login/logout, CSRF, password change, invalid formats and credentials'
     await service.close();
   }
 });
+
+test('invalid account fields are distinguished from weak passwords without changing the account', async () => {
+  const service = await setup();
+  try {
+    const attempt = (body: unknown) =>
+      service.request('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    for (const input of [
+      { email: 'not-an-email', name: '测试', password: 'test-strong-password' },
+      { email: 'invalid-name@example.com', name: ' ', password: 'test-strong-password' },
+    ]) {
+      const rejected = await attempt(input);
+      assert.equal(rejected.status, 400);
+      assert.equal((await rejected.json()).code, 'INVALID_ACCOUNT');
+    }
+    const short = await attempt({
+      email: 'short-password@example.com',
+      name: '测试',
+      password: 'short',
+    });
+    assert.equal(short.status, 400);
+    assert.equal((await short.json()).code, 'WEAK_PASSWORD');
+    const client = await register(service, 'password-validation@example.com');
+    for (const input of [
+      { newPassword: 'changed-strong-password' },
+      { currentPassword: '', newPassword: 'changed-strong-password' },
+    ]) {
+      const rejected = await service.request('/api/auth/password', options(client, input, 'POST'));
+      assert.equal(rejected.status, 400);
+      assert.equal((await rejected.json()).code, 'INVALID_ACCOUNT');
+    }
+    const weak = await service.request(
+      '/api/auth/password',
+      options(
+        client,
+        {
+          currentPassword: 'test-strong-password',
+          newPassword: 'short',
+        },
+        'POST'
+      )
+    );
+    assert.equal(weak.status, 400);
+    assert.equal((await weak.json()).code, 'WEAK_PASSWORD');
+    assert.equal((await service.request('/api/workspace', options(client))).status, 200);
+  } finally {
+    await service.close();
+  }
+});
+
+test('profile updates include the saved timezone in both their session response and subsequent session reads', async () => {
+  const service = await setup();
+  try {
+    const alice = await register(service, 'timezone-alice@example.com');
+    const bob = await register(service, 'timezone-bob@example.com');
+    assert.equal(alice.user.timezone, 'Asia/Shanghai');
+    const updated = await service.request(
+      '/api/auth/profile',
+      options(
+        alice,
+        {
+          name: '时区测试',
+          timezone: 'Europe/London',
+        },
+        'PATCH'
+      )
+    );
+    assert.equal(updated.status, 200);
+    assert.equal(((await updated.json()) as AuthSession).user!.timezone, 'Europe/London');
+    const latest = (await (
+      await service.request('/api/auth/session', options(alice))
+    ).json()) as AuthSession;
+    assert.equal(latest.user!.timezone, 'Europe/London');
+    const other = (await (
+      await service.request('/api/auth/session', options(bob))
+    ).json()) as AuthSession;
+    assert.equal(other.user!.timezone, 'Asia/Shanghai');
+    const rejected = await service.request(
+      '/api/auth/profile',
+      options(
+        alice,
+        {
+          name: '无效时区',
+          timezone: 'Invalid/Timezone',
+        },
+        'PATCH'
+      )
+    );
+    assert.equal(rejected.status, 400);
+    const unchanged = (await (
+      await service.request('/api/auth/session', options(alice))
+    ).json()) as AuthSession;
+    assert.equal(unchanged.user!.timezone, 'Europe/London');
+    assert.equal(unchanged.user!.name, '时区测试');
+  } finally {
+    await service.close();
+  }
+});
 test('upload preview actually handles JSON, CSV and format errors without saving', async () => {
   const service = await setup();
   try {
@@ -497,6 +598,48 @@ test('retained original bytes are owner-bound, immutable, persistent and deleted
     await assert.rejects(() =>
       readFile(path.join(originalStore.dataDir, 'uploads', `${preview.uploadId}.blob`))
     );
+  } finally {
+    await service.close();
+  }
+});
+
+test('material note limits include saved provenance and keep the workspace readable after restart', async () => {
+  const service = await setup();
+  try {
+    const client = await register(service, 'material-notes@example.com');
+    const template = await (await service.request('/api/public/input-template?format=json')).json();
+    const notes = Array.from({ length: 100 }, (_, index) => `用户备注 ${index + 1}`);
+    const rejected = await service.request(
+      '/api/materials',
+      options(client, { ...template, notes: [...notes, '额外备注'] }, 'POST')
+    );
+    assert.equal(rejected.status, 400);
+    assert.equal((await rejected.json()).code, 'INVALID_MATERIAL');
+    const store = await service.workspaceForUser(client.user.id);
+    assert.equal(store.state.materials.length, 0);
+    const saved = await service.request(
+      '/api/materials',
+      options(client, { ...template, notes }, 'POST')
+    );
+    assert.equal(saved.status, 201);
+    const material = (await saved.json()) as Material;
+    assert.equal(material.notes.length, 102);
+    assert.deepEqual(material.notes.slice(0, 100), notes);
+    const { WorkspaceStore } = await import('../server/store.js');
+    const reopened = new WorkspaceStore(process.cwd(), store.dataDir);
+    await reopened.initialize();
+    assert.deepEqual(reopened.state.materials[0], material);
+    const task = await createTask(service, client, {
+      id: 'uploaded',
+      title: '备注上限核查',
+      description: '',
+      company: material.company,
+      shortName: material.shortName,
+      materialIds: [material.id],
+      year: 2025,
+      kind: 'contrast',
+    });
+    assert.equal(task.status, 'completed');
   } finally {
     await service.close();
   }

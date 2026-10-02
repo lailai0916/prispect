@@ -144,7 +144,7 @@ export async function createApp(options: AppOptions = {}) {
       if (!inputs?.length) throw new Error('本次任务缺少保存的输入快照');
       await changeStage(0, 'completed', `已读取 ${inputs.length} 份材料；不访问隐藏案例。`);
       await changeStage(1, 'running', '核验输入声明的字段、单位与金额精度。');
-      for (const material of inputs) validateMaterial(material);
+      for (const material of inputs) validateMaterial(material, { saved: true });
       await changeStage(1, 'completed', '输入字段与精度检查完成；口径冲突与现金桥进入确定性分析。');
       await changeStage(2, 'running', '按人民币分计算金额，并核验现金桥原始分组行。');
       const report = analyze(task, inputs);
@@ -388,6 +388,7 @@ export async function createApp(options: AppOptions = {}) {
   };
   const upload = multer({
     storage: multer.memoryStorage(),
+    defParamCharset: 'utf8',
     limits: { fileSize: 25 * 1024 * 1024, files: 1, fields: 5, fieldSize: 1000 },
   });
   app.post(
@@ -707,6 +708,9 @@ export async function createApp(options: AppOptions = {}) {
   });
   const dist = path.join(root, 'dist');
   app.use(express.static(dist, { dotfiles: 'deny' }));
+  app.use('/assets', (_req, _res, next) => {
+    next(new ApiFault(404, 'FRONTEND_ASSET_NOT_FOUND', '未找到请求的前端资源，请刷新页面重试'));
+  });
   app.get('/{*path}', (_req, res, next) => {
     res.sendFile(path.join(dist, 'index.html'), (error) => {
       if (error)
@@ -745,6 +749,10 @@ export async function createApp(options: AppOptions = {}) {
     }
     if (error instanceof SyntaxError) {
       res.status(400).json({ error: '请求 JSON 格式无效', code: 'INVALID_JSON' });
+      return;
+    }
+    if (error instanceof URIError && (error as URIError & { status?: number }).status === 400) {
+      res.status(400).json({ error: '请求地址编码无效', code: 'INVALID_PATH' });
       return;
     }
     if ((error as { type?: string })?.type === 'entity.too.large') {

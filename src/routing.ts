@@ -1,4 +1,11 @@
+import { companySections, type CompanySection } from '../shared/company-workspace';
+
 export const ROUTE_CHANGE_EVENT = 'prispect:routechange';
+
+export function resolveCompanySection(value: string | null | undefined): CompanySection {
+  if (value === 'evidence') return value;
+  return companySections.find(([section]) => section === value)?.[0] || 'overview';
+}
 
 const pages = new Set([
   '/',

@@ -436,6 +436,9 @@ export class AuthStore {
             id: result.user.id,
             email: result.user.email,
             name: result.user.name,
+            timezone:
+              (result.user as typeof result.user & { timezone?: string }).timezone ||
+              'Asia/Shanghai',
             createdAt: new Date(
               result.user.createdAt instanceof Date
                 ? result.user.createdAt.getTime()
@@ -590,10 +593,12 @@ export class AuthStore {
   async register(input: unknown, req: Request, res: Response) {
     this.rateLimit(`register:${req.ip}`, 5, 3600000);
     const parsed = registerSchema.safeParse(input);
-    if (
-      !parsed.success ||
-      !validNewPassword(parsed.data.password, [parsed.data.email, parsed.data.name])
-    )
+    if (!parsed.success) {
+      if (parsed.error.issues.every((issue) => issue.path[0] === 'password'))
+        throw new ApiFault(400, 'WEAK_PASSWORD', '使用8–128字符且不易猜测的密码');
+      throw new ApiFault(400, 'INVALID_ACCOUNT', '请输入有效邮箱和 1–80 字符的姓名');
+    }
+    if (!validNewPassword(parsed.data.password, [parsed.data.email, parsed.data.name]))
       throw new ApiFault(400, 'WEAK_PASSWORD', '使用8–128字符且不易猜测的密码');
     const result = await this.identity.api.signUpEmail({
       body: parsed.data,
@@ -646,15 +651,20 @@ export class AuthStore {
         )
         .run(context.user.id, next.phoneNumber);
     })();
-    return this.response({ ...context, user: { ...context.user, name: next.name } });
+    return this.response({
+      ...context,
+      user: { ...context.user, name: next.name, timezone: next.timezone },
+    });
   }
   async changePassword(input: unknown, context: AuthContext, req: Request, res: Response) {
     this.requireFresh(context);
     const parsed = passwordSchema.safeParse(input);
-    if (
-      !parsed.success ||
-      !validNewPassword(parsed.data.newPassword, [context.user.name, context.user.email])
-    )
+    if (!parsed.success) {
+      if (parsed.error.issues.every((issue) => issue.path[0] === 'newPassword'))
+        throw new ApiFault(400, 'WEAK_PASSWORD', '使用8–128字符且不易猜测的密码');
+      throw new ApiFault(400, 'INVALID_ACCOUNT', '请输入当前密码和有效的新密码');
+    }
+    if (!validNewPassword(parsed.data.newPassword, [context.user.name, context.user.email]))
       throw new ApiFault(400, 'WEAK_PASSWORD', '使用8–128字符且不易猜测的密码');
     await this.accept(
       await this.identity.api.changePassword({

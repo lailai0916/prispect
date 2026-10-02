@@ -1,8 +1,30 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { appPath, appLinkPath, legacyRoute, loginDestination } from '../src/routing.js';
+import {
+  appPath,
+  appLinkPath,
+  legacyRoute,
+  loginDestination,
+  resolveCompanySection,
+} from '../src/routing.js';
 
 const origin = 'https://prispect.com';
+
+test('company navigation and content resolve missing, invalid and legacy sections consistently', () => {
+  for (const section of [null, undefined, '', 'unknown', 'qa', 'Overview'])
+    assert.equal(resolveCompanySection(section), 'overview');
+  for (const section of [
+    'overview',
+    'trends',
+    'industry',
+    'disclosures',
+    'profile',
+    'coverage',
+    'sources',
+    'evidence',
+  ])
+    assert.equal(resolveCompanySection(section), section);
+});
 
 test('legacy links retain encoded task IDs, query values and document sections', () => {
   assert.equal(legacyRoute('#/docs?section=materials', origin), '/docs?section=materials');

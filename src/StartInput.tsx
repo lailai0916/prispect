@@ -34,16 +34,20 @@ export function StartInput({
   const [candidates, setCandidates] = useState<CompanyIdentity[]>([]);
   const [finding, setFinding] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [searchFailed, setSearchFailed] = useState(false);
+  const [searchRetry, setSearchRetry] = useState(0);
   const [completionOpen, setCompletionOpen] = useState(false);
   const [activeCandidate, setActiveCandidate] = useState(-1);
   const composer = useRef<HTMLFormElement>(null);
   const selectionText = useRef('');
+  const selectedCompany = useRef<CompanyIdentity | null>(null);
   const intent = interpretStart(text, mode);
   const safeQuery = companyOnly ? text.trim() || null : intent.companyQuery;
   const companyIntent = companyOnly || intent.kind === 'company';
   useEffect(() => {
     setCandidates([]);
     setSearched(false);
+    setSearchFailed(false);
     setActiveCandidate(-1);
     if (
       !user ||
@@ -69,7 +73,10 @@ export function StartInput({
           }
         })
         .catch((cause) => {
-          if (!controller.signal.aborted) setError(requestErrorText(cause, locale));
+          if (!controller.signal.aborted) {
+            setSearchFailed(true);
+            setError(requestErrorText(cause, locale));
+          }
         })
         .finally(() => {
           if (!controller.signal.aborted) setFinding(false);
@@ -79,9 +86,11 @@ export function StartInput({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [safeQuery, companyIntent, companyOnly, user?.id, locale, text]);
+  }, [safeQuery, companyIntent, companyOnly, user?.id, locale, text, searchRetry]);
   const chooseCompany = (identity: CompanyIdentity) => {
+    if (disabled) return;
     selectionText.current = identity.shortName;
+    selectedCompany.current = identity;
     setText(identity.shortName);
     setCompletionOpen(false);
     setActiveCandidate(-1);
@@ -112,6 +121,7 @@ export function StartInput({
   const selected = choices.find((item) => item.id === mode)!;
   const submit = (event: FormEvent) => {
     event.preventDefault();
+    if (disabled) return;
     const value = text.trim();
     if (!value) return;
     const intent = interpretStart(value, mode);
@@ -120,8 +130,16 @@ export function StartInput({
         setError(t('公司名称或证券代码最多 80 个字符。', 'Use at most 80 characters.'));
         return;
       }
+      if (onCompanyChoice && selectedCompany.current && selectionText.current === text) {
+        chooseCompany(selectedCompany.current);
+        return;
+      }
       if (onCompanyChoice && (!searched || finding)) {
         setCompletionOpen(true);
+        if (!finding && searchFailed) {
+          setError('');
+          setSearchRetry((value) => value + 1);
+        }
         return;
       }
       if (onCompanyChoice && searched && !candidates.length) {
@@ -222,12 +240,13 @@ export function StartInput({
         onFocus={() => setCompletionOpen(true)}
         onChange={(event) => {
           selectionText.current = '';
+          selectedCompany.current = null;
           setText(event.target.value);
           setError('');
           setCompletionOpen(true);
         }}
         onKeyDown={(event) => {
-          if (event.nativeEvent.isComposing) return;
+          if (event.nativeEvent.isComposing || event.keyCode === 229) return;
           if (event.key === 'Escape') {
             setCompletionOpen(false);
             return;
@@ -235,10 +254,13 @@ export function StartInput({
           if (['ArrowDown', 'ArrowUp'].includes(event.key) && candidates.length) {
             event.preventDefault();
             setCompletionOpen(true);
-            setActiveCandidate(
-              (value) =>
-                (value + (event.key === 'ArrowDown' ? 1 : -1) + candidates.length) %
-                candidates.length
+            setActiveCandidate((value) =>
+              value < 0
+                ? event.key === 'ArrowDown'
+                  ? 0
+                  : candidates.length - 1
+                : (value + (event.key === 'ArrowDown' ? 1 : -1) + candidates.length) %
+                  candidates.length
             );
             return;
           }

@@ -27,7 +27,7 @@ import type {
   AccountUser,
 } from '../shared/contracts';
 import { api, setCsrfToken, RequestError, requestErrorText } from './api';
-import { type Locale } from './format';
+import { type Locale, setDisplayTimeZone } from './format';
 import { changeComposerOwner } from './start-draft';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { ThemeControl } from './ThemeControl';
@@ -99,6 +99,8 @@ const publicPages = ['/', '/method', '/login', '/register', ...documentPaths];
 
 export function App() {
   const [locale, setLocale] = useState<Locale>(storedLocale);
+  const localeRef = useRef(locale);
+  localeRef.current = locale;
   const [route, setRoute] = useState(readBrowserRoute);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
@@ -109,6 +111,10 @@ export function App() {
   const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
   const [pending, setPending] = useState(0);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
+  const [confirmFailure, setConfirmFailure] = useState<{
+    request: ConfirmRequest;
+    text: string;
+  } | null>(null);
   const [evidence, setEvidence] = useState<{ refs: EvidenceRef[]; report?: Report } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [assistantCompany, setAssistantCompany] = useState<AssistantCompany | null>(null);
@@ -120,8 +126,8 @@ export function App() {
   }, []);
   const t: Translate = useCallback((zh, en) => (locale === 'en' ? en : zh), [locale]);
   const navigate = useCallback((path: string, options?: { replace?: boolean }) => {
-    window.scrollTo(0, 0);
     if (!writeBrowserRoute(path, options?.replace)) return;
+    window.scrollTo(0, 0);
     setMenuOpen(false);
   }, []);
   const refresh = useCallback(async () => {
@@ -144,9 +150,11 @@ export function App() {
         setAssistantCompany(null);
         setEvidence(null);
         setConfirmRequest(null);
+        setConfirmFailure(null);
       }
       changeComposerOwner(committedOwner.current, owner);
       committedOwner.current = owner;
+      setDisplayTimeZone(session.user?.timezone);
       setCsrfToken(session.csrfToken);
       setUser(session.user);
       setWorkspace(nextWorkspace);
@@ -156,7 +164,7 @@ export function App() {
       setLoaded(true);
     } catch (error) {
       if (!controller.signal.aborted && generation === refreshGeneration.current) {
-        setLoadError(requestErrorText(error, locale));
+        setLoadError(requestErrorText(error, localeRef.current));
         setEvidence(null);
         setConfirmRequest(null);
         setMenuOpen(false);
@@ -166,7 +174,7 @@ export function App() {
     } finally {
       if (refreshController.current === controller) refreshController.current = null;
     }
-  }, [locale]);
+  }, []);
   const execute = useCallback(
     async <T,>(action: () => Promise<T>, success?: string) => {
       const actionOwner = committedOwner.current;
@@ -188,7 +196,7 @@ export function App() {
           error instanceof RequestError &&
           ['AUTH_REQUIRED', 'UNAUTHORIZED'].includes(error.code)
         ) {
-          await refresh();
+          await refresh().catch(() => undefined);
           navigate('/login');
         }
         return undefined;
@@ -336,6 +344,7 @@ export function App() {
         refreshController.current = null;
         changeComposerOwner(committedOwner.current, null);
         committedOwner.current = null;
+        setDisplayTimeZone();
         setAssistantCompany(null);
         setUser(null);
         setWorkspace(null);
@@ -597,7 +606,7 @@ export function App() {
                 ) : page === '/materials' ? (
                   <MaterialsPage />
                 ) : page.startsWith('/tasks/') ? (
-                  <TaskPage id={page.slice(7)} />
+                  <TaskPage key={page.slice(7)} id={page.slice(7)} />
                 ) : page === '/compare' ? (
                   <ComparePage key={route} query={new URLSearchParams(route.split('?')[1])} />
                 ) : (
@@ -635,7 +644,7 @@ export function App() {
               <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
             </Suspense>
           )}
-          {toast && !loadError && (
+          {toast && !loadError && confirmFailure?.request !== confirmRequest && (
             <div
               role={toast.error ? 'alert' : 'status'}
               className={`toast ${toast.error ? 'toast-error' : ''}`}
@@ -652,18 +661,47 @@ export function App() {
             </div>
           )}
           {confirmRequest && sessionAvailable && (
-            <Dialog title={confirmRequest.title} onClose={() => setConfirmRequest(null)}>
+            <Dialog
+              title={confirmRequest.title}
+              onClose={() => setConfirmRequest(null)}
+              closeDisabled={pending > 0}
+            >
               <p>{confirmRequest.text}</p>
+              {confirmFailure?.request === confirmRequest && (
+                <p role="alert" className="field-error">
+                  {confirmFailure.text}
+                </p>
+              )}
               <div className="dialog-actions">
-                <button className="button button-secondary" onClick={() => setConfirmRequest(null)}>
+                <button
+                  className="button button-secondary"
+                  disabled={pending > 0}
+                  onClick={() => setConfirmRequest(null)}
+                >
                   {t('取消', 'Cancel')}
                 </button>
                 <button
                   className="button button-danger"
                   disabled={pending > 0}
                   onClick={async () => {
-                    await execute(confirmRequest.action);
-                    setConfirmRequest(null);
+                    const request = confirmRequest;
+                    const owner = committedOwner.current;
+                    setConfirmFailure(null);
+                    const result = await execute(async () => {
+                      try {
+                        await request.action();
+                        return true;
+                      } catch (error) {
+                        if (committedOwner.current === owner)
+                          setConfirmFailure({
+                            request,
+                            text: requestErrorText(error, localeRef.current),
+                          });
+                        throw error;
+                      }
+                    });
+                    if (result)
+                      setConfirmRequest((current) => (current === request ? null : current));
                   }}
                 >
                   {t('确认操作', 'Confirm')}

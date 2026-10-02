@@ -11,9 +11,10 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import type { CompanyRecordSummary } from '../shared/company-workspace';
-import { companySections, companyPath, type CompanySection } from '../shared/company-workspace';
+import { companySections, companyPath } from '../shared/company-workspace';
 import { api, requestErrorText } from './api';
 import { useApp } from './context';
+import { resolveCompanySection } from './routing';
 
 export const COMPANY_RECORDS_EVENT = 'prispect:company-records-changed';
 const icons = [
@@ -25,6 +26,12 @@ const icons = [
   ScanSearch,
   GitCompareArrows,
 ];
+
+const sameCompany = (first: CompanyRecordSummary, second: CompanyRecordSummary) =>
+  first.input.securityCode === second.input.securityCode &&
+  first.input.orgId === second.input.orgId &&
+  first.name === second.name;
+
 export function CompanySidebar({
   route,
   onClose,
@@ -41,7 +48,7 @@ export function CompanySidebar({
   const [revision, setRevision] = useState(0);
   const query = new URLSearchParams(route.split('?')[1]);
   const currentId = query.get('run');
-  const section = (query.get('section') || 'overview') as CompanySection;
+  const section = resolveCompanySection(query.get('section'));
   useEffect(() => {
     setRecords([]);
     setError('');
@@ -76,16 +83,11 @@ export function CompanySidebar({
     };
   }, [user?.id, locale, revision]);
   const sorted = [...records].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const companies = sorted.filter(
-    (run, index) =>
-      sorted.findIndex(
-        (item) =>
-          item.input.securityCode === run.input.securityCode &&
-          item.input.orgId === run.input.orgId &&
-          item.name === run.name
-      ) === index
-  );
-  const current = records.find((run) => run.id === currentId) || companies[0];
+  const selected = records.find((run) => run.id === currentId);
+  const companies = sorted
+    .filter((run, index) => sorted.findIndex((item) => sameCompany(item, run)) === index)
+    .map((run) => (selected && sameCompany(selected, run) ? selected : run));
+  const current = selected || companies[0];
   return (
     <>
       <nav

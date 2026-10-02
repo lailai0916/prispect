@@ -226,6 +226,26 @@ input[type='radio'] {
   background: var(--selection);
   color: var(--selection-text);
 }
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
+summary:not(:has(svg))::before {
+  content: '';
+  display: inline-block;
+  width: 0;
+  height: 0;
+  margin-right: 0.5em;
+  border-top: 3px solid transparent;
+  border-bottom: 3px solid transparent;
+  border-left: 4px solid currentColor;
+  vertical-align: 0.075em;
+}
+details[open] > summary:not(:has(svg))::before {
+  transform: rotate(90deg);
+}
 h1,
 h2,
 h3,

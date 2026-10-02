@@ -35,6 +35,7 @@ const avatarPolicy = { extensions: ['png', 'jpg', 'jpeg', 'webp'], maxBytes: 2 *
 const avatarPixelLimit = 16000000;
 type AvatarImageError = 'decode' | 'pixels' | 'animated';
 type AvatarMessage = readonly [string, string];
+type SecureAction = (password: string, current: () => boolean) => Promise<unknown>;
 
 // Read dimensions before asking the browser to decode a potentially large compressed image.
 function avatarImageInfo(bytes: Uint8Array): {
@@ -205,6 +206,34 @@ export function AccountPage() {
   const [overview, setOverview] = useState<AccountOverview | null>(null),
     [tab, setTab] = useState<'profile' | 'security' | 'data'>('profile'),
     [failure, setFailure] = useState('');
+  const [loadFailed, setLoadFailed] = useState(false),
+    [keysFailed, setKeysFailed] = useState(false),
+    [sessionsFailed, setSessionsFailed] = useState(false),
+    [keysLoading, setKeysLoading] = useState(true),
+    [sessionsLoading, setSessionsLoading] = useState(true),
+    [reloadFailed, setReloadFailed] = useState(false),
+    [loadAttempt, setLoadAttempt] = useState(0),
+    [submitting, setSubmitting] = useState(false);
+  const submitLock = useRef(false),
+    loadGeneration = useRef(0),
+    accountScope = useRef(0),
+    accountOwner = useRef(user?.id);
+  accountOwner.current = user?.id;
+  const listFailed = keysFailed || sessionsFailed;
+  useEffect(() => {
+    setFailure('');
+  }, [tab]);
+  const submitOnce = async (action: () => Promise<void>) => {
+    if (busy || submitLock.current || avatarLock.current) return;
+    submitLock.current = true;
+    setSubmitting(true);
+    try {
+      await action();
+    } finally {
+      submitLock.current = false;
+      setSubmitting(false);
+    }
+  };
   const [name, setName] = useState(''),
     [bio, setBio] = useState(''),
     [company, setCompany] = useState(''),
@@ -220,11 +249,10 @@ export function AccountPage() {
     ),
     [enrollCode, setEnrollCode] = useState(''),
     [codes, setCodes] = useState<string[]>([]);
-  const [reauthAction, setReauthAction] = useState<((password: string) => Promise<unknown>) | null>(
-      null
-    ),
+  const [reauthAction, setReauthAction] = useState<SecureAction | null>(null),
     [reauthPassword, setReauthPassword] = useState(''),
-    [reauthCode, setReauthCode] = useState('');
+    [reauthCode, setReauthCode] = useState(''),
+    [reauthFailure, setReauthFailure] = useState('');
   const [newEmail, setNewEmail] = useState(''),
     [phone, setPhone] = useState(''),
     [keyName, setKeyName] = useState('');
@@ -241,6 +269,7 @@ export function AccountPage() {
     avatarOwner = useRef(user?.id),
     avatarRequest = useRef<AbortController | null>(null);
   avatarOwner.current = user?.id;
+  const pending = busy || submitting || Boolean(avatarBusy);
   useEffect(() => {
     avatarAlive.current = true;
     setAvatarBusy(null);
@@ -248,6 +277,7 @@ export function AccountPage() {
     setAvatarRetry(null);
     const leaveAccount = () => {
       if (location.pathname === '/account') return;
+      accountScope.current++;
       // A lazy next page may briefly keep this component mounted after navigation.
       avatarRequest.current?.abort();
       avatarRequest.current = null;
@@ -263,28 +293,86 @@ export function AccountPage() {
       window.removeEventListener('hashchange', leaveAccount);
       window.removeEventListener(ROUTE_CHANGE_EVENT, leaveAccount);
       avatarAlive.current = false;
+      accountScope.current++;
       avatarRequest.current?.abort();
       avatarRequest.current = null;
       avatarLock.current = false;
     };
   }, [user?.id]);
-  const load = useCallback(async () => {
-    const [account, keyList, sessionList] = await Promise.all([
-      api<AccountOverview>('/account'),
-      api<AccountPasskeySummary[]>('/account/passkeys'),
-      api<AccountSessionSummary[]>('/account/sessions'),
+  const load = useCallback(async (signal?: AbortSignal) => {
+    const owner = accountOwner.current,
+      generation = ++loadGeneration.current;
+    setKeysLoading(true);
+    setSessionsLoading(true);
+    const keyList = Promise.allSettled([
+      api<AccountPasskeySummary[]>('/account/passkeys', { signal }),
     ]);
-    setOverview(account);
-    setKeys(keyList);
-    setSessions(sessionList);
+    const sessionList = Promise.allSettled([
+      api<AccountSessionSummary[]>('/account/sessions', { signal }),
+    ]);
+    let account: AccountOverview;
+    try {
+      account = await api<AccountOverview>('/account', { signal });
+    } catch (error) {
+      if (
+        !signal?.aborted &&
+        owner === accountOwner.current &&
+        generation === loadGeneration.current
+      ) {
+        setKeysLoading(false);
+        setSessionsLoading(false);
+      }
+      throw error;
+    }
+    const current = () =>
+      !signal?.aborted &&
+      owner === accountOwner.current &&
+      account.user.id === owner &&
+      generation === loadGeneration.current;
+    if (current()) {
+      setOverview(account);
+      setLoadFailed(false);
+      setReloadFailed(false);
+    }
+    void keyList.then(([result]) => {
+      if (!current()) return;
+      if (result.status === 'fulfilled') setKeys(result.value);
+      setKeysFailed(result.status === 'rejected');
+      setKeysLoading(false);
+    });
+    void sessionList.then(([result]) => {
+      if (!current()) return;
+      if (result.status === 'fulfilled') setSessions(result.value);
+      setSessionsFailed(result.status === 'rejected');
+      setSessionsLoading(false);
+    });
     return account;
   }, []);
   useEffect(() => {
     if (!user) return;
-    let cancelled = false;
-    void load()
+    const controller = new AbortController(),
+      owner = user.id;
+    setOverview(null);
+    setKeys([]);
+    setSessions([]);
+    setLoadFailed(false);
+    setKeysFailed(false);
+    setSessionsFailed(false);
+    setReloadFailed(false);
+    setFailure('');
+    setEnrollment(null);
+    setCodes([]);
+    setReauthAction(null);
+    setPassword('');
+    setNewPassword('');
+    setConfirmation('');
+    setCode('');
+    setReauthPassword('');
+    setReauthCode('');
+    setReauthFailure('');
+    void load(controller.signal)
       .then((account) => {
-        if (!cancelled) {
+        if (!controller.signal.aborted && accountOwner.current === owner) {
           setName(account.user.name);
           setBio(account.user.bio);
           setCompany(account.user.company);
@@ -293,59 +381,96 @@ export function AccountPage() {
         }
       })
       .catch(() => {
-        if (!cancelled)
-          setFailure(
-            t('账号资料暂未载入，请刷新重试。', 'Account details could not load. Refresh to retry.')
-          );
+        if (!controller.signal.aborted && accountOwner.current === owner) setLoadFailed(true);
       });
     return () => {
-      cancelled = true;
+      controller.abort();
     };
-  }, [user?.id, load, t]);
-  const secure = (action: (password: string) => Promise<unknown>) => {
+  }, [user?.id, load, loadAttempt]);
+  const secure = (action: SecureAction) => {
+    if (pending) return;
     returnFocus.current = document.activeElement as HTMLElement;
     setReauthPassword('');
     setReauthCode('');
+    setReauthFailure('');
     setReauthAction(() => action);
   };
   const reauth = async (event: FormEvent) => {
     event.preventDefault();
-    const action = reauthAction;
-    if (!action) return;
-    const result = await execute(async () => {
-      await post('/account/re-auth', {
-        password: reauthPassword,
-        ...(overview?.user.twoFactorEnabled ? { code: reauthCode } : {}),
+    await submitOnce(async () => {
+      const action = reauthAction;
+      if (!action) return;
+      const owner = user?.id;
+      const scope = accountScope.current;
+      const current = () =>
+        owner === accountOwner.current &&
+        scope === accountScope.current &&
+        avatarAlive.current &&
+        location.pathname === '/account';
+      let completed = false;
+      setReauthFailure('');
+      const result = await execute(async () => {
+        try {
+          await post('/account/re-auth', {
+            password: reauthPassword,
+            ...(overview?.user.twoFactorEnabled ? { code: reauthCode } : {}),
+          });
+          if (!current()) return false;
+          await action(reauthPassword, current);
+          completed = true;
+          if (!current()) return true;
+          await load();
+          return true;
+        } catch (error) {
+          if (current()) {
+            if (completed) setReloadFailed(true);
+            else setReauthFailure(requestErrorText(error, locale));
+          }
+          throw error;
+        }
       });
-      await action(reauthPassword);
-      await load();
-      return true;
+      if ((result || completed) && current()) {
+        setReauthAction(null);
+        setReauthPassword('');
+        setReauthCode('');
+        returnFocus.current?.focus();
+      }
     });
-    if (result) {
-      setReauthAction(null);
-      setReauthPassword('');
-      setReauthCode('');
-      returnFocus.current?.focus();
-    }
   };
   const logout = async () => {
-    const result = await execute(() => post('/auth/logout', {}));
-    if (result) navigate('/');
+    await submitOnce(async () => {
+      await execute(async () => {
+        const result = await post('/auth/logout', {});
+        navigate('/');
+        return result;
+      });
+    });
   };
   const saveProfile = async (event: FormEvent) => {
     event.preventDefault();
-    await execute(
-      async () => {
-        const account = await api<AccountOverview>('/account/profile', {
-          method: 'PATCH',
-          body: JSON.stringify({ name: name.trim(), bio, company, timezone, phoneNumber: phone }),
-        });
-        setOverview(account);
-        setPhone(account.user.phoneNumber || '');
-        return account;
-      },
-      t('个人信息已保存', 'Profile saved')
-    );
+    await submitOnce(async () => {
+      setFailure('');
+      if (!name.trim()) {
+        setFailure(t('请填写姓名或昵称。', 'Enter your name.'));
+        return;
+      }
+      await execute(
+        async () => {
+          const account = await api<AccountOverview>('/account/profile', {
+            method: 'PATCH',
+            body: JSON.stringify({ name: name.trim(), bio, company, timezone, phoneNumber: phone }),
+          });
+          if (account.user.id === accountOwner.current) {
+            setOverview(account);
+            setPhone((currentPhone) =>
+              currentPhone === phone ? account.user.phoneNumber || '' : currentPhone
+            );
+          }
+          return account;
+        },
+        t('个人信息已保存', 'Profile saved')
+      );
+    });
   };
   const avatarSelectionError = (code: FileSelectionError | AvatarImageError) => {
     if (avatarLock.current || !avatarAlive.current) return;
@@ -376,7 +501,8 @@ export function AccountPage() {
   };
   const updateAvatar = async (file?: File) => {
     const owner = user?.id;
-    if (!owner || busy || avatarLock.current || !avatarAlive.current) return;
+    if (!owner || pending || submitLock.current || avatarLock.current || !avatarAlive.current)
+      return;
     // The ref is set before validation or the first await, including picker/drop/delete races.
     avatarLock.current = true;
     const controller = new AbortController();
@@ -444,66 +570,87 @@ export function AccountPage() {
   };
   const { isDragging: avatarDragging, dropProps: avatarDropProps } = useFileDrop({
     ...avatarPolicy,
-    disabled: busy || Boolean(avatarBusy),
+    disabled: pending || Boolean(avatarBusy),
     onFile: (file) => void updateAvatar(file),
     onError: avatarSelectionError,
   });
   const changePassword = async (event: FormEvent) => {
     event.preventDefault();
-    setFailure('');
-    if (newPassword !== confirmation) {
-      setFailure(t('两次输入的新密码不一致。', 'The new passwords do not match.'));
-      return;
-    }
-    let weak: boolean;
-    try {
-      weak = !(await import('../../shared/password-strength')).validNewPassword(newPassword, [
-        user?.name || '',
-        user?.email || '',
-      ]);
-    } catch {
-      setFailure(
-        t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
+    await submitOnce(async () => {
+      const scope = accountScope.current,
+        owner = user?.id;
+      const current = () =>
+        scope === accountScope.current &&
+        owner === accountOwner.current &&
+        avatarAlive.current &&
+        location.pathname === '/account';
+      setFailure('');
+      if (newPassword !== confirmation) {
+        setFailure(t('两次输入的新密码不一致。', 'The new passwords do not match.'));
+        return;
+      }
+      let weak: boolean;
+      try {
+        weak = !(await import('../../shared/password-strength')).validNewPassword(newPassword, [
+          user?.name || '',
+          user?.email || '',
+        ]);
+      } catch {
+        if (current())
+          setFailure(
+            t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
+          );
+        return;
+      }
+      if (!current()) return;
+      if (weak) {
+        setFailure(
+          t(
+            '新密码太容易猜测，请换用更长且独特的密码。',
+            'Choose a longer, unique password that is harder to guess.'
+          )
+        );
+        return;
+      }
+      let completed = false;
+      const result = await execute(
+        async () => {
+          await post('/account/re-auth', {
+            password,
+            ...(overview?.user.twoFactorEnabled ? { code } : {}),
+          });
+          if (!current()) return false;
+          await post('/auth/password', { currentPassword: password, newPassword });
+          completed = true;
+          if (current()) {
+            try {
+              await load();
+            } catch (error) {
+              if (current()) setReloadFailed(true);
+              throw error;
+            }
+          }
+          return true;
+        },
+        t('密码已修改，其他会话已退出', 'Password changed; other sessions signed out')
       );
-      return;
-    }
-    if (weak) {
-      setFailure(
-        t(
-          '新密码太容易猜测，请换用更长且独特的密码。',
-          'Choose a longer, unique password that is harder to guess.'
-        )
-      );
-      return;
-    }
-    const result = await execute(
-      async () => {
-        await post('/account/re-auth', {
-          password,
-          ...(overview?.user.twoFactorEnabled ? { code } : {}),
-        });
-        await post('/auth/password', { currentPassword: password, newPassword });
-        await load();
-        return true;
-      },
-      t('密码已修改，其他会话已退出', 'Password changed; other sessions signed out')
-    );
-    if (result) {
-      setPassword('');
-      setNewPassword('');
-      setConfirmation('');
-      setCode('');
-    }
+      if ((result || completed) && current()) {
+        setPassword('');
+        setNewPassword('');
+        setConfirmation('');
+        setCode('');
+      }
+    });
   };
   const enableTotp = () =>
-    secure(async (currentPassword) => {
+    secure(async (currentPassword, current) => {
       const data = identityResult(
         await identityClient.twoFactor.enable({
           password: currentPassword,
           issuer: '析光 Prispect',
         })
       );
-      if ('totpURI' in data && data.totpURI)
+      if (current() && 'totpURI' in data && data.totpURI)
         setEnrollment({
           totpURI: data.totpURI,
           backupCodes: 'backupCodes' in data ? data.backupCodes : [],
@@ -511,25 +658,46 @@ export function AccountPage() {
     });
   const verifyEnrollment = async (event: FormEvent) => {
     event.preventDefault();
-    const result = await execute(
-      async () => {
-        identityResult(
-          await identityClient.twoFactor.verifyTotp({ code: enrollCode, trustDevice: false })
-        );
-        await refresh();
-        await load();
-        return true;
-      },
-      t(
-        '两步验证已启用，其他会话已退出',
-        'Two-step verification enabled; other sessions signed out'
-      )
-    );
-    if (result) {
-      setCodes(enrollment?.backupCodes || []);
-      setEnrollment(null);
-      setEnrollCode('');
-    }
+    await submitOnce(async () => {
+      const scope = accountScope.current,
+        owner = user?.id,
+        backupCodes = enrollment?.backupCodes || [];
+      const current = () =>
+        scope === accountScope.current &&
+        owner === accountOwner.current &&
+        avatarAlive.current &&
+        location.pathname === '/account';
+      const finish = () => {
+        if (!current()) return;
+        setCodes(backupCodes);
+        setEnrollment(null);
+        setEnrollCode('');
+      };
+      let completed = false;
+      const result = await execute(
+        async () => {
+          identityResult(
+            await identityClient.twoFactor.verifyTotp({ code: enrollCode, trustDevice: false })
+          );
+          completed = true;
+          finish();
+          if (current()) {
+            try {
+              await load();
+            } catch (error) {
+              if (current()) setReloadFailed(true);
+              throw error;
+            }
+          }
+          return true;
+        },
+        t(
+          '两步验证已启用，其他会话已退出',
+          'Two-step verification enabled; other sessions signed out'
+        )
+      );
+      if (result || completed) finish();
+    });
   };
   const tabs = [
     { id: 'profile' as const, label: t('个人信息', 'Profile'), icon: UserRound },
@@ -554,7 +722,7 @@ export function AccountPage() {
             )}
           </p>
         </div>
-        <button className="account-secondary" onClick={logout} disabled={busy}>
+        <button className="account-secondary" onClick={logout} disabled={pending}>
           <LogOut size={16} />
           {t('退出登录', 'Log out')}
         </button>
@@ -576,9 +744,16 @@ export function AccountPage() {
             onClick={() => setTab(item.id)}
             onKeyDown={(event) => {
               const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-              if (direction) {
+              if (direction || event.key === 'Home' || event.key === 'End') {
                 event.preventDefault();
-                const target = tabs[(index + direction + tabs.length) % tabs.length]!;
+                const target =
+                  tabs[
+                    event.key === 'Home'
+                      ? 0
+                      : event.key === 'End'
+                        ? tabs.length - 1
+                        : (index + direction + tabs.length) % tabs.length
+                  ]!;
                 setTab(target.id);
                 document.getElementById(`account-tab-${target.id}`)?.focus();
               }
@@ -594,7 +769,38 @@ export function AccountPage() {
           {failure}
         </p>
       )}
-      {!overview ? (
+      {reloadFailed && (
+        <div className="account-notice" role="status">
+          <p>
+            {t(
+              '操作已完成，账号资料暂未刷新。请重新载入确认最新状态。',
+              'The action completed, but account details could not refresh. Reload to confirm the latest state.'
+            )}
+          </p>
+          <button
+            type="button"
+            className="account-link-button"
+            disabled={pending}
+            onClick={() => void execute(() => load())}
+          >
+            {t('重新载入', 'Reload')}
+          </button>
+        </div>
+      )}
+      {loadFailed ? (
+        <div className="account-form">
+          <p className="account-error" role="alert">
+            {t('账号资料暂未载入，请重试。', 'Account details could not load. Please retry.')}
+          </p>
+          <button
+            type="button"
+            className="account-secondary"
+            onClick={() => setLoadAttempt((attempt) => attempt + 1)}
+          >
+            {t('重新载入', 'Retry loading')}
+          </button>
+        </div>
+      ) : !overview || overview.user.id !== user.id ? (
         <p className="account-muted" role="status">
           <LoaderCircle size={17} className="spinner" />{' '}
           {t('载入账号资料…', 'Loading account details…')}
@@ -640,7 +846,7 @@ export function AccountPage() {
                         type="button"
                         className="account-secondary"
                         onClick={() => fileRef.current?.click()}
-                        disabled={busy || Boolean(avatarBusy)}
+                        disabled={pending || Boolean(avatarBusy)}
                         aria-describedby="avatar-upload-hint"
                       >
                         {avatarBusy && avatarBusy !== 'deleting' ? (
@@ -658,7 +864,7 @@ export function AccountPage() {
                         <button
                           type="button"
                           className="account-link-button"
-                          disabled={busy || Boolean(avatarBusy)}
+                          disabled={pending || Boolean(avatarBusy)}
                           onClick={() => void updateAvatar()}
                         >
                           {avatarBusy === 'deleting'
@@ -670,7 +876,7 @@ export function AccountPage() {
                         <button
                           type="button"
                           className="account-link-button"
-                          disabled={busy || Boolean(avatarBusy)}
+                          disabled={pending || Boolean(avatarBusy)}
                           onClick={() => void updateAvatar(avatarRetry)}
                         >
                           {t('重试上传', 'Retry upload')}
@@ -719,7 +925,7 @@ export function AccountPage() {
                     ref={fileRef}
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
-                    disabled={busy || Boolean(avatarBusy)}
+                    disabled={pending || Boolean(avatarBusy)}
                     aria-label={t('选择头像文件', 'Choose avatar file')}
                     onChange={(event) => {
                       const files = event.target.files;
@@ -744,16 +950,20 @@ export function AccountPage() {
                     />
                   </label>
                   <label>
-                    {t('手机号（展示用，选填）', 'Display phone number (optional)')}
+                    <span id="account-phone-label">
+                      {t('手机号（展示用，选填）', 'Display phone number (optional)')}
+                    </span>
                     <input
                       type="tel"
+                      aria-labelledby="account-phone-label"
+                      aria-describedby="account-phone-hint"
                       autoComplete="tel"
                       value={phone}
                       maxLength={30}
                       onChange={(event) => setPhone(event.target.value)}
                       placeholder={t('手机号或带国家区号的号码', 'Phone number with country code')}
                     />
-                    <span className="account-muted">
+                    <span className="account-muted" id="account-phone-hint">
                       {t(
                         '用于个人资料展示，无需验证码。',
                         'Shown in your profile. No verification code required.'
@@ -761,8 +971,9 @@ export function AccountPage() {
                     </span>
                   </label>
                   <label>
-                    {t('简介', 'Bio')}
+                    <span id="account-bio-label">{t('简介', 'Bio')}</span>
                     <textarea
+                      aria-labelledby="account-bio-label"
                       maxLength={500}
                       value={bio}
                       onChange={(event) => setBio(event.target.value)}
@@ -806,7 +1017,7 @@ export function AccountPage() {
                     </label>
                   </div>
                   <div className="account-actions">
-                    <button className="account-action" disabled={busy}>
+                    <button className="account-action" disabled={pending}>
                       {t('保存个人信息', 'Save profile')}
                     </button>
                   </div>
@@ -829,7 +1040,7 @@ export function AccountPage() {
                   </div>
                   <button
                     className="account-secondary"
-                    disabled={busy || !overview.capabilities.email.configured}
+                    disabled={pending || !overview.capabilities.email.configured}
                     onClick={() =>
                       secure(async () => {
                         await post('/account/email/verify', {});
@@ -869,7 +1080,7 @@ export function AccountPage() {
                         onChange={(event) => setNewEmail(event.target.value)}
                       />
                     </label>
-                    <button className="account-secondary" disabled={busy}>
+                    <button className="account-secondary" disabled={pending}>
                       {t('发送换绑验证', 'Send change verification')}
                     </button>
                   </form>
@@ -879,6 +1090,24 @@ export function AccountPage() {
           )}
           {tab === 'security' && (
             <>
+              {listFailed && (
+                <div className="account-notice" role="status">
+                  <p>
+                    {t(
+                      '部分通行密钥或设备会话暂未载入。',
+                      'Some passkeys or device sessions could not load.'
+                    )}
+                  </p>
+                  <button
+                    type="button"
+                    className="account-link-button"
+                    disabled={pending}
+                    onClick={() => void execute(() => load())}
+                  >
+                    {t('重试', 'Retry')}
+                  </button>
+                </div>
+              )}
               <Section
                 title={t('密码', 'Password')}
                 description={t(
@@ -938,7 +1167,7 @@ export function AccountPage() {
                     />
                   </label>
                   <div className="account-actions">
-                    <button className="account-action" disabled={busy}>
+                    <button className="account-action" disabled={pending}>
                       {t('修改密码', 'Change password')}
                     </button>
                   </div>
@@ -965,13 +1194,12 @@ export function AccountPage() {
                   {overview.user.twoFactorEnabled ? (
                     <button
                       className="account-secondary"
-                      disabled={busy}
+                      disabled={pending}
                       onClick={() =>
                         secure(async (currentPassword) => {
                           identityResult(
                             await identityClient.twoFactor.disable({ password: currentPassword })
                           );
-                          await refresh();
                         })
                       }
                     >
@@ -980,7 +1208,7 @@ export function AccountPage() {
                   ) : (
                     <button
                       className="account-action"
-                      disabled={busy || !!enrollment}
+                      disabled={pending || !!enrollment}
                       onClick={enableTotp}
                     >
                       <ShieldCheck size={16} />
@@ -1027,7 +1255,7 @@ export function AccountPage() {
                           onChange={(event) => setEnrollCode(event.target.value)}
                         />
                       </label>
-                      <button className="account-action" disabled={busy}>
+                      <button className="account-action" disabled={pending}>
                         {t('确认启用', 'Confirm and enable')}
                       </button>
                     </form>
@@ -1036,15 +1264,15 @@ export function AccountPage() {
                 {overview.user.twoFactorEnabled && (
                   <button
                     className="account-link-button"
-                    disabled={busy}
+                    disabled={pending}
                     onClick={() =>
-                      secure(async (currentPassword) => {
+                      secure(async (currentPassword, current) => {
                         const data = identityResult(
                           await identityClient.twoFactor.generateBackupCodes({
                             password: currentPassword,
                           })
                         );
-                        setCodes(data.backupCodes);
+                        if (current()) setCodes(data.backupCodes);
                       })
                     }
                   >
@@ -1098,7 +1326,7 @@ export function AccountPage() {
                   <div className="account-actions">
                     <button
                       className="account-action"
-                      disabled={busy || !window.PublicKeyCredential}
+                      disabled={pending || !window.PublicKeyCredential}
                       onClick={() =>
                         secure(async () => {
                           identityResult(
@@ -1139,7 +1367,7 @@ export function AccountPage() {
                         </div>
                         <button
                           className="account-secondary"
-                          disabled={busy}
+                          disabled={pending}
                           aria-label={
                             t('删除通行密钥：', 'Delete passkey: ') + (key.name || key.id)
                           }
@@ -1158,7 +1386,11 @@ export function AccountPage() {
                   </ul>
                 ) : (
                   <p className="account-empty">
-                    {t('尚未登记通行密钥。', 'No passkeys registered.')}
+                    {keysLoading
+                      ? t('载入通行密钥…', 'Loading passkeys…')
+                      : keysFailed
+                        ? t('通行密钥列表暂未载入。', 'The passkey list could not load.')
+                        : t('尚未登记通行密钥。', 'No passkeys registered.')}
                   </p>
                 )}
                 <p className="account-muted">
@@ -1175,6 +1407,19 @@ export function AccountPage() {
                   'View signed-in devices and sign out individual sessions.'
                 )}
               >
+                {sessionsLoading ? (
+                  <p className="account-muted" role="status">
+                    {t('载入设备会话…', 'Loading device sessions…')}
+                  </p>
+                ) : sessionsFailed ? (
+                  <p className="account-empty">
+                    {t('设备会话列表暂未载入。', 'The device session list could not load.')}
+                  </p>
+                ) : !sessions.length ? (
+                  <p className="account-empty">
+                    {t('没有可显示的设备会话。', 'No device sessions to display.')}
+                  </p>
+                ) : null}
                 <ul className="account-session-list">
                   {sessions.map((session) => (
                     <li key={session.id}>
@@ -1206,7 +1451,7 @@ export function AccountPage() {
                       </div>
                       <button
                         className="account-secondary"
-                        disabled={busy}
+                        disabled={pending}
                         onClick={() =>
                           confirm({
                             title: t('退出此会话？', 'Sign out this session?'),
@@ -1217,10 +1462,23 @@ export function AccountPage() {
                                   'The device will need to log in again before accessing the workspace.'
                                 ),
                             action: async () => {
+                              const scope = accountScope.current,
+                                owner = user.id;
+                              const current = () =>
+                                scope === accountScope.current &&
+                                owner === accountOwner.current &&
+                                avatarAlive.current &&
+                                location.pathname === '/account';
                               await post(`/account/sessions/${session.id}/revoke`, {});
-                              await refresh();
-                              if (session.current) navigate('/');
-                              else await load();
+                              if (session.current) {
+                                if (owner === accountOwner.current) navigate('/');
+                              } else if (current()) {
+                                try {
+                                  await load();
+                                } catch {
+                                  if (current()) setReloadFailed(true);
+                                }
+                              }
                             },
                           })
                         }
@@ -1246,8 +1504,8 @@ export function AccountPage() {
                   <ShieldCheck size={18} />
                   <p>
                     {t(
-                      '账号资料、身份验证密钥和决定中的私人输入不会发送到分析模型。公开企业查询只在你明确启用模型时发送允许的公开证据。',
-                      'Account details, authentication secrets and private decision inputs are not sent to analysis models. Public company retrieval sends allowed public evidence only when you explicitly enable a model.'
+                      '账号资料、身份验证密钥和决定中的私人输入不会发送到分析模型。公开企业查询与企业问答会自动使用 AI 分析取得的公开资料；详细说明见隐私政策。',
+                      'Account details, authentication secrets and private decision inputs are not sent to analysis models. Company retrieval and questions automatically use AI to analyze retrieved public information. See the privacy policy for details.'
                     )}
                   </p>
                 </div>
@@ -1273,7 +1531,7 @@ export function AccountPage() {
                 </p>
                 <button
                   className="account-danger"
-                  disabled={busy}
+                  disabled={pending}
                   onClick={() =>
                     confirm({
                       title: t('清空你的全部工作区内容？', 'Clear all your workspace content?'),
@@ -1300,10 +1558,11 @@ export function AccountPage() {
         <Dialog.Root
           open={true}
           onOpenChange={(open) => {
-            if (!open && !busy) {
+            if (!open && !pending) {
               setReauthAction(null);
               setReauthPassword('');
               setReauthCode('');
+              setReauthFailure('');
             }
           }}
         >
@@ -1345,23 +1604,29 @@ export function AccountPage() {
                     />
                   </label>
                 )}
+                {reauthFailure && (
+                  <p className="account-error" role="alert">
+                    {reauthFailure}
+                  </p>
+                )}
                 <div className="account-actions">
                   <button
                     className="account-secondary"
                     type="button"
-                    disabled={busy}
+                    disabled={pending}
                     onClick={() => {
                       setReauthAction(null);
                       setReauthPassword('');
                       setReauthCode('');
+                      setReauthFailure('');
                       returnFocus.current?.focus();
                     }}
                   >
                     <X size={15} />
                     {t('取消', 'Cancel')}
                   </button>
-                  <button className="account-action" disabled={busy}>
-                    {busy ? (
+                  <button className="account-action" disabled={pending}>
+                    {pending ? (
                       <LoaderCircle className="spinner" size={16} />
                     ) : (
                       <ShieldCheck size={16} />

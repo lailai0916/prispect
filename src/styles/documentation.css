@@ -341,6 +341,23 @@
   .document-heading {
     padding-top: 0;
   }
+  .document-page .method-content details {
+    padding: 0;
+    margin-top: 18px;
+    border: 0;
+    background: transparent;
+  }
+  .document-page .method-content details > summary {
+    font-weight: 600;
+    list-style: none;
+  }
+  .document-page .method-content details > summary::marker {
+    content: none;
+  }
+  .document-page .method-content details > summary::before,
+  .document-page .method-content details > summary::-webkit-details-marker {
+    display: none;
+  }
   .document-section {
     break-inside: auto;
   }

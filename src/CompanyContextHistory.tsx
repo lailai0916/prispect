@@ -8,7 +8,7 @@ import {
 } from '../shared/company-analysis';
 import { CompanyContextEvidence } from './CompanyContextViews';
 import { useApp } from './context';
-import { money } from './format';
+import { chartScale, money } from './format';
 
 export function CompanyContextHistory({
   snapshot,
@@ -66,7 +66,7 @@ export function CompanyContextHistory({
           ? ratioValue(index, field)
           : row.amounts[field as ContextAmountField] === null
             ? null
-            : Number(row.amounts[field as ContextAmountField]) / 1e8
+            : Number(row.amounts[field as ContextAmountField])
       )
     );
     const maximum = Math.max(0, ...values.filter((value): value is number => value !== null)),
@@ -77,105 +77,112 @@ export function CompanyContextHistory({
       width = Math.max(640, rows.length * 115),
       height = 270,
       pad = { left: 54, right: 16, top: 26, bottom: 36 };
+    const axis = ratio
+      ? { ...chartScale(0, range, locale, 4), label: '%' }
+      : chartScale(Math.max(Math.abs(high), Math.abs(low)), range, locale, 4);
     const y = (value: number) =>
         pad.top + ((high - value) / range) * (height - pad.top - pad.bottom),
       step = (width - pad.left - pad.right) / Math.max(rows.length, 1),
       bar = Math.min(24, (step - 30) / fields.length);
     return (
-      <div
-        className="context-chart-scroll"
-        tabIndex={0}
-        aria-label={t('年度图表，可横向滚动', 'Annual chart; scroll horizontally')}
-      >
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          role="group"
-          aria-label={
-            ratio ? t('年度比率', 'Annual ratios') : t('年度金额，亿元', 'Annual amounts, CNY 100m')
-          }
+      <div className="context-chart-plot">
+        <span className="muted">{ratio ? '%' : t(`人民币 · ${axis.label}`, axis.label)}</span>
+        <div
+          className="context-chart-scroll"
+          tabIndex={0}
+          aria-label={t('年度图表，可横向滚动', 'Annual chart; scroll horizontally')}
         >
-          {[0, 1, 2, 3, 4].map((index) => {
-            const value = low + (range * index) / 4;
-            return (
-              <g key={index}>
-                <line
-                  x1={pad.left}
-                  x2={width - pad.right}
-                  y1={y(value)}
-                  y2={y(value)}
-                  className="context-chart-grid"
-                />
-                <text x={pad.left - 8} y={y(value) + 4} textAnchor="end">
-                  {value.toLocaleString(locale, { maximumFractionDigits: 1 })}
-                </text>
-              </g>
-            );
-          })}
-          {rows.map((row, index) => {
-            const center = pad.left + step * (index + 0.5);
-            return (
-              <g
-                key={row.period}
-                role="button"
-                tabIndex={0}
-                aria-label={t(
-                  `查看 ${row.period.slice(0, 4)} 年明细`,
-                  `View ${row.period.slice(0, 4)} details`
-                )}
-                aria-pressed={detail?.period === row.period}
-                onClick={() => setSelected(row.period)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    setSelected(row.period);
-                  }
-                }}
-              >
-                <rect
-                  x={center - step / 2 + 3}
-                  y={12}
-                  width={step - 6}
-                  height={height - 18}
-                  rx={3}
-                  className={`context-chart-selection ${detail?.period === row.period ? 'selected' : ''}`}
-                />
-                {fields.map((field, series) => {
-                  const raw = ratio
-                      ? ratioValue(index, field)
-                      : row.amounts[field as ContextAmountField] === null
-                        ? null
-                        : Number(row.amounts[field as ContextAmountField]) / 1e8,
-                    x = center + (series - fields.length / 2) * (bar + 3);
-                  return raw === null ? (
-                    <text key={field} x={x} y={y(0) - 6}>
-                      ?
-                    </text>
-                  ) : (
-                    <rect
-                      key={field}
-                      x={x}
-                      y={y(Math.max(0, raw))}
-                      width={bar}
-                      height={Math.max(1, Math.abs(y(raw) - y(0)))}
-                      fill={colors[series]}
-                      rx={1}
-                    >
-                      <title>
-                        {row.period.slice(0, 4)} · {field}:{' '}
-                        {ratio
-                          ? `${raw}%`
-                          : money(row.amounts[field as ContextAmountField], locale, false)}
-                      </title>
-                    </rect>
-                  );
-                })}
-                <text x={center} y={height - 12} textAnchor="middle">
-                  {row.period.slice(0, 4)}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
+          <svg
+            viewBox={`0 0 ${width} ${height}`}
+            role="group"
+            aria-label={
+              ratio
+                ? t('年度比率', 'Annual ratios')
+                : t(`年度金额，${axis.label}`, `Annual amounts, ${axis.label}`)
+            }
+          >
+            {[0, 1, 2, 3, 4].map((index) => {
+              const value = low + (range * index) / 4;
+              return (
+                <g key={index}>
+                  <line
+                    x1={pad.left}
+                    x2={width - pad.right}
+                    y1={y(value)}
+                    y2={y(value)}
+                    className="context-chart-grid"
+                  />
+                  <text x={pad.left - 8} y={y(value) + 4} textAnchor="end">
+                    {(value / axis.divisor).toLocaleString(locale, {
+                      maximumFractionDigits: axis.digits,
+                    })}
+                  </text>
+                </g>
+              );
+            })}
+            {rows.map((row, index) => {
+              const center = pad.left + step * (index + 0.5);
+              return (
+                <g
+                  key={row.period}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={t(
+                    `查看 ${row.period.slice(0, 4)} 年明细`,
+                    `View ${row.period.slice(0, 4)} details`
+                  )}
+                  aria-pressed={detail?.period === row.period}
+                  onClick={() => setSelected(row.period)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setSelected(row.period);
+                    }
+                  }}
+                >
+                  <rect
+                    x={center - step / 2 + 3}
+                    y={12}
+                    width={step - 6}
+                    height={height - 18}
+                    rx={3}
+                    className={`context-chart-selection ${detail?.period === row.period ? 'selected' : ''}`}
+                  />
+                  {fields.map((field, series) => {
+                    const raw = ratio
+                        ? ratioValue(index, field)
+                        : row.amounts[field as ContextAmountField] === null
+                          ? null
+                          : Number(row.amounts[field as ContextAmountField]),
+                      x = center + (series - fields.length / 2) * (bar + 3);
+                    return raw === null ? (
+                      <text key={field} x={x} y={y(0) - 6}>
+                        ?
+                      </text>
+                    ) : (
+                      <rect
+                        key={field}
+                        x={x}
+                        y={y(Math.max(0, raw))}
+                        width={bar}
+                        height={Math.max(1, Math.abs(y(raw) - y(0)))}
+                        fill={colors[series]}
+                        rx={1}
+                      >
+                        <title>
+                          {`${row.period.slice(0, 4)} · ${field}: ${ratio ? `${raw}%` : money(row.amounts[field as ContextAmountField], locale, false)}`}
+                        </title>
+                      </rect>
+                    );
+                  })}
+                  <text x={center} y={height - 12} textAnchor="middle">
+                    {row.period.slice(0, 4)}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
       </div>
     );
   };
@@ -232,7 +239,6 @@ export function CompanyContextHistory({
         aria-labelledby={`${tabId}-${tab}`}
         className="context-chart-panel"
       >
-        <span className="muted">{tab === 'ratios' ? '%' : t('人民币 · 亿元', 'CNY · 100m')}</span>
         {tab === 'income' ? (
           <div className="context-chart-multiples">
             {keys.map((field) => (

@@ -169,7 +169,12 @@ export function CompanyQuestionsView({
               setQuestion(event.target.value);
             }}
             onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+              if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                event.keyCode !== 229
+              ) {
                 event.preventDefault();
                 event.currentTarget.form?.requestSubmit();
               }

@@ -216,7 +216,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
         });
     } else if (!isNew)
       void api<DecisionSummary[]>('/decisions', { signal: controller.signal })
-        .then(setList)
+        .then((next) => {
+          if (controller.signal.aborted) return;
+          setList(next);
+          setError('');
+        })
         .catch((cause) => {
           if (!controller.signal.aborted) setError(requestErrorText(cause, locale));
         });
@@ -231,6 +235,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
     }));
   const save = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy || (id && (loading || !detail || readOnly))) return;
     const normalized = {
       ...input,
       title:
@@ -465,175 +470,180 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       )}
       {(editing || isNew) && (
         <form className="decision-input-form" onSubmit={save}>
-          <fieldset className="new-purpose">
-            <legend>{t('事项类型', 'Review type')}</legend>
-            <div className="purpose-options">
-              {(['external', 'handover'] as const).map((value) => (
-                <label
-                  className={`purpose-option ${input.purpose === value ? 'selected' : ''}`}
-                  key={value}
-                >
-                  <input
-                    type="radio"
-                    name="decision-purpose"
-                    checked={input.purpose === value}
-                    onChange={() => setPurpose(value)}
-                  />
-                  <strong>
-                    {value === 'external'
-                      ? t('付款前核对', 'Before payment')
-                      : t('接手核查', 'Company handover')}
-                  </strong>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-          <div className="decision-form-grid">
-            <label className="form-field">
-              <span id="decision-company-label">
-                {t('公司或商家名称', 'Company or merchant name')}
-              </span>
-              <input
-                required
-                aria-labelledby="decision-company-label"
-                aria-describedby="decision-company-note"
-                maxLength={200}
-                value={input.transactionEntity}
-                onChange={(e) => setInput({ ...input, transactionEntity: e.target.value })}
-              />
-              <small id="decision-company-note" className="field-note">
-                {t(
-                  '暂按你提供的名称保存；尚未确认合同责任主体。',
-                  'Saved under the name you provide; the contract-responsible entity is not yet confirmed.'
-                )}
-              </small>
-            </label>
-            <MoneyField
-              label={t('本次拟付款', 'Proposed payment')}
-              value={
-                input.purpose === 'external'
-                  ? (input.external?.proposedAmount ?? null)
-                  : (input.datedCash?.proposedAmount ?? null)
-              }
-              onChange={(value) =>
-                setInput(
-                  input.purpose === 'external'
-                    ? {
-                        ...input,
-                        external: { ...(input.external || blankExternal()), proposedAmount: value },
-                      }
-                    : {
-                        ...input,
-                        datedCash: { ...(input.datedCash || blankCash()), proposedAmount: value },
-                      }
-                )
-              }
-            />
-          </div>
-          <label className="form-field">
-            <span>
-              {t(
-                '任务说明或对方原话（可选）',
-                'Your description or counterparty’s words (optional)'
-              )}
-            </span>
-            <textarea
-              maxLength={2000}
-              rows={2}
-              value={input.promise}
-              onChange={(e) => setInput({ ...input, promise: e.target.value })}
-            />
-          </label>
-          {input.purpose === 'handover' && (
-            <div className="decision-cash-import">
-              <CashPlanImport
-                current={input.datedCash}
-                onChange={(datedCash) => setInput((current) => ({ ...current, datedCash }))}
-              />
-              {!!input.datedCash?.flows.length && (
-                <p className="field-note" role="status">
-                  {t(
-                    `${input.datedCash.flows.length} 项收付款计划 · 起点 ${input.datedCash.asOf} · 保存后核对`,
-                    `${input.datedCash.flows.length} planned cash events · as of ${input.datedCash.asOf} · save to review`
-                  )}
-                </p>
-              )}
-            </div>
-          )}
-          <details className="decision-input-details" open={!isNew}>
-            <summary>{t('补充计算条件', 'Add calculation conditions')}</summary>
-            <p className="field-note">
-              {t(
-                '暂缺的付款、交付、退款与现金记录保留未知，保存不会填零。',
-                'Missing payment, delivery, refund and cash records stay unknown. Saving does not fill them with zero.'
-              )}
-            </p>
-            <label className="form-field">
-              <span>{t('事项名称（可选）', 'Name (optional)')}</span>
-              <input
-                maxLength={200}
-                value={input.title}
-                onChange={(e) => setInput({ ...input, title: e.target.value })}
-                placeholder={t('按公司和决定自动命名', 'Named from the company and decision')}
-              />
-            </label>
-            <DecisionInputs input={input} onChange={setInput} />
-            <details className="decision-financial-binding">
-              <summary>
-                {t('关联历史财务核查（可选）', 'Link a historical financial review (optional)')}
-              </summary>
+          <fieldset className="decision-save-fields" disabled={busy}>
+            <fieldset className="new-purpose">
+              <legend>{t('事项类型', 'Review type')}</legend>
+              <div className="purpose-options">
+                {(['external', 'handover'] as const).map((value) => (
+                  <label
+                    className={`purpose-option ${input.purpose === value ? 'selected' : ''}`}
+                    key={value}
+                  >
+                    <input
+                      type="radio"
+                      name="decision-purpose"
+                      checked={input.purpose === value}
+                      onChange={() => setPurpose(value)}
+                    />
+                    <strong>
+                      {value === 'external'
+                        ? t('付款前核对', 'Before payment')
+                        : t('接手核查', 'Company handover')}
+                    </strong>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+            <div className="decision-form-grid">
               <label className="form-field">
-                <span>{t('选择本账号核查', 'Select your review')}</span>
-                <Select
-                  value={input.reportTaskId || ''}
-                  onValueChange={(selectedValue) =>
-                    setInput({ ...input, reportTaskId: selectedValue || null })
-                  }
-                >
-                  <option value="">{t('不关联', 'No linked review')}</option>
-                  {workspace?.tasks
-                    .filter((task) => task.report)
-                    .map((task) => (
-                      <option key={task.id} value={task.id}>
-                        {task.company} · {task.year} · {task.title}
-                      </option>
-                    ))}
-                </Select>
+                <span id="decision-company-label">
+                  {t('公司或商家名称', 'Company or merchant name')}
+                </span>
+                <input
+                  required
+                  aria-labelledby="decision-company-label"
+                  aria-describedby="decision-company-note"
+                  maxLength={200}
+                  value={input.transactionEntity}
+                  onChange={(e) => setInput({ ...input, transactionEntity: e.target.value })}
+                />
+                <small id="decision-company-note" className="field-note">
+                  {t(
+                    '暂按你提供的名称保存；尚未确认合同责任主体。',
+                    'Saved under the name you provide; the contract-responsible entity is not yet confirmed.'
+                  )}
+                </small>
               </label>
+              <MoneyField
+                label={t('本次拟付款', 'Proposed payment')}
+                value={
+                  input.purpose === 'external'
+                    ? (input.external?.proposedAmount ?? null)
+                    : (input.datedCash?.proposedAmount ?? null)
+                }
+                onChange={(value) =>
+                  setInput(
+                    input.purpose === 'external'
+                      ? {
+                          ...input,
+                          external: {
+                            ...(input.external || blankExternal()),
+                            proposedAmount: value,
+                          },
+                        }
+                      : {
+                          ...input,
+                          datedCash: { ...(input.datedCash || blankCash()), proposedAmount: value },
+                        }
+                  )
+                }
+              />
+            </div>
+            <label className="form-field">
+              <span>
+                {t(
+                  '任务说明或对方原话（可选）',
+                  'Your description or counterparty’s words (optional)'
+                )}
+              </span>
+              <textarea
+                maxLength={2000}
+                rows={2}
+                value={input.promise}
+                onChange={(e) => setInput({ ...input, promise: e.target.value })}
+              />
+            </label>
+            {input.purpose === 'handover' && (
+              <div className="decision-cash-import">
+                <CashPlanImport
+                  current={input.datedCash}
+                  onChange={(datedCash) => setInput((current) => ({ ...current, datedCash }))}
+                />
+                {!!input.datedCash?.flows.length && (
+                  <p className="field-note" role="status">
+                    {t(
+                      `${input.datedCash.flows.length} 项收付款计划 · 起点 ${input.datedCash.asOf} · 保存后核对`,
+                      `${input.datedCash.flows.length} planned cash events · as of ${input.datedCash.asOf} · save to review`
+                    )}
+                  </p>
+                )}
+              </div>
+            )}
+            <details className="decision-input-details" open={!isNew}>
+              <summary>{t('补充计算条件', 'Add calculation conditions')}</summary>
               <p className="field-note">
                 {t(
-                  '集团年报不能代替子公司的合同责任或当前资金。',
-                  'A group annual report does not establish a subsidiary’s contract responsibility or current funds.'
+                  '暂缺的付款、交付、退款与现金记录保留未知，保存不会填零。',
+                  'Missing payment, delivery, refund and cash records stay unknown. Saving does not fill them with zero.'
                 )}
               </p>
+              <label className="form-field">
+                <span>{t('事项名称（可选）', 'Name (optional)')}</span>
+                <input
+                  maxLength={200}
+                  value={input.title}
+                  onChange={(e) => setInput({ ...input, title: e.target.value })}
+                  placeholder={t('按公司和决定自动命名', 'Named from the company and decision')}
+                />
+              </label>
+              <DecisionInputs input={input} onChange={setInput} />
+              <details className="decision-financial-binding">
+                <summary>
+                  {t('关联历史财务核查（可选）', 'Link a historical financial review (optional)')}
+                </summary>
+                <label className="form-field">
+                  <span>{t('选择本账号核查', 'Select your review')}</span>
+                  <Select
+                    value={input.reportTaskId || ''}
+                    onValueChange={(selectedValue) =>
+                      setInput({ ...input, reportTaskId: selectedValue || null })
+                    }
+                  >
+                    <option value="">{t('不关联', 'No linked review')}</option>
+                    {workspace?.tasks
+                      .filter((task) => task.report)
+                      .map((task) => (
+                        <option key={task.id} value={task.id}>
+                          {task.company} · {task.year} · {task.title}
+                        </option>
+                      ))}
+                  </Select>
+                </label>
+                <p className="field-note">
+                  {t(
+                    '集团年报不能代替子公司的合同责任或当前资金。',
+                    'A group annual report does not establish a subsidiary’s contract responsibility or current funds.'
+                  )}
+                </p>
+              </details>
             </details>
-          </details>
-          <div className="decision-form-actions">
-            <button className="button button-primary" disabled={busy}>
-              <Check size={15} />
-              {id
-                ? t('保存新版本并重算', 'Save new version and recalculate')
-                : t('保存并核对', 'Save and review')}
-            </button>
-            {id && (
-              <button
-                type="button"
-                className="button button-secondary"
-                onClick={() => {
-                  setInput(detail!.version.input);
-                  setEditing(false);
-                }}
-              >
-                {t('取消修改', 'Cancel edits')}
+            <div className="decision-form-actions">
+              <button className="button button-primary" disabled={busy}>
+                <Check size={15} />
+                {id
+                  ? t('保存新版本并重算', 'Save new version and recalculate')
+                  : t('保存并核对', 'Save and review')}
               </button>
-            )}
-          </div>
-          <p className="field-note">
-            {t(
-              '留空为未知，0须明确填写。任务说明和材料记录仅保存在本账号，不发送到外部模型。',
-              'Blank means unknown; enter zero explicitly. Descriptions and evidence stay in your account and are not sent to an external model.'
-            )}
-          </p>
+              {id && (
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => {
+                    setInput(detail!.version.input);
+                    setEditing(false);
+                  }}
+                >
+                  {t('取消修改', 'Cancel edits')}
+                </button>
+              )}
+            </div>
+            <p className="field-note">
+              {t(
+                '留空为未知，0须明确填写。任务说明和材料记录仅保存在本账号，不发送到外部模型。',
+                'Blank means unknown; enter zero explicitly. Descriptions and evidence stay in your account and are not sent to an external model.'
+              )}
+            </p>
+          </fieldset>
         </form>
       )}
       {detail && !editing && (
@@ -1341,57 +1351,68 @@ function ScopeDialog({
   const [asOf, setAsOf] = useState(evidence.asOf);
   const [reason, setReason] = useState('');
   return (
-    <Dialog title={t('更正适用范围', 'Correct evidence scope')} onClose={onClose}>
+    <Dialog
+      title={t('更正适用范围', 'Correct evidence scope')}
+      onClose={onClose}
+      closeDisabled={busy}
+    >
       <form
         className="decision-evidence-form"
         onSubmit={(event) => {
           event.preventDefault();
+          if (busy) return;
           void onSave(entity.trim(), asOf, reason.trim());
         }}
       >
-        <p className="field-note">
-          {t(
-            '只更正这条记录的主体与日期，金额、摘录与来源保留。新范围须能在保存的材料文本中定位；更正不认证材料真实性。',
-            'Only the entity and date change; amounts, excerpts and source remain. The corrected scope must be located in the saved material text. Correction does not authenticate the material.'
-          )}
-        </p>
-        <label className="form-field">
-          <span>{t('更正后的主体', 'Corrected entity')}</span>
-          <input
-            required
-            maxLength={200}
-            value={entity}
-            onChange={(e) => setEntity(e.target.value)}
-          />
-        </label>
-        <label className="form-field">
-          <span>{t('更正后的覆盖日期', 'Corrected covered date')}</span>
-          <input type="date" value={asOf || ''} onChange={(e) => setAsOf(e.target.value || null)} />
-        </label>
-        <label className="form-field">
-          <span>{t('更正原因', 'Correction reason')}</span>
-          <textarea
-            required
-            maxLength={1000}
-            rows={3}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-        </label>
-        <details className="decision-evidence-binding">
-          <summary>{t('原记录（保持不变）', 'Original record (unchanged)')}</summary>
-          <p>{evidence.sourceLabel}</p>
-          <blockquote>{evidence.quote}</blockquote>
-          <SourceLink materialId={evidence.materialId!} page={evidence.page} />
-        </details>
-        <div className="dialog-actions">
-          <button type="button" className="button button-secondary" onClick={onClose}>
-            {t('取消', 'Cancel')}
-          </button>
-          <button className="button button-primary" disabled={busy}>
-            {t('另存范围更正版本', 'Save scope-correction version')}
-          </button>
-        </div>
+        <fieldset className="decision-save-fields" disabled={busy}>
+          <p className="field-note">
+            {t(
+              '只更正这条记录的主体与日期，金额、摘录与来源保留。新范围须能在保存的材料文本中定位；更正不认证材料真实性。',
+              'Only the entity and date change; amounts, excerpts and source remain. The corrected scope must be located in the saved material text. Correction does not authenticate the material.'
+            )}
+          </p>
+          <label className="form-field">
+            <span>{t('更正后的主体', 'Corrected entity')}</span>
+            <input
+              required
+              maxLength={200}
+              value={entity}
+              onChange={(e) => setEntity(e.target.value)}
+            />
+          </label>
+          <label className="form-field">
+            <span>{t('更正后的覆盖日期', 'Corrected covered date')}</span>
+            <input
+              type="date"
+              value={asOf || ''}
+              onChange={(e) => setAsOf(e.target.value || null)}
+            />
+          </label>
+          <label className="form-field">
+            <span>{t('更正原因', 'Correction reason')}</span>
+            <textarea
+              required
+              maxLength={1000}
+              rows={3}
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+          </label>
+          <details className="decision-evidence-binding">
+            <summary>{t('原记录（保持不变）', 'Original record (unchanged)')}</summary>
+            <p>{evidence.sourceLabel}</p>
+            <blockquote>{evidence.quote}</blockquote>
+            <SourceLink materialId={evidence.materialId!} page={evidence.page} />
+          </details>
+          <div className="dialog-actions">
+            <button type="button" className="button button-secondary" onClick={onClose}>
+              {t('取消', 'Cancel')}
+            </button>
+            <button className="button button-primary" disabled={busy}>
+              {t('另存范围更正版本', 'Save scope-correction version')}
+            </button>
+          </div>
+        </fieldset>
       </form>
     </Dialog>
   );
@@ -2249,261 +2270,270 @@ function EvidenceDialog({
   const setValue = (patch: DecisionEvidenceInput['values']) =>
     setEvidence({ ...evidence, values: { ...evidence.values, ...patch } });
   return (
-    <Dialog title={t('记录决定依据', 'Record decision evidence')} onClose={onClose}>
+    <Dialog
+      title={t('记录决定依据', 'Record decision evidence')}
+      onClose={onClose}
+      closeDisabled={busy}
+    >
       <form
         className="decision-evidence-form"
         onSubmit={(event) => {
           event.preventDefault();
+          if (busy) return;
           void onSave(evidence);
         }}
       >
-        <div className="decision-form-grid">
-          <label className="form-field">
-            <span>{t('材料用途', 'Evidence slot')}</span>
-            <Select
-              value={evidence.slot}
-              onValueChange={(selectedValue) =>
-                setEvidence({
-                  ...evidence,
-                  slot: selectedValue as DecisionEvidenceSlot,
-                  values: {},
-                  flowId: undefined,
-                })
-              }
-            >
-              {(Object.keys(slotNames) as DecisionEvidenceSlot[]).map((slot) => (
-                <option key={slot} value={slot}>
-                  {evidenceName(slot, t)}
-                </option>
-              ))}
-            </Select>
-          </label>
-          <label className="form-field">
-            <span>{t('记录性质', 'Record type')}</span>
-            <Select
-              value={evidence.kind}
-              onValueChange={(selectedValue) =>
-                setEvidence({ ...evidence, kind: selectedValue as DecisionEvidenceInput['kind'] })
-              }
-            >
-              <option value="source-record">{t('原文记录', 'Source record')}</option>
-              <option value="counterparty-statement">
-                {t('对方陈述或承诺', 'Counterparty statement or promise')}
-              </option>
-              <option value="assumption">{t('情景假设', 'Scenario assumption')}</option>
-            </Select>
-          </label>
-          <label className="form-field">
-            <span>{t('记录所涉及主体', 'Entity covered by the record')}</span>
-            <input
-              required
-              maxLength={200}
-              value={evidence.entity}
-              onChange={(e) => setEvidence({ ...evidence, entity: e.target.value })}
-            />
-          </label>
-          <label className="form-field">
-            <span>{t('记录覆盖日期', 'Date covered by the record')}</span>
-            <input
-              type="date"
-              value={evidence.asOf || ''}
-              onChange={(e) => setEvidence({ ...evidence, asOf: e.target.value || null })}
-            />
-          </label>
-        </div>
-        {evidence.slot === 'identity' && (
+        <fieldset className="decision-save-fields" disabled={busy}>
           <div className="decision-form-grid">
             <label className="form-field">
-              <span>{t('主体角色', 'Entity role')}</span>
+              <span>{t('材料用途', 'Evidence slot')}</span>
               <Select
-                value={evidence.values.role || 'contract'}
+                value={evidence.slot}
                 onValueChange={(selectedValue) =>
-                  setValue({ role: selectedValue as 'contract' | 'payee' | 'refund' })
+                  setEvidence({
+                    ...evidence,
+                    slot: selectedValue as DecisionEvidenceSlot,
+                    values: {},
+                    flowId: undefined,
+                  })
                 }
               >
-                <option value="contract">{t('合同责任主体', 'Contract-responsible entity')}</option>
-                <option value="payee">{t('收款主体', 'Receiving entity')}</option>
-                <option value="refund">{t('退款责任主体', 'Refund-responsible entity')}</option>
-              </Select>
-            </label>
-            <label className="form-field">
-              <span>{t('原文主体完整名称', 'Full entity name in the source')}</span>
-              <input
-                required
-                maxLength={200}
-                value={evidence.values.entity || ''}
-                onChange={(e) =>
-                  setValue({ entity: e.target.value, role: evidence.values.role || 'contract' })
-                }
-              />
-            </label>
-          </div>
-        )}
-        {evidence.slot === 'terms' && (
-          <label className="form-field">
-            <span>
-              {t('原文付款、交付或退款条件', 'Payment, delivery or refund terms in the source')}
-            </span>
-            <textarea
-              required
-              rows={2}
-              maxLength={2000}
-              value={evidence.values.terms || ''}
-              onChange={(e) => setValue({ terms: e.target.value })}
-            />
-          </label>
-        )}
-        {monetary && (
-          <>
-            <MoneyField
-              label={t('记录中的金额', 'Amount in the record')}
-              value={evidence.values.amount ?? null}
-              onChange={(value) => setValue({ amount: value })}
-            />
-            <p className="field-note">
-              {t(
-                '金额和覆盖日期需由原文明示；0也要有记录。年报年度现金净额不是当前可用余额，退款承诺不是实际退款。',
-                'The source must explicitly state the amount and covered date, including zero. Annual operating cash is not current available cash; a refund promise is not an actual refund.'
-              )}
-            </p>
-          </>
-        )}
-        {evidence.slot === 'cash-flow' && (
-          <div className="decision-form-grid">
-            <label className="form-field">
-              <span>{t('对应现金事件', 'Linked cash event')}</span>
-              <Select
-                required
-                value={evidence.flowId || ''}
-                onValueChange={(selectedValue) =>
-                  setEvidence({ ...evidence, flowId: selectedValue || undefined })
-                }
-              >
-                <option value="">{t('选择已录入事件', 'Select an entered event')}</option>
-                {input.datedCash?.flows.map((flow) => (
-                  <option key={flow.id} value={flow.id}>
-                    {flow.label} · D{flow.day ?? '?'}
+                {(Object.keys(slotNames) as DecisionEvidenceSlot[]).map((slot) => (
+                  <option key={slot} value={slot}>
+                    {evidenceName(slot, t)}
                   </option>
                 ))}
               </Select>
             </label>
-            <DayField
-              label={t('原文对应事件日', 'Event day supported by the source')}
-              value={evidence.values.day ?? null}
-              onChange={(value) => setValue({ day: value })}
-            />
-          </div>
-        )}
-        <label className="form-field">
-          <span>{t('来源名称', 'Source label')}</span>
-          <input
-            required
-            maxLength={200}
-            placeholder={t(
-              '例如：银行对账单、合同条款、对方邮件',
-              'Bank reconciliation, contract terms, counterparty email'
-            )}
-            value={evidence.sourceLabel}
-            onChange={(e) => setEvidence({ ...evidence, sourceLabel: e.target.value })}
-          />
-        </label>
-        <label className="form-field">
-          <span>{t('原文摘录', 'Source excerpt')}</span>
-          <textarea
-            required
-            rows={4}
-            maxLength={4000}
-            value={evidence.quote}
-            onChange={(e) => setEvidence({ ...evidence, quote: e.target.value })}
-          />
-        </label>
-        <details className="decision-evidence-binding">
-          <summary>
-            {t('关联保存的材料文本（可选）', 'Link saved material text (optional)')}
-          </summary>
-          <label className="form-field">
-            <span>{t('材料', 'Material')}</span>
-            <Select
-              value={evidence.materialId || ''}
-              onValueChange={(selectedValue) =>
-                setEvidence({
-                  ...evidence,
-                  materialId: selectedValue || undefined,
-                  observationId: undefined,
-                  page: null,
-                })
-              }
-            >
-              <option value="">
-                {t('不关联材料 · 用户转录', 'No material linked · user transcription')}
-              </option>
-              {workspace?.materials.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.shortName} · {item.title}
+            <label className="form-field">
+              <span>{t('记录性质', 'Record type')}</span>
+              <Select
+                value={evidence.kind}
+                onValueChange={(selectedValue) =>
+                  setEvidence({ ...evidence, kind: selectedValue as DecisionEvidenceInput['kind'] })
+                }
+              >
+                <option value="source-record">{t('原文记录', 'Source record')}</option>
+                <option value="counterparty-statement">
+                  {t('对方陈述或承诺', 'Counterparty statement or promise')}
                 </option>
-              ))}
-            </Select>
-          </label>
-          {material && (
-            <>
+                <option value="assumption">{t('情景假设', 'Scenario assumption')}</option>
+              </Select>
+            </label>
+            <label className="form-field">
+              <span>{t('记录所涉及主体', 'Entity covered by the record')}</span>
+              <input
+                required
+                maxLength={200}
+                value={evidence.entity}
+                onChange={(e) => setEvidence({ ...evidence, entity: e.target.value })}
+              />
+            </label>
+            <label className="form-field">
+              <span>{t('记录覆盖日期', 'Date covered by the record')}</span>
+              <input
+                type="date"
+                value={evidence.asOf || ''}
+                onChange={(e) => setEvidence({ ...evidence, asOf: e.target.value || null })}
+              />
+            </label>
+          </div>
+          {evidence.slot === 'identity' && (
+            <div className="decision-form-grid">
               <label className="form-field">
-                <span>{t('已有观测定位', 'Locate an existing observation')}</span>
+                <span>{t('主体角色', 'Entity role')}</span>
                 <Select
-                  value={evidence.observationId || ''}
-                  onValueChange={(selectedValue) => {
-                    const obs = material.observations.find((item) => item.id === selectedValue);
-                    setEvidence({
-                      ...evidence,
-                      observationId: obs?.id,
-                      page: obs?.page ?? null,
-                      quote: obs?.quote || evidence.quote,
-                      sourceLabel: material.title,
-                    });
-                  }}
+                  value={evidence.values.role || 'contract'}
+                  onValueChange={(selectedValue) =>
+                    setValue({ role: selectedValue as 'contract' | 'payee' | 'refund' })
+                  }
                 >
-                  <option value="">
-                    {t('选择观测或自行指定页码', 'Choose observation or specify page')}
+                  <option value="contract">
+                    {t('合同责任主体', 'Contract-responsible entity')}
                   </option>
-                  {material.observations.map((obs) => (
-                    <option key={obs.id} value={obs.id}>
-                      {metricName(obs.key, locale)} · {obs.year} · PDF {obs.page ?? '?'}
+                  <option value="payee">{t('收款主体', 'Receiving entity')}</option>
+                  <option value="refund">{t('退款责任主体', 'Refund-responsible entity')}</option>
+                </Select>
+              </label>
+              <label className="form-field">
+                <span>{t('原文主体完整名称', 'Full entity name in the source')}</span>
+                <input
+                  required
+                  maxLength={200}
+                  value={evidence.values.entity || ''}
+                  onChange={(e) =>
+                    setValue({ entity: e.target.value, role: evidence.values.role || 'contract' })
+                  }
+                />
+              </label>
+            </div>
+          )}
+          {evidence.slot === 'terms' && (
+            <label className="form-field">
+              <span>
+                {t('原文付款、交付或退款条件', 'Payment, delivery or refund terms in the source')}
+              </span>
+              <textarea
+                required
+                rows={2}
+                maxLength={2000}
+                value={evidence.values.terms || ''}
+                onChange={(e) => setValue({ terms: e.target.value })}
+              />
+            </label>
+          )}
+          {monetary && (
+            <>
+              <MoneyField
+                label={t('记录中的金额', 'Amount in the record')}
+                value={evidence.values.amount ?? null}
+                onChange={(value) => setValue({ amount: value })}
+              />
+              <p className="field-note">
+                {t(
+                  '金额和覆盖日期需由原文明示；0也要有记录。年报年度现金净额不是当前可用余额，退款承诺不是实际退款。',
+                  'The source must explicitly state the amount and covered date, including zero. Annual operating cash is not current available cash; a refund promise is not an actual refund.'
+                )}
+              </p>
+            </>
+          )}
+          {evidence.slot === 'cash-flow' && (
+            <div className="decision-form-grid">
+              <label className="form-field">
+                <span>{t('对应现金事件', 'Linked cash event')}</span>
+                <Select
+                  required
+                  value={evidence.flowId || ''}
+                  onValueChange={(selectedValue) =>
+                    setEvidence({ ...evidence, flowId: selectedValue || undefined })
+                  }
+                >
+                  <option value="">{t('选择已录入事件', 'Select an entered event')}</option>
+                  {input.datedCash?.flows.map((flow) => (
+                    <option key={flow.id} value={flow.id}>
+                      {flow.label} · D{flow.day ?? '?'}
                     </option>
                   ))}
                 </Select>
               </label>
-              <label className="form-field">
-                <span>{t('材料页码', 'Material page')}</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={5000}
-                  value={evidence.page ?? ''}
-                  onChange={(e) =>
-                    setEvidence({
-                      ...evidence,
-                      page: e.target.value ? Number(e.target.value) : null,
-                    })
-                  }
-                />
-              </label>
-              <SourceLink materialId={material.id} page={evidence.page} />
-            </>
+              <DayField
+                label={t('原文对应事件日', 'Event day supported by the source')}
+                value={evidence.values.day ?? null}
+                onChange={(value) => setValue({ day: value })}
+              />
+            </div>
           )}
-        </details>
-        <p className="field-note">
-          {t(
-            '提供字段与原文的匹配不等于银行鉴真或履约核实。未关联保存材料文本时，仅记录你转录的文本；对方陈述与假设不会当作实际退款或现金依据。',
-            'Matching supplied fields to text does not authenticate banking records or performance. Without linked saved material text, this records your transcription. Counterparty statements and assumptions do not establish actual refunds or available cash.'
-          )}
-        </p>
-        <div className="dialog-actions">
-          <button type="button" className="button button-secondary" onClick={onClose}>
-            {t('取消', 'Cancel')}
-          </button>
-          <button className="button button-primary" disabled={busy}>
-            {t('保存并重新核对', 'Save and recheck')}
-          </button>
-        </div>
+          <label className="form-field">
+            <span>{t('来源名称', 'Source label')}</span>
+            <input
+              required
+              maxLength={200}
+              placeholder={t(
+                '例如：银行对账单、合同条款、对方邮件',
+                'Bank reconciliation, contract terms, counterparty email'
+              )}
+              value={evidence.sourceLabel}
+              onChange={(e) => setEvidence({ ...evidence, sourceLabel: e.target.value })}
+            />
+          </label>
+          <label className="form-field">
+            <span>{t('原文摘录', 'Source excerpt')}</span>
+            <textarea
+              required
+              rows={4}
+              maxLength={4000}
+              value={evidence.quote}
+              onChange={(e) => setEvidence({ ...evidence, quote: e.target.value })}
+            />
+          </label>
+          <details className="decision-evidence-binding">
+            <summary>
+              {t('关联保存的材料文本（可选）', 'Link saved material text (optional)')}
+            </summary>
+            <label className="form-field">
+              <span>{t('材料', 'Material')}</span>
+              <Select
+                value={evidence.materialId || ''}
+                onValueChange={(selectedValue) =>
+                  setEvidence({
+                    ...evidence,
+                    materialId: selectedValue || undefined,
+                    observationId: undefined,
+                    page: null,
+                  })
+                }
+              >
+                <option value="">
+                  {t('不关联材料 · 用户转录', 'No material linked · user transcription')}
+                </option>
+                {workspace?.materials.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.shortName} · {item.title}
+                  </option>
+                ))}
+              </Select>
+            </label>
+            {material && (
+              <>
+                <label className="form-field">
+                  <span>{t('已有观测定位', 'Locate an existing observation')}</span>
+                  <Select
+                    value={evidence.observationId || ''}
+                    onValueChange={(selectedValue) => {
+                      const obs = material.observations.find((item) => item.id === selectedValue);
+                      setEvidence({
+                        ...evidence,
+                        observationId: obs?.id,
+                        page: obs?.page ?? null,
+                        quote: obs?.quote || evidence.quote,
+                        sourceLabel: material.title,
+                      });
+                    }}
+                  >
+                    <option value="">
+                      {t('选择观测或自行指定页码', 'Choose observation or specify page')}
+                    </option>
+                    {material.observations.map((obs) => (
+                      <option key={obs.id} value={obs.id}>
+                        {metricName(obs.key, locale)} · {obs.year} · PDF {obs.page ?? '?'}
+                      </option>
+                    ))}
+                  </Select>
+                </label>
+                <label className="form-field">
+                  <span>{t('材料页码', 'Material page')}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={5000}
+                    value={evidence.page ?? ''}
+                    onChange={(e) =>
+                      setEvidence({
+                        ...evidence,
+                        page: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                  />
+                </label>
+                <SourceLink materialId={material.id} page={evidence.page} />
+              </>
+            )}
+          </details>
+          <p className="field-note">
+            {t(
+              '提供字段与原文的匹配不等于银行鉴真或履约核实。未关联保存材料文本时，仅记录你转录的文本；对方陈述与假设不会当作实际退款或现金依据。',
+              'Matching supplied fields to text does not authenticate banking records or performance. Without linked saved material text, this records your transcription. Counterparty statements and assumptions do not establish actual refunds or available cash.'
+            )}
+          </p>
+          <div className="dialog-actions">
+            <button type="button" className="button button-secondary" onClick={onClose}>
+              {t('取消', 'Cancel')}
+            </button>
+            <button className="button button-primary" disabled={busy}>
+              {t('保存并重新核对', 'Save and recheck')}
+            </button>
+          </div>
+        </fieldset>
       </form>
     </Dialog>
   );

@@ -170,6 +170,7 @@ export function ReviewContext({
   useImperativeHandle(controlRef, () => ({ changePurpose }));
   const save = async (event: FormEvent) => {
     event.preventDefault();
+    if (busy) return;
     const contextNotes: ContextNotes = {};
     for (const item of items) contextNotes[item.key] = notes[item.key] || { done: false, note: '' };
     const result = await execute(
@@ -457,6 +458,7 @@ export function ReviewContext({
                 <textarea
                   rows={2}
                   maxLength={2000}
+                  disabled={busy}
                   value={notes[item.key]?.note || ''}
                   onChange={(event) => update(item.key, { note: event.target.value })}
                   placeholder={t(
@@ -548,7 +550,7 @@ export function CashWorksheet({ task }: { task: AnalysisTask }) {
     });
   const save = async (event: FormEvent) => {
     event.preventDefault();
-    if (!amountsValid) return;
+    if (busy || !amountsValid) return;
     const next = await execute(
       () =>
         api<AnalysisTask>(`/tasks/${task.id}/context`, {
@@ -567,6 +569,7 @@ export function CashWorksheet({ task }: { task: AnalysisTask }) {
       type="text"
       inputMode="decimal"
       autoComplete="off"
+      disabled={busy}
       aria-label={label}
       aria-invalid={!validAmount(value)}
       placeholder={t('未知', 'Unknown')}
@@ -602,6 +605,7 @@ export function CashWorksheet({ task }: { task: AnalysisTask }) {
           <input
             type="date"
             required
+            disabled={busy}
             value={plan.asOf}
             onChange={(event) => update({ ...plan, asOf: event.target.value })}
           />

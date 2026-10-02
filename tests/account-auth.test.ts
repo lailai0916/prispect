@@ -461,7 +461,7 @@ test('blank workspace, actual profile/avatar ownership, display contacts, unconf
         name: '原ID保留',
         bio: '测试简介',
         company: '测试组织',
-        timezone: 'Asia/Shanghai',
+        timezone: 'America/Los_Angeles',
         phoneNumber: '13800138000',
       },
       'PATCH'
@@ -471,6 +471,9 @@ test('blank workspace, actual profile/avatar ownership, display contacts, unconf
     assert.equal(changedProfile.id, account.user!.id);
     assert.equal(changedProfile.phoneNumber, '+8613800138000');
     assert.equal(changedProfile.phoneNumberVerified, false);
+    assert.equal(changedProfile.timezone, 'America/Los_Angeles');
+    assert.equal((await alice.sync()).user!.timezone, 'America/Los_Angeles');
+    assert.equal((await bob.sync()).user!.timezone, 'Asia/Shanghai');
     assert.equal((await (await bob.send('/api/account')).json()).user.phoneNumber, null);
     const sharedContact = await bob.send(
       '/api/account/profile',
@@ -498,6 +501,7 @@ test('blank workspace, actual profile/avatar ownership, display contacts, unconf
     );
     const omittedContact = await alice.send('/api/account/profile', { name: '原ID保留' }, 'PATCH');
     assert.equal((await omittedContact.json()).user.phoneNumber, '+8613800138000');
+    assert.equal((await alice.sync()).user!.timezone, 'America/Los_Angeles');
     const clearedContact = await alice.send(
       '/api/account/profile',
       { name: '原ID保留', phoneNumber: '' },
@@ -561,6 +565,8 @@ test('blank workspace, actual profile/avatar ownership, display contacts, unconf
     } as Parameters<typeof service.auth.session>[0];
     assert.equal((await service.auth.session(request))?.user.id, id);
     assert.equal(service.auth.profileFor(id).bio, '测试简介');
+    assert.equal((await service.auth.session(request))?.user.timezone, 'America/Los_Angeles');
+    assert.equal(service.auth.profileFor(id).timezone, 'America/Los_Angeles');
     assert.equal(service.auth.profileFor(id).phoneNumber, '+8613800138000');
     assert.equal(service.auth.profileFor(id).phoneNumberVerified, false);
     assert.throws(

@@ -23,6 +23,15 @@ test('deep links serve the SPA on refresh while missing APIs keep JSON errors', 
       assert.match(response.headers.get('content-type')!, /text\/html/);
       assert.equal(await response.text(), html);
     }
+    for (const route of ['/assets/missing.js', '/assets/missing.css']) {
+      const missingAsset = await fetch(base + route);
+      assert.equal(missingAsset.status, 404);
+      assert.match(missingAsset.headers.get('content-type')!, /application\/json/);
+      assert.equal((await missingAsset.json()).code, 'FRONTEND_ASSET_NOT_FOUND');
+    }
+    const malformedPath = await fetch(base + '/tasks/%E0%A4%A');
+    assert.equal(malformedPath.status, 400);
+    assert.equal((await malformedPath.json()).code, 'INVALID_PATH');
     const anonymous = await fetch(base + '/api/no-such-endpoint');
     assert.equal(anonymous.status, 401);
     assert.match(anonymous.headers.get('content-type')!, /application\/json/);

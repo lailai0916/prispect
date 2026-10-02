@@ -284,6 +284,7 @@ export interface AccountUser {
   email: string;
   name: string;
   createdAt: string;
+  timezone?: string;
 }
 
 export interface AuthSession {

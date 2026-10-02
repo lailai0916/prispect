@@ -23,11 +23,14 @@ const labels: Record<IndustryMetricKey, readonly [string, string]> = {
 const value = (number: number | null) => (number === null ? '—' : `${number.toFixed(2)}%`);
 export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
   const { t, locale } = useApp(),
-    years = (run.context?.financials.filter((row) => row.annual).map((row) => row.period) || [])
+    years = [
+      ...new Set(run.context?.financials.filter((row) => row.annual).map((row) => row.period)),
+    ]
       .sort()
       .reverse();
-  const [period, setPeriod] = useState(years[0] || `${run.input.year}-12-31`);
-  const [snapshot, setSnapshot] = useState<CompanyIndustrySnapshot | null>(
+  const [requestedPeriod, setPeriod] = useState(years[0] || `${run.input.year}-12-31`);
+  const period = years.length && !years.includes(requestedPeriod) ? years[0]! : requestedPeriod;
+  const [loadedSnapshot, setSnapshot] = useState<CompanyIndustrySnapshot | null>(
       run.industry?.[period] || null
     ),
     [loading, setLoading] = useState(false),
@@ -37,6 +40,10 @@ export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
     [retry, setRetry] = useState(0);
   const generation = useRef(0),
     forced = useRef(false);
+  const snapshot =
+    loadedSnapshot?.period === period && loadedSnapshot.securityCode === run.input.securityCode
+      ? loadedSnapshot
+      : null;
   useEffect(() => {
     const controller = new AbortController(),
       current = ++generation.current;

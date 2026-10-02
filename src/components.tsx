@@ -121,6 +121,7 @@ export function Dialog({
   wide = false,
   variant = 'dialog',
   className = '',
+  closeDisabled = false,
 }: {
   title: string;
   onClose: () => void;
@@ -128,6 +129,7 @@ export function Dialog({
   wide?: boolean;
   variant?: 'dialog' | 'drawer';
   className?: string;
+  closeDisabled?: boolean;
 }) {
   const { t } = useApp();
   const returnFocus = useReturnFocus();
@@ -135,7 +137,13 @@ export function Dialog({
   return (
     <DialogPrimitive.Root
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(nextOpen, details) => {
+        if (!nextOpen && closeDisabled) {
+          details.cancel();
+          return;
+        }
+        setOpen(nextOpen);
+      }}
       onOpenChangeComplete={(nextOpen) => {
         if (!nextOpen) onClose();
       }}
@@ -150,6 +158,7 @@ export function Dialog({
             <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
             <DialogPrimitive.Close
               className="icon-button"
+              disabled={closeDisabled}
               aria-label={t('关闭对话框', 'Close dialog')}
             >
               <X size={18} />

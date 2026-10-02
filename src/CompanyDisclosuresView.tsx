@@ -1,5 +1,5 @@
 import { Select } from './Select';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, FileSearch } from 'lucide-react';
 import type { CompanyContextSnapshot, CompanyDisclosure } from '../shared/company-workspace';
 import { Dialog, Tag } from './components';
@@ -18,6 +18,17 @@ export function CompanyDisclosuresView({ snapshot }: { snapshot: CompanyContextS
       snapshot.announcements.filter((row) => row.attention !== 'routine').map((row) => row.category)
     ),
   ];
+  useEffect(() => {
+    if (
+      category !== 'all' &&
+      !snapshot.announcements.some(
+        (row) => row.attention !== 'routine' && row.category === category
+      )
+    ) {
+      setCategory('all');
+      setExpanded(false);
+    }
+  }, [snapshot, category]);
   const cutoff = new Date(Date.parse(snapshot.fetchedAt) - days * 86400000)
     .toISOString()
     .slice(0, 10);

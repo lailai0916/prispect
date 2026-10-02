@@ -34,10 +34,34 @@ export function DocumentLayout({
 }) {
   const { t } = useApp();
   const [activeId, setActiveId] = useState(headings[0]?.id);
+  const article = useRef<HTMLElement>(null);
   const mobileDocuments = useRef<HTMLDetailsElement>(null);
   const mobileContents = useRef<HTMLDetailsElement>(null);
   // Only IDs and query keys affect navigation; translation changes don't reset reading position.
   const targets = JSON.stringify(headings.map(({ id, section: key }) => ({ id, key })));
+
+  useEffect(() => {
+    const expandedForPrint = new Set<HTMLDetailsElement>();
+    const preparePrint = () => {
+      article.current
+        ?.querySelectorAll<HTMLDetailsElement>('details:not([open])')
+        .forEach((item) => {
+          expandedForPrint.add(item);
+          item.open = true;
+        });
+    };
+    const restoreDetails = () => {
+      for (const item of expandedForPrint) item.open = false;
+      expandedForPrint.clear();
+    };
+    window.addEventListener('beforeprint', preparePrint);
+    window.addEventListener('afterprint', restoreDetails);
+    return () => {
+      window.removeEventListener('beforeprint', preparePrint);
+      window.removeEventListener('afterprint', restoreDetails);
+      restoreDetails();
+    };
+  }, []);
 
   useEffect(() => {
     const entries: { id: string; key: string }[] = JSON.parse(targets);
@@ -156,7 +180,9 @@ export function DocumentLayout({
             {contents}
           </details>
         </div>
-        <article className="document-page">{children}</article>
+        <article ref={article} className="document-page">
+          {children}
+        </article>
       </div>
       <aside className="document-outline">
         <p className="document-navigation-title">{t('本页目录', 'On this page')}</p>

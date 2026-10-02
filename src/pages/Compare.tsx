@@ -19,14 +19,23 @@ import { PageHeading, EmptyState, VerdictTag } from '../components';
 import '../review-pages.css';
 
 export function ComparePage({ query }: { query: URLSearchParams }) {
-  const { t, locale, workspace, navigate, execute, showEvidence } = useApp();
+  const { t, locale, workspace, navigate, execute, showEvidence, busy } = useApp();
   const completed = workspace!.tasks.filter((task) => task.status === 'completed' && task.report);
   const [leftId, setLeftId] = useState(query.get('left') || completed[0]?.id || '');
   const [rightId, setRightId] = useState(
     query.get('right') || completed.find((task) => task.id !== leftId)?.id || ''
   );
-  const left = completed.find((task) => task.id === leftId);
-  const right = completed.find((task) => task.id === rightId);
+  const left =
+    completed.find((task) => task.id === leftId) ||
+    completed.find((task) => task.id !== rightId) ||
+    completed[0];
+  const right =
+    completed.find((task) => task.id === rightId) ||
+    completed.find((task) => task.id !== left?.id) ||
+    completed[0];
+  const recoveredSelection = Boolean(
+    (leftId && left?.id !== leftId) || (rightId && right?.id !== rightId)
+  );
   const leftReport = left?.report;
   const rightReport = right?.report;
   const withdrawn =
@@ -78,7 +87,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
         })
       : [];
   const restore = async () => {
-    if (!right) return;
+    if (!right || busy) return;
     const next = await execute(() =>
       post<AnalysisTask>('/tasks', {
         title: reviewVariantTitle(right.title, t('恢复完整证据', 'Full evidence restored')),
@@ -123,7 +132,10 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
           <div className="compare-selectors">
             <label className="form-field">
               <span>{t('基准任务', 'Baseline review')}</span>
-              <Select value={leftId} onValueChange={(selectedValue) => setLeftId(selectedValue)}>
+              <Select
+                value={left?.id || ''}
+                onValueChange={(selectedValue) => setLeftId(selectedValue)}
+              >
                 {completed.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.title} · {date(task.createdAt, locale)}
@@ -134,7 +146,10 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
             <span className="compare-versus">↔</span>
             <label className="form-field">
               <span>{t('对照任务', 'Comparison review')}</span>
-              <Select value={rightId} onValueChange={(selectedValue) => setRightId(selectedValue)}>
+              <Select
+                value={right?.id || ''}
+                onValueChange={(selectedValue) => setRightId(selectedValue)}
+              >
                 {completed.map((task) => (
                   <option key={task.id} value={task.id}>
                     {task.title} · {date(task.createdAt, locale)}
@@ -143,6 +158,14 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
               </Select>
             </label>
           </div>
+          {recoveredSelection && (
+            <p className="field-note" role="status">
+              {t(
+                '原选择的核查已不可用，已切换到可用核查。',
+                'A selected review is unavailable. Available reviews are shown instead.'
+              )}
+            </p>
+          )}
           {left && right && leftReport && rightReport && (
             <>
               {left.id === right.id ? (
@@ -485,7 +508,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                           )}
                         </p>
                       </div>
-                      <button className="button button-primary" onClick={restore}>
+                      <button className="button button-primary" disabled={busy} onClick={restore}>
                         <RotateCcw size={16} />
                         {t('恢复并重算', 'Restore and rerun')}
                       </button>

@@ -11,6 +11,15 @@ export const metricKeys = [
 ] as const;
 const amount = z.string().regex(/^-?\d{1,20}(?:\.\d{1,10})?$/, '金额必须为精确十进制字符串');
 const page = z.number().int().min(1).max(100000).nullable();
+const datePattern = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+function isCalendarDate(value: string) {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return (
+    value.slice(0, 4) !== '0000' &&
+    Number.isFinite(parsed.getTime()) &&
+    parsed.toISOString().slice(0, 10) === value
+  );
+}
 const safeUrl = z
   .string()
   .url()
@@ -50,7 +59,7 @@ export const materialInputSchema = z.object({
     .max(240)
     .refine((name) => !/[\\/\x00]/.test(name), '文件名不能含路径'),
   origin: z.enum(['public-report', 'user-upload']),
-  documentDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  documentDate: datePattern.refine(isCalendarDate, '披露日期必须是有效的 YYYY-MM-DD 日期'),
   sourceUrl: safeUrl.optional(),
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
   observations: z.array(observation).max(500),
@@ -64,6 +73,14 @@ export const materialInputSchema = z.object({
     .optional(),
   uploadId: z.string().uuid().optional(),
   managementExplanation: z.string().max(2000).optional(),
+});
+// Stored materials may include two server provenance notes in addition to the
+// user's hundred notes. Imported input retains its existing hundred-note limit.
+const savedMaterialSchema = materialInputSchema.extend({
+  notes: z.array(z.string().max(2000)).max(102),
+  // Older versions accepted calendar-invalid dates. Keep those saved declarations
+  // readable without normalizing them into different dates or replacing history.
+  documentDate: datePattern,
 });
 // Retain the legacy request field while making AI part of every new analysis.
 export const modelEnabledSchema = z
@@ -88,17 +105,7 @@ const cashPlanAmount = z
   .string()
   .regex(/^\d{1,20}(?:\.\d{1,2})?$/, '资金金额须为非负人民币元字符串，最多两位小数')
   .refine((value) => value.trim() === value, '资金金额不能含空白');
-const cashPlanDate = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine((value) => {
-    const parsed = new Date(`${value}T00:00:00.000Z`);
-    return (
-      value.slice(0, 4) !== '0000' &&
-      Number.isFinite(parsed.getTime()) &&
-      parsed.toISOString().slice(0, 10) === value
-    );
-  }, '资金计划日期必须是有效的 YYYY-MM-DD 日期');
+const cashPlanDate = datePattern.refine(isCalendarDate, '资金计划日期必须是有效的 YYYY-MM-DD 日期');
 function cashPeriod<const Days extends 30 | 60 | 90>(days: Days) {
   return z
     .object({
@@ -178,8 +185,11 @@ export function percent(numerator: bigint, denominator: bigint): string | null {
   const rounded = (absolute + denominator / 2n) / denominator;
   return `${signed < 0n ? '-' : ''}${rounded / 100n}.${(rounded % 100n).toString().padStart(2, '0')}`;
 }
-export function validateMaterial(input: unknown): Omit<Material, 'id' | 'createdAt'> {
-  const result = materialInputSchema.safeParse(input);
+export function validateMaterial(
+  input: unknown,
+  options: { saved?: boolean } = {}
+): Omit<Material, 'id' | 'createdAt'> {
+  const result = (options.saved ? savedMaterialSchema : materialInputSchema).safeParse(input);
   if (!result.success)
     throw new ApiFault(
       400,

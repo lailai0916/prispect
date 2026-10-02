@@ -40,9 +40,24 @@ export function yuan(value: string, unit: MoneyUnit): string {
   return `${sign}${whole}${remainder ? `.${remainder}` : ''}`;
 }
 
+let displayTimeZone = 'Asia/Shanghai';
+
+/** The single browser app applies the confirmed account preference on session changes. */
+export function setDisplayTimeZone(timeZone?: string): void {
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: timeZone || 'Asia/Shanghai' });
+    displayTimeZone = timeZone || 'Asia/Shanghai';
+  } catch {
+    displayTimeZone = 'Asia/Shanghai';
+  }
+}
+
 export function date(value: string, locale: Locale): string {
-  return new Date(value).toLocaleString(locale, {
-    timeZone: 'Asia/Shanghai',
+  const parsed = new Date(value);
+  if (!Number.isFinite(parsed.getTime())) return '—';
+  return parsed.toLocaleString(locale, {
+    timeZone: displayTimeZone,
+    year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',

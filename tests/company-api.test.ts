@@ -50,7 +50,7 @@ async function fixturePreview(): Promise<CompanyCandidatePreview> {
   return {
     material: {
       ...input,
-      filename: 'annual-fixture.pdf',
+      filename: '松原安全 2025 年度报告(原件).pdf',
       sha256: createHash('sha256').update(buffer).digest('hex'),
       rawSourceId: undefined,
     },
@@ -278,6 +278,13 @@ test('company queries keep real trace events and original files private; confirm
     );
     assert.equal(originalFile.status, 200);
     assert.match(originalFile.headers.get('content-type')!, /application\/pdf/);
+    const disposition = originalFile.headers.get('content-disposition')!;
+    assert.match(disposition, /^inline; filename="company-annual-report\.pdf"; filename\*=UTF-8''/);
+    const encodedFilename = disposition.split("filename*=UTF-8''")[1]!;
+    assert.equal(decodeURIComponent(encodedFilename), '松原安全 2025 年度报告(原件).pdf');
+    assert.match(encodedFilename, /%20/);
+    assert.match(encodedFilename, /%28/);
+    assert.match(encodedFilename, /%29/);
     assert.deepEqual(Buffer.from(await originalFile.arrayBuffer()), buffer);
     assert.equal(
       (

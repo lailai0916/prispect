@@ -365,9 +365,16 @@ export function installCompanyRoutes(
       if (!uploadId)
         throw new ApiFault(404, 'COMPANY_REPORT_UNAVAILABLE', '本次没有保留可下载的原件');
       const file = await store.pendingFile(uploadId);
+      const encodedName = encodeURIComponent(file.filename).replace(
+        /['()*]/g,
+        (char) => '%' + char.charCodeAt(0).toString(16).toUpperCase()
+      );
       res
         .type('pdf')
-        .setHeader('Content-Disposition', 'inline; filename="company-annual-report.pdf"')
+        .setHeader(
+          'Content-Disposition',
+          `inline; filename="company-annual-report.pdf"; filename*=UTF-8''${encodedName}`
+        )
         .send(file.buffer);
     })
   );

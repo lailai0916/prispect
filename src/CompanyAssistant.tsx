@@ -9,6 +9,7 @@ import { api, requestErrorText } from './api';
 import { useApp } from './context';
 import { CompanyAssistantContext } from './company-assistant-context';
 import { CompanyQuestionsView } from './CompanyQuestionsView';
+import { appendCompanyAnswer } from './company-question-state';
 import { COMPANY_RECORDS_EVENT } from './CompanySidebar';
 import './home.css';
 import './company-assistant.css';
@@ -44,6 +45,8 @@ export function CompanyAssistant({ route }: { route: string }) {
       ? company
       : null;
   const run = current?.run || (loadedRun?.id === selected ? loadedRun : null);
+  const latestCompany = useRef({ run, current, owner: user?.id });
+  latestCompany.current = { run, current, owner: user?.id };
   const close = () => {
     setOpen(false);
     trigger.current?.focus();
@@ -115,7 +118,12 @@ export function CompanyAssistant({ route }: { route: string }) {
     };
   }, [open, user?.id, locale, retry, routeRun]);
   useEffect(() => {
-    if (!open || !user || !selected || current) return;
+    if (!open || !user) return;
+    if (!selected || current) {
+      setLoading(false);
+      setLoadError('');
+      return;
+    }
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
     setLoading(true);
@@ -151,9 +159,12 @@ export function CompanyAssistant({ route }: { route: string }) {
 
   const onAnswer = (answer: CompanyQuestionAnswer) => {
     if (!run || !user) return;
-    const next = { ...run, questions: [...(run.questions || []), answer].slice(-50) };
+    const latest = latestCompany.current;
+    if (latest.owner !== user.id || latest.run?.id !== run.id) return;
+    const next = appendCompanyAnswer(latest.run, answer);
     setLoadedRun(next);
-    if (current) publish({ ...current, run: next });
+    if (latest.current?.owner === user.id && latest.current.run.id === run.id)
+      publish({ ...latest.current, run: next });
     window.dispatchEvent(new CustomEvent('prispect:company-run-updated', { detail: run.id }));
   };
   const help = (value: string) => {
@@ -193,6 +204,7 @@ export function CompanyAssistant({ route }: { route: string }) {
   const choices = records.filter(
     (record, index) =>
       record.id === routeRun ||
+      record.id === selected ||
       records.findIndex(
         (item) =>
           item.input.securityCode === record.input.securityCode &&
@@ -413,7 +425,12 @@ export function CompanyAssistant({ route }: { route: string }) {
                 placeholder={t('有什么可以帮你？', 'How can I help?')}
                 onChange={(event) => setHelpQuestion(event.target.value)}
                 onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                  if (
+                    event.key === 'Enter' &&
+                    !event.shiftKey &&
+                    !event.nativeEvent.isComposing &&
+                    event.keyCode !== 229
+                  ) {
                     event.preventDefault();
                     event.currentTarget.form?.requestSubmit();
                   }

@@ -41,12 +41,28 @@ const errorMessages: Record<string, string> = {
   RATE_LIMITED: 'Too many attempts. Please wait and try again.',
   INVALID_ORIGIN:
     'The request does not match this service origin. Open the site at its configured address.',
+  EMAIL_UNAVAILABLE: 'Email delivery is not configured. No email was sent.',
+  CASE_NOT_FOUND: 'The selected public example was not found.',
   MATERIAL_IN_USE:
     'This material is used by a review. Export or remove dependent reviews before deleting it.',
   MATERIAL_NOT_FOUND: 'The selected material no longer exists. Refresh your evidence library.',
+  MATERIAL_LIMIT:
+    'Your workspace has reached its 100-material limit. Remove unused materials first.',
+  TASK_LIMIT: 'Your workspace has reached its 200-review limit. Remove old reviews first.',
+  TASK_BUSY: 'Other reviews are running. Please wait before starting another.',
   TASK_RUNNING: 'A review is still running. Wait for completion before this action.',
+  TASK_IN_USE: 'A saved decision version references this review. Keep the report for that history.',
   TASK_NOT_FOUND: 'This review was not found. It may have been deleted.',
+  REPORT_NOT_READY: 'This report has not finished. Wait for completion before this action.',
   TASK_EXPORT_CHANGED: 'The report has changed. Reload the report before exporting it again.',
+  INVALID_EXPORT_FORMAT: 'Choose HTML or JSON for the report export.',
+  INVALID_FORMAT: 'Choose JSON or CSV for the input template.',
+  INVALID_STATUS: 'Choose an open or completed follow-up status.',
+  INVALID_SOURCE: 'The original source is not in the verified source list.',
+  SOURCE_NOT_FOUND: 'The original source was not found in the verified source list.',
+  SOURCE_NOT_DOWNLOADED: 'This original is not retained here. Open its public source link instead.',
+  SOURCE_HASH_MISMATCH:
+    'The retained original no longer matches its verified hash and was not served.',
   INVALID_COMPANY_QUERY:
     'Enter a company short name or six-digit security code, up to 80 characters.',
   COMPANY_INPUT_INVALID:
@@ -86,6 +102,14 @@ const errorMessages: Record<string, string> = {
   COMPANY_NOT_RECOVERABLE: 'This retrieval cannot resume from a checkpoint. Start a new search.',
   COMPANY_IDEMPOTENCY_CONFLICT:
     'This request key is already used for different input. Start a new search.',
+  COMPANY_REQUEST_KEY: 'The request identifier is invalid. Start a new search.',
+  COMPANY_REQUEST_KEY_REUSED:
+    'This request key is already used for a different company or year. Start a new search.',
+  COMPANY_CHECKPOINT_EXPIRED:
+    'The saved retrieval checkpoint expired. Start a new search; your history has been retained.',
+  COMPANY_PUBLISHING: 'The retrieval has completed and is being saved. Check the result shortly.',
+  INDUSTRY_SUBJECT_CONFLICT:
+    'The industry result did not match the selected company or annual period.',
   INVALID_COMPANY_RUN:
     'Check the selected company identity and year. Retrieval covers 2010 through the latest completed calendar year.',
   COMPANY_RUN_NOT_FOUND: 'This retrieval record was not found in your account.',
@@ -128,8 +152,12 @@ const errorMessages: Record<string, string> = {
   INVALID_TASK: 'Review input is invalid. Check the company, year, and selected materials.',
   INVALID_MATERIAL:
     'The material has invalid fields. Check values, units, periods, and statement scopes.',
+  DUPLICATE_OBSERVATION: 'Each observation in a material needs a unique identifier.',
+  INVALID_PRECISION: 'Use an exact amount that can be represented in renminbi cents.',
   QUESTION_NOT_FOUND: 'The follow-up question was not found.',
   FILE_REQUIRED: 'Choose a file to import.',
+  UPLOAD_BUSY: 'Other files are being parsed. Please wait before uploading another.',
+  UPLOAD_CANCELLED: 'The upload preview was cancelled.',
   LIMIT_FILE_SIZE: 'The file exceeds the 25 MB upload limit.',
   UNSUPPORTED_FILE: 'Only JSON, CSV, and text-based PDF files are supported.',
   INVALID_CSV: 'The CSV is invalid. Check the required columns and quotation marks.',
@@ -152,9 +180,15 @@ const errorMessages: Record<string, string> = {
   UPLOAD_FILE_MISSING: 'The original upload file is missing from storage.',
   UPLOAD_FILE_CHANGED:
     'The original file hash has changed. The file is not served as verified evidence.',
+  UPLOAD_HASH_MISMATCH: 'The preview does not match the uploaded file. Upload the original again.',
   STORAGE_QUOTA_EXCEEDED: 'Your account exceeds its 250 MB original-upload quota.',
   NO_UPLOADED_FILE: 'This structured material has no separately retained uploaded file.',
   INTERNAL_ERROR: 'The service could not complete this request. Retry or check the workspace.',
+  ENDPOINT_NOT_FOUND: 'The requested service endpoint was not found.',
+  FRONTEND_ASSET_NOT_FOUND:
+    'The requested page resource was not found. Refresh the page and retry.',
+  FRONTEND_NOT_BUILT: 'The website is temporarily unavailable. Please retry shortly.',
+  INVALID_PATH: 'The requested address has invalid URL encoding.',
 };
 
 export function requestErrorText(error: unknown, locale: string): string {
@@ -164,21 +198,25 @@ export function requestErrorText(error: unknown, locale: string): string {
 }
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type'))
+    headers.set('Content-Type', 'application/json');
+  const method = init?.method?.toUpperCase() || 'GET';
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method) && csrfToken && !headers.has('X-CSRF-Token'))
+    headers.set('X-CSRF-Token', csrfToken);
   const response = await fetch(`/api${path}`, {
     ...init,
-    headers: {
-      ...(init?.body && !(init.body instanceof FormData)
-        ? { 'Content-Type': 'application/json' }
-        : {}),
-      ...(init?.method && !['GET', 'HEAD'].includes(init.method) && csrfToken
-        ? { 'X-CSRF-Token': csrfToken }
-        : {}),
-      ...init?.headers,
-    },
+    headers,
   });
   if (!response.ok) {
-    const error = (await response.json().catch(() => ({ error: response.statusText }))) as ApiError;
-    throw new RequestError(error.error || response.statusText, error.code);
+    const body: unknown = await response.json().catch(() => undefined);
+    const error = (body && typeof body === 'object' ? body : {}) as Partial<ApiError>;
+    throw new RequestError(
+      typeof error.error === 'string' && error.error
+        ? error.error
+        : response.statusText || `请求失败（${response.status}）`,
+      typeof error.code === 'string' ? error.code : undefined
+    );
   }
   return response.json() as Promise<T>;
 }
