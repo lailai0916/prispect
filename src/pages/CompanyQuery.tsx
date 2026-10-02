@@ -60,7 +60,7 @@ export function CompanyQueryPage() {
   return (
     <div className="company-query-page">
       <div className="company-query-inner">
-        <h1 className="sr-only">{t('新建查询', 'New query')}</h1>
+        <h1>{t('开始一项核查', 'Start a review')}</h1>
         <StartInput
           compact
           companyOnly
