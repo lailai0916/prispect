@@ -161,3 +161,79 @@ than enlarging the navigation to the generated mockup's proportions.
 - [x] Retain detailed financial context, original confirmation and saved-report expert tabs.
 - [x] Resolve comparison findings and recapture desktop, mobile and language/theme states.
 - [x] Verify live retrieval/adoption and run project checks.
+
+# Platform finishing QA — 2026-10-02
+
+final result: passed
+
+## Scope, baseline and paired inspection
+
+Audited steps: anonymous home, query entry, company report, financial workbench, material
+list, payment/handover list, new financial review, account profile, documentation and login.
+The user's selected Linear-style direction and the existing sidebar, header and document
+layout are retained. This iteration polishes the existing application rather than selecting
+a new layout. The ten original browser captures (`01-query-before.png` through
+`10-login-before.png`) in `output/playwright/platform-polish/` are the visual baseline.
+
+The report, materials and decision-list full-frame before/after comparisons were inspected
+side by side in the same image input. Files: `02-report-comparison.png`,
+`04-materials-comparison.png` and `05-decisions-comparison.png`. Both sides use
+1440 × 1000 CSS pixels at device scale factor 1, with an added 44-pixel label strip; no
+scale or density correction is required. States match: same local owner, fixture records,
+Chinese, dark theme, page top, collapsed report details. The workbench pair is saved as
+`03-reviews-comparison.png`. Separate captures cover 390 × 844 mobile layouts and
+English/light variants. `live-report-polished.png` and `polish-motion.webm` use the separately
+queried, hash-verified and adopted Songyuan original in an isolated local account; they are
+not production account captures or a new live-source validation.
+
+## Findings and repairs
+
+- Materials: selected filters previously lacked a visible selected style. Buttons now expose
+  their pressed state and source counts; empty filtered results can restore the list. Search
+  clearing preserves input focus, including Escape. Command results select the matching
+  material without placing private text in the URL.
+- Workbench: status counts, actual sort choices and a reveal-on-focus link arrow improve
+  scanning and keyboard use. Sorting changes only the displayed order.
+- Feedback: notices previously shared the assistant launcher's corner. They now avoid the
+  trigger, move when its panel is open, pause successful-message expiry on hover, focus or
+  hidden tabs, and retain errors until dismissal. Download feedback says initiation; the
+  preview's exact bytes are still used for download.
+- Entry and forms: restrained empty-state file illustrations, real loading placeholders,
+  selected-evidence step feedback, a submit-key hint and Caps Lock notice explain current
+  state without slogans, simulated completion percentages or animated financial amounts.
+- Navigation: header search and Control/Meta+K operate on account-local metadata. Arrows,
+  Enter and Escape work; closing restores focus, selecting a result focuses the destination.
+  Long report/document pages provide a return-to-top action.
+- Motion: shared press/hover responses, brief page/dialog/assistant transitions, detail
+  reveals and actual-operation feedback follow the system reduced-motion preference.
+- QA caught and repaired a sibling React-key collision that duplicated the main page on
+  closing command search. The command key is now distinct from the owner-keyed main;
+  repeated closing/navigation retains exactly one main. Portal popup styling and initial
+  search focus were also corrected before final acceptance.
+
+## Validation and limits
+
+- `npm run check` passed after fast-forward integration of deployment-retention changes:
+  strict types, all **226** tests, production build and formatting. Final stylesheet changes
+  were subsequently built, type-checked, formatted and inspected again.
+- Eight combinations (1440/390 width × dark/light × Chinese/English) cover eight signed-in
+  pages plus command search and assistant: 80 captures, no body overflow or browser
+  exceptions. All eight overlay states were recaptured after portal-style repair.
+- Browser checks pass for keyboard/local-only command filtering, empty/reset/search-focus
+  states, material targeting, sort selection, export byte identity, hover-paused success,
+  persistent errors, return to top, reduced motion, anonymous navigation and Caps Lock.
+  Reduced-motion checks allow the existing 0.01 ms transition-completion events while
+  rejecting nontrivial running animations.
+- A separate two-account browser check changes owner while search is open: the menu closes,
+  previous metadata disappears, the new owner has no previous records, and the prior run
+  returns 404. Only isolated local accounts were created.
+- Loading captures use a deliberately delayed real local session response. Error checks use
+  one deliberately rejected local profile request. Neither represents an observed production
+  outage. Runtime/a11y checks are scoped evidence, not a full WCAG or capacity certification.
+- Motion recording is actual local browser output. Financial computations, adoption rules,
+  model payload boundaries and existing seven company pages remain covered by the tests;
+  this iteration does not claim new provider coverage or accounting validation.
+
+No unresolved P0/P1/P2 findings in the changed flows. Screenshots, recordings and browser
+scripts are local workspace evidence excluded from Git. Source financial documents and
+browser profiles remain excluded.

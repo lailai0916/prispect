@@ -30,6 +30,7 @@ import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
 import { CompanyReview } from '../CompanyReview';
+import { PageLoading } from '../Experience';
 const OriginalReview = lazy(() =>
   import('./CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
 );
@@ -160,10 +161,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             </button>
           </>
         ) : (
-          <>
-            <LoaderCircle className="spinner" />
-            <p>{t('正在打开企业…', 'Opening company…')}</p>
-          </>
+          <PageLoading label={t('正在打开企业…', 'Opening company…')} />
         )}
       </div>
     );

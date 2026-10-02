@@ -70,6 +70,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     [code, setCode] = useState(''),
     [validation, setValidation] = useState(''),
     [forgot, setForgot] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const register = mode === 'register';
   const destination = loginDestination(next, location.origin);
   useEffect(() => {
@@ -275,6 +276,9 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
+                    onKeyDown={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                    onKeyUp={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                    onBlur={() => setCapsLock(false)}
                   />
                   <button
                     type="button"
@@ -286,6 +290,11 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                     {visible ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </span>
+                {capsLock && (
+                  <small className="caps-lock-note" role="status">
+                    {t('大写锁定已开启', 'Caps Lock is on')}
+                  </small>
+                )}
                 {register && <PasswordMeter value={password} context={[email, name]} />}
               </label>
               {register && (

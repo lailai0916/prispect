@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { ArrowRight, Copy, Columns3, Plus, Search, Trash2 } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Copy, Columns3, Plus, Trash2 } from 'lucide-react';
 import type { AnalysisTask, CreateTaskInput } from '../../shared/contracts';
 import { api, post } from '../api';
 import { reviewVariantTitle, date } from '../format';
 import { useApp } from '../context';
 import { PageHeading, EmptyState, TaskTag, VerdictTag, ActionMenu } from '../components';
 import { purposeName } from '../ReviewContext';
+import { SearchField } from '../Experience';
+import { Select } from '../Select';
 
 type ReviewFilter = 'all' | 'active' | 'completed';
 
@@ -13,6 +15,7 @@ export function WorkspacePage() {
   const { t, locale, workspace, navigate, execute, confirm, busy } = useApp();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ReviewFilter>('all');
+  const [sort, setSort] = useState('recent');
   const tasks = workspace!.tasks
     .filter((task) =>
       `${task.title} ${task.company}`.toLowerCase().includes(search.trim().toLowerCase())
@@ -22,7 +25,13 @@ export function WorkspacePage() {
         filter === 'all' ||
         (filter === 'completed' ? task.status === 'completed' : task.status !== 'completed')
     )
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    .sort((a, b) =>
+      sort === 'year'
+        ? b.year - a.year || b.createdAt.localeCompare(a.createdAt)
+        : sort === 'name'
+          ? a.title.localeCompare(b.title, locale)
+          : b.createdAt.localeCompare(a.createdAt)
+    );
   const filters: [ReviewFilter, string][] = [
     ['all', t('全部', 'All')],
     ['active', t('未完成', 'Incomplete')],
@@ -58,19 +67,33 @@ export function WorkspacePage() {
           {filters.map(([key, label]) => (
             <button key={key} aria-pressed={filter === key} onClick={() => setFilter(key)}>
               {label}
+              <span className="filter-count">
+                {
+                  workspace!.tasks.filter(
+                    (task) =>
+                      key === 'all' ||
+                      (key === 'completed'
+                        ? task.status === 'completed'
+                        : task.status !== 'completed')
+                  ).length
+                }
+              </span>
             </button>
           ))}
         </div>
-        <label className="search-field">
-          <Search size={15} aria-hidden="true" />
-          <input
-            type="search"
-            aria-label={t('搜索财报核查', 'Search financial reviews')}
-            placeholder={t('搜索公司或核查名称', 'Search company or review')}
+        <div className="list-toolbar-controls">
+          <Select aria-label={t('排序方式', 'Sort reviews')} value={sort} onValueChange={setSort}>
+            <option value="recent">{t('最近创建', 'Recently created')}</option>
+            <option value="year">{t('年度优先', 'Year descending')}</option>
+            <option value="name">{t('名称排序', 'Name')}</option>
+          </Select>
+          <SearchField
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={setSearch}
+            label={t('搜索财报核查', 'Search financial reviews')}
+            placeholder={t('搜索公司或核查名称', 'Search company or review')}
           />
-        </label>
+        </div>
       </div>
       {!tasks.length ? (
         <EmptyState
@@ -139,6 +162,7 @@ export function WorkspacePage() {
                     <td>
                       <a href={`/tasks/${task.id}`} className="table-title">
                         {task.title}
+                        <ArrowUpRight size={13} className="row-open-icon" aria-hidden="true" />
                       </a>
                       <span className="table-subtitle">
                         {task.company} · {purposeName(task.purpose, t)}
@@ -207,7 +231,7 @@ export function WorkspacePage() {
             </table>
           </div>
           <div className="list-summary">
-            <span>
+            <span role="status">
               {tasks.length} {t('份核查', 'reviews')}
             </span>
             <a href="/materials" className="text-link">
