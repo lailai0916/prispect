@@ -544,6 +544,7 @@ test('an in-flight model result cannot resurrect a record removed from the works
     const run = await h.createRun();
     await h.call(`/company-runs/${run.id}/context`, {});
     await waitUntil(() => calls === 1);
+    assert.equal((await (await h.call('/company-records')).json())[0].deletionBlocked, true);
     const removed = await h.call(`/company-runs/${run.id}`, undefined, h.owner.headers, 'DELETE');
     assert.ok([200, 409].includes(removed.status));
     if (removed.status === 409) {

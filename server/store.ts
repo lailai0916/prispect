@@ -419,7 +419,12 @@ export class WorkspaceStore {
       const record = this.state.uploads[uploadId];
       if (!record || record.materialId) return;
       delete this.state.uploads[uploadId];
-      await this.persist();
+      try {
+        await this.persist();
+      } catch (error) {
+        this.state.uploads[uploadId] = record;
+        throw error;
+      }
       await rm(this.uploadFilename(uploadId), { force: true });
     });
   }

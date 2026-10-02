@@ -55,6 +55,15 @@ export function installCompanyRoutes(
   };
   const busy = (store: WorkspaceStore) =>
     records(store).some((run) => active.has(run.id) || adopting.has(run.id));
+  const deletionBlocked = (run: CompanyResearchRun) =>
+    active.has(run.id) ||
+    publishing.has(run.id) ||
+    adopting.has(run.id) ||
+    run.status === 'queued' ||
+    run.status === 'running' ||
+    run.contextStatus === 'loading' ||
+    run.assessmentStatus === 'loading' ||
+    run.challenge?.status === 'loading';
   const execute = (run: CompanyResearchRun, store: WorkspaceStore, resume: boolean) => {
     run.input.useModel = true;
     run.model.requested = true;
@@ -486,24 +495,42 @@ export function installCompanyRoutes(
     wrap(async (req, res) => {
       const store = res.locals.store as WorkspaceStore;
       const run = byId(store, String(req.params.id));
-      if (
-        active.has(run.id) ||
-        adopting.has(run.id) ||
-        run.contextStatus === 'loading' ||
-        run.assessmentStatus === 'loading' ||
-        run.challenge?.status === 'loading'
-      )
+      if (deletionBlocked(run))
         throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '查询或保存中不能删除');
+      const index = records(store).indexOf(run);
+      const before = records(store)[index - 1];
+      const after = records(store)[index + 1];
+      records(store).splice(index, 1);
+      try {
+        await store.persist();
+      } catch (error) {
+        // Restore relative order without overwriting records added during persistence.
+        const following = after ? records(store).indexOf(after) : -1;
+        const preceding = before ? records(store).indexOf(before) : -1;
+        const restoreIndex =
+          following >= 0
+            ? following
+            : preceding >= 0
+              ? preceding + 1
+              : Math.min(index, records(store).length);
+        records(store).splice(restoreIndex, 0, run);
+        throw error;
+      }
+      // Delete originals only after the record removal is durable. Cleanup failure must
+      // not report a failed deletion for an already-removed record; unconfirmed uploads
+      // remain subject to the existing expiry cleanup. Adopted files are never removed.
       if (run.preview?.material.uploadId)
-        await store.discardUnconfirmedUpload(run.preview.material.uploadId);
-      await rm(path.join(store.dataDir, 'company-agent', run.id), { recursive: true, force: true });
-      store.state.companyRuns = records(store).filter((item) => item.id !== run.id);
-      await store.persist();
+        await store.discardUnconfirmedUpload(run.preview.material.uploadId).catch(() => undefined);
+      await rm(path.join(store.dataDir, 'company-agent', run.id), {
+        recursive: true,
+        force: true,
+      }).catch(() => undefined);
       res.json({ ok: true });
     })
   );
   return {
     busy,
+    deletionBlocked,
     waitForIdle: async () => {
       while (active.size || adopting.size) await new Promise((resolve) => setTimeout(resolve, 10));
     },

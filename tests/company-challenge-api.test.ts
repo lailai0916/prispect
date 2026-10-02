@@ -300,6 +300,7 @@ test('challenge API isolates owners, CSRF, payload fields and the service input 
       409
     );
     assert.equal(calls, 1);
+    assert.equal((await (await h.call('/company-records')).json())[0].deletionBlocked, true);
     assert.equal((await h.call('/reset', { confirm: 'RESET_DEMO' })).status, 409);
     assert.equal(
       (await h.call(`/company-runs/${h.run.id}`, undefined, h.owner.headers, 'DELETE')).status,

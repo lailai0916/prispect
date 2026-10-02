@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import type { AddressInfo } from 'node:net';
@@ -435,6 +435,10 @@ test('an active public query prevents overlapping downloads and destructive work
     );
     assert.equal(response.status, 202);
     const run = (await response.json()) as CompanyResearchRun;
+    const summaries = await (
+      await service.request('/api/company-records', requestOptions(client))
+    ).json();
+    assert.equal(summaries[0].deletionBlocked, true);
     assert.equal(
       (await service.request('/api/company-runs', requestOptions(client, runInput, 'POST'))).status,
       429
@@ -460,6 +464,114 @@ test('an active public query prevents overlapping downloads and destructive work
   } finally {
     release();
     await service.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('query deletion restores the record, its order and original when the durable write fails', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-company-delete-rollback-'));
+  const service = await openService(directory, await serviceMock());
+  try {
+    const client = await authenticate(service, 'company-delete-rollback@example.com');
+    const target = await makeRun(service, client);
+    const newest = await makeRun(service, client);
+    const store = await service.workspaceForUser(client.userId);
+    const checkpoint = path.join(store.dataDir, 'company-agent', target.id);
+    await mkdir(checkpoint, { recursive: true });
+    await writeFile(path.join(checkpoint, 'scope.json'), '{"fixture":true}');
+    const before = await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8');
+    const persist = store.persist.bind(store);
+    store.persist = async () => {
+      throw new Error('simulated deletion write failure');
+    };
+    const failed = await service.request(
+      `/api/company-runs/${target.id}`,
+      requestOptions(client, undefined, 'DELETE')
+    );
+    assert.equal(failed.status, 500);
+    store.persist = persist;
+    assert.deepEqual(
+      store.state.companyRuns!.map((run) => run.id),
+      [newest.id, target.id]
+    );
+    assert.equal(await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8'), before);
+    assert.equal(await readFile(path.join(checkpoint, 'scope.json'), 'utf8'), '{"fixture":true}');
+    assert.equal(
+      (await service.request(`/api/company-runs/${target.id}/file`, requestOptions(client))).status,
+      200
+    );
+    const summaries = await (
+      await service.request('/api/company-records', requestOptions(client))
+    ).json();
+    assert.equal(summaries[1].deletionBlocked, false);
+    assert.equal(
+      (
+        await service.request(
+          `/api/company-runs/${target.id}`,
+          requestOptions(client, undefined, 'DELETE')
+        )
+      ).status,
+      200
+    );
+    assert.deepEqual(
+      store.state.companyRuns!.map((run) => run.id),
+      [newest.id]
+    );
+    assert.equal(store.state.uploads[target.preview!.material.uploadId!], undefined);
+  } finally {
+    await service.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('query deletion remains successful and durable when subsequent pending-original cleanup fails', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-company-delete-cleanup-'));
+  let service: Awaited<ReturnType<typeof openService>> | undefined;
+  const mock = await serviceMock();
+  try {
+    service = await openService(directory, mock);
+    const client = await authenticate(service, 'company-delete-cleanup@example.com');
+    const target = await makeRun(service, client);
+    const survivor = await makeRun(service, client);
+    const store = await service.workspaceForUser(client.userId);
+    const uploadId = target.preview!.material.uploadId!;
+    const persist = store.persist.bind(store);
+    let writes = 0;
+    store.persist = async () => {
+      if (++writes === 2) throw new Error('simulated upload cleanup write failure');
+      await persist();
+    };
+    const removed = await service.request(
+      `/api/company-runs/${target.id}`,
+      requestOptions(client, undefined, 'DELETE')
+    );
+    assert.equal(removed.status, 200);
+    assert.deepEqual(await removed.json(), { ok: true });
+    store.persist = persist;
+    assert.ok(store.state.uploads[uploadId], 'failed cleanup retains the file expiry record');
+    assert.deepEqual((await store.pendingFile(uploadId)).buffer, buffer);
+    const saved = JSON.parse(await readFile(path.join(store.dataDir, 'workspace.json'), 'utf8'));
+    assert.deepEqual(
+      saved.companyRuns.map((run: CompanyResearchRun) => run.id),
+      [survivor.id]
+    );
+    assert.ok(saved.uploads[uploadId]);
+    await service.stop();
+    service = undefined;
+    service = await openService(directory, mock);
+    const restarted = await authenticate(service, 'company-delete-cleanup@example.com', true);
+    assert.equal(
+      (await service.request(`/api/company-runs/${target.id}`, requestOptions(restarted))).status,
+      404
+    );
+    assert.deepEqual(
+      (await (await service.request('/api/company-records', requestOptions(restarted))).json()).map(
+        (run: CompanyResearchRun) => run.id
+      ),
+      [survivor.id]
+    );
+  } finally {
+    await service?.stop();
     await rm(directory, { recursive: true, force: true });
   }
 });

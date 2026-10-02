@@ -164,6 +164,7 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     const summaries = await (await call('/company-records')).json();
     assert.equal(summaries.length, 1);
     assert.equal(summaries[0].name, identity.shortName);
+    assert.equal(summaries[0].deletionBlocked, true);
     assert.equal(summaries[0].context, undefined);
     assert.equal(summaries[0].preview, undefined);
     assert.deepEqual(await (await call('/company-records', undefined, other)).json(), []);
@@ -173,6 +174,7 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     await app.waitForIdle();
     const ready = (await (await call(`/company-runs/${run.id}`)).json()) as CompanyResearchRun;
     assert.equal(ready.contextStatus, 'ready');
+    assert.equal((await (await call('/company-records')).json())[0].deletionBlocked, false);
     assert.equal(ready.input.purpose, 'handover');
     assert.equal(ready.context?.financials[0]?.amounts.ocf, '80.00');
     assert.equal((await call(`/company-runs/${run.id}/context`, {})).status, 200);

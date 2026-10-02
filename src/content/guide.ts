@@ -63,8 +63,8 @@ export const guideDocument: ProductDocument = {
       title: ['查询公司与确认候选', 'Look up a company and confirm candidates'],
       bullets: [
         [
-          '登录后点击“新建查询”，输入公司名称或证券代码，选择披露主体后进入详情。公开资料返回后自动研究，概览先展示企业证据实验室；展开“核查报告与综合评级”查看完整分析。年报原件继续在后台核查，执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。',
-          'After signing in, select New query, enter a company name or security code and choose its disclosure identity. Research starts automatically when public data is available. The overview opens with the evidence lab; expand Review report and financial grade for the full analysis. Original annual reports continue in the background, with separate execution and gap states. Loaded companies remain in the sidebar, with only that list scrolling.',
+          '登录后点击“新建查询”，输入公司名称或证券代码，选择披露主体后进入详情。公开资料返回后自动研究，概览先展示企业证据实验室；展开“核查报告与综合评级”查看完整分析。年报原件继续在后台核查，执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。点击记录右侧的 × 可直接删除本次查询和问答，已采用的材料保留；查询或分析进行中暂不可删除。',
+          'After signing in, select New query, enter a company name or security code and choose its disclosure identity. Research starts automatically when public data is available. The overview opens with the evidence lab; expand Review report and financial grade for the full analysis. Original annual reports continue in the background, with separate execution and gap states. Loaded companies remain in the sidebar, with only that list scrolling. Click the × beside a record to delete that query and its answers; adopted materials remain. Deletion is unavailable during an active query or analysis.',
         ],
         [
           '侧边栏提供公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个页面。企业问答改为右下角的圆形助手，点击打开小对话框。财报工作台、材料中心、付款与交接、核查比较位于“核查工具”菜单。',

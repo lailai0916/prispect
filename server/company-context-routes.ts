@@ -23,7 +23,12 @@ export interface CompanyContextService {
 }
 export function installCompanyContextRoutes(
   app: express.Express,
-  options: { auth: AuthStore; model: ModelConfig; service?: CompanyContextService }
+  options: {
+    auth: AuthStore;
+    model: ModelConfig;
+    service?: CompanyContextService;
+    deletionBlocked?: (run: CompanyResearchRun) => boolean;
+  }
 ) {
   const service = options.service || {
     searchCompanies,
@@ -335,6 +340,13 @@ export function installCompanyContextRoutes(
           run.input.securityCode,
         status: run.status,
         createdAt: run.createdAt,
+        deletionBlocked:
+          options.deletionBlocked?.(run) ||
+          run.status === 'queued' ||
+          run.status === 'running' ||
+          run.contextStatus === 'loading' ||
+          run.assessmentStatus === 'loading' ||
+          run.challenge?.status === 'loading',
       }))
     );
   });

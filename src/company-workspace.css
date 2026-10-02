@@ -15,13 +15,16 @@
   scrollbar-width: thin;
   padding: 0 2px 8px;
 }
-.sidebar-company {
+.sidebar-company-row {
   position: relative;
+  margin: 2px 0;
+  border-radius: 6px;
+}
+.sidebar-company {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding: 9px 10px;
-  margin: 2px 0;
+  padding: 9px 42px 9px 10px;
   border-radius: 6px;
   font-size: 12px;
   color: var(--muted);
@@ -36,18 +39,45 @@
   font-size: 10px;
   font-variant-numeric: tabular-nums;
 }
-.sidebar-company > svg {
+.sidebar-company-delete.icon-button {
   position: absolute;
-  right: 9px;
-  top: 13px;
+  right: 4px;
+  top: 50%;
+  translate: 0 -50%;
+  min-width: 32px;
+  min-height: 32px;
+  color: var(--subtle);
 }
-.sidebar-company:hover {
+.sidebar-company-row:hover,
+.sidebar-company-row:focus-within {
   background: var(--hover);
+}
+.sidebar-company-row:hover .sidebar-company,
+.sidebar-company-row:focus-within .sidebar-company {
   color: var(--ink);
+}
+.sidebar-company-row.active {
+  background: var(--selected);
 }
 .sidebar-company.active {
-  background: var(--selected);
   color: var(--ink);
+}
+.sidebar-company-delete.icon-button:not([aria-disabled='true']):hover {
+  color: var(--red);
+  background: var(--danger-surface);
+}
+.sidebar-company-delete[aria-disabled='true'] {
+  cursor: wait;
+}
+@media (pointer: coarse) {
+  .sidebar-company {
+    padding-right: 50px;
+  }
+  .sidebar-company-delete.icon-button {
+    right: 1px;
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 .sidebar-history-state {
   display: flex;

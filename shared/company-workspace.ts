@@ -252,4 +252,5 @@ export interface CompanyRecordSummary {
   name: string;
   status: string;
   createdAt: string;
+  deletionBlocked?: boolean;
 }

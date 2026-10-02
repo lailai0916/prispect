@@ -401,6 +401,7 @@ export async function createApp(options: AppOptions = {}) {
     auth,
     model,
     service: options.companyContextService,
+    deletionBlocked: company.deletionBlocked,
   });
   const companyChallenge = installCompanyChallengeRoutes(app, {
     auth,
