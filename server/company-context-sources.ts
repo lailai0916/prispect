@@ -212,6 +212,27 @@ const blankPeriod = (period: string): CompanyContextPeriod => ({
   originalUrl: null,
 });
 
+function contextReportUrl(period: string, announcements: CompanyDisclosure[]): string | null {
+  const report = {
+    '03-31': '(?:第一|第1|一|1)季度',
+    '06-30': '半年度',
+    '09-30': '(?:第三|第3|三|3)季度',
+    '12-31': '年度',
+  }[period.slice(5)];
+  if (!report) return null;
+  const title = new RegExp(
+    `(?:^|[^0-9])${period.slice(0, 4)}年?${report}报告(?:全文)?(?:[（(][^（）()]*[）)])*$`
+  );
+  return (
+    announcements.find(
+      (item) =>
+        item.category === '财报' &&
+        !/摘要|英文|English|提示|公告|更正说明|补充说明|取消|撤销/i.test(item.title) &&
+        title.test(item.title.replace(/\s/g, ''))
+    )?.url || null
+  );
+}
+
 export async function eastmoneyRows(
   reader: PublicCompanyReader,
   report: string,
@@ -485,18 +506,7 @@ export async function retrieveCompanyContext(
         a.auditOpinion ||= b.auditOpinion;
         a.sourceUrls = [...new Set([...a.sourceUrls, ...b.sourceUrls])];
       }
-      const document = snapshot.announcements.find(
-        (item) =>
-          item.category === '财报' &&
-          item.title.includes(period.slice(0, 4)) &&
-          (period.endsWith('-12-31')
-            ? /年度报告/.test(item.title)
-            : period.endsWith('-06-30')
-              ? /半年度报告/.test(item.title)
-              : /季度报告/.test(item.title)) &&
-          !/摘要|英文/.test(item.title)
-      );
-      a.originalUrl = document?.url || null;
+      a.originalUrl = contextReportUrl(period, snapshot.announcements);
       snapshot.financials.push(a);
     }
     const annual = snapshot.financials.filter((row) => row.annual).slice(-6),
@@ -509,17 +519,8 @@ export async function retrieveCompanyContext(
   snapshot.status = snapshot.financials.length ? 'partial' : 'unavailable';
   await dependencies.onSnapshot?.(structuredClone(snapshot));
   await extras;
-  for (const row of snapshot.financials) {
-    const document = snapshot.announcements.find(
-      (item) =>
-        item.category === '财报' &&
-        item.title.includes(row.period.slice(0, 4)) &&
-        (row.annual
-          ? /年度报告/.test(item.title) && !/摘要/.test(item.title)
-          : /半年度报告|季度报告/.test(item.title) && !/摘要/.test(item.title))
-    );
-    row.originalUrl = document?.url || null;
-  }
+  for (const row of snapshot.financials)
+    row.originalUrl = contextReportUrl(row.period, snapshot.announcements);
   snapshot.verificationLinks = verificationLinks(
     snapshot.profile.orgName || snapshot.companyName,
     snapshot.profile.creditCode || ''
@@ -1097,7 +1098,13 @@ async function retrieveDisclosures(
             f_node: '0',
             s_node: '0',
           }).toString();
-          const response = await reader.json(url.href);
+          const response = await reader.json(url.href, {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+              Referer: 'https://emweb.eastmoney.com/',
+            },
+          });
           state.responseHashes.push(response.sha256);
           const list = arrayValue(objectValue(response.value.data).list);
           if (!list.length) {

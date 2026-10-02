@@ -6,6 +6,7 @@ import type {
   CompanyContextPeriod,
   ContextAmountField,
   CompanyDisclosure,
+  PublicSourceState,
 } from '../shared/company-workspace';
 import {
   analyzeCompanyContext,
@@ -17,7 +18,7 @@ import {
   type CompanyReadingBasis,
 } from '../shared/company-analysis';
 import { Dialog, Tag } from './components';
-import { useApp } from './context';
+import { useApp, type Translate } from './context';
 import { date, money } from './format';
 
 export function CompanyContextEvidence({
@@ -625,15 +626,20 @@ export function CompanyProfileView({ snapshot }: { snapshot: CompanyContextSnaps
   );
 }
 
+const sourceStateLabels: Record<PublicSourceState | 'unknown', readonly [string, string]> = {
+  available: ['已取得', 'Retrieved'],
+  partial: ['部分覆盖', 'Partial'],
+  empty: ['检索为空', 'No results'],
+  error: ['本次失败', 'Failed'],
+  manual: ['待人工 / 授权', 'Manual / authorised'],
+  unknown: ['未知', 'Unknown'],
+};
+function sourceStateLabel(state: PublicSourceState | 'unknown', t: Translate) {
+  return t(...sourceStateLabels[state]);
+}
+
 export function CompanySourcesView({ snapshot }: { snapshot: CompanyContextSnapshot }) {
   const { t, locale } = useApp();
-  const states = {
-    available: t('已取得', 'Retrieved'),
-    partial: t('部分覆盖', 'Partial'),
-    empty: t('检索为空', 'No results'),
-    error: t('本次失败', 'Failed'),
-    manual: t('待人工 / 授权', 'Manual / authorised'),
-  };
   return (
     <>
       <p className="context-data-note">
@@ -662,7 +668,7 @@ export function CompanySourcesView({ snapshot }: { snapshot: CompanyContextSnaps
                   <small>{source.dimension}</small>
                 </td>
                 <td>
-                  <Tag>{states[source.status]}</Tag>
+                  <Tag>{sourceStateLabel(source.status, t)}</Tag>
                   {source.count > 0 && (
                     <small>
                       {source.count} {t('条', 'records')}
@@ -774,7 +780,10 @@ export function CompanyCoverageView({
     ],
     [
       t('公告线索', 'Disclosures'),
-      snapshot.sources.find((source) => source.id === 'cninfo-disclosures')?.status || 'unknown',
+      sourceStateLabel(
+        snapshot.sources.find((source) => source.id === 'cninfo-disclosures')?.status || 'unknown',
+        t
+      ),
       t(
         '来源条数有上限；标题规则与有限原文摘录',
         'Capped coverage; title rules and limited original excerpts'

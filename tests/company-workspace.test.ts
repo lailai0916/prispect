@@ -208,6 +208,171 @@ function financeFetch(
     return new Response('upstream unavailable', { status: 503 });
   };
 }
+
+function reportFetch(reportDate: string, titles: string[]): typeof fetch {
+  const baseline = financeFetch((_kind, row) => ({ ...row, REPORT_DATE: reportDate }));
+  return async (url, init) => {
+    const address = new URL(String(url));
+    if (address.hostname === 'www.cninfo.com.cn')
+      return new Response(
+        JSON.stringify({
+          totalAnnouncement: titles.length,
+          hasMore: false,
+          announcements: titles.map((title, index) => ({
+            secCode: identity.securityCode,
+            orgId: identity.orgId,
+            announcementId: String(index),
+            announcementTitle: title,
+            announcementTime: Date.parse(`2026-09-${20 - index}T00:00:00Z`),
+            adjunctUrl: `finalpage/2026-09-20/${1234567890 + index}.PDF`,
+          })),
+        })
+      );
+    if (address.searchParams.get('reportName')?.includes('FINANCE'))
+      // Let the independent disclosure responses settle before financial publication,
+      // so the same assertion covers both early snapshots and final enrichment.
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    return baseline(url, init);
+  };
+}
+
+test('financial original links match exact year and quarter in early and final context snapshots', async () => {
+  const reports = [
+    ['2025-03-31', '第一季度'],
+    ['2025-06-30', '半年度'],
+    ['2025-09-30', '第三季度'],
+    ['2025-12-31', '年度'],
+  ];
+  for (const [reportDate, kind] of reports) {
+    const titles = [
+      `2024年${kind}报告`,
+      ...reports.filter(([, other]) => other !== kind).map(([, other]) => `2025年${other}报告`),
+      `2025年${kind}报告摘要`,
+      `2025年${kind}报告(English)`,
+      `关于2025年${kind}报告披露的提示性公告`,
+      `贵州茅台：2025年${kind}报告（修订版）`,
+    ];
+    const expected = `https://static.cninfo.com.cn/finalpage/2026-09-20/${1234567890 + titles.length - 1}.PDF`;
+    let published = false;
+    const snapshot = await retrieveCompanyContext(identity, {
+      now: () => new Date('2026-10-02T00:00:00Z'),
+      fetch: reportFetch(reportDate!, titles),
+      onSnapshot: async (early) => {
+        published = true;
+        assert.ok(
+          early.announcements.length,
+          'Disclosures must already be available in this fixture'
+        );
+        assert.equal(early.financials[0]?.originalUrl, expected, reportDate);
+      },
+    });
+    assert.ok(published);
+    assert.equal(snapshot.financials[0]?.originalUrl, expected, reportDate);
+  }
+});
+
+test('a missing original is never replaced with another period, summary or disclosure notice', async () => {
+  for (const [reportDate, kind] of [
+    ['2025-03-31', '第一季度'],
+    ['2025-06-30', '半年度'],
+    ['2025-09-30', '第三季度'],
+    ['2025-12-31', '年度'],
+  ]) {
+    const titles = [
+      `2024年${kind}报告`,
+      ...['第一季度', '半年度', '第三季度', '年度']
+        .filter((other) => other !== kind)
+        .map((other) => `2025年${other}报告`),
+      `2025年${kind}报告摘要`,
+      `2025年${kind}报告(English)`,
+      `关于2025年${kind}报告披露的提示性公告`,
+    ];
+    const snapshot = await retrieveCompanyContext(identity, {
+      now: () => new Date('2026-10-02T00:00:00Z'),
+      fetch: reportFetch(reportDate!, titles),
+      onSnapshot: async (early) => {
+        assert.ok(
+          early.announcements.length,
+          'Disclosures must already be available in this fixture'
+        );
+        assert.equal(early.financials[0]?.originalUrl, null, reportDate);
+      },
+    });
+    assert.equal(snapshot.financials[0]?.originalUrl, null, reportDate);
+  }
+});
+
+test('disclosure providers retain their own request identity and reject another issuer’s announcements', async () => {
+  const baseline = financeFetch();
+  const requestedPages: string[] = [];
+  const snapshot = await retrieveCompanyContext(identity, {
+    now: () => new Date('2026-10-02T00:00:00Z'),
+    fetch: async (url, init) => {
+      const address = new URL(String(url));
+      const headers = new Headers(init?.headers);
+      assert.equal(init?.redirect, 'error');
+      if (address.hostname === 'np-anotice-stock.eastmoney.com') {
+        assert.equal(headers.get('Referer'), 'https://emweb.eastmoney.com/');
+        assert.match(headers.get('User-Agent') || '', /Chrome\/126\.0 Safari\/537\.36/);
+        assert.equal(address.searchParams.get('stock_list'), identity.securityCode);
+        const page = address.searchParams.get('page_index')!;
+        requestedPages.push(page);
+        return new Response(
+          JSON.stringify({
+            success: 1,
+            data: {
+              list:
+                page === '1'
+                  ? [
+                      {
+                        art_code: 'AN202609201234567890',
+                        notice_date: '2026-09-20 00:00:00',
+                        title: '贵州茅台：股东减持计划公告',
+                        codes: [{ stock_code: identity.securityCode }],
+                      },
+                      {
+                        art_code: 'AN202609201234567891',
+                        notice_date: '2026-09-20 00:00:00',
+                        title: '另一主体：对外担保公告',
+                        codes: [{ stock_code: '000001' }],
+                      },
+                    ]
+                  : [],
+            },
+          })
+        );
+      }
+      assert.equal(headers.get('Referer'), 'https://www.cninfo.com.cn/');
+      assert.equal(headers.get('User-Agent'), 'Mozilla/5.0');
+      return baseline(url, init);
+    },
+  });
+  assert.deepEqual(requestedPages, ['1', '2']);
+  const source = snapshot.sources.find((row) => row.id === 'em-disclosures')!;
+  assert.equal(source.status, 'available');
+  assert.equal(source.count, 1);
+  assert.equal(source.latestDate, '2026-09-20');
+  assert.equal(source.responseHashes.length, 2);
+  assert.equal(snapshot.announcements.length, 1);
+  assert.deepEqual(snapshot.announcements[0], {
+    id: 'em-AN202609201234567890',
+    title: '贵州茅台：股东减持计划公告',
+    date: '2026-09-20',
+    url: 'https://data.eastmoney.com/notices/detail/600519/AN202609201234567890.html',
+    sources: [
+      {
+        provider: '东方财富',
+        url: 'https://data.eastmoney.com/notices/detail/600519/AN202609201234567890.html',
+      },
+    ],
+    category: '股权',
+    attention: 'medium',
+    matched: '减持',
+    meaning: '涉及股东资金安排或控制权变化',
+    nextQuestion: '核实比例、用途和控制权影响；解除质押不等同风险增加',
+  });
+});
+
 test('public context preserves precise fields/provenance and stops financial inference on currency, bank or issuer conflicts', async () => {
   const snapshot = await retrieveCompanyContext(identity, { fetch: financeFetch() });
   assert.equal(snapshot.financials[0]?.amounts.netProfit, '90071992547409.91');
