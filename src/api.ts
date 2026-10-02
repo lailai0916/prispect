@@ -62,6 +62,11 @@ const errorMessages: Record<string, string> = {
   COMPANY_TOOL_BUDGET:
     'The retrieval reached its tool-call limit. No additional sources were fetched.',
   COMPANY_CANCELLED: 'The retrieval was cancelled before completion.',
+  COMPANY_NOT_RUNNING: 'No step is currently running. Reload to view the latest result.',
+  COMPANY_STALE_REVISION: 'The retrieval version has changed. Reload before resuming.',
+  COMPANY_NOT_RECOVERABLE: 'This retrieval cannot resume from a checkpoint. Start a new search.',
+  COMPANY_IDEMPOTENCY_CONFLICT:
+    'This request key is already used for different input. Start a new search.',
   INVALID_COMPANY_RUN:
     'Check the selected company identity and year. Retrieval covers 2010 through the latest completed calendar year.',
   COMPANY_RUN_NOT_FOUND: 'This retrieval record was not found in your account.',

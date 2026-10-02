@@ -1,10 +1,16 @@
 import type express from 'express';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import path from 'node:path';
+import { rm, access } from 'node:fs/promises';
 import { z } from 'zod';
 import type { CompanyResearchRun, Material } from '../shared/contracts.js';
 import type { AuthContext, AuthStore } from './auth.js';
 import type { ModelConfig } from './model.js';
-import { runCompanyResearch, searchCompanies } from './company-agent.js';
+import {
+  initialCompanyGraphProgress,
+  runCompanyResearch,
+  searchCompanies,
+} from './company-agent.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, validateMaterial } from './validation.js';
 
@@ -18,6 +24,9 @@ export function installCompanyRoutes(
 ) {
   const service = options.service || { searchCompanies, runCompanyResearch };
   const active = new Set<string>();
+  const controllers = new Map<string, AbortController>();
+  const executions = new Map<string, symbol>();
+  const publishing = new Set<string>();
   const adopting = new Set<string>();
   const schema = z
     .object({
@@ -45,6 +54,218 @@ export function installCompanyRoutes(
   };
   const busy = (store: WorkspaceStore) =>
     records(store).some((run) => active.has(run.id) || adopting.has(run.id));
+  const execute = (run: CompanyResearchRun, store: WorkspaceStore, resume: boolean) => {
+    const controller = new AbortController();
+    controllers.set(run.id, controller);
+    const execution = Symbol(run.id);
+    executions.set(run.id, execution);
+    const isCurrent = () => executions.get(run.id) === execution;
+    setImmediate(() => {
+      void (async () => {
+        const timeout = setTimeout(() => controller.abort(), 480_000);
+        let graphCompleted = false;
+        try {
+          if (!isCurrent()) return;
+          if (controller.signal.aborted)
+            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次公开查询已取消');
+          run.status = 'running';
+          run.updatedAt = new Date().toISOString();
+          await store.persist();
+          const directory = path.join(store.dataDir, 'company-agent', run.id);
+          const existing =
+            resume &&
+            (await access(path.join(directory, 'scope.json')).then(
+              () => true,
+              () => false
+            ));
+          const output = await service.runCompanyResearch(run.input, {
+            root: options.root,
+            model: options.model,
+            signal: controller.signal,
+            checkpoint: { directory, threadId: run.id, resume: existing },
+            previousProgress: run.agent,
+            onUpdate: async (entry) => {
+              if (!isCurrent()) return;
+              const index = run.trace.findIndex((item) => item.id === entry.id);
+              if (index === -1) run.trace.push(structuredClone(entry));
+              else run.trace[index] = structuredClone(entry);
+              run.updatedAt = new Date().toISOString();
+              await store.persist();
+            },
+            onProgress: async (progress) => {
+              if (!isCurrent()) return;
+              run.agent = {
+                ...structuredClone(progress),
+                revision: run.agent?.revision || progress.revision,
+                ...(run.agent?.requestKey ? { requestKey: run.agent.requestKey } : {}),
+                cancelRequested: run.agent?.cancelRequested || progress.cancelRequested,
+                ...(run.agent?.cancelledAt ? { cancelledAt: run.agent.cancelledAt } : {}),
+              };
+              run.updatedAt = new Date().toISOString();
+              await store.persist();
+            },
+          });
+          graphCompleted = true;
+          if (!isCurrent()) return;
+          if (controller.signal.aborted)
+            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次公开查询已取消');
+          if (output.preview && output.buffer) {
+            const prior = run.preview?.material;
+            let uploadId: string | undefined;
+            if (
+              prior?.uploadId &&
+              prior.sha256 === output.preview.material.sha256 &&
+              prior.filename === output.preview.material.filename &&
+              prior.sourceUrl === output.preview.material.sourceUrl
+            ) {
+              const existing = await store.pendingFile(prior.uploadId).catch(() => undefined);
+              if (
+                existing &&
+                createHash('sha256').update(existing.buffer).digest('hex') ===
+                  output.preview.material.sha256
+              )
+                uploadId = prior.uploadId;
+            }
+            uploadId ||= await store.retainUpload(
+              output.buffer,
+              output.preview.material.filename,
+              output.preview.material.sha256
+            );
+            if (!isCurrent()) return;
+            output.preview.material.uploadId = uploadId;
+            output.preview.material.rawSourceId = undefined;
+            output.preview.warnings.push(
+              '原件仅向当前账号开放；未采用原件24小时后过期，确认后随材料保留。'
+            );
+            // Preserve the retained file identity even when publication is interrupted.
+            // Recovery of a completed graph can publish this exact candidate without
+            // downloading or retaining a second copy of the source.
+            run.preview = structuredClone(output.preview);
+          }
+          if (!isCurrent()) return;
+          if (controller.signal.aborted)
+            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次公开查询已取消');
+          // Once the short final commit begins, cancellation cannot truthfully stop
+          // the already-completed graph. Keep the runner lock until persistence ends.
+          publishing.add(run.id);
+          const { buffer: _buffer, agent, ...safeOutput } = output;
+          Object.assign(run, safeOutput);
+          if (agent)
+            run.agent = {
+              ...(run.agent?.requestKey ? { requestKey: run.agent.requestKey } : {}),
+              ...agent,
+              revision: run.agent?.revision || agent.revision,
+              recoverable: false,
+            };
+          run.status = 'ready';
+          run.updatedAt = new Date().toISOString();
+          await store.persist();
+          await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+        } catch (error) {
+          if (!isCurrent()) return;
+          run.status = 'failed';
+          run.updatedAt = new Date().toISOString();
+          run.error = controller.signal.aborted
+            ? '本次执行已中止；可以恢复已保存的公开步骤。'
+            : error instanceof ApiFault
+              ? error.message
+              : '公开证据查询未完成；可以恢复，或自行导入材料。';
+          if (run.agent) {
+            run.agent.recoverable =
+              graphCompleted || run.agent.recoverable || controller.signal.aborted;
+            if (controller.signal.aborted) {
+              run.agent.cancelRequested = true;
+              run.agent.cancelledAt ||= run.updatedAt;
+            }
+          }
+          for (const entry of run.trace)
+            if (entry.status === 'running') {
+              entry.status = 'failed';
+              entry.finishedAt = run.updatedAt;
+              entry.outputSummary = run.error;
+            }
+          await store.persist().catch(() => undefined);
+        } finally {
+          clearTimeout(timeout);
+          if (isCurrent()) {
+            publishing.delete(run.id);
+            executions.delete(run.id);
+            controllers.delete(run.id);
+            active.delete(run.id);
+          }
+        }
+      })();
+    });
+  };
+  app.post(
+    '/api/company-runs/:id/cancel',
+    wrap(async (req, res) => {
+      const store = res.locals.store as WorkspaceStore;
+      const run = byId(store, String(req.params.id));
+      const body = z.object({ revision: z.number().int().positive() }).strict().safeParse(req.body);
+      if (!body.success || body.data.revision !== run.agent?.revision)
+        throw new ApiFault(409, 'COMPANY_STALE_REVISION', '查询版本已变化，请刷新后取消');
+      if (publishing.has(run.id))
+        throw new ApiFault(409, 'COMPANY_PUBLISHING', '查询步骤已完成，正在保存结果；请稍后查看');
+      const controller = controllers.get(run.id);
+      if (!controller || !active.has(run.id))
+        throw new ApiFault(409, 'COMPANY_NOT_RUNNING', '本次查询没有正在运行的步骤');
+      run.agent ||= initialCompanyGraphProgress();
+      run.agent.cancelRequested = true;
+      run.agent.cancelledAt = new Date().toISOString();
+      run.agent.revision++;
+      controller.abort();
+      await store.persist();
+      res.status(202).json(structuredClone(run));
+    })
+  );
+  app.post(
+    '/api/company-runs/:id/resume',
+    wrap(async (req, res) => {
+      const store = res.locals.store as WorkspaceStore;
+      const run = byId(store, String(req.params.id));
+      const body = z.object({ revision: z.number().int().positive() }).strict().safeParse(req.body);
+      if (!body.success || body.data.revision !== run.agent?.revision)
+        throw new ApiFault(409, 'COMPANY_STALE_REVISION', '查询版本已变化，请刷新后恢复');
+      if (run.status !== 'failed' || !run.agent.recoverable || run.adoptedMaterialId)
+        throw new ApiFault(409, 'COMPANY_NOT_RECOVERABLE', '本次结果不支持断点恢复，请新建查询');
+      if (active.size >= 2 || busy(store))
+        throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公开证据Agent正在查询，请稍后重试');
+      if (Date.now() - Date.parse(run.createdAt) > 24 * 60 * 60 * 1000) {
+        await rm(path.join(store.dataDir, 'company-agent', run.id), {
+          recursive: true,
+          force: true,
+        });
+        run.agent.recoverable = false;
+        await store.persist();
+        throw new ApiFault(
+          409,
+          'COMPANY_CHECKPOINT_EXPIRED',
+          '断点原件已过期，请新建公开查询；历史记录保留'
+        );
+      }
+      options.auth.rateLimit(
+        `company-resume:${(res.locals.auth as AuthContext).user.id}`,
+        12,
+        3_600_000
+      );
+      run.agent = initialCompanyGraphProgress(run.agent);
+      run.agent.revision++;
+      run.status = 'queued';
+      run.error = undefined;
+      run.updatedAt = new Date().toISOString();
+      active.add(run.id);
+      try {
+        await store.persist();
+      } catch (error) {
+        active.delete(run.id);
+        run.status = 'failed';
+        throw error;
+      }
+      execute(run, store, true);
+      res.status(202).json(structuredClone(run));
+    })
+  );
   app.get(
     '/api/companies/search',
     wrap(async (req, res) => {
@@ -76,9 +297,25 @@ export function installCompanyRoutes(
       if (!input.success)
         throw new ApiFault(400, 'INVALID_COMPANY_RUN', '公司代码、标识、年度或查询选项无效');
       const store = res.locals.store as WorkspaceStore;
+      const requestKey = req.get('Idempotency-Key');
+      if (requestKey && !/^[a-f0-9-]{36}$/.test(requestKey))
+        throw new ApiFault(400, 'COMPANY_REQUEST_KEY', '请求标识格式无效');
+      const existing = requestKey
+        ? records(store).find((item) => item.agent?.requestKey === requestKey)
+        : undefined;
+      if (existing) {
+        if (JSON.stringify(existing.input) !== JSON.stringify(input.data))
+          throw new ApiFault(
+            409,
+            'COMPANY_REQUEST_KEY_REUSED',
+            '相同请求标识不能用于另一主体或年度'
+          );
+        res.status(200).json(structuredClone(existing));
+        return;
+      }
       if (records(store).length >= 30)
         throw new ApiFault(429, 'COMPANY_RUN_LIMIT', '最多保留30份公开查询，请整理历史后重试');
-      if (active.size >= 1 || busy(store))
+      if (active.size >= 2 || busy(store))
         throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公开证据Agent正在查询，请稍后重试');
       options.auth.rateLimit(
         `company-run:${(res.locals.auth as AuthContext).user.id}`,
@@ -94,6 +331,7 @@ export function installCompanyRoutes(
         updatedAt: now,
         trace: [],
         announcements: [],
+        agent: { ...initialCompanyGraphProgress(), ...(requestKey ? { requestKey } : {}) },
         model: {
           requested: input.data.useModel,
           status: input.data.useModel
@@ -113,64 +351,7 @@ export function installCompanyRoutes(
         throw error;
       }
       res.status(202).json(structuredClone(run));
-      setImmediate(() => {
-        void (async () => {
-          const controller = new AbortController();
-          const timeout = setTimeout(() => controller.abort(), 150_000);
-          try {
-            run.status = 'running';
-            run.updatedAt = new Date().toISOString();
-            await store.persist();
-            const output = await service.runCompanyResearch(run.input, {
-              root: options.root,
-              model: options.model,
-              signal: controller.signal,
-              onUpdate: async (entry) => {
-                const index = run.trace.findIndex((item) => item.id === entry.id);
-                if (index === -1) run.trace.push(structuredClone(entry));
-                else run.trace[index] = structuredClone(entry);
-                run.updatedAt = new Date().toISOString();
-                await store.persist();
-              },
-            });
-            if (controller.signal.aborted) throw new Error('Query timeout');
-            if (output.preview && output.buffer) {
-              const uploadId = await store.retainUpload(
-                output.buffer,
-                output.preview.material.filename,
-                output.preview.material.sha256
-              );
-              output.preview.material.uploadId = uploadId;
-              output.preview.material.rawSourceId = undefined;
-              output.preview.warnings.push(
-                '原件仅向当前账号开放；未采用原件24小时后过期，确认后随材料保留。'
-              );
-            }
-            const { buffer: _buffer, ...safeOutput } = output;
-            Object.assign(run, safeOutput);
-            run.status = 'ready';
-            run.updatedAt = new Date().toISOString();
-            await store.persist();
-          } catch (error) {
-            run.status = 'failed';
-            run.updatedAt = new Date().toISOString();
-            run.error =
-              error instanceof ApiFault
-                ? error.message
-                : '公开证据查询未完成。可重新查询，或自行导入材料。';
-            for (const entry of run.trace)
-              if (entry.status === 'running') {
-                entry.status = 'failed';
-                entry.finishedAt = run.updatedAt;
-                entry.outputSummary = run.error;
-              }
-            await store.persist().catch(() => undefined);
-          } finally {
-            clearTimeout(timeout);
-            active.delete(run.id);
-          }
-        })();
-      });
+      execute(run, store, false);
     })
   );
   app.get(
@@ -290,6 +471,7 @@ export function installCompanyRoutes(
         throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '查询或保存中不能删除');
       if (run.preview?.material.uploadId)
         await store.discardUnconfirmedUpload(run.preview.material.uploadId);
+      await rm(path.join(store.dataDir, 'company-agent', run.id), { recursive: true, force: true });
       store.state.companyRuns = records(store).filter((item) => item.id !== run.id);
       await store.persist();
       res.json({ ok: true });

@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { Activity, ArrowRight, ChevronRight, RotateCcw } from 'lucide-react';
+import { Activity, ArrowRight, ChevronRight } from 'lucide-react';
 
-import { post } from '../api';
 import { useApp } from '../context';
 import { PageHeading } from '../components';
+import '../review-pages.css';
 
 export function MethodPage() {
-  const { t, workspace, user, confirm, navigate } = useApp();
+  const { t, workspace, user, navigate } = useApp();
   useEffect(() => {
     const showPrivacy = () => {
       if (new URLSearchParams(location.hash.split('?')[1]).get('section') !== 'privacy') return;
@@ -21,7 +21,7 @@ export function MethodPage() {
   }, []);
 
   return (
-    <>
+    <div className="method-page">
       <PageHeading
         title={t('方法与数据', 'Method and data')}
         description={t(
@@ -33,11 +33,11 @@ export function MethodPage() {
         <nav className="method-nav" aria-label={t('方法目录', 'Method contents')}>
           {[
             ['method-scope', t('核查范围', 'Scope')],
-            ['method-decision', t('付款决定', 'Payment decisions')],
+            ['method-decision', t('付款事项', 'Payment matters')],
             ['method-math', t('计算公式', 'Calculations')],
             ['method-evidence', t('来源与冲突', 'Sources')],
-            ['method-ai', t('Agent 与模型', 'Agent and models')],
-            ['method-demo', t('示例与重置', 'Examples and reset')],
+            ['method-ai', t('检索与模型', 'Research and models')],
+            ['method-demo', t('数据管理', 'Data management')],
             ['method-privacy', t('数据与隐私', 'Data and privacy')],
           ].map(([id, label]) => (
             <a
@@ -45,7 +45,11 @@ export function MethodPage() {
               href={`#${id}`}
               onClick={(event) => {
                 event.preventDefault();
-                document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById(id)?.scrollIntoView({
+                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                    ? 'auto'
+                    : 'smooth',
+                });
               }}
             >
               {label}
@@ -58,22 +62,22 @@ export function MethodPage() {
             <h2>{t('核查范围', 'Review scope')}</h2>
             <p>
               {t(
-                '比较同公司、同年度、合并报表的净利润与经营现金净额，币种为 CNY。',
-                'Compare annual consolidated net profit and operating cash flow for the same company, in CNY.'
+                '查找公开公司披露，核对历史财务结构；付款事项按所供条件与收付记录测算。',
+                'Find public disclosures and review historical finances. Payment matters use the terms and cash records you supply.'
               )}
             </p>
             <details>
-              <summary>{t('支持范围与示例来源', 'Supported scope and examples')}</summary>
+              <summary>{t('财报口径', 'Financial statement scope')}</summary>
               <p>
                 {t(
-                  '核查名称用于区分底稿，不是任意自然语言问题的分析指令。系统支持年度合并数据、可比两年金额及现金流补充表的调整项；归母或母公司利润不能代替合并净利润。',
+                  '核查名称用于区分任务，不是任意自然语言问题的分析指令。系统支持年度合并数据、可比两年金额及现金流补充表的调整项；归母或母公司利润不能代替合并净利润。',
                   'Review names identify working papers, not arbitrary natural-language analysis requests. Reviews support annual consolidated data, comparable two-year amounts, and cash-flow supplementary adjustments. Profit attributable to the parent and parent-only profit cannot replace consolidated net profit.'
                 )}
               </p>
               <p>
                 {t(
-                  '样本采用松原安全与海康威视的 2025 年度报告，含 2024 年比较列，分别于 2026-04-11、2026-04-18 披露。两家公司行业不同，样本用于验证方法，不作健康排名，也不代表今日经营状态。',
-                  'Examples use Songyuan Safety and Hikvision 2025 annual reports, including 2024 comparisons, published on 2026-04-11 and 2026-04-18 respectively. They are from different industries and demonstrate the method without health rankings or claims about current operations.'
+                  '财务年度与披露日期分别保留。2025 年年度报告通常于 2026 年披露；年度金额不代表今日经营状态。不同公司并列展示时，不作健康排名。',
+                  'The financial year and publication date are retained separately. A 2025 annual report is normally published in 2026; historical amounts do not establish current conditions. Side-by-side companies are not health rankings.'
                 )}
               </p>
               <p>
@@ -85,7 +89,7 @@ export function MethodPage() {
             </details>
           </section>
           <section id="method-decision">
-            <h2>{t('付款决定', 'Payment decisions')}</h2>
+            <h2>{t('付款事项', 'Payment matters')}</h2>
             <p>
               {t(
                 '外部核对自己拟交出去的钱；内部核对接手企业的一笔新增付款。主体、材料与金额未知时仍可保存，计算保留未知。',
@@ -116,7 +120,7 @@ export function MethodPage() {
               </p>
               <p>
                 {t(
-                  '每次输入或证据变更保存新版本，旧版本只读。恢复旧输入会新建版本并重新计算，不抹去已知未解冲突。底稿、销售原话和收付款计划仅保存在当前账号，不进入公共 PDF 模型请求。',
+                  '每次输入或证据变更保存新版本，旧版本只读。恢复旧输入会新建版本并重新计算，不抹去已知未解冲突。付款事项、销售原话和收付款计划仅保存在当前账号，不进入公共 PDF 模型请求。',
                   'Every input or evidence change creates a version; historical inputs are read-only. Restoring them creates and recalculates a new version while preserving known unresolved conflicts. Decisions, sales statements and cash plans remain within the current account and do not enter public-PDF model requests.'
                 )}
               </p>
@@ -192,7 +196,7 @@ export function MethodPage() {
             </details>
           </section>
           <section id="method-ai">
-            <h2>{t('Agent 与模型', 'Agent and models')}</h2>
+            <h2>{t('检索与模型', 'Research and models')}</h2>
             <p>
               {t(
                 '默认规则核查；每个任务主动选择后，才向第三方 TokenFlux 发送采用的指标、短摘录与规则分析。',
@@ -203,14 +207,14 @@ export function MethodPage() {
               <summary>{t('公开企业查询如何处理', 'How public company research works')}</summary>
               <p>
                 {t(
-                  '从巨潮披露源检索 A 股主体，由用户选择代码与公司；再核对主体标识、指定年度中文完整年报、原件哈希、表格范围与单位。真实工具步骤、来源与停止原因保存在查询记录。无匹配只表示当前披露源未找到；近期公告标题是待读线索，不等于已证明风险。',
-                  'Search A-share identities in CNINFO disclosures and select the company and security code. The Agent then checks the identity, requested full Chinese annual report, file hash, statement scope and units. Research records retain actual tool events, sources and stop reasons. No match means this source returned no candidate; recent announcement titles are leads to read, not proven risks.'
+                  '从巨潮披露源确认 A 股主体，再并行核对指定年度年报、相关附注和选定的近期公告原件。核对主体、原件哈希、表格范围与单位，按具体财务信号有限补查。检索步骤、来源与停止原因保存在查询记录。无匹配只表示当前披露源未找到；公告标题不等于已证明风险，选定全文也不代表完整风险调查。',
+                  'Confirm an A-share identity in CNINFO disclosures, then check the requested annual report, related notes and selected recent announcement originals in parallel. Checks cover identity, file hash, statement scope and units; specific financial signals guide bounded follow-up. Records retain actual tool events, sources and stop reasons. No match means this source returned no candidate. Titles do not prove risk, and reading selected originals is not a comprehensive risk investigation.'
                 )}
               </p>
               <p>
                 {t(
-                  '公开查询的模型选项独立于报告解释。主动启用后，选定公开主体和公告信息、相关财表短文本及规则采用的事实可发送到第三方，用于受限证据规划、页面选择与定性解释。模型不生成金额，也不能修补原表差额；私有上传、场景备注与人工计划不发送。界面展示执行记录与依据，不展示私有模型思考过程。',
-                  'Research model consent is separate from report explanation consent. If enabled, selected public identity and announcement metadata, short relevant table texts and rule-adopted facts may be sent to the third party for constrained evidence planning, page selection and qualitative explanation. The model cannot create amounts or repair source differences. Private uploads, notes and manual cash plans are excluded. The interface shows execution records and evidence rather than private model reasoning.'
+                  '公开查询初始启用已配置模型，开始前可关闭，独立于报告解释。选定公开主体、候选页或公告 ID 与标题、财表/附注/公告短摘录和规则信号可发送到第三方，用于受限证据规划与定性解释。模型不生成金额，也不能修补原表差额；原始私人说明、上传、备注与现金计划不发送。界面展示执行记录与依据，不展示私有模型思考过程。',
+                  'Public research initially enables the configured model; turn it off before starting if desired. This is separate from report explanation. Public identity, candidate page or announcement IDs and titles, short table/note/announcement excerpts and rule signals may be sent to the third party for constrained planning and qualitative explanation. The model cannot create amounts or repair differences. Private descriptions, uploads, notes and cash plans are excluded. The interface shows execution records and evidence rather than private model reasoning.'
                 )}
               </p>
               <p>
@@ -267,19 +271,19 @@ export function MethodPage() {
             </details>
           </section>
           <section id="method-demo">
-            <h2>{t('示例与重置', 'Examples and reset')}</h2>
+            <h2>{t('数据管理', 'Data management')}</h2>
             <p>
               {t(
-                '四个示例分别展示完整数据、不同现金结构、材料不足和报表范围冲突。',
-                'Four examples cover complete data, a different cash structure, missing evidence, and conflicting statement scopes.'
+                '材料、查询和任务属于当前账号；需要保留的报告请先导出。',
+                'Evidence, searches and tasks belong to this account. Export reports you need to keep.'
               )}
             </p>
             <details>
-              <summary>{t('示例输入与重置操作', 'Example inputs and reset')}</summary>
+              <summary>{t('清空工作区的范围', 'What clearing your workspace removes')}</summary>
               <p>
                 {t(
-                  '材料不足与范围冲突是人为调整输入的案例，不表示发行人缺少披露，也不是信用评级。重置会删除本账号的核查、问题状态与导入材料，再恢复示例，不影响其他账号。',
-                  'Missing-evidence and scope-conflict cases deliberately alter the supplied input. They do not imply missing issuer disclosures or credit ratings. Reset deletes this account’s reviews, follow-up statuses, and imports, then restores examples without affecting other accounts.'
+                  '清空工作区会删除本账号的付款任务与全部版本、企业查询、财报核查、跟进状态和上传材料。不可撤销，不影响其他账号。',
+                  'Clearing removes this account’s payment tasks and all versions, company searches, financial reviews, follow-up statuses and uploaded evidence. It cannot be undone and does not affect other accounts.'
                 )}
               </p>
               <div className="inline-actions">
@@ -288,25 +292,10 @@ export function MethodPage() {
                   <ArrowRight size={16} />
                 </button>
                 {user && (
-                  <button
-                    className="button button-secondary"
-                    onClick={() =>
-                      confirm({
-                        title: t('重置本账号工作区？', 'Reset this account’s workspace?'),
-                        text: t(
-                          '删除本账号全部核查、问题状态和导入材料，并恢复示例。不可撤销，不影响其他账号；请先导出需要保留的报告。',
-                          'Delete all reviews, follow-up statuses, and imports in this account, then restore examples. This cannot be undone and does not affect other accounts. Export reports you need first.'
-                        ),
-                        action: async () => {
-                          await post('/reset', { confirm: 'RESET_DEMO' });
-                          navigate('/workspace');
-                        },
-                      })
-                    }
-                  >
-                    <RotateCcw size={16} />
-                    {t('重置工作区', 'Reset workspace')}
-                  </button>
+                  <a className="text-link" href="#/account">
+                    {t('管理账号数据', 'Manage account data')}
+                    <ArrowRight size={14} />
+                  </a>
                 )}
               </div>
             </details>
@@ -315,7 +304,7 @@ export function MethodPage() {
             <h2>{t('数据与隐私', 'Data and privacy')}</h2>
             <p>
               {t(
-                '账号、上传文件与核查保存在网站服务器；下载仅向所属账号开放。',
+                '账号、上传文件与核查保存在网站服务器；账号内文件下载需登录相应账号。',
                 'Accounts, uploaded files, and reviews are stored on the website server. Downloads are restricted to their owning account.'
               )}
             </p>
@@ -326,15 +315,15 @@ export function MethodPage() {
               <h3>{t('账号', 'Account')}</h3>
               <p>
                 {t(
-                  '服务器保存登录邮箱、名字、密码哈希和会话摘要。邮箱用于登录，目前不支持邮件找回。',
-                  'The server stores your login email, name, password hash, and session digest. Email identifies your login; email-based recovery is not available.'
+                  '服务器保存账号资料、密码哈希与登录会话。验证、找回和其他登录方式以账号页当前可用服务为准；邮件或短信功能需相应服务配置。',
+                  'The server retains account details, password hashes and sessions. Verification, recovery and other sign-in methods depend on the services currently available on the account page; email and SMS need configured providers.'
                 )}
               </p>
               <h3>{t('文件与记录', 'Files and records')}</h3>
               <p>
                 {t(
-                  '确认保存的材料、原始上传文件、任务、场景备注、收付款工作表与跟进状态保留至你删除相应记录或重置工作区。未确认的上传预览在 24 小时后过期，在后续访问或上传时清理，不是定时准点删除。',
-                  'Confirmed materials, original uploaded files, reviews, scenario notes, cash worksheets, and follow-up statuses remain until you delete the corresponding records or reset the workspace. Unconfirmed upload previews expire after 24 hours and are cleaned up during subsequent access or uploads, not at a guaranteed scheduled time.'
+                  '确认保存的材料、原始上传文件、任务、场景备注、收付款工作表与跟进状态保留至删除相应记录或重置工作区。未确认的上传预览，以及可恢复失败查询的临时断点和公开原件缓存，在24小时后过期，后续访问时清理；历史查询记录保留。不是定时准点删除。',
+                  'Confirmed materials, original uploads, reviews, notes, cash worksheets and follow-up states remain until deletion or workspace reset. Unconfirmed uploads and temporary checkpoints/public-file caches for recoverable failed research expire after 24 hours and are cleaned on subsequent access. Historical research records remain. Cleanup is not guaranteed at an exact scheduled time.'
                 )}
               </p>
               <h3>{t('访问与模型外发', 'Access and model sending')}</h3>
@@ -348,6 +337,6 @@ export function MethodPage() {
           </section>
         </div>
       </div>
-    </>
+    </div>
   );
 }

@@ -23,6 +23,13 @@ restore_service() {
 trap restore_service EXIT
 systemctl stop cashlens
 backup_file="$(mktemp --suffix=.tar.gz "$backup_dir/$(date -u +%Y%m%dT%H%M%SZ).XXXXXX")"
-tar -C "$state_dir" -czf "$backup_file" .
+# The independent production secret is required to restore factors and signed sessions.
+[[ -f /etc/cashlens.env && ! -L /etc/cashlens.env ]] || { echo 'Production configuration is missing.' >&2; exit 1; }
+[[ ! -e "$state_dir/configuration" ]] || { echo 'Reserved backup configuration path exists in state.' >&2; exit 1; }
+config_stage="$(mktemp -d)"
+trap 'rm -rf -- "$config_stage"; restore_service' EXIT
+mkdir "$config_stage/configuration"
+install -m 600 /etc/cashlens.env "$config_stage/configuration/cashlens.env"
+tar -czf "$backup_file" -C "$state_dir" . -C "$config_stage" configuration
 sha256sum "$backup_file" > "$backup_file.sha256"
 echo "CashLens backup saved: $backup_file"

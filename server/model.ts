@@ -1,5 +1,6 @@
 import type { MetricKey, Report } from '../shared/contracts.js';
 import { z } from 'zod';
+import type { CompanyModelFailure } from '../shared/company-contracts.js';
 
 export interface ModelConfig {
   apiKey?: string;
@@ -7,12 +8,86 @@ export interface ModelConfig {
   model?: string;
   timeoutMs?: number;
   fetch?: typeof fetch;
+  serviceTier?: 'auto' | 'default' | 'priority' | 'flex';
+  onFailure?: (failure: CompanyModelFailure) => void | Promise<void>;
+}
+/** Only fixed codes are diagnostic data; never expose exception messages, URLs or bodies. */
+export function modelFailureDiagnostic(error: unknown): CompanyModelFailure {
+  const value = error as {
+    name?: string;
+    message?: string;
+    code?: string;
+    cause?: { code?: string };
+  } | null;
+  const fixedCode = value?.code || value?.message || '';
+  const knownCodes = new Set([
+    'MODEL_HTTP',
+    'MODEL_EMPTY',
+    'MODEL_CITATION',
+    'MODEL_UNSUPPORTED_CLAIM',
+    'MODEL_LINK',
+    'MODEL_NUMBER',
+    'MODEL_TIMEOUT',
+    'MODEL_CANCELLED',
+    'MODEL_OUTPUT_SCHEMA',
+    'MODEL_OUTPUT_PARSE',
+    'MODEL_REQUEST_FAILED',
+    'COMPANY_MODEL_AUTH',
+    'COMPANY_MODEL_RESTRICTED',
+    'COMPANY_MODEL_BUDGET',
+    'COMPANY_MODEL_HTTP',
+    'COMPANY_MODEL_SELECTION',
+    'COMPANY_MODEL_CITATION',
+    'COMPANY_MODEL_RESPONSE_LIMIT',
+    'COMPANY_PROGRESS_STORAGE',
+  ]);
+  const code = knownCodes.has(fixedCode)
+    ? fixedCode
+    : error instanceof z.ZodError
+      ? 'MODEL_OUTPUT_SCHEMA'
+      : error instanceof SyntaxError
+        ? 'MODEL_OUTPUT_PARSE'
+        : value?.name === 'TimeoutError'
+          ? 'MODEL_TIMEOUT'
+          : value?.name === 'AbortError'
+            ? 'MODEL_CANCELLED'
+            : 'MODEL_REQUEST_FAILED';
+  const transport = value?.cause?.code || value?.code || '';
+  const transportCode =
+    /^(?:ECONNRESET|ECONNREFUSED|ETIMEDOUT|ENOTFOUND|EAI_AGAIN|EPIPE|CERT_HAS_EXPIRED|UNABLE_TO_VERIFY_LEAF_SIGNATURE|DEPTH_ZERO_SELF_SIGNED_CERT|UND_ERR_(?:CONNECT_TIMEOUT|HEADERS_TIMEOUT|BODY_TIMEOUT|SOCKET|ABORTED|RESPONSE_STATUS_CODE))$/.test(
+      transport
+    )
+      ? transport
+      : undefined;
+  const category: CompanyModelFailure['category'] = /TIMEOUT/.test(code)
+    ? 'timeout'
+    : /CANCELLED/.test(code)
+      ? 'cancelled'
+      : /BUDGET/.test(code)
+        ? 'budget'
+        : /STORAGE/.test(code)
+          ? 'storage'
+          : /HTTP|AUTH|RESTRICTED/.test(code)
+            ? 'http'
+            : /PARSE|EMPTY/.test(code)
+              ? 'parse'
+              : /SCHEMA/.test(code)
+                ? 'schema'
+                : /SELECTION|CITATION|CLAIM|LINK|NUMBER|RESPONSE_LIMIT/.test(code)
+                  ? 'validation'
+                  : transportCode || error instanceof TypeError
+                    ? 'transport'
+                    : 'unknown';
+  return { errorCode: code, category, ...(transportCode ? { transportCode } : {}) };
 }
 export function modelConfigFromEnv(): ModelConfig {
   return {
     apiKey: process.env.OPENAI_API_KEY,
     baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+    model: process.env.OPENAI_MODEL || 'gpt-6.1-sol',
+    ...(['auto', 'default', 'priority', 'flex'].includes(process.env.OPENAI_SERVICE_TIER || '')
+      ? { serviceTier: process.env.OPENAI_SERVICE_TIER as ModelConfig['serviceTier'] }
+      : {}),
     timeoutMs: Math.min(90000, Math.max(100, Number(process.env.LLM_TIMEOUT_MS) || 60000)),
   };
 }
@@ -40,7 +115,7 @@ export async function explainWithModel(
   } catch {
     /* Invalid configuration will fail only when a call is requested. */
   }
-  const metadata = { provider, name: config.model || 'gpt-4.1-mini' };
+  const metadata = { provider, name: config.model || 'gpt-6.1-sol' };
   if (!requested) {
     report.model = { enabled: false, status: 'not-requested', ...metadata };
     return report;
@@ -104,8 +179,9 @@ export async function explainWithModel(
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
         signal: controller.signal,
         body: JSON.stringify({
-          model: config.model || 'gpt-4.1-mini',
+          model: config.model || 'gpt-6.1-sol',
           temperature: 0,
+          ...(config.serviceTier ? { service_tier: config.serviceTier } : {}),
           response_format: { type: 'json_object' },
           messages: [
             {
@@ -158,6 +234,9 @@ export async function explainWithModel(
         .join('\n\n'),
     };
   } catch (error) {
+    await config.onFailure?.(
+      modelFailureDiagnostic(controller.signal.aborted ? new Error('MODEL_TIMEOUT') : error)
+    );
     const reason = controller.signal.aborted
       ? 'MODEL_TIMEOUT'
       : error instanceof Error &&

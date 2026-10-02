@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
+import { Menu as MenuPrimitive } from '@base-ui/react/menu';
+import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import {
   ArrowUpRight,
-  Check,
   ChevronDown,
   CircleAlert,
   Download,
   ExternalLink,
   FileText,
-  FolderOpen,
   LoaderCircle,
+  MoreHorizontal,
   X,
 } from 'lucide-react';
 import type { AnalysisTask, EvidenceRef, Report } from '../shared/contracts';
@@ -16,6 +18,7 @@ import { api } from './api';
 import { metricName, money, yuan } from './format';
 
 import { useApp } from './context';
+import { translateRule } from './ruleTranslations';
 
 export function Logo({ light = false }: { light?: boolean }) {
   return (
@@ -116,85 +119,184 @@ export function Dialog({
   onClose,
   children,
   wide = false,
+  variant = 'dialog',
+  className = '',
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
+  variant?: 'dialog' | 'drawer';
+  className?: string;
 }) {
   const { t } = useApp();
-  const ref = useRef<HTMLDivElement>(null);
-  useDialogFocus(ref, onClose);
+  const returnFocus = useReturnFocus();
+  const [open, setOpen] = useState(true);
   return (
-    <div
-      className="dialog-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={setOpen}
+      onOpenChangeComplete={(nextOpen) => {
+        if (!nextOpen) onClose();
       }}
     >
-      <div
-        className={`dialog ${wide ? 'dialog-wide' : ''}`}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-title"
-        ref={ref}
-        tabIndex={-1}
-      >
-        <div className="dialog-header">
-          <h2 id="dialog-title">{title}</h2>
-          <button
-            className="icon-button"
-            onClick={onClose}
-            aria-label={t('关闭对话框', 'Close dialog')}
-          >
-            <X size={21} />
-          </button>
-        </div>
-        <div className="dialog-body">{children}</div>
-      </div>
-    </div>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="dialog-backdrop" />
+        <DialogPrimitive.Popup
+          className={`dialog ${wide ? 'dialog-wide' : ''} ${variant === 'drawer' ? 'dialog-drawer' : ''} ${className}`}
+          finalFocus={returnFocus}
+        >
+          <div className="dialog-header">
+            <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Close
+              className="icon-button"
+              aria-label={t('关闭对话框', 'Close dialog')}
+            >
+              <X size={18} />
+            </DialogPrimitive.Close>
+          </div>
+          <div className="dialog-body">{children}</div>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
-export function useDialogFocus(ref: React.RefObject<HTMLDivElement | null>, onClose: () => void) {
-  const closeRef = useRef(onClose);
-  closeRef.current = onClose;
+
+export type ActionMenuItem = {
+  label: string;
+  onSelect: () => void;
+  icon?: ReactNode;
+  danger?: boolean;
+  disabled?: boolean;
+};
+
+export function ActionMenu({
+  label,
+  items,
+  children,
+  className = 'icon-button',
+  align = 'end',
+}: {
+  label: string;
+  items: ActionMenuItem[];
+  children?: ReactNode;
+  className?: string;
+  align?: 'start' | 'end';
+}) {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  return (
+    <MenuPrimitive.Root>
+      <MenuPrimitive.Trigger className={className} aria-label={label} ref={triggerRef}>
+        {children || <MoreHorizontal size={18} />}
+      </MenuPrimitive.Trigger>
+      <MenuPrimitive.Portal>
+        <MenuPrimitive.Positioner
+          align={align}
+          sideOffset={6}
+          collisionPadding={12}
+          className="menu-positioner"
+        >
+          <MenuPrimitive.Popup className="action-menu">
+            {items.map((item) => (
+              <MenuPrimitive.Item
+                key={item.label}
+                className={`action-menu-item ${item.danger ? 'menu-item-danger' : ''}`}
+                render={<button type="button" />}
+                nativeButton
+                disabled={item.disabled}
+                onClick={() => {
+                  requestAnimationFrame(() => {
+                    triggerRef.current?.focus();
+                    item.onSelect();
+                  });
+                }}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </MenuPrimitive.Item>
+            ))}
+          </MenuPrimitive.Popup>
+        </MenuPrimitive.Positioner>
+      </MenuPrimitive.Portal>
+    </MenuPrimitive.Root>
+  );
+}
+
+export function Hint({ label, children }: { label: string; children: ReactElement }) {
+  return (
+    <TooltipPrimitive.Provider delay={500}>
+      <TooltipPrimitive.Root>
+        <TooltipPrimitive.Trigger render={children} />
+        <TooltipPrimitive.Portal>
+          <TooltipPrimitive.Positioner
+            sideOffset={6}
+            collisionPadding={8}
+            className="tooltip-positioner"
+          >
+            <TooltipPrimitive.Popup className="tooltip-popup">{label}</TooltipPrimitive.Popup>
+          </TooltipPrimitive.Positioner>
+        </TooltipPrimitive.Portal>
+      </TooltipPrimitive.Root>
+    </TooltipPrimitive.Provider>
+  );
+}
+
+export function NavigationPanel({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+}) {
+  const { t } = useApp();
+  const returnFocus = useReturnFocus();
+  const [open, setOpen] = useState(true);
+  return (
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={setOpen}
+      onOpenChangeComplete={(nextOpen) => !nextOpen && onClose()}
+    >
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="dialog-backdrop" />
+        <DialogPrimitive.Popup className="navigation-panel" finalFocus={returnFocus}>
+          <div className="dialog-header">
+            <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
+            <DialogPrimitive.Close
+              className="icon-button"
+              aria-label={t('关闭导航', 'Close navigation')}
+            >
+              <X size={18} />
+            </DialogPrimitive.Close>
+          </div>
+          <div className="navigation-panel-body">{children}</div>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+  );
+}
+
+function useReturnFocus() {
+  const target = useRef(document.activeElement as HTMLElement | null);
+  const mounted = useRef(false);
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    ref.current?.focus();
-    const key = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeRef.current();
-      if (event.key === 'Tab') {
-        const elements = Array.from(
-          ref.current?.querySelectorAll<HTMLElement>(
-            'button:not([disabled]),a[href],input:not([disabled]),select,textarea,[tabindex="0"]'
-          ) || []
-        ).filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0);
-        const first = elements[0];
-        const last = elements.at(-1);
-        if (
-          event.shiftKey &&
-          (document.activeElement === first || document.activeElement === ref.current)
-        ) {
-          event.preventDefault();
-          last?.focus();
-        } else if (
-          !event.shiftKey &&
-          (document.activeElement === last || (document.activeElement === ref.current && !first))
-        ) {
-          event.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    document.addEventListener('keydown', key);
+    mounted.current = true;
+    const previous = target.current;
     return () => {
-      document.removeEventListener('keydown', key);
-      document.body.style.overflow = previousOverflow;
-      previous?.focus();
+      mounted.current = false;
+      queueMicrotask(() => {
+        if (
+          !mounted.current &&
+          previous?.isConnected &&
+          !document.activeElement?.closest('[role="dialog"]')
+        )
+          previous.focus({ preventScroll: true });
+      });
     };
-  }, [ref]);
+  }, []);
+  return target;
 }
 
 export function EvidenceDrawer({
@@ -207,8 +309,8 @@ export function EvidenceDrawer({
   onClose: () => void;
 }) {
   const { t, locale, workspace } = useApp();
-  const drawerRef = useRef<HTMLDivElement>(null);
-  useDialogFocus(drawerRef, onClose);
+  const returnFocus = useReturnFocus();
+  const [open, setOpen] = useState(true);
   const [availability, setAvailability] = useState<Record<string, boolean>>({});
   const materials = report?.snapshot || workspace?.materials || [];
   const uniqueRefs = refs.filter(
@@ -217,6 +319,28 @@ export function EvidenceDrawer({
         (item) =>
           item.materialId === ref.materialId && item.page === ref.page && item.quote === ref.quote
       ) === index
+  );
+  const citedCalculations = (report?.metrics || []).filter(
+    (metric) =>
+      metric.unit === '%' &&
+      metric.value !== null &&
+      uniqueRefs.length > 0 &&
+      uniqueRefs.every((ref) =>
+        metric.sourceRefs.some(
+          (entry) =>
+            ref.materialId === entry.materialId &&
+            ref.page === entry.page &&
+            ref.quote === entry.quote
+        )
+      ) &&
+      metric.sourceRefs.every((entry) =>
+        uniqueRefs.some(
+          (ref) =>
+            ref.materialId === entry.materialId &&
+            ref.page === entry.page &&
+            ref.quote === entry.quote
+        )
+      )
   );
   const sources = Array.from(
     new Set(
@@ -242,198 +366,207 @@ export function EvidenceDrawer({
     };
   }, [sources.join('|')]);
   return (
-    <div
-      className="drawer-backdrop"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={setOpen}
+      onOpenChangeComplete={(nextOpen) => !nextOpen && onClose()}
     >
-      <aside
-        className="evidence-drawer"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="evidence-title"
-        ref={drawerRef}
-        tabIndex={-1}
-      >
-        <div className="drawer-header">
-          <div>
-            <h2 id="evidence-title">{t('来源', 'Source')}</h2>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="drawer-backdrop" />
+        <DialogPrimitive.Popup className="evidence-drawer" finalFocus={returnFocus}>
+          <div className="drawer-header">
+            <div>
+              <DialogPrimitive.Title>{t('来源', 'Source')}</DialogPrimitive.Title>
+            </div>
+            <DialogPrimitive.Close
+              className="icon-button"
+              aria-label={t('关闭证据抽屉', 'Close evidence drawer')}
+            >
+              <X size={22} />
+            </DialogPrimitive.Close>
           </div>
-          <button
-            className="icon-button"
-            onClick={onClose}
-            aria-label={t('关闭证据抽屉', 'Close evidence drawer')}
-          >
-            <X size={22} />
-          </button>
-        </div>
-        <div className="drawer-scroll">
-          {uniqueRefs.length > 0 && (
-            <p className="source-reading-note">
-              {t(
-                '以下显示已确认的输入与原文摘录，未认证原件真实性。',
-                'Confirmed inputs and source excerpts are shown below; original-document authenticity has not been verified.'
-              )}
-            </p>
-          )}
-          {!uniqueRefs.length ? (
-            <EmptyState
-              title={t('无原文引用', 'No source citation')}
-              text={t(
-                '此项为口径检查或材料缺失提示。',
-                'This item is a scope check or missing-evidence notice.'
-              )}
-            />
-          ) : (
-            uniqueRefs.map((ref, index) => {
-              const material = materials.find((item) => item.id === ref.materialId);
-              const observations =
-                material?.observations.filter(
-                  (obs) =>
-                    obs.page === ref.page &&
-                    (obs.quote === ref.quote || ref.quote.includes(obs.quote))
-                ) || [];
-              return (
-                <article className="evidence-entry" key={`${ref.materialId}-${index}`}>
-                  <div className="evidence-entry-head">
-                    <span className="evidence-number">E{String(index + 1).padStart(2, '0')}</span>
-                    <Tag>
-                      {ref.page
-                        ? `PDF ${t('第', 'p.')} ${ref.page} ${t('页', '')}`
-                        : t('页码未提供', 'Page not supplied')}
-                    </Tag>
-                  </div>
-                  <h3>{material?.title || ref.materialId}</h3>
-                  <div className="evidence-meta">
-                    <span>{material?.company}</span>
-                    <span>{material?.documentDate}</span>
-                  </div>
-                  <blockquote>
-                    {ref.quote ||
-                      t(
-                        '此引用没有短摘录，请核对原始材料。',
-                        'No excerpt was supplied. Check the original material.'
-                      )}
-                  </blockquote>
-                  {locale === 'en' && (
-                    <p className="original-language">
-                      {t(
-                        '',
-                        'Original source language: Chinese. Quotes are retained verbatim, not rewritten as model evidence.'
-                      )}
-                    </p>
+          <div className="drawer-scroll">
+            {uniqueRefs.length > 0 && (
+              <p className="source-reading-note">
+                {t(
+                  '以下显示已确认的输入与原文摘录，未认证原件真实性。',
+                  'Confirmed inputs and source excerpts are shown below; original-document authenticity has not been verified.'
+                )}
+              </p>
+            )}
+            {citedCalculations.map((metric) => (
+              <div className="source-calculation" key={metric.key}>
+                <div>
+                  <strong>{t(metric.label, metricName(metric.key, locale))}</strong>
+                  <span className="mono">{metric.value}%</span>
+                </div>
+                <p>{t(metric.formula, translateRule(metric.formula))}</p>
+                <small>
+                  {t(
+                    '以下来源分别支持公式中的输入。',
+                    'The sources below support the inputs in this formula.'
                   )}
-                  {observations.length > 0 && (
-                    <div className="evidence-observations">
-                      {observations.map((obs) => (
-                        <div key={obs.id}>
-                          <strong>{metricName(obs.key, locale)}</strong>
-                          <span className="mono">
-                            {money(yuan(obs.value, obs.unit), locale, false)} {obs.currency}
-                          </span>
-                          <span>
-                            {obs.year} ·{' '}
-                            {obs.scope === 'consolidated'
-                              ? t('合并', 'Consolidated')
-                              : obs.scope === 'parent'
-                                ? t('母公司', 'Parent')
-                                : t('范围待确认', 'Unconfirmed scope')}{' '}
-                            ·{' '}
-                            {obs.period === 'annual'
-                              ? t('全年', 'Annual')
-                              : obs.period || t('期间待确认', 'Unconfirmed period')}
-                          </span>
-                          {obs.components?.length && (
-                            <details>
-                              <summary>
-                                {t('查看全部原始分组行', 'View original component rows')}
-                                <ChevronDown size={13} />
-                              </summary>
-                              {obs.components.map((component, i) => (
-                                <p className="component-row" key={i}>
-                                  <span>{component.label}</span>
-                                  <span className="mono">
-                                    {money(yuan(component.value, obs.unit), locale, false)} CNY
-                                  </span>
-                                  <small>PDF {component.page}</small>
-                                </p>
-                              ))}
-                            </details>
-                          )}
-                        </div>
-                      ))}
+                </small>
+              </div>
+            ))}
+            {!uniqueRefs.length ? (
+              <EmptyState
+                title={t('无原文引用', 'No source citation')}
+                text={t(
+                  '此项为口径检查或材料缺失提示。',
+                  'This item is a scope check or missing-evidence notice.'
+                )}
+              />
+            ) : (
+              uniqueRefs.map((ref, index) => {
+                const material = materials.find((item) => item.id === ref.materialId);
+                const observations =
+                  material?.observations.filter(
+                    (obs) =>
+                      obs.page === ref.page &&
+                      (obs.quote === ref.quote || ref.quote.includes(obs.quote))
+                  ) || [];
+                return (
+                  <article className="evidence-entry" key={`${ref.materialId}-${index}`}>
+                    <div className="evidence-entry-head">
+                      <span className="evidence-number">E{String(index + 1).padStart(2, '0')}</span>
+                      <Tag>
+                        {ref.page
+                          ? `PDF ${t('第', 'p.')} ${ref.page} ${t('页', '')}`
+                          : t('页码未提供', 'Page not supplied')}
+                      </Tag>
                     </div>
-                  )}
-                  <div className="evidence-links">
-                    {material?.uploadId && (
-                      <a
-                        className="button button-primary"
-                        href={`/api/materials/${material.id}/file${material.filename.toLowerCase().endsWith('.pdf') ? `#page=${ref.page || 1}` : ''}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <Download size={16} />
-                        {t('打开原始上传文件', 'Open original uploaded file')}
-                        <ArrowUpRight size={15} />
-                      </a>
-                    )}
-                    {material?.rawSourceId && availability[material.rawSourceId] === true ? (
-                      <a
-                        className="button button-primary"
-                        href={`/api/sources/${material.rawSourceId}/pdf#page=${ref.page || 1}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <FileText size={16} />
-                        {t('打开 PDF 原件', 'Open original PDF')}
-                        <ArrowUpRight size={15} />
-                      </a>
-                    ) : material?.rawSourceId &&
-                      availability[material.rawSourceId] === undefined ? (
-                      <span className="field-note">{t('检查文件…', 'Checking file…')}</span>
-                    ) : !material?.uploadId ? (
-                      <p className="pdf-unavailable">
-                        <CircleAlert size={15} />
+                    <h3>{material?.title || ref.materialId}</h3>
+                    <div className="evidence-meta">
+                      <span>{material?.company}</span>
+                      <span>{material?.documentDate}</span>
+                    </div>
+                    <blockquote>
+                      {ref.quote ||
+                        t(
+                          '此引用没有短摘录，请核对原始材料。',
+                          'No excerpt was supplied. Check the original material.'
+                        )}
+                    </blockquote>
+                    {locale === 'en' && (
+                      <p className="original-language">
                         {t(
-                          'PDF 原件不可用，请查看公开来源或上传文件。',
-                          'PDF unavailable. Check the public source or uploaded file.'
+                          '',
+                          'Original source language: Chinese. Quotes are retained verbatim, not rewritten as model evidence.'
                         )}
                       </p>
-                    ) : null}
-                    {(ref.sourceUrl || material?.sourceUrl) && (
-                      <a
-                        className="button button-secondary"
-                        href={ref.sourceUrl || material?.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        <ExternalLink size={16} />
-                        {t('公开原件', 'Public source')}
-                      </a>
                     )}
-                  </div>
-                  {material && (
-                    <details className="evidence-provenance">
-                      <summary>
-                        {t('文件信息与核验范围', 'File information and verification scope')}
-                      </summary>
-                      <code>{material.sha256}</code>
-                      <p>
-                        {material.filename} ·{' '}
-                        {t(
-                          '材料观测一致不代表原件认证。',
-                          'Consistent observations do not authenticate the document.'
-                        )}
-                      </p>
-                    </details>
-                  )}
-                </article>
-              );
-            })
-          )}
-        </div>
-      </aside>
-    </div>
+                    {observations.length > 0 && (
+                      <div className="evidence-observations">
+                        {observations.map((obs) => (
+                          <div key={obs.id}>
+                            <strong>{metricName(obs.key, locale)}</strong>
+                            <span className="mono">
+                              {money(yuan(obs.value, obs.unit), locale, false)} {obs.currency}
+                            </span>
+                            <span>
+                              {obs.year} ·{' '}
+                              {obs.scope === 'consolidated'
+                                ? t('合并', 'Consolidated')
+                                : obs.scope === 'parent'
+                                  ? t('母公司', 'Parent')
+                                  : t('范围待确认', 'Unconfirmed scope')}{' '}
+                              ·{' '}
+                              {obs.period === 'annual'
+                                ? t('全年', 'Annual')
+                                : obs.period || t('期间待确认', 'Unconfirmed period')}
+                            </span>
+                            {obs.components?.length && (
+                              <details>
+                                <summary>
+                                  {t('查看全部原始分组行', 'View original component rows')}
+                                  <ChevronDown size={13} />
+                                </summary>
+                                {obs.components.map((component, i) => (
+                                  <p className="component-row" key={i}>
+                                    <span>{component.label}</span>
+                                    <span className="mono">
+                                      {money(yuan(component.value, obs.unit), locale, false)} CNY
+                                    </span>
+                                    <small>PDF {component.page}</small>
+                                  </p>
+                                ))}
+                              </details>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="evidence-links">
+                      {material?.uploadId && (
+                        <a
+                          className="button button-primary"
+                          href={`/api/materials/${material.id}/file${material.filename.toLowerCase().endsWith('.pdf') ? `#page=${ref.page || 1}` : ''}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <Download size={16} />
+                          {t('打开原始上传文件', 'Open original uploaded file')}
+                          <ArrowUpRight size={15} />
+                        </a>
+                      )}
+                      {material?.rawSourceId && availability[material.rawSourceId] === true ? (
+                        <a
+                          className="button button-primary"
+                          href={`/api/sources/${material.rawSourceId}/pdf#page=${ref.page || 1}`}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <FileText size={16} />
+                          {t('打开 PDF 原件', 'Open original PDF')}
+                          <ArrowUpRight size={15} />
+                        </a>
+                      ) : material?.rawSourceId &&
+                        availability[material.rawSourceId] === undefined ? (
+                        <span className="field-note">{t('检查文件…', 'Checking file…')}</span>
+                      ) : !material?.uploadId ? (
+                        <p className="pdf-unavailable">
+                          <CircleAlert size={15} />
+                          {t(
+                            'PDF 原件不可用，请查看公开来源或上传文件。',
+                            'PDF unavailable. Check the public source or uploaded file.'
+                          )}
+                        </p>
+                      ) : null}
+                      {(ref.sourceUrl || material?.sourceUrl) && (
+                        <a
+                          className="button button-secondary"
+                          href={ref.sourceUrl || material?.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <ExternalLink size={16} />
+                          {t('公开原件', 'Public source')}
+                        </a>
+                      )}
+                    </div>
+                    {material && (
+                      <details className="evidence-provenance">
+                        <summary>
+                          {t('文件信息与核验范围', 'File information and verification scope')}
+                        </summary>
+                        <code>{material.sha256}</code>
+                        <p>
+                          {material.filename} ·{' '}
+                          {t(
+                            '材料观测一致不代表原件认证。',
+                            'Consistent observations do not authenticate the document.'
+                          )}
+                        </p>
+                      </details>
+                    )}
+                  </article>
+                );
+              })
+            )}
+          </div>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

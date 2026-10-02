@@ -15,6 +15,7 @@ import { translateRule } from '../ruleTranslations';
 
 import { useApp } from '../context';
 import { PageHeading, EmptyState, VerdictTag } from '../components';
+import '../review-pages.css';
 
 export function ComparePage({ query }: { query: URLSearchParams }) {
   const { t, locale, workspace, navigate, execute, showEvidence } = useApp();
@@ -57,7 +58,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
   return (
     <>
       <PageHeading
-        title={t('比较核查', 'Compare reviews')}
+        title={t('财报对比', 'Compare financial reviews')}
         description={t(
           '比较两份任务采用的材料与计算结果。',
           'Compare the evidence and calculated results of two reviews.'

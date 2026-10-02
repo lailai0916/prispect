@@ -35,7 +35,16 @@ import { ModelExplanation } from '../ModelExplanation';
 import { ReviewContext, purposeName } from '../ReviewContext';
 
 import { useApp, adjustments } from '../context';
-import { PageHeading, EmptyState, Tag, TaskTag, VerdictTag, Dialog } from '../components';
+import {
+  ActionMenu,
+  PageHeading,
+  EmptyState,
+  Tag,
+  TaskTag,
+  VerdictTag,
+  Dialog,
+} from '../components';
+import '../review-pages.css';
 
 export function TaskPage({ id }: { id: string }) {
   const { t, locale, workspace, execute, navigate, refresh } = useApp();
@@ -56,7 +65,7 @@ export function TaskPage({ id }: { id: string }) {
               {t('刷新', 'Refresh')}
             </button>
             <button className="button button-primary" onClick={() => navigate('/workspace')}>
-              {t('返回工作台', 'Workspace')}
+              {t('返回财报核查', 'Financial reviews')}
             </button>
           </div>
         }
@@ -69,7 +78,7 @@ export function TaskPage({ id }: { id: string }) {
   return (
     <>
       <div className="breadcrumb">
-        <a href="#/workspace">{t('工作台', 'Workspace')}</a>
+        <a href="#/workspace">{t('财报核查', 'Financial reviews')}</a>
         <ChevronRight size={14} />
         <span>{t('核查报告', 'Review')}</span>
         <code>{task.id.slice(0, 8)}</code>
@@ -85,22 +94,26 @@ export function TaskPage({ id }: { id: string }) {
                   <SlidersHorizontal size={16} />
                   {t('调整证据', 'Adjust evidence')}
                 </button>
-                <a
-                  className="button button-secondary"
-                  href={`/api/tasks/${task.id}/export?format=html`}
-                  download
-                >
-                  <Download size={16} />
-                  {t('导出 HTML', 'Export HTML')}
-                </a>
-                <button
-                  className="icon-button"
-                  title={t('打印报告', 'Print report')}
-                  aria-label={t('打印报告', 'Print report')}
-                  onClick={() => window.print()}
-                >
-                  <Printer size={18} />
-                </button>
+                <ActionMenu
+                  label={t('报告操作', 'Report actions')}
+                  items={[
+                    {
+                      label: t('下载报告（HTML）', 'Download report (HTML)'),
+                      icon: <Download size={15} />,
+                      onSelect: () => {
+                        const anchor = document.createElement('a');
+                        anchor.href = `/api/tasks/${task.id}/export?format=html`;
+                        anchor.download = '';
+                        anchor.click();
+                      },
+                    },
+                    {
+                      label: t('打印报告', 'Print report'),
+                      icon: <Printer size={15} />,
+                      onSelect: () => window.print(),
+                    },
+                  ]}
+                />
               </>
             )}
           </div>
@@ -237,6 +250,9 @@ export function StageList({ task }: { task: AnalysisTask }) {
 
 export function ReportView({ task, report }: { task: AnalysisTask; report: Report }) {
   const { t, locale, execute, showEvidence, navigate, busy } = useApp();
+  const [section, setSection] = useState<'evidence' | 'explanations' | 'requests' | 'scope'>(
+    'evidence'
+  );
   const getMetric = (key: string) => report.metrics.find((metric) => metric.key === key);
   const metrics = [
     getMetric('netProfit'),
@@ -260,12 +276,12 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
   return (
     <div className="report-content">
       <div className="report-decision-entry">
-        <span>{t('用这份资料核对一笔付款', 'Use this evidence for a payment decision')}</span>
+        <span>{t('继续核查本次安排', 'Continue this review')}</span>
         <button
           className="text-link"
           onClick={() => navigate(`/decisions?new=${task.purpose || 'external'}&task=${task.id}`)}
         >
-          {t('新建付款决定', 'New payment decision')}
+          {t('新建核查事项', 'New review matter')}
           <ArrowRight size={14} />
         </button>
       </div>
@@ -354,348 +370,374 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           </div>
         ))}
       </section>
-      <div className="report-two-column">
-        <div className="report-primary">
-          <section className="report-section">
-            <div className="report-section-title">
-              <div>
-                <h2>{t('现金桥', 'Cash bridge')}</h2>
-              </div>
-              <Tag>{report.year} · CNY</Tag>
-            </div>
-            {report.bridge ? (
-              <>
-                <p className="section-intro">
-                  {t(
-                    '选择柱形，查看金额、页码与原文。',
-                    'Select a bar to inspect its amount, page and source.'
-                  )}
-                </p>
-                <CashBridge steps={report.bridge} report={report} />
-                <div className="chart-legend">
-                  <span>
-                    <i className="legend-dot ink" />
-                    {t('起点与终点', 'Starting and ending amounts')}
-                  </span>
-                  <span>
-                    <i className="legend-dot teal" />
-                    {t('正向调整', 'Positive adjustments')}
-                  </span>
-                  <span>
-                    <i className="legend-dot amber" />
-                    {t('负向调整', 'Negative adjustments')}
-                  </span>
+      <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
+        {(
+          [
+            ['evidence', t('图表与来源', 'Charts and sources')],
+            ['explanations', t('解释', 'Explanations')],
+            ['requests', t('待询证', 'Evidence requests')],
+            ['scope', t('模型与范围', 'Model and scope')],
+          ] as const
+        ).map(([value, label]) => (
+          <button
+            key={value}
+            aria-current={section === value ? 'page' : undefined}
+            aria-controls={`report-panel-${value}`}
+            onClick={() => setSection(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      <div id="report-panel-evidence" hidden={section !== 'evidence'}>
+        <div className="report-two-column">
+          <div className="report-primary">
+            <section className="report-section">
+              <div className="report-section-title">
+                <div>
+                  <h2>{t('现金桥', 'Cash bridge')}</h2>
                 </div>
-                <details className="chart-caption chart-notes">
-                  <summary>{t('图表口径', 'Chart scope')}</summary>
-                  <p>
+                <Tag>{report.year} · CNY</Tag>
+              </div>
+              {report.bridge ? (
+                <>
+                  <p className="section-intro">
                     {t(
-                      '调整项不是现金余额或未来预测。图形标签已舍入，精确金额显示在所选项中；经营性应收调整不等于单一应收账款余额变化，负向调整不能直接证明坏账或滞销。',
-                      'Adjustments are not cash balances or forecasts. Plot labels are rounded; the selected item shows exact amounts. Operating receivables adjustments are not simply changes in accounts receivable, and negative adjustments alone do not prove bad debt or slow inventory.'
+                      '选择柱形，查看金额、页码与原文。',
+                      'Select a bar to inspect its amount, page and source.'
                     )}
                   </p>
-                </details>
-              </>
-            ) : (
-              <div className="bridge-unavailable">
-                <h3>{t('现金桥未生成', 'Cash bridge unavailable')}</h3>
-                <p>
-                  {report.verdict === 'conflict'
-                    ? t(
-                        '现有输入或现金桥核对存在冲突。金额与原文保留，请先复核下方口径检查，再解释经营原因。',
-                        'The inputs or bridge reconciliation conflict. Amounts and sources remain visible; resolve the scope checks below before attributing operating causes.'
-                      )
-                    : t(
-                        '缺少同口径调整项。请补充下方待询证材料；利润与现金的差额不能代替原因解释。',
-                        'Consistent adjustment items are missing. Request the evidence below; a profit-to-cash gap does not explain its causes.'
+                  <CashBridge steps={report.bridge} report={report} />
+                  <div className="chart-legend">
+                    <span>
+                      <i className="legend-dot ink" />
+                      {t('起点与终点', 'Starting and ending amounts')}
+                    </span>
+                    <span>
+                      <i className="legend-dot teal" />
+                      {t('正向调整', 'Positive adjustments')}
+                    </span>
+                    <span>
+                      <i className="legend-dot amber" />
+                      {t('负向调整', 'Negative adjustments')}
+                    </span>
+                  </div>
+                  <details className="chart-caption chart-notes">
+                    <summary>{t('图表口径', 'Chart scope')}</summary>
+                    <p>
+                      {t(
+                        '调整项不是现金余额或未来预测。图形标签已舍入，精确金额显示在所选项中；经营性应收调整不等于单一应收账款余额变化，负向调整不能直接证明坏账或滞销。',
+                        'Adjustments are not cash balances or forecasts. Plot labels are rounded; the selected item shows exact amounts. Operating receivables adjustments are not simply changes in accounts receivable, and negative adjustments alone do not prove bad debt or slow inventory.'
                       )}
-                </p>
-                <a
-                  className="text-link"
-                  href="#questions"
-                  onClick={(event) => {
-                    event.preventDefault();
-                    document.getElementById('questions')?.scrollIntoView({
-                      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                        ? 'auto'
-                        : 'smooth',
-                    });
-                  }}
-                >
-                  {t('查看补件问题', 'See evidence requests')}
-                  <ArrowDown size={15} />
-                </a>
-              </div>
-            )}
-          </section>
-          <section className="report-section">
-            <div className="report-section-title">
-              <div>
-                <h2>{t('年度对比', 'Annual comparison')}</h2>
-              </div>
-            </div>
-            <TrendChart report={report} />
-            <p className="chart-caption">
-              {t(
-                '同一家公司、同一报表范围。同比基数为零或负值时，不给出通常增长率。',
-                'One company and one reporting scope. Conventional growth rates are withheld for zero or negative prior-year bases.'
-              )}
-            </p>
-          </section>
-        </div>
-        <aside className="report-secondary">
-          <ChecksPanel report={report} />
-          <section className="source-panel">
-            <h2>{t('所用材料', 'Materials used')}</h2>
-            {report.snapshot.map((material) => (
-              <button
-                className="source-snapshot-row"
-                key={material.id}
-                onClick={() =>
-                  showEvidence(
-                    material.observations.slice(0, 8).map((obs) => ({
-                      materialId: material.id,
-                      page: obs.page,
-                      quote: obs.quote,
-                      sourceUrl: material.sourceUrl,
-                    })),
-                    report
-                  )
-                }
-              >
-                <FileText size={20} />
-                <span>
-                  <strong>{material.title}</strong>
-                  <small>
-                    {material.documentDate} · {t('查看原文与口径', 'Inspect source and scope')}
-                  </small>
-                </span>
-                <ArrowUpRight size={16} />
-              </button>
-            ))}
-            <p>
-              {t(
-                '历史报告使用已保存的输入快照，不会被新的导入覆盖。',
-                'Historical reports use their saved inputs. New imports do not overwrite them.'
-              )}
-            </p>
-          </section>
-        </aside>
-      </div>
-      <ReviewContext task={task} report={report} />
-      <section className="report-section findings-section">
-        <div className="report-section-title">
-          <div>
-            <h2>{t('可能解释', 'Possible explanations')}</h2>
-          </div>
-        </div>
-        <div className="findings-list">
-          {report.findings.map((finding, index) => (
-            <article className={`finding-row finding-${finding.severity}`} key={finding.id}>
-              <span className="finding-number">{index + 1}</span>
-              <div>
-                <div className="finding-title">
-                  <h3>{t(finding.label, translateRule(finding.label))}</h3>
-                  <Tag tone={finding.basis === 'management' ? 'amber' : 'neutral'}>
-                    {finding.basis === 'management'
-                      ? t('管理层说法', 'Management claim')
-                      : finding.basis === 'calculation'
-                        ? t('派生计算', 'Derived calculation')
-                        : t('来源事实', 'Source evidence')}
-                  </Tag>
+                    </p>
+                  </details>
+                </>
+              ) : (
+                <div className="bridge-unavailable">
+                  <h3>{t('现金桥未生成', 'Cash bridge unavailable')}</h3>
+                  <p>
+                    {report.verdict === 'conflict'
+                      ? t(
+                          '现有输入或现金桥核对存在冲突。金额与原文保留，请先复核下方口径检查，再解释经营原因。',
+                          'The inputs or bridge reconciliation conflict. Amounts and sources remain visible; resolve the scope checks below before attributing operating causes.'
+                        )
+                      : t(
+                          '缺少同口径调整项。请补充下方待询证材料；利润与现金的差额不能代替原因解释。',
+                          'Consistent adjustment items are missing. Request the evidence below; a profit-to-cash gap does not explain its causes.'
+                        )}
+                  </p>
+                  <a
+                    className="text-link"
+                    href="#questions"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      setSection('requests');
+                      requestAnimationFrame(() =>
+                        document.getElementById('questions')?.scrollIntoView({
+                          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                            ? 'auto'
+                            : 'smooth',
+                        })
+                      );
+                    }}
+                  >
+                    {t('查看补件问题', 'See evidence requests')}
+                    <ArrowDown size={15} />
+                  </a>
                 </div>
-                <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
-                {finding.questionIds.length > 0 && (
-                  <span className="finding-question-link">
-                    {finding.questionIds.length} {t('条待询证问题', 'evidence requests')}
-                  </span>
-                )}
-              </div>
-              {finding.sourceRefs.length > 0 && (
-                <button
-                  className="button button-secondary"
-                  onClick={() => showEvidence(finding.sourceRefs, report)}
-                >
-                  <FileText size={15} />
-                  {t('来源', 'Source')}
-                </button>
               )}
-            </article>
-          ))}
-        </div>
-      </section>
-      <section className="report-section questions-section" id="questions">
-        <div className="report-section-title">
-          <div>
-            <h2>{t('待询证清单', 'Evidence requests')}</h2>
+            </section>
+            <section className="report-section">
+              <div className="report-section-title">
+                <div>
+                  <h2>{t('年度对比', 'Annual comparison')}</h2>
+                </div>
+              </div>
+              <TrendChart report={report} />
+              <p className="chart-caption">
+                {t(
+                  '同一家公司、同一报表范围。同比基数为零或负值时，不给出通常增长率。',
+                  'One company and one reporting scope. Conventional growth rates are withheld for zero or negative prior-year bases.'
+                )}
+              </p>
+            </section>
           </div>
-          <Tag tone="green">
-            {report.questions.filter((question) => question.status === 'done').length}/
-            {report.questions.length} {t('已完成', 'done')}
-          </Tag>
-        </div>
-        <p className="section-intro">
-          {t(
-            '勾选仅记录跟进完成，不代表财务问题已证实或解决。',
-            'Checking an item records follow-up only; it does not prove a financial issue is resolved.'
-          )}
-        </p>
-        <div className="question-list">
-          {report.questions.map((question, index) => (
-            <div
-              className={`question-row ${question.status === 'done' ? 'question-done' : ''}`}
-              key={question.id}
-            >
-              <label className="question-checkbox">
-                <input
-                  aria-label={`${t('标记完成', 'Mark complete')}: ${t(question.text, translateRule(question.text))}`}
-                  type="checkbox"
-                  checked={question.status === 'done'}
-                  disabled={busy}
-                  onChange={(event) =>
-                    execute(
-                      () =>
-                        api<AnalysisTask>(`/tasks/${task.id}/questions/${question.id}`, {
-                          method: 'PATCH',
-                          body: JSON.stringify({ status: event.target.checked ? 'done' : 'open' }),
-                        }),
-                      t('跟进状态已保存', 'Follow-up saved')
+          <aside className="report-secondary">
+            <ChecksPanel report={report} />
+            <section className="source-panel">
+              <h2>{t('所用材料', 'Materials used')}</h2>
+              {report.snapshot.map((material) => (
+                <button
+                  className="source-snapshot-row"
+                  key={material.id}
+                  onClick={() =>
+                    showEvidence(
+                      material.observations.slice(0, 8).map((obs) => ({
+                        materialId: material.id,
+                        page: obs.page,
+                        quote: obs.quote,
+                        sourceUrl: material.sourceUrl,
+                      })),
+                      report
                     )
                   }
-                />
-                <span>
-                  <Check size={16} />
-                </span>
-              </label>
-              <div>
-                <span className="question-number">Q{String(index + 1).padStart(2, '0')}</span>
-                <h3>{t(question.text, translateRule(question.text))}</h3>
-                <p>{t(question.reason, translateRule(question.reason))}</p>
-                {question.trigger && (
-                  <div className="question-trigger">
-                    <span>
-                      {question.trigger.year} · {metricName(question.trigger.metric, locale)}
-                    </span>
-                    <strong className="mono">
-                      {money(question.trigger.amount, locale, false)} CNY
-                    </strong>
-                    <button
-                      className="text-link"
-                      onClick={() => showEvidence(question.trigger!.sourceRefs, report)}
-                    >
-                      {t('查看触发依据', 'Inspect triggering evidence')}
-                      <ArrowUpRight size={14} />
-                    </button>
-                  </div>
-                )}
-                <div className="requested-evidence">
-                  <FileText size={15} />
+                >
+                  <FileText size={20} />
                   <span>
-                    {t(question.requestedEvidence, translateRule(question.requestedEvidence))}
+                    <strong>{material.title}</strong>
+                    <small>
+                      {material.documentDate} · {t('查看原文与口径', 'Inspect source and scope')}
+                    </small>
                   </span>
+                  <ArrowUpRight size={16} />
+                </button>
+              ))}
+              <p>
+                {t(
+                  '历史报告使用已保存的输入快照，不会被新的导入覆盖。',
+                  'Historical reports use their saved inputs. New imports do not overwrite them.'
+                )}
+              </p>
+            </section>
+          </aside>
+        </div>
+      </div>
+      <div id="report-panel-explanations" hidden={section !== 'explanations'}>
+        <section className="report-section findings-section">
+          <div className="report-section-title">
+            <div>
+              <h2>{t('可能解释', 'Possible explanations')}</h2>
+            </div>
+          </div>
+          <div className="findings-list">
+            {report.findings.map((finding, index) => (
+              <article className={`finding-row finding-${finding.severity}`} key={finding.id}>
+                <span className="finding-number">{index + 1}</span>
+                <div>
+                  <div className="finding-title">
+                    <h3>{t(finding.label, translateRule(finding.label))}</h3>
+                    <Tag tone={finding.basis === 'management' ? 'amber' : 'neutral'}>
+                      {finding.basis === 'management'
+                        ? t('管理层说法', 'Management claim')
+                        : finding.basis === 'calculation'
+                          ? t('派生计算', 'Derived calculation')
+                          : t('来源事实', 'Source evidence')}
+                    </Tag>
+                  </div>
+                  <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
+                  {finding.questionIds.length > 0 && (
+                    <span className="finding-question-link">
+                      {finding.questionIds.length} {t('条待询证问题', 'evidence requests')}
+                    </span>
+                  )}
+                </div>
+                {finding.sourceRefs.length > 0 && (
+                  <button
+                    className="button button-secondary"
+                    onClick={() => showEvidence(finding.sourceRefs, report)}
+                  >
+                    <FileText size={15} />
+                    {t('来源', 'Source')}
+                  </button>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
+      <div id="report-panel-requests" hidden={section !== 'requests'}>
+        <details className="report-context-details">
+          <summary>{t('付款背景与跟进', 'Payment context and follow-up')}</summary>
+          <ReviewContext task={task} report={report} />
+        </details>
+        <section className="report-section questions-section" id="questions">
+          <div className="report-section-title">
+            <div>
+              <h2>{t('待询证清单', 'Evidence requests')}</h2>
+            </div>
+            <Tag tone="green">
+              {report.questions.filter((question) => question.status === 'done').length}/
+              {report.questions.length} {t('已完成', 'done')}
+            </Tag>
+          </div>
+          <p className="section-intro">
+            {t(
+              '勾选仅记录跟进完成，不代表财务问题已证实或解决。',
+              'Checking an item records follow-up only; it does not prove a financial issue is resolved.'
+            )}
+          </p>
+          <div className="question-list">
+            {report.questions.map((question, index) => (
+              <div
+                className={`question-row ${question.status === 'done' ? 'question-done' : ''}`}
+                key={question.id}
+              >
+                <label className="question-checkbox">
+                  <input
+                    aria-label={`${t('标记完成', 'Mark complete')}: ${t(question.text, translateRule(question.text))}`}
+                    type="checkbox"
+                    checked={question.status === 'done'}
+                    disabled={busy}
+                    onChange={(event) =>
+                      execute(
+                        () =>
+                          api<AnalysisTask>(`/tasks/${task.id}/questions/${question.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({
+                              status: event.target.checked ? 'done' : 'open',
+                            }),
+                          }),
+                        t('跟进状态已保存', 'Follow-up saved')
+                      )
+                    }
+                  />
+                  <span>
+                    <Check size={16} />
+                  </span>
+                </label>
+                <div>
+                  <span className="question-number">Q{String(index + 1).padStart(2, '0')}</span>
+                  <h3>{t(question.text, translateRule(question.text))}</h3>
+                  <p>{t(question.reason, translateRule(question.reason))}</p>
+                  {question.trigger && (
+                    <div className="question-trigger">
+                      <span>
+                        {question.trigger.year} · {metricName(question.trigger.metric, locale)}
+                      </span>
+                      <strong className="mono">
+                        {money(question.trigger.amount, locale, false)} CNY
+                      </strong>
+                      <button
+                        className="text-link"
+                        onClick={() => showEvidence(question.trigger!.sourceRefs, report)}
+                      >
+                        {t('查看触发依据', 'Inspect triggering evidence')}
+                        <ArrowUpRight size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="requested-evidence">
+                    <FileText size={15} />
+                    <span>
+                      {t(question.requestedEvidence, translateRule(question.requestedEvidence))}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="report-limitations">
-        <div>
-          <h3>
-            <ShieldCheck size={18} />
-            {t('核查范围', 'Review scope')}
-          </h3>
-          <p className="scope-line">
-            {t(
-              '仅核对历史年度合并报表，不作投资、授信或合作决策。',
-              'Historical consolidated financial evidence only; no investment, credit or partnership decisions.'
-            )}
-          </p>
-          <details>
-            <summary>{t('范围详情', 'Scope details')}</summary>
-            <ul>
-              {report.limitations.map((item, index) => (
-                <li key={index}>{t(item, translateRule(item))}</li>
-              ))}
-            </ul>
-          </details>
-          <p className="model-status">
-            <Activity size={15} />
-            {report.model.status === 'not-requested'
-              ? t(
-                  '规则核查完成 · 本次未选择智能解释，没有模型调用。',
-                  'Rules review complete · Optional model explanation was not requested; no model call made.'
-                )
-              : report.model.status === 'not-configured'
-                ? t(
-                    '规则分析完成 · 未配置模型 API，本报告没有外部模型解释。',
-                    'Rules-based analysis complete · No model API configured; this report contains no external model explanation.'
-                  )
-                : report.model.status === 'failed'
-                  ? report.model.error?.includes('未调用')
-                    ? t(
-                        '规则报告可用 · 未满足证据条件，未调用模型。',
-                        'Rules report available · Evidence conditions were not met; no model call was made.'
-                      )
-                    : t(
-                        '规则报告可用 · 可选模型调用或输出检查未完成。',
-                        'Rules report available · Optional model call or output checks did not complete.'
-                      )
-                  : t(
-                      '规则计算 + 已完成的可选模型解释',
-                      'Deterministic calculations + completed optional model explanation'
-                    )}
-            {report.model.provider && (
-              <span>
-                {t('第三方服务', 'Third-party service')}: {report.model.provider} ·{' '}
-                {report.model.name}
-              </span>
-            )}
-            {report.model.error && (
-              <span>{t(report.model.error, translateRule(report.model.error))}</span>
-            )}
-          </p>
-          {report.model.text && (
-            <details className="model-explanation">
-              <summary>{t('查看可选模型解释', 'View optional model explanation')}</summary>
-              <div className="info-strip">
-                <CircleAlert size={16} />
-                <p>
-                  {t(
-                    '仅对引用 ID、格式和允许金额做确定性检查，不代表模型解释的含义真实。模型文字不是新增证据。',
-                    'Only citation IDs, format, and permitted numbers are checked deterministically. This does not prove the explanation’s meaning. Model text is not new evidence.'
-                  )}
-                </p>
-              </div>
-              <ModelExplanation
-                report={report}
-                onSource={(_title, refs) => showEvidence(refs, report)}
-              />
+            ))}
+          </div>
+        </section>
+      </div>
+      <div id="report-panel-scope" hidden={section !== 'scope'}>
+        <section className="report-limitations">
+          <div>
+            <h3>
+              <ShieldCheck size={18} />
+              {t('核查范围', 'Review scope')}
+            </h3>
+            <p className="scope-line">
+              {t(
+                '仅核对历史年度合并报表，不作投资、授信或合作决策。',
+                'Historical consolidated financial evidence only; no investment, credit or partnership decisions.'
+              )}
+            </p>
+            <details>
+              <summary>{t('范围详情', 'Scope details')}</summary>
+              <ul>
+                {report.limitations.map((item, index) => (
+                  <li key={index}>{t(item, translateRule(item))}</li>
+                ))}
+              </ul>
             </details>
-          )}
-        </div>
-        <div className="report-bottom-actions">
-          <a
-            className="button button-secondary"
-            href={`/api/tasks/${task.id}/export?format=json`}
-            download
-          >
-            <Download size={16} />
-            {t('下载完整 JSON', 'Download full JSON')}
-          </a>
-          <button
-            className="button button-secondary"
-            onClick={() => navigate(`/compare?left=${task.id}`)}
-          >
-            <Columns3 size={16} />
-            {t('与历史任务比较', 'Compare with history')}
-          </button>
-          <a href="#/method" className="text-link">
-            {t('阅读方法说明', 'Read the methodology')}
-            <ArrowUpRight size={15} />
-          </a>
-        </div>
-      </section>
+            <p className="model-status">
+              <Activity size={15} />
+              {report.model.status === 'not-requested'
+                ? t('模型未启用', 'Model off')
+                : report.model.status === 'not-configured'
+                  ? t('模型未配置', 'Model not configured')
+                  : report.model.status === 'failed'
+                    ? report.model.error?.includes('未调用')
+                      ? t(
+                          '证据条件不足，未调用模型',
+                          'Evidence conditions not met; model not called'
+                        )
+                      : t(
+                          '模型调用或检查未完成，规则结果保留',
+                          'Model call or checks incomplete; rule results retained'
+                        )
+                    : t('模型解释已完成', 'Model explanation complete')}
+              {report.model.provider && (
+                <span>
+                  {t('第三方服务', 'Third-party service')}: {report.model.provider} ·{' '}
+                  {report.model.name}
+                </span>
+              )}
+              {report.model.error && (
+                <span>{t(report.model.error, translateRule(report.model.error))}</span>
+              )}
+            </p>
+            {report.model.text && (
+              <details className="model-explanation">
+                <summary>{t('查看可选模型解释', 'View optional model explanation')}</summary>
+                <div className="info-strip">
+                  <CircleAlert size={16} />
+                  <p>
+                    {t(
+                      '只检查引用、格式与允许金额，不认证解释含义。模型文字不是新增证据。',
+                      'Citation, format and permitted-number checks do not verify meaning. Model text is not new evidence.'
+                    )}
+                  </p>
+                </div>
+                <ModelExplanation
+                  report={report}
+                  onSource={(_title, refs) => showEvidence(refs, report)}
+                />
+              </details>
+            )}
+          </div>
+          <div className="report-bottom-actions">
+            <a
+              className="button button-secondary"
+              href={`/api/tasks/${task.id}/export?format=json`}
+              download
+            >
+              <Download size={16} />
+              {t('下载完整 JSON', 'Download full JSON')}
+            </a>
+            <button
+              className="button button-secondary"
+              onClick={() => navigate(`/compare?left=${task.id}`)}
+            >
+              <Columns3 size={16} />
+              {t('与历史任务比较', 'Compare with history')}
+            </button>
+            <a href="#/method" className="text-link">
+              {t('阅读方法说明', 'Read the methodology')}
+              <ArrowUpRight size={15} />
+            </a>
+          </div>
+        </section>
+      </div>
       <div className="print-footer">
         CashLens / {task.id} · {report.year} ·{' '}
         {t(
@@ -1138,7 +1180,7 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
           onChange={(event) => setUseModel(event.target.checked)}
         />
         <span>
-          <strong>{t('开启智能解释', 'Enable model explanation')}</strong>
+          <strong>{t('添加模型解释', 'Add model explanation')}</strong>
           <small>
             {t(
               '默认不向模型发送材料；选中后将采用的指标、短摘录与规则分析发送至第三方 TokenFlux。解释含义需人工复核。',

@@ -9,6 +9,7 @@ import type {
   Workspace,
 } from '../shared/contracts.js';
 import type { DecisionCase } from '../shared/decision-contracts.js';
+import type { CompanyGraphProgress } from '../shared/company-contracts.js';
 import { ApiFault, validateMaterial } from './validation.js';
 
 export const UPLOAD_QUOTA_BYTES = 250 * 1024 * 1024;
@@ -120,6 +121,18 @@ export class WorkspaceStore {
         if (run.status === 'queued' || run.status === 'running') {
           run.status = 'failed';
           run.error = '服务重启中断了公开证据查询，可重新查询；已有原件与任务保留。';
+          const agent = (run as CompanyResearchRun & { agent?: CompanyGraphProgress }).agent;
+          if (agent?.version === 'langgraph-v1') {
+            agent.recoverable = true;
+            agent.revision += 1;
+            run.error = '服务重启中断了查询，可恢复公开证据步骤；主体与年度快照保持。';
+            for (const branch of agent.branches)
+              if (branch.status === 'running') {
+                branch.status = 'failed';
+                branch.finishedAt = new Date().toISOString();
+                branch.summary = run.error;
+              }
+          }
           run.updatedAt = new Date().toISOString();
           for (const entry of run.trace)
             if (entry.status === 'running') {
@@ -152,7 +165,7 @@ export class WorkspaceStore {
         );
       this.state = {
         schemaVersion: 1,
-        materials: initial.materials,
+        materials: [],
         tasks: [],
         inputs: {},
         uploads: {},
@@ -197,6 +210,24 @@ export class WorkspaceStore {
       if (!record.materialId && Date.parse(record.createdAt) + PENDING_UPLOAD_TTL_MS <= now) {
         await rm(this.uploadFilename(id), { force: true });
         delete this.state.uploads[id];
+        changed = true;
+      }
+    }
+    for (const run of this.state.companyRuns || []) {
+      const graph = run.agent;
+      if (
+        run.status === 'failed' &&
+        graph?.version === 'langgraph-v1' &&
+        graph.recoverable &&
+        /^[a-f0-9-]{36}$/.test(run.id) &&
+        Number.isFinite(Date.parse(run.createdAt)) &&
+        Date.parse(run.createdAt) + PENDING_UPLOAD_TTL_MS <= now
+      ) {
+        await rm(path.join(this.dataDir, 'company-agent', run.id), {
+          recursive: true,
+          force: true,
+        });
+        graph.recoverable = false;
         changed = true;
       }
     }
@@ -282,6 +313,23 @@ export class WorkspaceStore {
       throw new ApiFault(409, 'UPLOAD_FILE_CHANGED', '保留原件的大小或哈希不一致，停止使用');
     return { record, buffer };
   }
+  async importPublicMaterials(materials: Material[]) {
+    return this.serializeUploads(async () => {
+      const previous = this.state.materials;
+      this.state.materials = [
+        ...previous,
+        ...materials
+          .filter((material) => !previous.some((item) => item.id === material.id))
+          .map((material) => structuredClone(material)),
+      ];
+      try {
+        await this.persist();
+      } catch (error) {
+        this.state.materials = previous;
+        throw error;
+      }
+    });
+  }
   async saveMaterial(material: Material) {
     return this.serializeUploads(async () => {
       let record: UploadRecord | undefined;
@@ -365,11 +413,10 @@ export class WorkspaceStore {
   }
   async reset() {
     await this.serializeUploads(async () => {
-      const initial = await seeds(this.root);
       const previous = this.state;
       this.state = {
         schemaVersion: 1,
-        materials: initial.materials,
+        materials: [],
         tasks: [],
         inputs: {},
         uploads: {},
@@ -383,6 +430,7 @@ export class WorkspaceStore {
         throw error;
       }
       await rm(path.join(this.dataDir, 'uploads'), { recursive: true, force: true });
+      await rm(path.join(this.dataDir, 'company-agent'), { recursive: true, force: true });
       await mkdir(path.join(this.dataDir, 'uploads'), { recursive: true, mode: 0o700 });
     });
   }

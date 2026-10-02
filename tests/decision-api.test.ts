@@ -223,6 +223,11 @@ test('private decisions enforce owner and CSRF boundaries, serialize revision wr
       409
     );
     const demos = (await (await service.request('/api/cases')).json()) as DemoCase[];
+    assert.equal(
+      (await service.request(`/api/cases/${demos[0]!.id}/import`, options(alice, {}, 'POST')))
+        .status,
+      201
+    );
     const taskResponse = await service.request(
       '/api/tasks',
       options(

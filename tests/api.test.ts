@@ -68,6 +68,12 @@ async function createTask(
   client: Client,
   demo: DemoCase
 ): Promise<AnalysisTask> {
+  if (['songyuan', 'hikvision', 'missing', 'conflict'].includes(demo.id)) {
+    assert.equal(
+      (await service.request(`/api/cases/${demo.id}/import`, options(client, {}, 'POST'))).status,
+      201
+    );
+  }
   const response = await service.request(
     '/api/tasks',
     options(
@@ -316,7 +322,7 @@ test('sessions and reports survive real server restart', async () => {
     const req = { headers: { cookie: client.cookie } } as Parameters<
       typeof restored.auth.session
     >[0];
-    assert.equal(restored.auth.session(req)?.user.id, client.user.id);
+    assert.equal((await restored.auth.session(req))?.user.id, client.user.id);
     restoredServer = restored.app.listen(0, '127.0.0.1');
     await new Promise<void>((resolve) => restoredServer!.once('listening', resolve));
     const base = `http://127.0.0.1:${(restoredServer.address() as AddressInfo).port}`;
@@ -353,7 +359,7 @@ test('expired sessions, login limits and 25MB uploads are enforced', async () =>
     }
     const { default: Database } = await import('better-sqlite3');
     const db = new Database(path.join(service.directory, 'accounts.sqlite'));
-    db.prepare('UPDATE sessions SET expires_at=0').run();
+    db.prepare('UPDATE session SET expiresAt=0').run();
     db.close();
     assert.equal((await service.request('/api/workspace', options(client))).status, 401);
   } finally {

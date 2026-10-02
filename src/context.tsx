@@ -27,7 +27,7 @@ export type AppContextValue = {
   user: AccountUser | null;
   examples: PublicExample[];
   refresh: () => Promise<void>;
-  navigate: (path: string) => void;
+  navigate: (path: string, options?: { replace?: boolean }) => void;
   execute: <T>(action: () => Promise<T>, success?: string) => Promise<T | undefined>;
   confirm: (request: ConfirmRequest) => void;
   showEvidence: (refs: EvidenceRef[], report?: Report) => void;

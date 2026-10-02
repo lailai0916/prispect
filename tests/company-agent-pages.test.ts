@@ -26,7 +26,10 @@ test('actual late supplemental rows and components survive many low-page keyword
     sha256: 'a'.repeat(64),
     total: 201,
     pages: [
-      { page: 1, text: '测试股份有限公司\n2025年年度报告\n本报告以人民币千元列示' },
+      {
+        page: 1,
+        text: '测试股份有限公司\n股票代码：300750\n2025年年度报告\n本报告以人民币千元列示',
+      },
       ...Array.from({ length: 25 }, (_, index) => ({
         page: index + 2,
         text: '合并利润表\n这是目录与说明，未给出表头和金额',
@@ -68,7 +71,10 @@ test('evidence-linked short text is anchored to the real financial rows rather t
     sha256: 'b'.repeat(64),
     total: 200,
     pages: [
-      { page: 1, text: '测试股份有限公司\n2025年年度报告\n本报告以人民币千元列示' },
+      {
+        page: 1,
+        text: '测试股份有限公司\n股票代码：300750\n2025年年度报告\n本报告以人民币千元列示',
+      },
       {
         page: 200,
         text: `经营活动产生的现金流量净额（此处是前表的标题）\n${'无关讨论'.repeat(800)}\n合并财务报表项目注释\n现金流量表补充资料\n单位：千元\n补充资料 本期金额 上期金额\n1.将净利润调节为经营活动现金流量\n净利润 100 80\n加：折旧 10 10\n存货的减少 -20 -10\n经营性应收项目的减少 -30 -20\n经营性应付项目的增加 10 10\n经营活动产生的现金流量净额 72 70`,

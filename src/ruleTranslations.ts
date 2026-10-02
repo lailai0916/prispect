@@ -1,6 +1,8 @@
 import { metricNames } from './format';
 
 const rules: Record<string, string> = {
+  '输入存在混用或矛盾，系统保留来源并拒绝无声覆盖。请按问题单修复后再核查。':
+    'The inputs are mixed or contradictory. Sources are retained without silently overwriting values. Resolve the evidence requests before reviewing again.',
   '原始文件已暂存于当前账号；请在24小时内确认保存，未确认文件会过期清理。确认后随材料保留，个人额度250MB。':
     'The original upload is temporarily retained in your account. Confirm within 24 hours before it expires; confirmed files remain with the material. Your account quota is 250 MB.',
   '采用材料的主体字段一致。': 'Company fields are consistent across the adopted materials.',
@@ -172,6 +174,41 @@ const rules: Record<string, string> = {
   公开选择页二次核对: 'Recheck selected public pages',
   '输入口径、数值或现金桥核对存在冲突。保留可单独采用的金额与原始来源，暂停依赖冲突证据的解释；差额不直接证明经营风险。':
     'Input scope, amounts or bridge reconciliation conflict. Independently admissible amounts and original sources remain visible. Explanations dependent on conflicting evidence stop; the difference alone does not establish operating risk.',
+  本次公开查询已取消: 'This public retrieval was cancelled.',
+  公开查询已中止: 'Public retrieval was stopped.',
+  确认上市主体: 'Confirm the listed company',
+  检索完整年报: 'Retrieve the full annual report',
+  检索近期公告: 'Retrieve recent disclosures',
+  下载年报原件: 'Download the original annual report',
+  读取年报页与文本: 'Read report pages and text',
+  读取附注线索: 'Read operating note excerpts',
+  执行附注补查: 'Read additional note pages',
+  读取公告全文: 'Read disclosure text',
+  选择下一步公开补查: 'Select additional public evidence to read',
+  分析公开附注的竞争解释: 'Examine competing explanations in public evidence',
+  业务扩张或结算变化: 'Business growth or settlement changes',
+  回款压力: 'Collection pressure',
+  扩张备货: 'Stocking for expansion',
+  存货去化压力: 'Inventory clearance pressure',
+  付款安排变化: 'Changes in payment timing',
+  '索取分客户账龄、信用期变化与期后回款记录':
+    'Request ageing by customer, changes in credit terms and subsequent collection records.',
+  '核对逾期账龄、期后回款与坏账准备依据':
+    'Check overdue ageing, subsequent collections and the basis for loss allowances.',
+  '核对订单、库龄与后续销售': 'Check orders, inventory ageing and subsequent sales.',
+  '核对库龄、减值依据与后续销售':
+    'Check inventory ageing, impairment evidence and subsequent sales.',
+  '核对应付到期日、账期与付款记录': 'Check payable due dates, credit terms and payment records.',
+  '按来源合并结果；缺件、冲突与覆盖限制保留。':
+    'Results combined by source; missing evidence, conflicts and coverage limits retained.',
+  '引用仅校验原文定位；年报主体不证明合同相对方、当前资金或履约能力。':
+    'Citations check text location only. The annual-report entity does not establish the contractual counterparty, current funds or fulfilment capability.',
+  '财务原表存在核验失败；附注解释不能覆盖或解除金额冲突。':
+    'Financial source checks failed. Note explanations do not override or resolve conflicting amounts.',
+  '附注模型解释未完成，原文线索保留。':
+    'Model interpretation of notes was incomplete; original source excerpts remain.',
+  '公告定性解释未完成，原件读取记录保留。':
+    'Qualitative disclosure interpretation was incomplete; original reading records remain.',
   重新确认官方主体: 'Reconfirm the official company identity',
   检索指定年度完整年报: 'Retrieve the requested annual report',
   检索近90天公告线索: 'Retrieve disclosures from the last 90 days',
@@ -251,6 +288,22 @@ const rules: Record<string, string> = {
 
 export function translateRule(text: string): string {
   if (rules[text]) return rules[text];
+  const graphFinancial = text.match(/^(\d+)条原表候选，仍需确认口径。$/);
+  if (graphFinancial)
+    return `${graphFinancial[1]} source-table candidates; scope still requires confirmation.`;
+  const graphNotes = text.match(/^(\d+)段原文；(\d+)个待核查假设。$/);
+  if (graphNotes)
+    return `${graphNotes[1]} source excerpts; ${graphNotes[2]} hypotheses to investigate.`;
+  const graphNotices = text.match(/^(\d+)份全文已读；(\d+)项覆盖限制。$/);
+  if (graphNotices)
+    return `${graphNotices[1]} full texts read; ${graphNotices[2]} coverage limitations.`;
+  const graphTitlesOnly = text.match(/^仅读取所选(\d+)份近期原件，未逐份覆盖全部标题。$/);
+  if (graphTitlesOnly)
+    return `Only ${graphTitlesOnly[1]} selected recent originals were read; not every title was covered.`;
+  const graphUnfinished = text.match(/^(.*)：原件未读完，不等于没有相关变化。$/);
+  if (graphUnfinished)
+    return `${graphUnfinished[1]}: the original was not fully read. This does not establish the absence of changes.`;
+
   const bridgeDifference = text.match(
     /^利润与调整合计 ([\d.-]+) 元，经营现金 ([\d.-]+) 元；差额（经营现金−合计）([\d.-]+) 元。停止现金桥解释并请求复核，不以残差补数。$/
   );

@@ -49,6 +49,39 @@ release="$releases/$sha"
 switched=false
 install_unit=""
 
+# Auth migrations can accept new security state. Never return that database to an older binary.
+database_auth_schema() {
+  python3 - /var/lib/cashlens/accounts.sqlite <<'PY'
+import pathlib, sqlite3, sys
+path = pathlib.Path(sys.argv[1])
+if not path.exists():
+    print(1)
+else:
+    with sqlite3.connect(f"file:{path}?mode=ro", uri=True, timeout=10) as db:
+        exists = db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='cashlens_auth_migrations'").fetchone()
+        row = db.execute("SELECT MAX(version) FROM cashlens_auth_migrations").fetchone() if exists else None
+        print(row[0] if row and row[0] else 1)
+PY
+}
+
+release_auth_schema() {
+  python3 - "$1/AUTH_SCHEMA.json" <<'PY'
+import json, pathlib, sys
+path = pathlib.Path(sys.argv[1])
+version = json.loads(path.read_text()).get("version") if path.exists() else 1
+if type(version) is not int or version < 1 or version > 100:
+    raise SystemExit("Invalid auth schema compatibility manifest.")
+print(version)
+PY
+}
+
+can_restore_release() {
+  local live_schema previous_schema
+  live_schema="$(database_auth_schema)" || return 1
+  previous_schema="$(release_auth_schema "$1")" || return 1
+  [[ "$previous_schema" -ge "$live_schema" ]]
+}
+
 probe() {
   "$healthcheck" >"$job/health.log" 2>&1 || return 1
   curl -fsS --max-time 5 http://127.0.0.1:4317/ >"$job/served-index.html" || return 1
@@ -87,12 +120,17 @@ finish() {
     systemctl stop "$install_unit" >"$job/install-stop.log" 2>&1 || true
   fi
   if [[ "$status" -ne 0 && "$switched" == true ]]; then
-    printf '%s\n' 'Deployment failed; restoring previous release.' >&2
-    rollback_link="$base/.current-rollback-$$"
-    ln -s "$old_release" "$rollback_link"
-    mv -Tf "$rollback_link" "$current"
-    systemctl restart cashlens >"$job/rollback.log" 2>&1 || true
-    "$healthcheck" >>"$job/rollback.log" 2>&1 || true
+    if can_restore_release "$old_release"; then
+      printf '%s\n' 'Deployment failed; restoring a compatible previous release.' >&2
+      rollback_link="$base/.current-rollback-$$"
+      ln -s "$old_release" "$rollback_link"
+      mv -Tf "$rollback_link" "$current"
+      systemctl restart cashlens >"$job/rollback.log" 2>&1 || true
+      "$healthcheck" >>"$job/rollback.log" 2>&1 || true
+    else
+      printf '%s\n' 'Deployment failed after an auth schema barrier. Old-binary rollback refused; state preserved for compatible recovery.' >&2
+      systemctl stop cashlens >"$job/rollback.log" 2>&1 || true
+    fi
   fi
   if [[ -d "$job" ]]; then
     chown -hR root:root "$job" || true
@@ -321,6 +359,11 @@ PY
   # Maintenance services use fixed preinstalled helpers, not archive scripts.
   mv "$sealed" "$release"
 fi
+
+# Validate against the live database before switching even on manual redeployment.
+target_auth_schema="$(release_auth_schema "$release")" || fail 'Release authentication manifest is invalid.'
+live_auth_schema="$(database_auth_schema)" || fail 'Live authentication schema cannot be read.'
+[[ "$target_auth_schema" -ge "$live_auth_schema" ]] || fail 'Release cannot read the current authentication schema.'
 
 # Execute only the preinstalled helper, never a script from the received archive.
 "$backup" >"$job/backup.log" 2>&1

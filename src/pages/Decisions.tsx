@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { createContext, useContext, useEffect, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -10,7 +10,6 @@ import {
   LoaderCircle,
   Plus,
   RotateCcw,
-  Trash2,
   X,
 } from 'lucide-react';
 import type {
@@ -27,12 +26,17 @@ import type {
 } from '../../shared/decision-contracts';
 import type { DatedCashComparison, DatedCashResult } from '../../shared/decision-cash';
 import type { ReviewPurpose } from '../../shared/contracts';
+import { interpretStart } from '../../shared/start-intent';
 import { api, post, requestErrorText } from '../api';
 import { useApp, type Translate } from '../context';
-import { Dialog, PageHeading, Tag } from '../components';
+import { ActionMenu, Dialog, PageHeading, Tag } from '../components';
 import { date, money, metricName } from '../format';
 import { decisionText } from '../decisionTranslations';
+import { translateRule } from '../ruleTranslations';
+import { CashPlanImport } from '../CashPlanImport';
 import '../decision.css';
+
+const EvidenceRecordContext = createContext<(id: string) => void>(() => {});
 
 const today = () => {
   const d = new Date();
@@ -109,25 +113,53 @@ const revisionName = (reason: string, t: Translate) =>
   })[reason] || reason;
 
 export function Decisions({ query }: { query: URLSearchParams }) {
-  const { t, locale, workspace, navigate, execute, busy, confirm } = useApp();
+  const { t, locale, workspace, navigate, execute, busy, confirm, showEvidence } = useApp();
   const id = query.get('id');
   const requestedRevision = query.get('revision');
   const isNew = query.has('new');
   const purpose: ReviewPurpose = query.get('new') === 'handover' ? 'handover' : 'external';
   const [list, setList] = useState<DecisionSummary[]>([]);
   const [detail, setDetail] = useState<DecisionDetail | null>(null);
-  const [input, setInput] = useState<DecisionInput>(() =>
-    blankInput(
-      purpose,
-      workspace?.tasks.some((task) => task.id === query.get('task')) ? query.get('task') : null
-    )
-  );
+  const [input, setInput] = useState<DecisionInput>(() => {
+    const linkedTask = workspace?.tasks.find((task) => task.id === query.get('task'));
+    const value = blankInput(purpose, linkedTask?.id || null);
+    value.transactionEntity = linkedTask?.company || '';
+    if (isNew && query.get('start') === '1') {
+      try {
+        const draft: unknown = JSON.parse(sessionStorage.getItem('cashlens.start-draft') || 'null');
+        if (
+          draft &&
+          typeof draft === 'object' &&
+          'kind' in draft &&
+          'text' in draft &&
+          draft.kind === purpose &&
+          typeof draft.text === 'string'
+        ) {
+          value.promise = draft.text;
+          const intent = interpretStart(draft.text, purpose);
+          value.transactionEntity = intent.companyQuery || value.transactionEntity;
+          if (value.external) value.external.proposedAmount = intent.proposedAmount;
+          if (value.datedCash) value.datedCash.proposedAmount = intent.proposedAmount;
+        }
+      } catch {
+        /* A missing or invalid local draft leaves the form empty. */
+      }
+    }
+    return value;
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(Boolean(id));
   const [editing, setEditing] = useState(isNew);
   const [evidenceSlot, setEvidenceSlot] = useState<DecisionEvidenceSlot | null>(null);
   const [scopeEvidence, setScopeEvidence] = useState<DecisionEvidence | null>(null);
-  const [sample, setSample] = useState(false);
+  const [section, setSection] = useState<
+    'overview' | 'scenarios' | 'conditions' | 'evidence' | 'history'
+  >('overview');
+  const [viewedEvidenceId, setViewedEvidenceId] = useState<string | null>(null);
+  const viewedEvidence = detail?.version.evidence.find((item) => item.id === viewedEvidenceId);
+  useEffect(() => {
+    if (isNew && query.get('start') === '1') sessionStorage.removeItem('cashlens.start-draft');
+  }, []);
   const [reload, setReload] = useState(0);
   const [copied, setCopied] = useState(false);
   const readOnly = Boolean(detail && detail.version.revision !== detail.decision.currentRevision);
@@ -171,7 +203,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       ...input,
       title:
         input.title.trim() ||
-        `${input.transactionEntity.trim()} · ${input.purpose === 'external' ? t('预付款', 'Prepayment') : t('新增付款', 'Additional payment')}`.slice(
+        `${input.transactionEntity.trim()} · ${input.purpose === 'external' ? t('预付款', 'Prepayment') : t('接手核查', 'Handover review')}`.slice(
           0,
           200
         ),
@@ -190,7 +222,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               }),
             })
           : post<DecisionDetail>('/decisions', normalized),
-      t('决定底稿已保存', 'Decision working paper saved')
+      t('事项已保存', 'Payment matter saved')
     );
     if (result) {
       setDetail(result);
@@ -273,83 +305,6 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       setScopeEvidence(null);
     }
   };
-  const loadSample = (next: ReviewPurpose) => {
-    const value = blankInput(next);
-    value.title = t(
-      next === 'external' ? '虚构验收 · 预付款方案' : '虚构验收 · 付款日期方案',
-      next === 'external' ? 'Fictional test · prepayment' : 'Fictional test · payment timing'
-    );
-    value.transactionEntity = t('虚构采购主体', 'Fictional purchasing entity');
-    if (value.external)
-      Object.assign(value.external, {
-        totalAmount: '100000.00',
-        alreadyPaid: '0.00',
-        deliveredAmount: '0.00',
-        actualRefund: '0.00',
-        proposedAmount: '100000.00',
-        alternativeAmount: '20000.00',
-        exposureLimit: '20000.00',
-      });
-    if (value.datedCash)
-      Object.assign(value.datedCash, {
-        openingCash: '120000.00',
-        proposedAmount: '60000.00',
-        proposedDay: 5,
-        alternativeDay: 26,
-        flows: [
-          {
-            id: 'fixed-d10',
-            label: t('第10天付款', 'Day 10 payment'),
-            direction: 'out',
-            day: 10,
-            amount: '100000.00',
-            flexibility: 'fixed',
-          },
-          {
-            id: 'fixed-d40',
-            label: t('第40天付款', 'Day 40 payment'),
-            direction: 'out',
-            day: 40,
-            amount: '100000.00',
-            flexibility: 'fixed',
-          },
-          {
-            id: 'fixed-d70',
-            label: t('第70天付款', 'Day 70 payment'),
-            direction: 'out',
-            day: 70,
-            amount: '100000.00',
-            flexibility: 'fixed',
-          },
-          {
-            id: 'in-d25',
-            label: t('第25天预计收款', 'Day 25 expected receipt'),
-            direction: 'in',
-            day: 25,
-            amount: '200000.00',
-            flexibility: 'fixed',
-          },
-          {
-            id: 'in-d55',
-            label: t('第55天预计收款', 'Day 55 expected receipt'),
-            direction: 'in',
-            day: 55,
-            amount: '120000.00',
-            flexibility: 'fixed',
-          },
-          {
-            id: 'in-d85',
-            label: t('第85天预计收款', 'Day 85 expected receipt'),
-            direction: 'in',
-            day: 85,
-            amount: '120000.00',
-            flexibility: 'fixed',
-          },
-        ],
-      });
-    setInput(value);
-    setSample(true);
-  };
   const exportDetail = () => {
     if (!detail) return;
     const blob = new Blob([JSON.stringify(detail, null, 2)], { type: 'application/json' });
@@ -364,14 +319,32 @@ export function Decisions({ query }: { query: URLSearchParams }) {
     (gate) => gate.status !== 'matched' && gate.id !== 'historical-scope'
   );
   const nextAction = detail?.evaluation.nextActions[0];
+  const nextSlot =
+    nextAction &&
+    detail?.evaluation.gates.find((gate) => nextAction.gateIds.includes(gate.id))?.neededSlots[0];
   const translated = (text: string) => (locale === 'en' ? decisionText(text) : text);
+  const relatedTask = workspace?.tasks.find(
+    (task) => task.id === detail?.version.input.reportTaskId
+  );
+  const relatedReport = relatedTask?.report;
+  const relatedFinding = relatedReport?.findings.find(
+    (finding) =>
+      finding.sourceRefs.length > 0 &&
+      finding.questionIds.some((id) =>
+        relatedReport.questions.some((question) => question.id === id)
+      )
+  );
+  const relatedQuestion = relatedReport?.questions.find((question) =>
+    relatedFinding?.questionIds.includes(question.id)
+  );
+
   return (
     <div className="decisions-page">
       <PageHeading
-        title={t('付款决定', 'Payment decisions')}
+        title={t('核查事项', 'Reviews')}
         description={t(
-          '核对一笔付款的条件、资料与现金时点。',
-          'Review the conditions, evidence and cash timing of one payment.'
+          '从财务发现出发，核对相关材料和当前安排。',
+          'Follow financial findings into evidence and current arrangements.'
         )}
         action={
           !id && !isNew ? (
@@ -380,11 +353,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               onClick={() => navigate('/decisions?new=external')}
             >
               <Plus size={15} />
-              {t('新建决定', 'New decision')}
+              {t('新建事项', 'New payment')}
             </button>
           ) : id ? (
             <button className="text-link" onClick={() => navigate('/decisions')}>
-              {t('全部底稿', 'All working papers')}
+              {t('全部事项', 'All payments')}
             </button>
           ) : undefined
         }
@@ -400,7 +373,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       {loading && (
         <div className="loading-page">
           <LoaderCircle className="spinner" />
-          {t('读取已保存底稿…', 'Reading saved working paper…')}
+          {t('读取任务…', 'Loading task…')}
         </div>
       )}
       {!id && !isNew && (
@@ -410,14 +383,14 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               className="button button-secondary"
               onClick={() => navigate('/decisions?new=external')}
             >
-              {t('核对一笔预付款', 'Review a prepayment')}
+              {t('付款前核对', 'Before payment')}
               <ArrowRight size={15} />
             </button>
             <button
               className="button button-secondary"
               onClick={() => navigate('/decisions?new=handover')}
             >
-              {t('接手后安排一笔付款', 'Plan a payment after handover')}
+              {t('接手核查', 'Company handover')}
               <ArrowRight size={15} />
             </button>
           </div>
@@ -437,8 +410,8 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               : !error && (
                   <p className="section-intro">
                     {t(
-                      '还没有决定底稿。先选择一笔需要核对的付款。',
-                      'No decision working papers yet. Select a payment to review.'
+                      '还没有核查事项。从付款前核对或公司接手开始。',
+                      'No reviews yet. Start with a payment or company handover.'
                     )}
                   </p>
                 )}
@@ -448,7 +421,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       {(editing || isNew) && (
         <form className="decision-input-form" onSubmit={save}>
           <fieldset className="new-purpose">
-            <legend>{t('具体决定', 'Decision type')}</legend>
+            <legend>{t('事项类型', 'Review type')}</legend>
             <div className="purpose-options">
               {(['external', 'handover'] as const).map((value) => (
                 <label
@@ -463,8 +436,8 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                   />
                   <strong>
                     {value === 'external'
-                      ? t('核对一笔预付款', 'Review a prepayment')
-                      : t('接手后安排一笔付款', 'Plan a payment after handover')}
+                      ? t('付款前核对', 'Before payment')
+                      : t('接手核查', 'Company handover')}
                   </strong>
                 </label>
               ))}
@@ -515,8 +488,8 @@ export function Decisions({ query }: { query: URLSearchParams }) {
           <label className="form-field">
             <span>
               {t(
-                '对方原话或拟进行的安排（可选）',
-                'Counterparty’s words or proposed arrangement (optional)'
+                '任务说明或对方原话（可选）',
+                'Your description or counterparty’s words (optional)'
               )}
             </span>
             <textarea
@@ -526,6 +499,22 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               onChange={(e) => setInput({ ...input, promise: e.target.value })}
             />
           </label>
+          {input.purpose === 'handover' && (
+            <div className="decision-cash-import">
+              <CashPlanImport
+                current={input.datedCash}
+                onChange={(datedCash) => setInput((current) => ({ ...current, datedCash }))}
+              />
+              {!!input.datedCash?.flows.length && (
+                <p className="field-note" role="status">
+                  {t(
+                    `${input.datedCash.flows.length} 项收付款计划 · 起点 ${input.datedCash.asOf} · 保存后核对`,
+                    `${input.datedCash.flows.length} planned cash events · as of ${input.datedCash.asOf} · save to review`
+                  )}
+                </p>
+              )}
+            </div>
+          )}
           <details className="decision-input-details" open={!isNew}>
             <summary>{t('补充计算条件', 'Add calculation conditions')}</summary>
             <p className="field-note">
@@ -535,7 +524,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               )}
             </p>
             <label className="form-field">
-              <span>{t('底稿名称（可选）', 'Working-paper name (optional)')}</span>
+              <span>{t('事项名称（可选）', 'Name (optional)')}</span>
               <input
                 maxLength={200}
                 value={input.title}
@@ -572,14 +561,6 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               </p>
             </details>
           </details>
-          {sample && (
-            <p className="decision-sample-note">
-              {t(
-                '当前草稿为你主动载入的虚构验收数据，不是公司预测，也没有原件依据。',
-                'You explicitly loaded fictional test data. This is not a company forecast and has no original-source evidence.'
-              )}
-            </p>
-          )}
           <div className="decision-form-actions">
             <button className="button button-primary" disabled={busy}>
               <Check size={15} />
@@ -600,43 +581,16 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               </button>
             )}
           </div>
-          {!id && (
-            <details className="decision-sample-loader">
-              <summary>{t('试用虚构验收数据', 'Try fictional test data')}</summary>
-              <p className="field-note">
-                {t(
-                  '主动载入后再保存，所有金额仅用于理解规则。',
-                  'Load explicitly, then save. Amounts are only for exploring the rules.'
-                )}
-              </p>
-              <div className="inline-actions">
-                <button
-                  type="button"
-                  className="button button-secondary"
-                  onClick={() => loadSample('external')}
-                >
-                  {t('载入虚构预付款', 'Load fictional prepayment')}
-                </button>
-                <button
-                  type="button"
-                  className="button button-secondary"
-                  onClick={() => loadSample('handover')}
-                >
-                  {t('载入虚构收付款安排', 'Load fictional cash schedule')}
-                </button>
-              </div>
-            </details>
-          )}
           <p className="field-note">
             {t(
-              '留空为未知；0须明确填写。此底稿与材料记录不发送到外部模型。',
-              'Blank means unknown; enter zero explicitly. These inputs and evidence records are not sent to an external model.'
+              '留空为未知，0须明确填写。任务说明和材料记录仅保存在本账号，不发送到外部模型。',
+              'Blank means unknown; enter zero explicitly. Descriptions and evidence stay in your account and are not sent to an external model.'
             )}
           </p>
         </form>
       )}
       {detail && !editing && (
-        <>
+        <EvidenceRecordContext.Provider value={setViewedEvidenceId}>
           <div className="decision-detail-heading">
             <div>
               <h2>{detail.version.input.title}</h2>
@@ -645,55 +599,103 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 {detail.version.revision} · {date(detail.version.createdAt, locale)}
               </p>
             </div>
-            <div className="inline-actions">
+            <ActionMenu
+              label={t('事项操作', 'Payment actions')}
+              items={[
+                {
+                  label: t('导出当前版本', 'Export this version'),
+                  icon: <Download size={15} />,
+                  onSelect: exportDetail,
+                },
+                {
+                  label: t('重新读取', 'Reload'),
+                  onSelect: () => setReload((value) => value + 1),
+                  disabled: loading,
+                },
+                ...(!readOnly
+                  ? [{ label: t('修改输入', 'Edit inputs'), onSelect: () => setEditing(true) }]
+                  : []),
+              ]}
+            />
+          </div>
+          <nav className="decision-local-nav" aria-label={t('事项内容', 'Payment sections')}>
+            {(
+              [
+                ['overview', t('下一步', 'Next step')],
+                ['scenarios', t('方案比较', 'Compare options')],
+                ['conditions', t('条件', 'Conditions')],
+                ['evidence', t('材料', 'Evidence')],
+                ['history', t('版本', 'Versions')],
+              ] as const
+            ).map(([value, label]) => (
               <button
-                className="text-link"
-                onClick={() => setReload((value) => value + 1)}
-                disabled={loading}
+                key={value}
+                aria-current={section === value ? 'page' : undefined}
+                aria-controls={`decision-panel-${value}`}
+                onClick={() => setSection(value)}
               >
-                {t('重新读取', 'Reload')}
+                {label}
+                {value === 'evidence' && <span>{detail.version.evidence.length}</span>}
               </button>
-              <button className="button button-secondary" onClick={exportDetail}>
-                <Download size={15} />
-                {t('导出当前底稿', 'Export current working paper')}
+            ))}
+          </nav>
+          {readOnly && (
+            <p className="decision-history-notice">
+              {t(
+                '正在查看历史版本。修改前请返回当前版本，或恢复为一个新版本。',
+                'You are viewing history. Return to the current version to edit, or restore this as a new version.'
+              )}
+              <button className="text-link" onClick={() => navigate(`/decisions?id=${id}`)}>
+                {t('返回当前版本', 'Current version')}
               </button>
-              {!readOnly && (
-                <button className="button button-secondary" onClick={() => setEditing(true)}>
-                  {t('修改输入', 'Edit inputs')}
-                </button>
+            </p>
+          )}
+          <div id="decision-panel-history" hidden={section !== 'history'}>
+            <div className="decision-version-bar">
+              <History size={15} />
+              <label>
+                {t('版本回放', 'Version replay')}
+                <select
+                  value={detail.version.revision}
+                  onChange={(e) => navigate(`/decisions?id=${id}&revision=${e.target.value}`)}
+                >
+                  {detail.revisions.map((version) => (
+                    <option key={version.revision} value={version.revision}>
+                      V{version.revision} · {revisionName(version.reason, t)} ·{' '}
+                      {date(version.createdAt, locale)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {readOnly ? (
+                <>
+                  <Tag>{t('历史版本 · 只读', 'Historical version · read only')}</Tag>
+                  <button className="text-link" onClick={restore}>
+                    <RotateCcw size={14} />
+                    {t('恢复并重新核算', 'Restore and recalculate')}
+                  </button>
+                  <button className="text-link" onClick={() => navigate(`/decisions?id=${id}`)}>
+                    {t('返回当前版本', 'Current version')}
+                  </button>
+                </>
+              ) : (
+                <Tag>{t('当前版本', 'Current version')}</Tag>
               )}
             </div>
-          </div>
-          <div className="decision-version-bar">
-            <History size={15} />
-            <label>
-              {t('版本回放', 'Version replay')}
-              <select
-                value={detail.version.revision}
-                onChange={(e) => navigate(`/decisions?id=${id}&revision=${e.target.value}`)}
-              >
-                {detail.revisions.map((version) => (
-                  <option key={version.revision} value={version.revision}>
-                    V{version.revision} · {revisionName(version.reason, t)} ·{' '}
-                    {date(version.createdAt, locale)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {readOnly ? (
-              <>
-                <Tag>{t('历史版本 · 只读', 'Historical version · read only')}</Tag>
-                <button className="text-link" onClick={restore}>
-                  <RotateCcw size={14} />
-                  {t('恢复并重新核算', 'Restore and recalculate')}
+            <div className="decision-revision-list">
+              {detail.revisions.map((version) => (
+                <button
+                  key={version.revision}
+                  className={version.revision === detail.version.revision ? 'selected' : ''}
+                  onClick={() => navigate(`/decisions?id=${id}&revision=${version.revision}`)}
+                >
+                  <strong>V{version.revision}</strong>
+                  <span>{revisionName(version.reason, t)}</span>
+                  <time>{date(version.createdAt, locale)}</time>
+                  <ArrowRight size={15} />
                 </button>
-                <button className="text-link" onClick={() => navigate(`/decisions?id=${id}`)}>
-                  {t('返回当前版本', 'Current version')}
-                </button>
-              </>
-            ) : (
-              <Tag>{t('当前版本', 'Current version')}</Tag>
-            )}
+              ))}
+            </div>
           </div>
           {detail.version.reason === 'restored-version' && (
             <p className="decision-restored-note">
@@ -703,332 +705,394 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               )}
             </p>
           )}
-          <section className="decision-next">
-            <div>
-              <span className="field-note">{t('当前阻断项', 'Current blocker')}</span>
-              <h3>
-                {blocking
-                  ? translated(blocking.label)
-                  : t('已提供字段匹配记录', 'Provided fields have matching records')}
-              </h3>
-              <p>
-                {blocking
-                  ? translated(blocking.summary)
-                  : t(
-                      '字段匹配不等于平台鉴真，也不是付款批准。',
-                      'Field matching is not authentication or payment approval.'
-                    )}
-              </p>
-            </div>
-            {nextAction && (
-              <div>
-                <span className="field-note">{t('下一步先做', 'Next action')}</span>
-                <h3>{translated(nextAction.title)}</h3>
-                <p>{translated(nextAction.requestedEvidence)}</p>
-                <button
-                  className="text-link decision-copy-question"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(
-                        `${detail.version.input.transactionEntity}：${translated(nextAction.requestedEvidence)}`
-                      );
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 2200);
-                    } catch (cause) {
-                      setError(
-                        t(
-                          '未能复制，请选择上方询问文字复制。',
-                          'Could not copy. Select the request text above and copy it.'
-                        )
-                      );
-                    }
-                  }}
-                >
-                  {copied ? t('已复制', 'Copied') : t('复制询问', 'Copy request')}
-                </button>
-                {!readOnly && (
+          <div id="decision-panel-overview" hidden={section !== 'overview'}>
+            {detail.version.input.promise && (
+              <details className="decision-description">
+                <summary>{t('任务说明 · 用户提供', 'Description · supplied by you')}</summary>
+                <p>{detail.version.input.promise}</p>
+              </details>
+            )}
+            {relatedReport && relatedTask && (
+              <section className="decision-research-context">
+                <div className="decision-research-heading">
+                  <span className="field-note">
+                    {t('关联财务研究 · 当前报告', 'Related research · current report')} ·{' '}
+                    {relatedReport.company} · {relatedReport.year}
+                  </span>
                   <button
-                    className="button button-primary"
-                    onClick={() => {
-                      const gate = detail.evaluation.gates.find((g) =>
-                        nextAction.gateIds.includes(g.id)
-                      );
-                      if (gate?.neededSlots[0]) setEvidenceSlot(gate.neededSlots[0]);
-                      else setEditing(true);
+                    className="text-link"
+                    onClick={() => navigate(`/tasks/${relatedTask.id}`)}
+                  >
+                    {t('查看报告', 'Open report')} <ArrowUpRight size={14} />
+                  </button>
+                </div>
+                {relatedFinding ? (
+                  <>
+                    <h3>{t(relatedFinding.label, translateRule(relatedFinding.label))}</h3>
+                    <p>
+                      {t(relatedFinding.explanation, translateRule(relatedFinding.explanation))}
+                    </p>
+                    <button
+                      className="text-link"
+                      onClick={() => showEvidence(relatedFinding.sourceRefs, relatedReport)}
+                    >
+                      <FileText size={14} /> {t('核对原文', 'Check source')}
+                    </button>
+                    {relatedQuestion && (
+                      <div className="decision-research-question">
+                        <span className="field-note">
+                          {t('由此追问', 'Follow-up from this finding')}
+                        </span>
+                        <p>
+                          {t(
+                            relatedQuestion.requestedEvidence,
+                            translateRule(relatedQuestion.requestedEvidence)
+                          )}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p>{t(relatedReport.summary, translateRule(relatedReport.summary))}</p>
+                )}
+                {readOnly && (
+                  <p className="field-note">
+                    {t(
+                      '关联任务当前报告独立于此历史输入版本。',
+                      'The linked task’s current report is separate from this historical input version.'
+                    )}
+                  </p>
+                )}
+                <p className="field-note decision-research-scope">
+                  {relatedReport.company.trim() !== detail.version.input.transactionEntity.trim()
+                    ? t(
+                        `研究主体为${relatedReport.company}，事项主体为${detail.version.input.transactionEntity}；两者尚未确认一致。`,
+                        `The research concerns ${relatedReport.company}; this review concerns ${detail.version.input.transactionEntity}. They are not confirmed to be the same entity.`
+                      )
+                    : t(
+                        '历史披露用于提出核查问题；当前现金、交易主体和条款需各自提供依据。',
+                        'Historical disclosure informs follow-up questions. Current cash, transaction entities and terms need their own evidence.'
+                      )}
+                </p>
+              </section>
+            )}
+            <section className="decision-next">
+              <div>
+                <span className="field-note">{t('当前阻断项', 'Current blocker')}</span>
+                <h3>
+                  {blocking
+                    ? translated(blocking.label)
+                    : t('已提供字段匹配记录', 'Provided fields have matching records')}
+                </h3>
+                <p>
+                  {blocking
+                    ? translated(blocking.summary)
+                    : t(
+                        '字段匹配不等于平台鉴真，也不是付款批准。',
+                        'Field matching is not authentication or payment approval.'
+                      )}
+                </p>
+              </div>
+              {nextAction && (
+                <div>
+                  <span className="field-note">{t('下一步先做', 'Next action')}</span>
+                  <h3>{translated(nextAction.title)}</h3>
+                  <p>{translated(nextAction.requestedEvidence)}</p>
+                  <button
+                    className="text-link decision-copy-question"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(
+                          `${detail.version.input.transactionEntity}：${translated(nextAction.requestedEvidence)}`
+                        );
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2200);
+                      } catch (cause) {
+                        setError(
+                          t(
+                            '未能复制，请选择上方询问文字复制。',
+                            'Could not copy. Select the request text above and copy it.'
+                          )
+                        );
+                      }
                     }}
                   >
-                    {t('记录这项材料', 'Record this evidence')}
-                    <ArrowRight size={15} />
+                    {copied ? t('已复制', 'Copied') : t('复制询问', 'Copy request')}
+                  </button>
+                  {!readOnly && (
+                    <button
+                      className="button button-primary"
+                      onClick={() => {
+                        const gate = detail.evaluation.gates.find((g) =>
+                          nextAction.gateIds.includes(g.id)
+                        );
+                        if (gate?.neededSlots[0]) setEvidenceSlot(gate.neededSlots[0]);
+                        else setEditing(true);
+                      }}
+                    >
+                      {nextSlot
+                        ? t('添加这项材料', 'Add this evidence')
+                        : t('补充输入', 'Complete inputs')}
+                      <ArrowRight size={15} />
+                    </button>
+                  )}
+                </div>
+              )}
+            </section>
+            {detail.evaluation.knownConflicts.some((issue) =>
+              conflictOpen(issue, detail.version.revision)
+            ) && (
+              <section className="decision-known-conflicts">
+                <h3>{t('仍未解释的冲突', 'Unresolved conflicts')}</h3>
+                {detail.evaluation.knownConflicts
+                  .filter((issue) => conflictOpen(issue, detail.version.revision))
+                  .map((issue) => (
+                    <div key={issue.id}>
+                      <strong>
+                        {evidenceName(issue.slot, t)} · {issue.entity}
+                      </strong>
+                      <span>
+                        {t('首次记录于版本', 'First recorded in version')}{' '}
+                        {issue.introducedRevision}
+                      </span>
+                      <p>{translated(issue.message)}</p>
+                    </div>
+                  ))}
+              </section>
+            )}
+          </div>
+          <div hidden={section !== 'history'}>
+            {detail.evaluation.knownConflicts.some(
+              (issue) => !conflictOpen(issue, detail.version.revision)
+            ) && (
+              <details className="decision-scope-history">
+                <summary>{t('范围更正记录', 'Scope corrections')}</summary>
+                {detail.evaluation.knownConflicts
+                  .filter((issue) => !conflictOpen(issue, detail.version.revision))
+                  .map((issue) => (
+                    <div key={issue.id}>
+                      <strong>
+                        {evidenceName(issue.slot, t)} · {issue.entity}
+                      </strong>
+                      <p>{translated(issue.resolutionReason || '')}</p>
+                      <span>
+                        {t('更正记录版本', 'Correction version')} {issue.resolvedRevision}
+                      </span>
+                    </div>
+                  ))}
+              </details>
+            )}
+          </div>
+          <div id="decision-panel-scenarios" hidden={section !== 'scenarios'}>
+            <DecisionScenarios detail={detail} />
+          </div>
+          <div id="decision-panel-conditions" hidden={section !== 'conditions'}>
+            <section className="decision-gates">
+              <div className="report-section-title">
+                <h3>{t('条件与依据', 'Conditions and dependencies')}</h3>
+                <span className="field-note">
+                  {t('局部结论随相关证据变化', 'Local results follow relevant evidence')}
+                </span>
+              </div>
+              {detail.evaluation.gates.map((gate) => (
+                <details key={gate.id} className={`decision-gate decision-gate-${gate.status}`}>
+                  <summary>
+                    <strong>{translated(gate.label)}</strong>
+                    <Tag>{gateState(gate.status, t)}</Tag>
+                    <ChevronDown size={14} />
+                  </summary>
+                  <p>{translated(gate.summary)}</p>
+                  <Dependencies detail={detail} dependencies={gate.dependencies} />
+                  {!readOnly &&
+                    gate.neededSlots.map((slot) => (
+                      <button
+                        key={slot}
+                        className="text-link"
+                        onClick={() => setEvidenceSlot(slot)}
+                      >
+                        <Plus size={14} />
+                        {evidenceName(slot, t)}
+                      </button>
+                    ))}
+                </details>
+              ))}
+            </section>
+            {detail.version.input.reportTaskId && detail.evaluation.explanations.length > 0 && (
+              <section className="decision-explanations">
+                <h3>{t('保留两个解释', 'Keep two explanations')}</h3>
+                {detail.evaluation.explanations.map((item) => (
+                  <div key={item.id}>
+                    <h4>
+                      {item.id === 'collections'
+                        ? t('回款', 'Collections')
+                        : t('存货', 'Inventory')}{' '}
+                      ·{' '}
+                      {item.state === 'withheld'
+                        ? t('依据不足，暂不归因', 'Evidence insufficient; attribution withheld')
+                        : t('尚待区分', 'Needs distinction')}
+                    </h4>
+                    {item.state === 'open' && (
+                      <ol>
+                        {item.alternatives.map((text, i) => (
+                          <li key={i}>{translated(text)}</li>
+                        ))}
+                      </ol>
+                    )}
+                    <Dependencies detail={detail} dependencies={item.dependencies} />
+                    <p className="field-note">{translated(item.nextEvidence)}</p>
+                    {detail.evaluation.nextActions.some((action) =>
+                      action.id.startsWith(`investigate-${item.id}-`)
+                    ) && (
+                      <details className="decision-specific-requests">
+                        <summary>
+                          {t('这项信号与当前收款事件', 'This signal and current receipt events')}
+                        </summary>
+                        {detail.evaluation.nextActions
+                          .filter((action) => action.id.startsWith(`investigate-${item.id}-`))
+                          .map((action) => (
+                            <div key={action.id}>
+                              <h4>{translated(action.title)}</h4>
+                              <p>{translated(action.reason)}</p>
+                              <p>{translated(action.requestedEvidence)}</p>
+                              <Dependencies detail={detail} dependencies={action.dependencies} />
+                              <CopyRequest text={translated(action.requestedEvidence)} />
+                            </div>
+                          ))}
+                      </details>
+                    )}
+
+                    {!readOnly && (
+                      <button className="text-link" onClick={() => setEvidenceSlot(item.id)}>
+                        {t('记录区分材料', 'Record distinguishing evidence')}
+                        <ArrowRight size={14} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </section>
+            )}
+          </div>
+          <div id="decision-panel-evidence" hidden={section !== 'evidence'}>
+            <section className="decision-evidence">
+              <div className="report-section-title">
+                <h3>{t('证据记录', 'Evidence records')}</h3>
+                {!readOnly && (
+                  <button
+                    className="button button-secondary"
+                    onClick={() =>
+                      setEvidenceSlot(input.purpose === 'external' ? 'identity' : 'opening-cash')
+                    }
+                  >
+                    <Plus size={15} />
+                    {t('记录材料', 'Record evidence')}
                   </button>
                 )}
               </div>
-            )}
-          </section>
-          {detail.evaluation.knownConflicts.some((issue) =>
-            conflictOpen(issue, detail.version.revision)
-          ) && (
-            <section className="decision-known-conflicts">
-              <h3>{t('仍未解释的冲突', 'Unresolved conflicts')}</h3>
-              {detail.evaluation.knownConflicts
-                .filter((issue) => conflictOpen(issue, detail.version.revision))
-                .map((issue) => (
-                  <div key={issue.id}>
-                    <strong>
-                      {evidenceName(issue.slot, t)} · {issue.entity}
-                    </strong>
-                    <span>
-                      {t('首次记录于版本', 'First recorded in version')} {issue.introducedRevision}
-                    </span>
-                    <p>{translated(issue.message)}</p>
-                  </div>
-                ))}
-            </section>
-          )}
-          {detail.evaluation.knownConflicts.some(
-            (issue) => !conflictOpen(issue, detail.version.revision)
-          ) && (
-            <details className="decision-scope-history">
-              <summary>
-                {t('范围更正记录（不认证事实）', 'Scope-correction history (not verification)')}
-              </summary>
-              {detail.evaluation.knownConflicts
-                .filter((issue) => !conflictOpen(issue, detail.version.revision))
-                .map((issue) => (
-                  <div key={issue.id}>
-                    <strong>
-                      {evidenceName(issue.slot, t)} · {issue.entity}
-                    </strong>
-                    <p>{translated(issue.resolutionReason || '')}</p>
-                    <span>
-                      {t('更正记录版本', 'Correction version')} {issue.resolvedRevision}
-                    </span>
-                  </div>
-                ))}
-            </details>
-          )}
-          <DecisionScenarios detail={detail} />
-          <section className="decision-gates">
-            <div className="report-section-title">
-              <h3>{t('条件与依据', 'Conditions and dependencies')}</h3>
-              <span className="field-note">
-                {t('局部结论随相关证据变化', 'Local results follow relevant evidence')}
-              </span>
-            </div>
-            {detail.evaluation.gates.map((gate) => (
-              <details key={gate.id} className={`decision-gate decision-gate-${gate.status}`}>
-                <summary>
-                  <strong>{translated(gate.label)}</strong>
-                  <Tag>{gateState(gate.status, t)}</Tag>
-                  <ChevronDown size={14} />
-                </summary>
-                <p>{translated(gate.summary)}</p>
-                <Dependencies detail={detail} dependencies={gate.dependencies} />
-                {!readOnly &&
-                  gate.neededSlots.map((slot) => (
-                    <button key={slot} className="text-link" onClick={() => setEvidenceSlot(slot)}>
-                      <Plus size={14} />
-                      {evidenceName(slot, t)}
-                    </button>
-                  ))}
-              </details>
-            ))}
-          </section>
-          {detail.version.input.reportTaskId && detail.evaluation.explanations.length > 0 && (
-            <section className="decision-explanations">
-              <h3>{t('保留两个解释', 'Keep two explanations')}</h3>
-              {detail.evaluation.explanations.map((item) => (
-                <div key={item.id}>
-                  <h4>
-                    {item.id === 'collections' ? t('回款', 'Collections') : t('存货', 'Inventory')}{' '}
-                    ·{' '}
-                    {item.state === 'withheld'
-                      ? t('依据不足，暂不归因', 'Evidence insufficient; attribution withheld')
-                      : t('尚待区分', 'Needs distinction')}
-                  </h4>
-                  {item.state === 'open' && (
-                    <ol>
-                      {item.alternatives.map((text, i) => (
-                        <li key={i}>{translated(text)}</li>
-                      ))}
-                    </ol>
-                  )}
-                  <Dependencies detail={detail} dependencies={item.dependencies} />
-                  <p className="field-note">{translated(item.nextEvidence)}</p>
-                  {detail.evaluation.nextActions.some((action) =>
-                    action.id.startsWith(`investigate-${item.id}-`)
-                  ) && (
-                    <details className="decision-specific-requests">
-                      <summary>
-                        {t('这项信号与当前收款事件', 'This signal and current receipt events')}
-                      </summary>
-                      {detail.evaluation.nextActions
-                        .filter((action) => action.id.startsWith(`investigate-${item.id}-`))
-                        .map((action) => (
-                          <div key={action.id}>
-                            <h4>{translated(action.title)}</h4>
-                            <p>{translated(action.reason)}</p>
-                            <p>{translated(action.requestedEvidence)}</p>
-                            <Dependencies detail={detail} dependencies={action.dependencies} />
-                            <CopyRequest text={translated(action.requestedEvidence)} />
-                          </div>
-                        ))}
-                    </details>
-                  )}
-
-                  {!readOnly && (
-                    <button className="text-link" onClick={() => setEvidenceSlot(item.id)}>
-                      {t('记录区分材料', 'Record distinguishing evidence')}
-                      <ArrowRight size={14} />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </section>
-          )}
-          <section className="decision-evidence">
-            <div className="report-section-title">
-              <h3>{t('证据记录', 'Evidence records')}</h3>
-              {!readOnly && (
-                <button
-                  className="button button-secondary"
-                  onClick={() =>
-                    setEvidenceSlot(input.purpose === 'external' ? 'identity' : 'opening-cash')
-                  }
-                >
-                  <Plus size={15} />
-                  {t('记录材料', 'Record evidence')}
-                </button>
-              )}
-            </div>
-            <p className="field-note">
-              {t(
-                '来源记录、对方陈述与假设分别保留。撤回会创建新版本；无关财报事实保留。',
-                'Records, counterparty statements and assumptions remain distinct. Withdrawing creates a new version; unrelated financial facts remain.'
-              )}
-            </p>
-            {detail.version.evidence.length ? (
-              detail.version.evidence.map((evidence) => (
-                <div
-                  id={`decision-evidence-${evidence.id}`}
-                  className={`decision-evidence-record ${evidence.state === 'withdrawn' ? 'withdrawn' : ''}`}
-                  key={evidence.id}
-                >
-                  <div className="decision-evidence-record-heading">
-                    <strong>{evidenceName(evidence.slot, t)}</strong>
-                    <Tag>{kindName(evidence.kind, t, evidence.materialId != null)}</Tag>
-                    {evidence.state === 'withdrawn' && <Tag>{t('已撤回', 'Withdrawn')}</Tag>}
-                    {!readOnly && (
-                      <button
-                        className="text-link"
-                        disabled={busy}
-                        onClick={() => void updateEvidence(evidence)}
-                      >
-                        {evidence.state === 'active'
-                          ? t('撤回此依据', 'Withdraw evidence')
-                          : t('恢复此依据', 'Restore evidence')}
-                      </button>
-                    )}
-                    {!readOnly && evidence.kind === 'source-record' && evidence.materialId && (
-                      <button
-                        className="text-link"
-                        disabled={busy}
-                        onClick={() => setScopeEvidence(evidence)}
-                      >
-                        {t('更正适用范围', 'Correct scope')}
-                      </button>
-                    )}
-                  </div>
-                  <p>
-                    {evidence.entity} · {evidence.asOf || t('日期未提供', 'Date missing')} ·{' '}
-                    {evidence.sourceLabel}
-                  </p>
-                  {evidence.kind === 'source-record' && (
-                    <p className="field-note">
-                      {evidence.materialId
-                        ? t(
-                            '仅与服务器保存的材料文本核对，未独立验证真实性；定位结果见条件与依据。',
-                            'Compared only with material text saved on the server, without independent authentication. See conditions and dependencies for the location result.'
-                          )
-                        : t(
-                            '用户转录，按所供输入测算；未进入已关联记录字段分支。',
-                            'User transcription, calculated from supplied inputs; excluded from the linked-records branch.'
-                          )}
-                    </p>
-                  )}
-                  <blockquote>{evidence.quote}</blockquote>
-                  <div className="decision-evidence-values">
-                    {Object.entries(evidence.values).map(([key, value]) => (
-                      <span key={key}>
-                        {fieldName(key, t)}:{' '}
-                        <strong>
-                          {value == null
-                            ? t('未知', 'Unknown')
-                            : key === 'role'
-                              ? roleName(String(value), t)
-                              : value}
-                        </strong>
-                      </span>
-                    ))}
-                  </div>
-                  {evidence.materialId && (
-                    <SourceLink materialId={evidence.materialId} page={evidence.page} />
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="section-intro">
-                {t(
-                  '尚未提供依据。输入的金额先作为情景，不自动成为实绩。',
-                  'No evidence has been provided. Entered amounts are scenarios, not automatically recorded performance.'
-                )}
-              </p>
-            )}
-          </section>
-          <details className="decision-linked-tools">
-            <summary>{t('财报与公司资料', 'Financial reviews and company documents')}</summary>
-            {detail.version.input.reportTaskId ? (
-              <a
-                className="button button-secondary"
-                href={`#/tasks/${detail.version.input.reportTaskId}`}
-              >
-                <FileText size={15} />
-                {t('打开关联财务核查', 'Open linked financial review')}
-              </a>
-            ) : (
               <p className="field-note">
                 {t(
-                  '没有关联年报；这不会自动证明付款主体或当前现金。',
-                  'No annual report linked. A report would not automatically establish transaction identity or current cash.'
+                  '来源记录、对方陈述与假设分别保留。撤回会创建新版本；无关财报事实保留。',
+                  'Records, counterparty statements and assumptions remain distinct. Withdrawing creates a new version; unrelated financial facts remain.'
                 )}
               </p>
-            )}
-            <button
-              className="text-link"
-              onClick={() =>
-                navigate(
-                  `/company?query=${encodeURIComponent(detail.version.input.transactionEntity)}&purpose=${detail.version.input.purpose}`
-                )
-              }
-            >
-              {t('查询公司公开资料', 'Look up company disclosures')}
-              <ArrowUpRight size={14} />
-            </button>
-          </details>
-          <details className="decision-boundaries">
-            <summary>{t('计算范围与边界', 'Calculation scope and limits')}</summary>
-            <ul>
-              {detail.evaluation.limitations.map((text, i) => (
-                <li key={i}>{translated(text)}</li>
-              ))}
-            </ul>
-            <p>
-              {t(
-                '这份底稿不输出公司安全评级，不批准或执行付款，也不发送补件请求。',
-                'This working paper does not rate company safety, approve or execute payments, or send evidence requests.'
+              {detail.version.evidence.length ? (
+                <div className="decision-evidence-list">
+                  {detail.version.evidence.map((evidence) => (
+                    <button
+                      key={evidence.id}
+                      className={`decision-evidence-card ${evidence.state}`}
+                      aria-label={`${evidenceName(evidence.slot, t)} · ${evidence.entity} · ${evidence.state === 'active' ? t('当前采用', 'Active') : t('已撤回', 'Withdrawn')}`}
+                      onClick={() => setViewedEvidenceId(evidence.id)}
+                    >
+                      <div>
+                        <FileText size={17} />
+                        <strong>{evidenceName(evidence.slot, t)}</strong>
+                        <ArrowUpRight size={15} />
+                      </div>
+                      <span>
+                        {evidence.entity} · {evidence.asOf || t('日期未提供', 'Date missing')}
+                      </span>
+                      <p>{evidence.quote}</p>
+                      <footer>
+                        <Tag>{kindName(evidence.kind, t, evidence.materialId != null)}</Tag>
+                        {evidence.state === 'withdrawn' && <Tag>{t('已撤回', 'Withdrawn')}</Tag>}
+                      </footer>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="decision-empty-evidence">
+                  <FileText size={24} />
+                  <h4>{t('尚未提供材料', 'No evidence yet')}</h4>
+                  <p>
+                    {t(
+                      '输入金额只用于情景测算。添加记录后，核对适用主体、日期和原文。',
+                      'Entered amounts are scenarios. Add records to check their entity, date and source text.'
+                    )}
+                  </p>
+                </div>
               )}
-            </p>
-          </details>
-        </>
+            </section>
+          </div>
+          <div hidden={section !== 'overview'} className="decision-secondary-tools">
+            <details className="decision-linked-tools">
+              <summary>{t('财报与公司资料', 'Financial reviews and company documents')}</summary>
+              {detail.version.input.reportTaskId ? (
+                <a
+                  className="button button-secondary"
+                  href={`#/tasks/${detail.version.input.reportTaskId}`}
+                >
+                  <FileText size={15} />
+                  {t('打开关联财务核查', 'Open linked financial review')}
+                </a>
+              ) : (
+                <p className="field-note">
+                  {t(
+                    '没有关联年报；这不会自动证明付款主体或当前现金。',
+                    'No annual report linked. A report would not automatically establish transaction identity or current cash.'
+                  )}
+                </p>
+              )}
+              <button
+                className="text-link"
+                onClick={() => navigate(`/company?purpose=${detail.version.input.purpose}`)}
+              >
+                {t('查询公司公开资料', 'Look up company disclosures')}
+                <ArrowUpRight size={14} />
+              </button>
+            </details>
+            <details className="decision-boundaries">
+              <summary>{t('计算范围与边界', 'Calculation scope and limits')}</summary>
+              <ul>
+                {detail.evaluation.limitations.map((text, i) => (
+                  <li key={i}>{translated(text)}</li>
+                ))}
+              </ul>
+              <p>
+                {t(
+                  '测算供你核对条件，不作公司安全评级，不批准或执行付款，也不代发请求。',
+                  'Use these calculations to review conditions. They do not rate safety, approve payments, or send requests.'
+                )}
+              </p>
+            </details>
+          </div>
+        </EvidenceRecordContext.Provider>
+      )}
+      {viewedEvidence && detail && (
+        <Dialog
+          title={evidenceName(viewedEvidence.slot, t)}
+          variant="drawer"
+          onClose={() => setViewedEvidenceId(null)}
+        >
+          <DecisionEvidenceRecord
+            evidence={viewedEvidence}
+            readOnly={readOnly}
+            onToggle={updateEvidence}
+            onCorrect={() => {
+              setViewedEvidenceId(null);
+              setScopeEvidence(viewedEvidence);
+            }}
+          />
+        </Dialog>
       )}
       {evidenceSlot && detail && !readOnly && (
         <EvidenceDialog
@@ -1045,6 +1109,85 @@ export function Decisions({ query }: { query: URLSearchParams }) {
           onSave={correctScope}
         />
       )}
+    </div>
+  );
+}
+
+function DecisionEvidenceRecord({
+  evidence,
+  readOnly,
+  onToggle,
+  onCorrect,
+}: {
+  evidence: DecisionEvidence;
+  readOnly: boolean;
+  onToggle: (evidence: DecisionEvidence) => Promise<void>;
+  onCorrect: () => void;
+}) {
+  const { t, busy } = useApp();
+  return (
+    <div
+      className={`decision-evidence-record ${evidence.state === 'withdrawn' ? 'withdrawn' : ''}`}
+    >
+      <div className="decision-evidence-record-heading">
+        <Tag>{kindName(evidence.kind, t, evidence.materialId != null)}</Tag>
+        <Tag>
+          {evidence.state === 'active' ? t('当前采用', 'Active') : t('已撤回', 'Withdrawn')}
+        </Tag>
+      </div>
+      <p>
+        {evidence.entity} · {evidence.asOf || t('日期未提供', 'Date missing')} ·{' '}
+        {evidence.sourceLabel}
+      </p>
+      {evidence.kind === 'source-record' && (
+        <p className="field-note">
+          {evidence.materialId
+            ? t(
+                '字段仅与保存的材料文本核对；不认证材料。定位结果见“条件”。',
+                'Fields are compared with saved text, without authentication. See Conditions for location results.'
+              )
+            : t(
+                '用户转录，按所供输入测算；未进入已关联记录字段分支。',
+                'User transcription, calculated from supplied inputs; excluded from the linked-records branch.'
+              )}
+        </p>
+      )}
+      <blockquote>{evidence.quote}</blockquote>
+      <div className="decision-evidence-values">
+        {Object.entries(evidence.values).map(([key, value]) => (
+          <span key={key}>
+            {fieldName(key, t)}:{' '}
+            <strong>
+              {value == null
+                ? t('未知', 'Unknown')
+                : key === 'role'
+                  ? roleName(String(value), t)
+                  : value}
+            </strong>
+          </span>
+        ))}
+      </div>
+      {evidence.materialId && <SourceLink materialId={evidence.materialId} page={evidence.page} />}
+
+      <div className="dialog-actions">
+        {!readOnly && evidence.kind === 'source-record' && evidence.materialId && (
+          <button className="button button-secondary" disabled={busy} onClick={onCorrect}>
+            {t('更正范围', 'Correct scope')}
+          </button>
+        )}
+        {!readOnly && (
+          <button
+            className="button button-secondary"
+            disabled={busy}
+            onClick={() => void onToggle(evidence)}
+          >
+            <RotateCcw size={14} />
+            {evidence.state === 'active'
+              ? t('撤回依据并重算', 'Withdraw and recalculate')
+              : t('恢复依据并重算', 'Restore and recalculate')}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -1834,6 +1977,7 @@ function Dependencies({
   dependencies: DecisionGate['dependencies'];
 }) {
   const { t, locale } = useApp();
+  const openRecord = useContext(EvidenceRecordContext);
   return (
     <ul className="decision-dependencies">
       {dependencies.map((dependency, index) => (
@@ -1877,21 +2021,9 @@ function Dependencies({
             <SourceLink materialId={dependency.materialId} page={dependency.page} />
           ) : dependency.kind === 'evidence' &&
             detail.version.evidence.some((item) => item.id === dependency.id) ? (
-            <a
-              className="text-link"
-              href={`#decision-evidence-${dependency.id}`}
-              onClick={(event) => {
-                event.preventDefault();
-                document.getElementById(`decision-evidence-${dependency.id}`)?.scrollIntoView({
-                  block: 'center',
-                  behavior: window.matchMedia('(prefers-reduced-motion:reduce)').matches
-                    ? 'auto'
-                    : 'smooth',
-                });
-              }}
-            >
+            <button className="text-link" onClick={() => openRecord(dependency.id)}>
               {t('查看记录', 'View record')}
-            </a>
+            </button>
           ) : null}
         </li>
       ))}
@@ -2010,9 +2142,7 @@ function EvidenceDialog({
                 setEvidence({ ...evidence, kind: e.target.value as DecisionEvidenceInput['kind'] })
               }
             >
-              <option value="source-record">
-                {t('提供原文记录（不等于鉴真）', 'Provided source record (not authenticated)')}
-              </option>
+              <option value="source-record">{t('原文记录', 'Source record')}</option>
               <option value="counterparty-statement">
                 {t('对方陈述或承诺', 'Counterparty statement or promise')}
               </option>

@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
-import { PDFParse } from 'pdf-parse';
+import { readPdfIsolated } from './pdf-parser.js';
 import type { Material, MetricKey, Observation, UploadPreview } from '../shared/contracts.js';
 import { ApiFault, fenToYuan, moneyToFen, validateMaterial } from './validation.js';
 export interface UploadMeta {
@@ -100,20 +100,17 @@ async function fromPdf(
   buffer: Buffer,
   filename: string,
   hash: string,
-  meta: UploadMeta
+  meta: UploadMeta,
+  signal?: AbortSignal
 ): Promise<UploadPreview> {
   if (buffer.subarray(0, 5).toString() !== '%PDF-')
     throw new ApiFault(400, 'INVALID_PDF', '文件没有 PDF 格式标记');
-  const parser = new PDFParse({ data: new Uint8Array(buffer), isEvalSupported: false });
   try {
-    const info = await parser.getInfo();
-    if (info.total > 500)
-      throw new ApiFault(
-        400,
-        'PDF_PAGE_LIMIT',
-        'PDF 超过 500 页，请提供相关财务材料页或结构化输入'
-      );
-    const extracted = await parser.getText({ cellSeparator: '\t' });
+    const result = await readPdfIsolated(buffer, signal);
+    const extracted = {
+      text: result.text,
+      pages: result.pages.map((page) => ({ num: page.page, text: page.text })),
+    };
     if (extracted.text.trim().length < 40)
       throw new ApiFault(
         400,
@@ -300,19 +297,18 @@ async function fromPdf(
       'PDF_PARSE_FAILED',
       'PDF 提取失败或文件不可读，请使用文本 PDF 或 JSON/CSV'
     );
-  } finally {
-    await parser.destroy();
   }
 }
 export async function previewUpload(
   buffer: Buffer,
   originalName: string,
-  meta: UploadMeta = {}
+  meta: UploadMeta = {},
+  signal?: AbortSignal
 ): Promise<UploadPreview> {
   const filename = filenameOnly(originalName),
     extension = path.extname(filename).toLowerCase();
   const hash = createHash('sha256').update(buffer).digest('hex');
-  if (extension === '.pdf') return fromPdf(buffer, filename, hash, meta);
+  if (extension === '.pdf') return fromPdf(buffer, filename, hash, meta, signal);
   if (!['.json', '.csv'].includes(extension))
     throw new ApiFault(415, 'UNSUPPORTED_FILE', '仅支持 JSON、CSV 与文本型 PDF');
   const text = buffer.toString('utf8');

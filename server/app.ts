@@ -1,5 +1,8 @@
 import express, { type ErrorRequestHandler } from 'express';
 import multer from 'multer';
+import { getRequest, setResponse } from 'better-call/node';
+import { APIError } from 'better-auth/api';
+import { installAccountRoutes } from './account-routes.js';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import { access, readFile } from 'node:fs/promises';
@@ -47,6 +50,7 @@ export async function createApp(options: AppOptions = {}) {
   else if (process.env.TRUST_PROXY && process.env.TRUST_PROXY !== 'false')
     throw new Error('TRUST_PROXY 仅接受 loopback 或 false');
   app.use((req, res, next) => {
+    req.headers['x-cashlens-client-ip'] = req.ip || req.socket.remoteAddress || 'unknown';
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'same-origin');
     res.setHeader(
@@ -81,6 +85,20 @@ export async function createApp(options: AppOptions = {}) {
       return;
     }
     next();
+  });
+  app.all('/api/identity/*splat', async (req, res, next) => {
+    try {
+      if (Number(req.headers['content-length'] || 0) > 65536)
+        throw new ApiFault(413, 'BODY_TOO_LARGE', '认证请求超过64KB限制');
+      await setResponse(
+        res,
+        await auth.identity.handler(
+          getRequest({ request: req, base: auth.origin, bodySizeLimit: 65536 })
+        )
+      );
+    } catch (error) {
+      next(error);
+    }
   });
   app.use(express.json({ limit: '2mb' }));
   const running = new Set<string>();
@@ -273,9 +291,15 @@ export async function createApp(options: AppOptions = {}) {
       next(error);
     }
   });
-  app.get('/api/auth/session', (req, res) => {
-    res.json(auth.response(auth.session(req)));
-  });
+  app.get(
+    '/api/auth/session',
+    wrap(async (req, res) => {
+      res.json(auth.response(await auth.session(req)));
+    })
+  );
+  app.post('/api/auth/password-reset', (_req, _res, next) =>
+    next(new ApiFault(503, 'EMAIL_UNAVAILABLE', '邮件服务尚未配置，未发送重置邮件'))
+  );
   app.post(
     '/api/auth/register',
     wrap(async (req, res) => {
@@ -289,10 +313,13 @@ export async function createApp(options: AppOptions = {}) {
     })
   );
   app.use('/api/auth', authentication(auth));
-  app.post('/api/auth/logout', (req, res) => {
-    auth.logout(res.locals.auth as AuthContext, res);
-    res.json({ user: null, csrfToken: null });
-  });
+  app.post(
+    '/api/auth/logout',
+    wrap(async (req, res) => {
+      await auth.logout(res.locals.auth as AuthContext, req, res);
+      res.json({ user: null, csrfToken: null });
+    })
+  );
   app.patch('/api/auth/profile', (req, res, next) => {
     try {
       res.json(auth.profile(req.body, res.locals.auth as AuthContext));
@@ -315,6 +342,19 @@ export async function createApp(options: AppOptions = {}) {
       })
       .catch(next);
   });
+  installAccountRoutes(app, auth, dataDir);
+  app.post(
+    '/api/cases/:id/import',
+    wrap(async (req, res) => {
+      const selected = initial.cases.find((item) => item.id === req.params.id);
+      if (!selected) throw new ApiFault(404, 'CASE_NOT_FOUND', '公开案例不存在');
+      const store = res.locals.store as WorkspaceStore;
+      await store.importPublicMaterials(
+        initial.materials.filter((material) => selected.materialIds.includes(material.id))
+      );
+      res.status(201).json({ materialIds: selected.materialIds });
+    })
+  );
   app.get('/api/workspace', (_req, res) => {
     res.json((res.locals.store as WorkspaceStore).workspace(provider));
   });
@@ -353,22 +393,42 @@ export async function createApp(options: AppOptions = {}) {
     wrap(async (req, res) => {
       if (!req.file) throw new ApiFault(400, 'FILE_REQUIRED', '请选择上传文件');
       const store = res.locals.store as WorkspaceStore;
-      const preview = await previewUpload(req.file.buffer, req.file.originalname, {
-        company: typeof req.body.company === 'string' ? req.body.company : undefined,
-        shortName: typeof req.body.shortName === 'string' ? req.body.shortName : undefined,
-        documentDate: typeof req.body.documentDate === 'string' ? req.body.documentDate : undefined,
-      });
-      const uploadId = await store.retainUpload(
-        req.file.buffer,
-        preview.material.filename,
-        preview.material.sha256
-      );
-      preview.uploadId = uploadId;
-      preview.material.uploadId = uploadId;
-      preview.warnings.push(
-        '原始文件已暂存于当前账号；请在24小时内确认保存，未确认文件会过期清理。确认后随材料保留，个人额度250MB。'
-      );
-      res.json(preview);
+      const controller = new AbortController();
+      const disconnected = () => {
+        if (!res.writableEnded) controller.abort();
+      };
+      req.once('aborted', disconnected);
+      res.once('close', disconnected);
+      if (req.aborted) controller.abort();
+      try {
+        const preview = await previewUpload(
+          req.file.buffer,
+          req.file.originalname,
+          {
+            company: typeof req.body.company === 'string' ? req.body.company : undefined,
+            shortName: typeof req.body.shortName === 'string' ? req.body.shortName : undefined,
+            documentDate:
+              typeof req.body.documentDate === 'string' ? req.body.documentDate : undefined,
+          },
+          controller.signal
+        );
+        if (controller.signal.aborted)
+          throw new ApiFault(499, 'UPLOAD_CANCELLED', '材料预览已中止');
+        const uploadId = await store.retainUpload(
+          req.file.buffer,
+          preview.material.filename,
+          preview.material.sha256
+        );
+        preview.uploadId = uploadId;
+        preview.material.uploadId = uploadId;
+        preview.warnings.push(
+          '原始文件已暂存于当前账号；请在24小时内确认保存，未确认文件会过期清理。确认后随材料保留，个人额度250MB。'
+        );
+        res.json(preview);
+      } finally {
+        req.removeListener('aborted', disconnected);
+        res.removeListener('close', disconnected);
+      }
     })
   );
   app.post(
@@ -650,13 +710,25 @@ export async function createApp(options: AppOptions = {}) {
     });
   });
   const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
+    if (error instanceof APIError) {
+      res.status(error.statusCode).json({
+        error: error.statusCode >= 500 ? '认证服务暂不可用' : error.message,
+        code: typeof error.body?.code === 'string' ? error.body.code : 'AUTH_FAILED',
+      });
+      return;
+    }
     if (error instanceof ApiFault) {
       res.status(error.status).json({ error: error.message, code: error.code });
       return;
     }
     if (error instanceof multer.MulterError) {
       res.status(error.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({
-        error: error.code === 'LIMIT_FILE_SIZE' ? '文件超过 25MB 限制' : '上传字段或文件数量不合法',
+        error:
+          error.code === 'LIMIT_FILE_SIZE'
+            ? _req.path.startsWith('/api/account/avatar')
+              ? '头像超过2MB限制'
+              : '文件超过 25MB 限制'
+            : '上传字段或文件数量不合法',
         code: error.code,
       });
       return;

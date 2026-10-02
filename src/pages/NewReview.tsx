@@ -3,8 +3,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
-  CheckCircle2,
-  ChevronRight,
   CircleAlert,
   Download,
   ExternalLink,
@@ -20,7 +18,6 @@ import {
 import type {
   AnalysisTask,
   CreateTaskInput,
-  DemoCase,
   Material,
   MetricKey,
   Observation,
@@ -31,56 +28,33 @@ import { api, post, requestErrorText } from '../api';
 import { date, metricName, yuan } from '../format';
 import { translateRule } from '../ruleTranslations';
 
-import { useApp, adjustments, type Translate } from '../context';
+import { useApp, adjustments } from '../context';
 import { PageHeading, EmptyState, Tag, Dialog } from '../components';
 import { purposeName } from '../ReviewContext';
+import '../review-pages.css';
 
 export function NewReview({ query }: { query: URLSearchParams }) {
-  const { t, workspace, cases, navigate, execute, busy } = useApp();
+  const { t, workspace, navigate, execute, busy } = useApp();
   const suppliedMaterial = workspace!.materials.find((item) => item.id === query.get('material'));
   const suppliedYear = Number(query.get('year'));
-  const initial =
-    query.get('case') === 'custom'
-      ? undefined
-      : cases.find((item) => item.id === query.get('case')) ||
-        cases.find((item) => item.kind === 'contrast');
-  const [selectedCase, setSelectedCase] = useState(initial?.id || 'custom');
+  const materialYear = suppliedMaterial?.observations.length
+    ? Math.max(...suppliedMaterial.observations.map((item) => item.year))
+    : null;
   const [selectedIds, setSelectedIds] = useState<string[]>(
-    suppliedMaterial ? [suppliedMaterial.id] : initial?.materialIds || []
+    suppliedMaterial ? [suppliedMaterial.id] : []
   );
-  const [title, setTitle] = useState(
-    suppliedMaterial
-      ? `${suppliedMaterial.shortName} · ${t('现金核查', 'Cash review')}`
-      : initial
-        ? `${initial.shortName} · ${t('现金核查', 'Cash review')}`
-        : ''
-  );
-  const [company, setCompany] = useState(suppliedMaterial?.company || initial?.company || '');
-  const [year, setYear] = useState(
+  const [title, setTitle] = useState('');
+  const [company, setCompany] = useState(suppliedMaterial?.company || '');
+  const [year, setYear] = useState<number | null>(
     Number.isInteger(suppliedYear) && suppliedYear >= 2000 && suppliedYear <= 2100
       ? suppliedYear
-      : suppliedMaterial
-        ? Math.max(...suppliedMaterial.observations.map((item) => item.year), 2000)
-        : initial?.year || 2025
+      : materialYear
   );
   const [importOpen, setImportOpen] = useState(false);
   const [useModel, setUseModel] = useState(false);
   const [purpose, setPurpose] = useState<ReviewPurpose>(
     query.get('purpose') === 'handover' ? 'handover' : 'external'
   );
-  const selectCase = (item: DemoCase) => {
-    setSelectedCase(item.id);
-    setSelectedIds(item.materialIds);
-    setCompany(item.company);
-    setYear(item.year);
-    setTitle(`${item.shortName} · ${t('现金核查', 'Cash review')}`);
-  };
-  const selectCustom = () => {
-    setSelectedCase('custom');
-    setSelectedIds([]);
-    setCompany('');
-    setTitle('');
-  };
   const toggleMaterial = (material: Material) => {
     setSelectedIds((previous) =>
       previous.includes(material.id)
@@ -88,13 +62,15 @@ export function NewReview({ query }: { query: URLSearchParams }) {
         : [...previous, material.id]
     );
     if (!company) setCompany(material.company);
-    if (!title) setTitle(`${material.shortName} · ${t('现金核查', 'Cash review')}`);
+    if (year == null && material.observations.length)
+      setYear(Math.max(...material.observations.map((item) => item.year)));
   };
   const create = async (event: FormEvent) => {
     event.preventDefault();
+    if (year == null) return;
     const task = await execute(() =>
       post<AnalysisTask>('/tasks', {
-        title: title.trim(),
+        title: title.trim() || `${company.trim()} · ${year}`,
         company: company.trim(),
         year,
         materialIds: selectedIds,
@@ -105,266 +81,195 @@ export function NewReview({ query }: { query: URLSearchParams }) {
     if (task) navigate(`/tasks/${task.id}`);
   };
   return (
-    <>
+    <div className="financial-create-page">
       <PageHeading
-        title={t('新建核查', 'New review')}
+        title={t('新建财报核查', 'New financial review')}
         description={t(
-          '比较同年度合并净利润与经营现金净额。',
-          'Compare annual consolidated net profit and operating cash flow.'
+          '先选材料，再确认主体与年度。',
+          'Choose evidence, then confirm the company and financial year.'
         )}
       />
-      <fieldset className="new-purpose">
-        <legend>{t('核查用途', 'Review purpose')}</legend>
-        <div className="purpose-options">
-          {(['external', 'handover'] as const).map((value) => (
-            <label
-              key={value}
-              className={purpose === value ? 'purpose-option selected' : 'purpose-option'}
-            >
-              <input
-                type="radio"
-                name="purpose"
-                value={value}
-                checked={purpose === value}
-                onChange={() => setPurpose(value)}
-              />
-              <span>
-                <strong>{purposeName(value, t)}</strong>
-                <small>
-                  {value === 'external'
-                    ? t(
-                        '核对主体、承诺条件与年报后变化。',
-                        'Review entities, terms and changes since publication.'
-                      )
-                    : t(
-                        '核对交接资料，填写90天收付款工作表。',
-                        'Review handover documents and fill the 90-day cash worksheet.'
-                      )}
-                </small>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <div className="new-layout">
-        <div className="new-main">
-          <section className="form-section">
-            <div className="form-section-heading">
-              <span className="section-number">01</span>
-              <h2>{t('选择材料', 'Choose evidence')}</h2>
-            </div>
-            <div className="case-list">
-              {cases.map((item) => (
-                <button
-                  key={item.id}
-                  className={`case-option ${selectedCase === item.id ? 'selected' : ''}`}
-                  onClick={() => selectCase(item)}
+      <div className="financial-create-layout">
+        <section className="financial-source-step">
+          <div className="form-section-heading">
+            <span className="section-number">1</span>
+            <h2>{t('选择材料', 'Choose evidence')}</h2>
+            <span className="field-note">
+              {selectedIds.length} {t('份已选', 'selected')}
+            </span>
+          </div>
+          <div className="financial-source-actions">
+            <button className="button button-secondary" onClick={() => setImportOpen(true)}>
+              <Upload size={16} />
+              {t('上传材料', 'Upload evidence')}
+            </button>
+            <button className="text-link" onClick={() => navigate(`/company?purpose=${purpose}`)}>
+              {t('查找公开年报', 'Find public annual reports')}
+              <ArrowUpRight size={14} />
+            </button>
+          </div>
+          {workspace!.materials.length ? (
+            <div className="material-picker">
+              {workspace!.materials.map((material) => (
+                <label
+                  className={`material-check ${selectedIds.includes(material.id) ? 'selected' : ''}`}
+                  key={material.id}
                 >
-                  <span className="radio-indicator">{selectedCase === item.id && <span />}</span>
-                  <span className="case-option-text">
-                    <strong>{caseTitle(item, t)}</strong>
-                    <span>{caseDescription(item, t)}</span>
-                  </span>
-                  <span className="case-kind">
-                    {item.year}
-                    <ChevronRight size={16} />
-                  </span>
-                </button>
-              ))}
-              <button
-                className={`case-option ${selectedCase === 'custom' ? 'selected' : ''}`}
-                onClick={selectCustom}
-              >
-                <span className="radio-indicator">{selectedCase === 'custom' && <span />}</span>
-                <span className="case-option-text">
-                  <strong>{t('使用自己的材料', 'Use your own evidence')}</strong>
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(material.id)}
+                    onChange={() => toggleMaterial(material)}
+                  />
+                  <FileText size={18} />
                   <span>
-                    {t(
-                      '导入 JSON / CSV / 文本型 PDF，逐项预览与确认。',
-                      'Import JSON, CSV, or a text-based PDF. Preview and confirm every observation.'
-                    )}
+                    <strong>{material.title}</strong>
+                    <small>
+                      {material.company} · {material.documentDate} · {material.observations.length}{' '}
+                      {t('条指标', 'values')}
+                    </small>
                   </span>
-                </span>
-                <Upload size={19} />
-              </button>
+                </label>
+              ))}
             </div>
-          </section>
-          <section className="form-section">
-            <div className="form-section-heading">
-              <span className="section-number">02</span>
-              <h2>{t('确认材料', 'Confirm the evidence')}</h2>
-              <button className="text-link" onClick={() => setImportOpen(true)}>
-                <Upload size={16} />
-                {t('导入材料', 'Import material')}
-              </button>
+          ) : (
+            <div className="financial-no-source">
+              <FileText size={24} />
+              <h3>{t('还没有材料', 'No evidence yet')}</h3>
+              <p>
+                {t(
+                  '上传文本型 PDF、JSON 或 CSV，预览后确认金额与口径。',
+                  'Upload a text PDF, JSON or CSV, then confirm values and statement scope.'
+                )}
+              </p>
             </div>
-            {selectedCase === 'custom' ? (
-              <div className="material-picker">
-                {workspace!.materials.map((material) => (
-                  <label className="material-check" key={material.id}>
+          )}
+        </section>
+        <form onSubmit={create} className="financial-create-form">
+          <div className="form-section-heading">
+            <span className="section-number">2</span>
+            <h2>{t('确认核查范围', 'Confirm review scope')}</h2>
+          </div>
+          <div className="form-grid">
+            <label className="form-field">
+              <span>{t('公司完整名称', 'Full company name')}</span>
+              <input
+                value={company}
+                onChange={(event) => setCompany(event.target.value)}
+                maxLength={200}
+                required
+                placeholder={t('与材料主体一致', 'Match the entity in the evidence')}
+              />
+            </label>
+            <label className="form-field">
+              <span>{t('财务年度', 'Financial year')}</span>
+              <input
+                type="number"
+                min="2000"
+                max="2100"
+                value={year ?? ''}
+                onChange={(event) =>
+                  setYear(event.target.value ? Number(event.target.value) : null)
+                }
+                required
+                placeholder={t('年报所属年度', 'Year covered by the report')}
+              />
+            </label>
+          </div>
+          <p className="field-note">
+            {t(
+              '使用同主体、同年度的合并净利润与经营现金净额。',
+              'Use consolidated profit and operating cash flow for the same entity and year.'
+            )}
+          </p>
+          <details className="financial-create-options">
+            <summary>{t('名称与核查用途', 'Name and review purpose')}</summary>
+            <label className="form-field">
+              <span>{t('核查名称（可选）', 'Review name (optional)')}</span>
+              <input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                maxLength={180}
+                placeholder={t('按公司与年度命名', 'Named from the company and year')}
+              />
+            </label>
+            <fieldset className="new-purpose">
+              <legend>{t('核查用途', 'Review purpose')}</legend>
+              <div className="purpose-options">
+                {(['external', 'handover'] as const).map((value) => (
+                  <label
+                    key={value}
+                    className={purpose === value ? 'purpose-option selected' : 'purpose-option'}
+                  >
                     <input
-                      type="checkbox"
-                      checked={selectedIds.includes(material.id)}
-                      onChange={() => toggleMaterial(material)}
+                      type="radio"
+                      name="purpose"
+                      value={value}
+                      checked={purpose === value}
+                      onChange={() => setPurpose(value)}
                     />
-                    <FileText size={20} />
-                    <span>
-                      <strong>{material.title}</strong>
-                      <small>
-                        {material.company} · {material.documentDate} ·{' '}
-                        {material.observations.length} {t('条观测', 'observations')}
-                      </small>
-                    </span>
+                    <strong>{purposeName(value, t)}</strong>
                   </label>
                 ))}
               </div>
-            ) : (
-              <div className="selected-materials">
-                {workspace!.materials
-                  .filter((material) => selectedIds.includes(material.id))
-                  .map((material) => (
-                    <div className="selected-material" key={material.id}>
-                      <div className="file-symbol">
-                        <FileText size={22} />
-                      </div>
-                      <div>
-                        <strong>{material.title}</strong>
-                        <p>
-                          {material.documentDate} · {material.observations.length}{' '}
-                          {t('条观测', 'observations')} ·{' '}
-                          {material.origin === 'public-report'
-                            ? t('公开披露', 'Public disclosure')
-                            : t('用户导入', 'User import')}
-                        </p>
-                      </div>
-                      <CheckCircle2 size={19} />
-                    </div>
-                  ))}
-              </div>
-            )}
-            <p className="field-note">
-              <ShieldCheck size={15} />
-              {t(
-                '调整证据会创建新任务，原材料保留。',
-                'Adjusting evidence creates a new review; source materials remain.'
-              )}
-            </p>
-          </section>
-          <form onSubmit={create} className="form-section">
-            <div className="form-section-heading">
-              <span className="section-number">03</span>
-              <h2>{t('核查主体与期间', 'Company and reporting period')}</h2>
-            </div>
-            <div className="form-grid">
-              <label className="form-field field-wide">
-                <span>{t('核查名称', 'Review name')}</span>
-                <input
-                  value={title}
-                  onChange={(event) => setTitle(event.target.value)}
-                  maxLength={180}
-                  required
-                  placeholder={t(
-                    '例如：松原安全 · 采购合作前现金核查',
-                    'Example: Songyuan · Pre-partnership cash review'
-                  )}
-                />
-              </label>
-              <label className="form-field">
-                <span>{t('公司完整名称', 'Full company name')}</span>
-                <input
-                  value={company}
-                  onChange={(event) => setCompany(event.target.value)}
-                  maxLength={200}
-                  required
-                />
-              </label>
-              <label className="form-field">
-                <span>{t('核查年度', 'Financial year')}</span>
-                <input
-                  type="number"
-                  min="2000"
-                  max="2100"
-                  value={year}
-                  onChange={(event) => setYear(Number(event.target.value))}
-                  required
-                />
-              </label>
-            </div>
-            <label className="model-opt-in">
-              <input
-                type="checkbox"
-                checked={useModel}
-                disabled={!workspace!.provider.configured}
-                onChange={(event) => setUseModel(event.target.checked)}
-              />
-              <span>
-                <strong>{t('开启可选智能解释', 'Enable optional model explanation')}</strong>
-                <small>
-                  {workspace!.provider.configured
-                    ? t(
-                        '默认不向模型发送材料；选中后将采用的指标、短摘录与规则分析发送至第三方 TokenFlux。解释含义需人工复核。',
-                        'Off by default. Selecting this sends adopted metrics, short excerpts and rule findings to third-party TokenFlux. Meaning requires human review.'
-                      )
-                    : t(
-                        '当前未配置模型接口，规则核查与导出仍可完整运行。',
-                        'No model API configured. Rules-based review and export are fully available.'
-                      )}
-                </small>
+            </fieldset>
+          </details>
+          <label className="model-opt-in">
+            <input
+              type="checkbox"
+              checked={useModel}
+              disabled={!workspace!.provider.configured}
+              onChange={(event) => setUseModel(event.target.checked)}
+            />
+            <span>
+              <strong>{t('添加模型解释', 'Add model explanation')}</strong>
+              <small>
+                {workspace!.provider.configured
+                  ? t(
+                      '主动选中后，将采用指标、短摘录与规则分析发送至第三方 TokenFlux。解释需复核。',
+                      'Selecting this sends adopted values, short excerpts and rule findings to third-party TokenFlux. Review the explanation.'
+                    )
+                  : t(
+                      '模型未配置，仍可运行规则核查。',
+                      'Model unavailable; rules-based reviews remain available.'
+                    )}
+              </small>
+            </span>
+          </label>
+          <div className="form-submit">
+            <button
+              className="button button-primary"
+              type="submit"
+              disabled={busy || selectedIds.length === 0}
+            >
+              {busy ? <LoaderCircle size={16} className="spinner" /> : <ArrowRight size={16} />}
+              {t('开始核查', 'Run review')}
+            </button>
+            {!selectedIds.length && (
+              <span className="field-note">
+                {t('先选择或上传材料', 'Choose or upload evidence first')}
               </span>
-            </label>
-            <div className="form-submit">
-              <button
-                className="button button-primary button-large"
-                type="submit"
-                disabled={busy || selectedIds.length === 0}
-              >
-                {busy ? <LoaderCircle size={18} className="spinner" /> : <ArrowRight size={18} />}{' '}
-                {t('开始核查', 'Run review')}
-              </button>
-            </div>
-          </form>
-        </div>
+            )}
+          </div>
+        </form>
       </div>
       {importOpen && (
         <Dialog
-          title={t('导入并确认材料', 'Import and confirm evidence')}
-          onClose={() => setImportOpen(false)}
+          title={t('上传并确认材料', 'Upload and confirm evidence')}
           wide
+          onClose={() => setImportOpen(false)}
         >
           <MaterialImporter
             onSaved={(material) => {
-              setSelectedCase('custom');
               setSelectedIds((previous) => [...previous, material.id]);
               setCompany(material.company);
-              if (!title) setTitle(`${material.shortName} · ${t('现金核查', 'Cash review')}`);
+              if (material.observations.length)
+                setYear(Math.max(...material.observations.map((item) => item.year)));
               setImportOpen(false);
             }}
           />
         </Dialog>
       )}
-    </>
-  );
-}
-
-export function caseTitle(item: DemoCase, t: Translate): string {
-  if (item.kind === 'contrast')
-    return t(`${item.shortName} · ${item.year}`, `Songyuan · ${item.year}`);
-  if (item.kind === 'counterpoint')
-    return t(`${item.shortName} · ${item.year}`, `Hikvision · ${item.year}`);
-  if (item.kind === 'missing') return t('合并利润范围未确认', 'Unconfirmed consolidation scope');
-  return t('母公司与合并口径冲突', 'Parent and consolidated scope conflict');
-}
-export function caseDescription(item: DemoCase, t: Translate): string {
-  if (item.kind === 'contrast' || item.kind === 'counterpoint')
-    return t('合并年报与现金流补充表。', 'Consolidated annual report and cash flow supplement.');
-  if (item.kind === 'missing')
-    return t(
-      '仅提供摘要页；净利润范围未知，未提供调整项。',
-      'Summary page only; profit scope is unknown and adjustments are missing.'
-    );
-  return t(
-    '材料包含母公司利润与合并经营现金。',
-    'Inputs contain parent-company profit and consolidated operating cash.'
+    </div>
   );
 }
 
@@ -381,7 +286,7 @@ export function MaterialsPage() {
   return (
     <>
       <PageHeading
-        title={t('材料中心', 'Evidence library')}
+        title={t('材料', 'Evidence')}
         description={t(
           '查看来源、原文件与已确认的指标。',
           'Inspect sources, original files and confirmed metrics.'
@@ -555,8 +460,8 @@ export function MaterialsPage() {
         <ShieldCheck size={18} />
         <p>
           {t(
-            '文件哈希记录导入文件的来源身份；人工确认后的结构化观测与原始文件分别保留。扫描件与无法识别的表格不自动猜值。',
-            'File hashes identify the imported source. Confirmed structured observations and source files remain distinct. Scanned or ambiguous tables are not silently guessed.'
+            '哈希用于核对文件内容；原件与确认后的指标分别保留。扫描件或不明确的表格需人工核对。',
+            'Hashes identify file content. Source files and confirmed values remain separate. Scans and unclear tables need manual review.'
           )}
         </p>
       </div>
@@ -692,7 +597,7 @@ export function MaterialImporter({ onSaved }: { onSaved: (material: Material) =>
             {uploading ? <LoaderCircle className="spinner" size={32} /> : <Upload size={32} />}
             <strong>
               {uploading
-                ? t('正在读取真实文件…', 'Reading your file…')
+                ? t('正在读取文件…', 'Reading file…')
                 : t('选择文件，或拖放到这里', 'Choose a file or drop it here')}
             </strong>
             <span>JSON / CSV / {t('文本型 PDF', 'text-based PDF')}</span>
@@ -707,11 +612,11 @@ export function MaterialImporter({ onSaved }: { onSaved: (material: Material) =>
             <summary>{t('查看 JSON / CSV 输入规范', 'View JSON / CSV input format')}</summary>
             <div className="inline-actions">
               <a className="text-link" href="/api/public/input-template?format=json" download>
-                {t('下载 JSON 样例', 'Download JSON example')}
+                {t('JSON 格式示例', 'JSON format example')}
                 <Download size={14} />
               </a>
               <a className="text-link" href="/api/public/input-template?format=csv" download>
-                {t('下载 CSV 样例', 'Download CSV example')}
+                {t('CSV 格式示例', 'CSV format example')}
                 <Download size={14} />
               </a>
             </div>

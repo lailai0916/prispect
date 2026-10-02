@@ -1,231 +1,685 @@
-import { useState } from 'react';
-import { ArrowRight, ExternalLink, Search } from 'lucide-react';
-import { money } from '../format';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  ChevronRight,
+  FileText,
+  History,
+  Minus,
+  PanelLeft,
+  RotateCcw,
+  Wallet,
+} from 'lucide-react';
+import type { DecisionSummary, DatedCashInput } from '../../shared/decision-contracts';
+import { compareDatedCash } from '../../shared/decision-cash';
+import { StartInput } from '../StartInput';
+import { api, requestErrorText } from '../api';
 import { useApp } from '../context';
+import { date, money } from '../format';
+import '../home.css';
 
-export function Home() {
-  const { t, locale, examples, navigate } = useApp();
-  const [companyQuery, setCompanyQuery] = useState('');
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const sample = examples.find((item) => item.id === selectedId) || examples[0];
-  const metric = (key: string) => sample?.metrics.find((item) => item.key === key)?.value ?? null;
-  const profit = metric('netProfit');
-  const cash = metric('operatingCashFlow');
-  const ratio = metric('cashConversion');
-  const max = Math.max(Math.abs(Number(profit || 0)), Math.abs(Number(cash || 0)), 1);
-  const growth = (value: string | null) =>
-    value === null ? '—' : `${Number(value) > 0 ? '+' : ''}${Number(value).toFixed(2)}%`;
+gsap.registerPlugin(ScrollTrigger, useGSAP);
+
+function FinancialPreview() {
+  const { t, locale, examples } = useApp();
+  const [selected, setSelected] = useState(0);
+  const [focusedMetric, setFocusedMetric] = useState('netProfit');
+  const item = examples[selected];
+  if (!item) return null;
+  const metrics = ['netProfit', 'operatingCashFlow'].map((key) =>
+    item.metrics.find((metric) => metric.key === key)
+  );
+  const reference = item.metrics.find((metric) => metric.key === focusedMetric)?.sourceRefs[0];
+  const maximum = Math.max(...metrics.map((metric) => Math.abs(Number(metric?.value || 0))), 1);
   return (
-    <div className="home-content">
-      <section className="home-intro">
-        <h1>{t('先核对一笔付款', 'Review a payment first')}</h1>
+    <section className="landing-financial-section" data-home-reveal>
+      <div className="landing-section-intro">
+        <h2>
+          {t('利润与现金，\n分别从原表核对。', 'Profit and cash.\nChecked against the source.')}
+        </h2>
         <p>
           {t(
-            '核对预付款条件，或安排接手后的付款日期。比较两个方案，查看缺哪项材料，以及证据变化后哪些结果仍成立。',
-            'Review prepayment terms or plan a payment after handover. Compare two options, find the missing evidence, and see which results survive changes to the evidence.'
+            '先核对公开披露的财务关系，再沿具体分项查找相关解释。每个金额都能回到原文。',
+            'Check disclosed financial relationships, then investigate the explanations behind specific items. Each amount links back to the source.'
           )}
         </p>
-
-        <div className="home-purpose-actions">
+      </div>
+      <div className="financial-preview">
+        <div className="financial-preview-heading">
           <div>
-            <button
-              className="button button-secondary"
-              onClick={() => navigate('/decisions?new=external')}
-            >
-              {t('核对一笔预付款', 'Review a prepayment')}
-              <ArrowRight size={16} />
-            </button>
-            <p>
-              {t(
-                '先看合同与收款主体、已付与已交付，再测算这次付款后的未交付暴露。',
-                'Check the contract and receiving entity, payments and delivered value, then calculate undelivered exposure after this payment.'
-              )}
-            </p>
+            <FileText size={16} />
+            <span>
+              {item.year} {t('年度合并财务报表', 'consolidated annual statements')}
+            </span>
           </div>
-          <div>
-            <button
-              className="button button-secondary"
-              onClick={() => navigate('/decisions?new=handover')}
-            >
-              {t('接手后安排一笔付款', 'Plan a payment after handover')}
-              <ArrowRight size={16} />
-            </button>
-            <p>
-              {t(
-                '按具体日期排列收付事件，对照两种付款日期，定位最早缺口及下一项依据。',
-                'Place cash events on specific dates, compare two payment dates, and locate the earliest gap and next evidence needed.'
-              )}
-            </p>
-          </div>
-        </div>
-        <form
-          className="home-company-search"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (companyQuery.trim())
-              navigate(`/company?query=${encodeURIComponent(companyQuery.trim())}`);
-          }}
-        >
-          <label htmlFor="home-company-query">
-            {t('公司名称或证券代码', 'Company name or security code')}
-          </label>
-          <div>
-            <input
-              id="home-company-query"
-              type="search"
-              required
-              maxLength={80}
-              value={companyQuery}
-              onChange={(event) => setCompanyQuery(event.target.value)}
-              placeholder={t(
-                '例如：松原安全、海康威视、300893',
-                'Chinese company name or code, e.g. 300893'
-              )}
-            />
-            <button className="button button-primary" type="submit">
-              <Search size={16} />
-              {t('查询公司', 'Find company')}
-            </button>
-          </div>
-        </form>
-      </section>
-      <section className="public-example" aria-labelledby="public-example-title">
-        <div className="public-example-toolbar">
-          <h2 id="public-example-title">{t('公开示例', 'Public examples')}</h2>
           <div
-            className="example-tabs"
-            role="tablist"
-            aria-label={t('选择示例', 'Choose an example')}
+            className="financial-company-switch"
+            aria-label={t('公开年报', 'Public annual reports')}
           >
-            {examples.map((item, index) => (
+            {examples.map((example, index) => (
               <button
-                key={item.id}
-                role="tab"
-                id={`example-tab-${item.id}`}
-                aria-controls="example-panel"
-                tabIndex={sample?.id === item.id ? 0 : -1}
-                onKeyDown={(event) => {
-                  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
-                  event.preventDefault();
-                  const next =
-                    event.key === 'Home'
-                      ? 0
-                      : event.key === 'End'
-                        ? examples.length - 1
-                        : (index + (event.key === 'ArrowRight' ? 1 : examples.length - 1)) %
-                          examples.length;
-                  setSelectedId(examples[next].id);
-                  (
-                    event.currentTarget.parentElement?.querySelectorAll('button')[next] as
-                      | HTMLButtonElement
-                      | undefined
-                  )?.focus();
-                }}
-                aria-selected={sample?.id === item.id}
-                className={sample?.id === item.id ? 'active' : ''}
-                onClick={() => setSelectedId(item.id)}
+                key={example.id}
+                type="button"
+                aria-pressed={selected === index}
+                onClick={() => setSelected(index)}
               >
-                {locale === 'en'
-                  ? item.kind === 'contrast'
-                    ? 'Songyuan'
-                    : 'Hikvision'
-                  : item.shortName}
+                {example.shortName}
               </button>
             ))}
           </div>
         </div>
-        {sample && (
-          <div id="example-panel" role="tabpanel" aria-labelledby={`example-tab-${sample.id}`}>
-            <div className="example-heading">
-              <div>
-                <h3>
-                  {locale === 'en'
-                    ? sample.kind === 'contrast'
-                      ? 'Songyuan Safety'
-                      : 'Hikvision'
-                    : sample.shortName}
-                </h3>
-                <p>
-                  {sample.year} · {t('年度合并报表', 'Annual consolidated statements')} · CNY
-                </p>
-              </div>
-              <button
-                className="button button-secondary"
-                onClick={() => navigate(`/new?case=${sample.id}`)}
-              >
-                {t('使用此示例', 'Use this example')}
-                <ArrowRight size={15} />
-              </button>
-            </div>
-            <div className="example-metrics">
-              {[
-                {
-                  label: t('合并净利润', 'Consolidated net profit'),
-                  value: profit,
-                  change: metric('profitGrowth'),
-                  kind: 'profit',
-                },
-                {
-                  label: t('经营现金净额', 'Operating cash flow'),
-                  value: cash,
-                  change: metric('cashGrowth'),
-                  kind: 'cash',
-                },
-              ].map((item) => (
-                <div className="example-metric" key={item.kind}>
-                  <div className="example-metric-heading">
-                    <span>{item.label}</span>
-                    <span className="example-change">
-                      {t('同比', 'YoY')} {growth(item.change)}
+        <div className="financial-preview-body">
+          <div className="financial-preview-metrics">
+            {metrics.map(
+              (metric, index) =>
+                metric && (
+                  <button
+                    key={metric.key}
+                    type="button"
+                    className={`financial-metric ${focusedMetric === metric.key ? 'selected' : ''}`}
+                    onPointerEnter={() => setFocusedMetric(metric.key)}
+                    onFocus={() => setFocusedMetric(metric.key)}
+                    onClick={() => setFocusedMetric(metric.key)}
+                    aria-pressed={focusedMetric === metric.key}
+                  >
+                    <span>
+                      {index === 0
+                        ? t('净利润', 'Net profit')
+                        : t('经营现金净额', 'Operating cash flow')}
                     </span>
-                  </div>
-                  <strong>
-                    {money(item.value, locale, false)}
-                    <small>CNY</small>
-                  </strong>
-                  <div className="example-bar-track" aria-hidden="true">
-                    <div
-                      className={`example-bar example-bar-${item.kind}`}
-                      style={{
-                        width: `${Math.max(0, Math.min(100, (Math.abs(Number(item.value || 0)) / max) * 100))}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="example-ratio">
-              <div>
-                <span>{t('现金利润比', 'Cash-to-profit ratio')}</span>
-                <strong>{ratio === null ? '—' : `${Number(ratio).toFixed(2)}%`}</strong>
-              </div>
+                    <strong>{money(metric.value, locale)}</strong>
+                    <span className="financial-metric-bar">
+                      <i
+                        style={{
+                          width: `${(Math.abs(Number(metric.value || 0)) / maximum) * 100}%`,
+                        }}
+                      />
+                    </span>
+                    <small>{t('人民币 · 合并口径', 'CNY · consolidated scope')}</small>
+                  </button>
+                )
+            )}
+          </div>
+          <aside className="financial-preview-source">
+            <span className="preview-section-label">
+              {t('原表核对记录', 'Source reference')} ·{' '}
+              {reference?.page
+                ? t(`第 ${reference.page} 页`, `Page ${reference.page}`)
+                : t('页码待核', 'Page unresolved')}
+            </span>
+            <blockquote>
+              {reference?.quote ||
+                t('当前引用尚未提供可定位的摘录。', 'No locatable excerpt is available.')}
+            </blockquote>
+            <a
+              href={`${item.source.url}#page=${reference?.page || 1}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('打开年报原文', 'Open the annual report')}
+              <ArrowUpRight size={13} />
+            </a>
+            <small>
+              {t(
+                '历史年度披露；不能据此认定当前可用现金或本次履约能力。',
+                'Historical annual disclosure does not establish current available cash or fulfilment of a specific commitment.'
+              )}
+            </small>
+          </aside>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CashPreview() {
+  const { t, locale } = useApp();
+  const [paymentDay, setPaymentDay] = useState(5);
+  const [dayText, setDayText] = useState('5');
+  const [hasBalance, setHasBalance] = useState(true);
+  const [inspectedDay, setInspectedDay] = useState<number | null>(null);
+  const input = useMemo<DatedCashInput>(
+    () => ({
+      asOf: '2026-01-01',
+      openingCash: hasBalance ? '120000.00' : null,
+      cashFloor: '0.00',
+      proposedAmount: '60000.00',
+      proposedDay: paymentDay,
+      alternativeDay: 26,
+      flows: [
+        ...[10, 40, 70].map((day) => ({
+          id: `pay-${day}`,
+          label: t('固定付款', 'Scheduled payment'),
+          direction: 'out' as const,
+          day,
+          amount: '100000.00',
+          flexibility: 'fixed' as const,
+        })),
+        ...[
+          { day: 25, amount: '200000.00' },
+          { day: 55, amount: '120000.00' },
+          { day: 85, amount: '120000.00' },
+        ].map(({ day, amount }) => ({
+          id: `receive-${day}`,
+          label: t('预计收款', 'Expected receipt'),
+          direction: 'in' as const,
+          day,
+          amount,
+          flexibility: 'fixed' as const,
+        })),
+      ],
+    }),
+    [hasBalance, paymentDay, t]
+  );
+  const result = compareDatedCash(input).primary;
+  const inspectedEvent =
+    result.events.find((event) => event.day === inspectedDay) ||
+    result.events.find((event) => event.day === result.firstShortfallDay) ||
+    result.events.find((event) => event.includesProposal);
+  const points =
+    result.status === 'known' ? [{ day: 0, balance: '120000.00' }, ...result.events] : [];
+  const x = (day: number) => 30 + (day / 90) * 580;
+  const y = (value: string) => 150 - (Number(value) / 340000) * 115;
+  const path = points
+    .map((point, index) =>
+      index ? `H${x(point.day)} V${y(point.balance)}` : `M${x(point.day)} ${y(point.balance)}`
+    )
+    .join(' ');
+  return (
+    <div className="product-window" data-product-window>
+      <div className="product-window-chrome">
+        <span>
+          <PanelLeft size={15} />
+          {t('付款事项', 'Payments')}
+          <ChevronRight size={12} />
+          {t('采购付款', 'Procurement')}
+        </span>
+        <span className="preview-label">
+          {t('交互演示 · 合成交易数据', 'Interactive preview · synthetic transaction data')}
+        </span>
+      </div>
+      <div className="product-preview-body">
+        <div className="preview-title">
+          <span className="preview-icon">
+            <Wallet size={19} />
+          </span>
+          <div>
+            <h3>{t('新增采购付款', 'New procurement payment')}</h3>
+            <p>
+              {t(
+                '付款 60,000 元 · 未来 90 天已列收付款',
+                'CNY 60,000 · listed cash events over 90 days'
+              )}
+            </p>
+          </div>
+          <span className="preview-version">{t('条件对照', 'Scenario comparison')}</span>
+        </div>
+        <div className="preview-workspace">
+          <div className="preview-main">
+            <div className="preview-result" aria-live="polite">
+              <span>{t('最低日期末余额', 'Lowest event-date closing balance')}</span>
+              <strong
+                className={
+                  result.minimumBalance !== null && Number(result.minimumBalance) < 0
+                    ? 'preview-negative'
+                    : ''
+                }
+              >
+                {result.minimumBalance === null
+                  ? t('当前余额待提供', 'Opening balance needed')
+                  : money(result.minimumBalance, locale, false)}
+              </strong>
               <p>
-                {t(
-                  '经营现金净额 ÷ 合并净利润，不是销售回款率。',
-                  'Operating cash flow ÷ consolidated net profit; not a sales collection rate.'
-                )}
+                {result.status === 'unknown'
+                  ? t(
+                      '缺少当前可用现金，余额路径暂停计算。',
+                      'The balance path waits for the opening cash amount.'
+                    )
+                  : result.firstShortfallDay
+                    ? t(
+                        `第 ${result.firstShortfallDay} 天出现缺口`,
+                        `A gap appears on day ${result.firstShortfallDay}`
+                      )
+                    : t(
+                        '按所列日期到账时，各事件日期末余额非负。',
+                        'Event-date closing balances remain nonnegative if receipts arrive as listed.'
+                      )}
               </p>
             </div>
-            <div className="example-source">
-              <span>
-                {sample.year} {t('年度报告', 'annual report')} · {sample.source.documentDate}{' '}
-                {t('披露', 'published')}
+            <div className={`preview-chart ${hasBalance ? '' : 'preview-chart-unknown'}`}>
+              <svg
+                viewBox="0 0 640 220"
+                role="img"
+                aria-label={t(
+                  '按所列收付款计算的日期末现金路径',
+                  'Event-date cash path from the listed receipts and payments'
+                )}
+              >
+                {[35, 90, 150].map((line) => (
+                  <line
+                    key={line}
+                    x1="30"
+                    x2="610"
+                    y1={line}
+                    y2={line}
+                    className={line === 150 ? 'preview-zero' : 'preview-grid'}
+                  />
+                ))}
+                <text x="7" y="155">
+                  0
+                </text>
+                {hasBalance && (
+                  <>
+                    <path d={path} className="preview-cash-line" />
+                    {result.events.map((event) => (
+                      <g
+                        key={event.day}
+                        className={`preview-event ${event.day === inspectedEvent?.day ? 'preview-event-selected' : ''}`}
+                        role="button"
+                        tabIndex={0}
+                        aria-label={t(
+                          `查看第 ${event.day} 天的收付款`,
+                          `Inspect receipts and payments on day ${event.day}`
+                        )}
+                        onPointerEnter={() => setInspectedDay(event.day)}
+                        onFocus={() => setInspectedDay(event.day)}
+                        onClick={() => setInspectedDay(event.day)}
+                        onKeyDown={(key) => {
+                          if (key.key === 'Enter' || key.key === ' ') {
+                            key.preventDefault();
+                            setInspectedDay(event.day);
+                          }
+                        }}
+                      >
+                        <circle
+                          cx={x(event.day)}
+                          cy={y(event.balance)}
+                          r="12"
+                          className="preview-event-target"
+                        />
+                        <circle
+                          cx={x(event.day)}
+                          cy={y(event.balance)}
+                          r="4"
+                          className="preview-event-dot"
+                        />
+                      </g>
+                    ))}
+                    <circle
+                      cx={x(paymentDay)}
+                      cy={y(
+                        result.events.find((event) => event.includesProposal)?.balance || '0.00'
+                      )}
+                      r="4"
+                      className="preview-proposal-point"
+                    />
+                  </>
+                )}
+                {[0, 30, 60, 90].map((day) => (
+                  <text key={day} x={x(day)} y="207" textAnchor="middle">
+                    {t(`第${day}天`, `Day ${day}`)}
+                  </text>
+                ))}
+              </svg>
+              {!hasBalance && (
+                <div className="preview-chart-waiting">
+                  <Minus size={18} />
+                  <span>{t('等待现金余额依据', 'Awaiting opening cash evidence')}</span>
+                </div>
+              )}
+            </div>
+            {inspectedEvent && (
+              <div className="preview-event-detail">
+                <span>{t(`第 ${inspectedEvent.day} 天`, `Day ${inspectedEvent.day}`)}</span>
+                <span>
+                  {t('收款', 'Receipts')} <strong>{money(inspectedEvent.inflow, locale)}</strong>
+                </span>
+                <span>
+                  {t('付款', 'Payments')} <strong>{money(inspectedEvent.outflow, locale)}</strong>
+                </span>
+              </div>
+            )}
+            <label className="preview-slider-label" htmlFor="preview-payment-day">
+              <span>{t('采购付款日期', 'Procurement payment date')}</span>
+              <span className="preview-day-input">
+                <input
+                  type="number"
+                  min={1}
+                  max={45}
+                  step={1}
+                  value={dayText}
+                  aria-label={t('付款日期（第几天）', 'Payment day number')}
+                  onChange={(event) => {
+                    setDayText(event.target.value);
+                    const next = Number(event.target.value);
+                    if (event.target.value && Number.isInteger(next) && next >= 1 && next <= 45)
+                      setPaymentDay(next);
+                  }}
+                  onBlur={() => setDayText(String(paymentDay))}
+                />
+                <span>{t('天', 'day')}</span>
               </span>
-              <a href={sample.source.url} target="_blank" rel="noreferrer">
-                {t('查看原件', 'Source PDF')}
-                <ExternalLink size={14} />
+            </label>
+            <input
+              id="preview-payment-day"
+              type="range"
+              min="1"
+              max="45"
+              value={paymentDay}
+              onChange={(event) => {
+                setPaymentDay(Number(event.target.value));
+                setDayText(event.target.value);
+              }}
+              aria-valuetext={t(`第 ${paymentDay} 天`, `Day ${paymentDay}`)}
+            />
+            <p className="preview-assumption">
+              {t(
+                '改期为条件对照，尚待协商；其他收付款金额和日期保持不变。',
+                'Rescheduling remains subject to agreement; other listed amounts and dates stay fixed.'
+              )}
+            </p>
+          </div>
+          <aside className="preview-evidence">
+            <h4>{t('计算依据', 'Calculation inputs')}</h4>
+            <div className={`preview-source ${hasBalance ? '' : 'preview-source-withdrawn'}`}>
+              <FileText size={17} />
+              <div>
+                <strong>{t('当前可用现金', 'Opening cash')}</strong>
+                <span>120,000 CNY</span>
+              </div>
+              <span className="preview-source-state">
+                {hasBalance ? <Check size={14} /> : <Minus size={14} />}
+              </span>
+            </div>
+            <button
+              className="preview-evidence-toggle"
+              type="button"
+              onClick={() => setHasBalance(!hasBalance)}
+            >
+              {hasBalance
+                ? t('暂不采信这项依据', 'Withdraw this input')
+                : t('恢复这项依据', 'Restore this input')}
+              <RotateCcw size={13} />
+            </button>
+            <div className="preview-next-check">
+              <span className="preview-section-label">{t('下一项核查', 'Next check')}</span>
+              <strong>
+                {hasBalance
+                  ? t('核对计划回款的到账日期', 'Check the receipt dates')
+                  : t('补充当前可用现金', 'Provide opening cash')}
+              </strong>
+              <p>
+                {hasBalance
+                  ? t(
+                      '收款日期决定采购付款前是否有足够现金。',
+                      'Receipt timing affects cash available before procurement.'
+                    )
+                  : t(
+                      '恢复这一项后，仅重算依赖它的现金路径。',
+                      'Restoring this input recalculates the dependent cash path.'
+                    )}
+              </p>
+            </div>
+            <div className="preview-periods">
+              <span>{t('30 / 60 / 90 天期末', 'Day 30 / 60 / 90 closing')}</span>
+              <strong>
+                {result.periodEnds
+                  .map(({ balance }) => (balance === null ? '—' : `${Number(balance) / 10000}`))
+                  .join(' / ')}
+                <small>{t('万元', '× CNY 10k')}</small>
+              </strong>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function Home() {
+  const { t, user, locale, navigate } = useApp();
+  const root = useRef<HTMLDivElement>(null);
+  const [recent, setRecent] = useState<DecisionSummary[]>([]);
+  const [recentError, setRecentError] = useState('');
+  const [recentOwner, setRecentOwner] = useState<string | null>(null);
+  useEffect(() => {
+    setRecent([]);
+    setRecentError('');
+    setRecentOwner(user?.id || null);
+    if (!user) return;
+    const abort = new AbortController();
+    void api<DecisionSummary[]>('/decisions', { signal: abort.signal })
+      .then((items) => {
+        if (!abort.signal.aborted)
+          setRecent(items.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 4));
+      })
+      .catch((cause) => {
+        if (!abort.signal.aborted) setRecentError(requestErrorText(cause, locale));
+      });
+    return () => abort.abort();
+  }, [user?.id, locale]);
+  useGSAP(
+    () => {
+      if (user) return;
+      const media = gsap.matchMedia();
+      media.add('(prefers-reduced-motion: no-preference)', () => {
+        gsap.utils.toArray<HTMLElement>('[data-home-reveal]').forEach((element) => {
+          gsap.fromTo(
+            element,
+            { y: 24, opacity: 0.5 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.6,
+              ease: 'power2.out',
+              scrollTrigger: { trigger: element, start: 'top 90%', once: true },
+            }
+          );
+        });
+        gsap.fromTo(
+          '[data-product-window]',
+          { rotationX: 3, y: 20 },
+          {
+            rotationX: 0,
+            y: 0,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: '[data-product-window]',
+              start: 'top 95%',
+              end: 'top 40%',
+              scrub: 0.6,
+            },
+          }
+        );
+      });
+      return () => media.revert();
+    },
+    { scope: root, dependencies: [Boolean(user)], revertOnUpdate: true }
+  );
+  if (user)
+    return (
+      <div className="home-workspace" ref={root}>
+        <section className="workspace-start">
+          <h1>{t('开始一项核查', 'Start a review')}</h1>
+          <StartInput compact />
+        </section>
+        {recentOwner === user.id && (recent.length > 0 || recentError) && (
+          <section className="home-recent">
+            <div className="home-recent-heading">
+              <h2>{t('最近的核查事项', 'Recent reviews')}</h2>
+              <a href="#/decisions">
+                {t('查看全部', 'View all')}
+                <ArrowUpRight size={13} />
               </a>
             </div>
-          </div>
+            {recentError ? (
+              <p role="alert">{recentError}</p>
+            ) : (
+              recent.map((item) => (
+                <a className="home-recent-row" key={item.id} href={`#/decisions?id=${item.id}`}>
+                  <span className="home-recent-icon">
+                    <Wallet size={16} />
+                  </span>
+                  <span>
+                    <strong>{item.title}</strong>
+                    <small>
+                      {item.purpose === 'external'
+                        ? t('预付款核对', 'Prepayment review')
+                        : t('接手核查', 'Company handover')}{' '}
+                      · V{item.currentRevision}
+                    </small>
+                  </span>
+                  <time dateTime={item.updatedAt}>{date(item.updatedAt, locale)}</time>
+                  <ChevronRight size={14} />
+                </a>
+              ))
+            )}
+          </section>
         )}
+      </div>
+    );
+  return (
+    <div className="home-landing" ref={root}>
+      <section className="landing-start">
+        <div className="landing-start-inner">
+          <span className="landing-product-name">CashLens · 照见</span>
+          <h1>{t('你想核查什么？', 'What would you like to review?')}</h1>
+          <StartInput />
+          <a
+            className="landing-explore"
+            href="#product"
+            onClick={(event) => {
+              event.preventDefault();
+              document.getElementById('product')?.scrollIntoView({
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                  ? 'auto'
+                  : 'smooth',
+              });
+            }}
+          >
+            {t('了解工作方式', 'See how it works')}
+            <ArrowRight size={14} />
+          </a>
+        </div>
+        <div className="landing-scroll-mark" aria-hidden="true">
+          <span />
+        </div>
       </section>
-      <p className="home-scope">
-        {t(
-          '支持年度合并人民币口径；用于历史财务核查，不作信用评级。',
-          'Annual consolidated CNY statements. Historical financial review, without a credit rating.'
-        )}{' '}
-        <a href="#/method">{t('核查范围', 'Review scope')}</a>
-      </p>
+      <div id="product">
+        <FinancialPreview />
+      </div>
+      <section className="landing-product-section">
+        <div className="landing-section-intro" data-home-reveal>
+          <h2>
+            {t(
+              '同样的期末余额，\n不同的付款结果。',
+              'Same closing balances.\nDifferent payment timing.'
+            )}
+          </h2>
+          <p>
+            {t(
+              '下面使用独立的合成现金计划。改变付款日期查看缺口，再撤回依据观察结果变化。',
+              'The independent synthetic plan below shows payment timing. Change the date to locate a gap, then withdraw an input to inspect the effect.'
+            )}
+          </p>
+        </div>
+        <div className="product-window-stage">
+          <CashPreview />
+        </div>
+      </section>
+      <section className="landing-perspectives" data-home-reveal>
+        <div className="landing-perspective">
+          <span className="landing-section-number">01</span>
+          <h2>{t('重要预付款', 'Before a prepayment')}</h2>
+          <p>
+            {t(
+              '合同由谁签，款项交给谁，退款由谁负责。把对方的承诺与付款、交付记录放在一起核对。',
+              'Check who signs, receives payment, and handles refunds. Compare commitments with payment and delivery records.'
+            )}
+          </p>
+          <button
+            className="landing-text-action"
+            onClick={() => navigate('/decisions?new=external')}
+          >
+            {t('核对付款条件', 'Review payment terms')}
+            <ArrowUpRight size={15} />
+          </button>
+          <div className="perspective-document">
+            <div>
+              <FileText size={16} />
+              <strong>{t('付款与退款说明', 'Payment and refund terms')}</strong>
+            </div>
+            <dl>
+              {[
+                [t('签约主体', 'Contract entity'), t('待核对', 'To review')],
+                [t('收款账户全称', 'Payee account name'), t('待提供', 'Not provided')],
+                [t('退款条件与时限', 'Refund terms and timing'), t('待提供', 'Not provided')],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </div>
+        <div className="landing-perspective">
+          <span className="landing-section-number">02</span>
+          <h2>{t('接手后的资金安排', 'After taking over a company')}</h2>
+          <p>
+            {t(
+              '从当前可用现金和已列收付款出发。核对到账时点，比较付款安排，保留每次材料变更的影响。',
+              'Start with available cash and listed transactions. Check receipt timing, compare payment schedules, and retain the impact of evidence changes.'
+            )}
+          </p>
+          <button
+            className="landing-text-action"
+            onClick={() => navigate('/decisions?new=handover')}
+          >
+            {t('建立付款事项', 'Plan a payment')}
+            <ArrowUpRight size={15} />
+          </button>
+          <div className="perspective-versions">
+            <div>
+              <History size={16} />
+              <strong>{t('版本与依据', 'Versions and evidence')}</strong>
+            </div>
+            <div className="perspective-version-row">
+              <span className="version-node" />
+              <span>V1</span>
+              <span>{t('保存输入与来源', 'Retain inputs and sources')}</span>
+            </div>
+            <div className="perspective-version-row">
+              <span className="version-node version-node-muted" />
+              <span>V2</span>
+              <span>{t('只重算受影响的结果', 'Recalculate dependent results')}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section className="landing-method" data-home-reveal>
+        <span>{t('财务信息与证据', 'Financial information and evidence')}</span>
+        <h2>
+          {t(
+            '原始金额、披露范围、\n每一步的依据。',
+            'Original amounts, reporting scope,\nand the basis of each result.'
+          )}
+        </h2>
+        <p>
+          {t(
+            '从公开年报核对利润与经营现金，沿具体分项建立核查问题。历史报表用于解释历史，当前付款需要自己的依据。',
+            'Review profit and operating cash from public annual reports, then create checks from specific line items. Historical reports explain the past; current payments need their own evidence.'
+          )}
+        </p>
+        <a href="#/method">
+          {t('查看方法与范围', 'Methods and scope')}
+          <ArrowRight size={15} />
+        </a>
+      </section>
     </div>
   );
 }

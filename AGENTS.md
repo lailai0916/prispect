@@ -4,7 +4,8 @@
 
 `xuejun-hackathon` is the private repository for CashLens (照见), a cash-conversion
 evidence and payment-decision product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
-It uses strict TypeScript, React/Vite and Express, SQLite accounts/sessions, and isolated
+It uses strict TypeScript, React/Vite and Express, Better Auth accounts/sessions, a LangGraph
+workflow with per-user SQLite checkpoints, and isolated
 atomic per-user working-paper storage. The narrow financial task compares same-period
 consolidated annual net profit and operating cash and traces supported adjustments. It serves external money/trust decisions and internal
 operating handovers. Private decisions use immutable input/evidence versions and conditional
@@ -50,7 +51,7 @@ acceptance separate from unit-test success. `npm start` serves the production bu
 
 ## Ownership and product boundaries
 
-- `shared/contracts.ts` and `shared/decision-contracts.ts` define the API contracts; coordinate changes before concurrent edits.
+- `shared/contracts.ts`, `shared/decision-contracts.ts`, `shared/company-contracts.ts` and `shared/account-contracts.ts` define API contracts; `shared/start-intent.ts` handles local entry routing. Coordinate changes before concurrent edits.
 - `server/` owns auth, tenant-scoped access, validation, computation, imports and exports.
 - `src/` owns the bilingual product flow; all visible actions must have actual behavior.
 - Production deployment uses main CI-gated `.github/workflows/deploy.yml` and fixed root-owned helpers. Never execute received archive maintenance scripts as root.

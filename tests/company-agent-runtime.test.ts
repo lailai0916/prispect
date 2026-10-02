@@ -51,7 +51,7 @@ function textPdf(pages: string[]): Buffer {
 }
 const syntheticPdf = (conflict = true) =>
   textPdf([
-    '测试股份有限公司\n2025年年度报告\n本报告金额以人民币千元列示',
+    '测试股份有限公司\n股票代码：300750\n2025年年度报告\n本报告金额以人民币千元列示',
     '合并财务报表项目注释\n现金流量表补充资料\n单位：千元\n补充资料 本期金额 上期金额\n1.将净利润调节为经营活动现金流量\n净利润 100 80\n加：折旧 10 10',
     `存货的减少 -20 -10\n经营性应收项目的减少 -30 -20\n经营性应付项目的增加 10 10\n经营活动产生的现金流量净额 ${conflict ? '72' : '70'} 70`,
   ]);
@@ -188,9 +188,15 @@ test('identity mismatch, normal missing annual data and source refusal stop with
     () => runCompanyResearch(input, { root, fetch: denied.fetch, onUpdate: trace.onUpdate }),
     /来源限制访问/
   );
-  assert.equal(denied.calls.length, 2);
-  assert.equal(trace.records.at(-1)?.tool, 'cninfo_annual');
-  assert.equal(trace.records.at(-1)?.status, 'failed');
+  assert.equal(
+    denied.calls.length,
+    3,
+    'annual and recent requests start in parallel; refusal is never retried'
+  );
+  assert.ok(
+    trace.records.some((record) => record.tool === 'cninfo_annual' && record.status === 'failed')
+  );
+  assert.equal(denied.calls.filter((address) => address.includes('static.cninfo')).length, 0);
 });
 
 test('page planner rejects invented pages, retries within budget and executes a real constrained second check without erasing source conflicts', async () => {

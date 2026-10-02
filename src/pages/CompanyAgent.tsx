@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -14,6 +14,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import type {
+  AnalysisTask,
+  CreateTaskInput,
   CompanyAdoptInput,
   CompanyAdoptResponse,
   CompanyAgentTrace,
@@ -26,67 +28,145 @@ import type {
   Observation,
   ReviewPurpose,
 } from '../../shared/contracts';
+import { interpretStart } from '../../shared/start-intent';
+import {
+  CompanyRunOverview,
+  CompanyFinancialFindings,
+  CompanyEvidenceResults,
+} from '../CompanyRunOverview';
+import type { CompanyPublicEvidence } from '../../shared/company-contracts';
 import { api, post, requestErrorText } from '../api';
 import { useApp } from '../context';
-import { PageHeading, Tag } from '../components';
+import { Dialog, PageHeading, Tag } from '../components';
 import { date, metricName } from '../format';
 import { purposeName } from '../ReviewContext';
 import { translateRule } from '../ruleTranslations';
+import '../company-agent.css';
 
 type CandidateMaterial = Omit<Material, 'id' | 'createdAt'>;
 const safeUrl = (url: string) => (/^https?:\/\//i.test(url) ? url : undefined);
 const sameIdentity = (a: CompanyIdentity | null, b: CompanyIdentity) =>
   a?.orgId === b.orgId && a.securityCode === b.securityCode;
+const normalizeIdentityName = (value: string) =>
+  value.normalize('NFKC').replace(/\s/g, '').toLowerCase();
 const activeRun = (run: CompanyResearchRun | null) =>
   run?.status === 'queued' || run?.status === 'running';
 
 export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
   const { t, locale, workspace, navigate, execute, busy, confirm } = useApp();
   const initialQuery = query.get('query') || '';
+  const yearQuery = query.get('year');
+  const requestedYear = yearQuery === null ? null : Number(yearQuery);
+  const invalidYearQuery =
+    requestedYear !== null &&
+    (!Number.isInteger(requestedYear) ||
+      requestedYear < 2010 ||
+      requestedYear > new Date().getFullYear() - 1);
+  const [yearNeedsCorrection, setYearNeedsCorrection] = useState(invalidYearQuery);
   const runId = query.get('run');
   const [search, setSearch] = useState(initialQuery);
   const [results, setResults] = useState<CompanySearchResponse | null>(null);
   const [selected, setSelected] = useState<CompanyIdentity | null>(null);
   const [searching, setSearching] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(
+    invalidYearQuery
+      ? t(
+          '指定年度不在支持范围，请在检索选项中更正后开始。',
+          'The requested year is outside the supported range. Correct it in retrieval options before starting.'
+        )
+      : ''
+  );
   const [purpose, setPurpose] = useState<ReviewPurpose>(
     query.get('purpose') === 'handover' ? 'handover' : 'external'
   );
-  const [year, setYear] = useState(new Date().getFullYear() - 1);
-  const [useModel, setUseModel] = useState(false);
+  const [year, setYear] = useState(() => {
+    const latest = new Date().getFullYear() - 1;
+    const requested = Number(query.get('year'));
+    return Number.isInteger(requested) && requested >= 2010 && requested <= latest
+      ? requested
+      : latest;
+  });
+  const [useModel, setUseModel] = useState(true);
+  const autoStarted = useRef(new Set<string>());
+  const runKeys = useRef(new Map<string, string>());
   const [run, setRun] = useState<CompanyResearchRun | null>(null);
   const [history, setHistory] = useState<CompanyResearchRun[]>([]);
   const [historyError, setHistoryError] = useState('');
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [loadingRun, setLoadingRun] = useState(Boolean(runId));
   const [pollError, setPollError] = useState('');
   const [pollVersion, setPollVersion] = useState(0);
   const [candidate, setCandidate] = useState<CandidateMaterial | null>(null);
   const [confirmed, setConfirmed] = useState(false);
-  const [page, setPage] = useState<number | null>(null);
+  const [source, setSource] = useState<{
+    title: string;
+    page: number | null;
+    quote: string;
+    url?: string;
+    sha256?: string;
+    observations?: Observation[];
+  } | null>(null);
+  const [detailedColumns, setDetailedColumns] = useState(false);
+  const [changingRun, setChangingRun] = useState(false);
   const previewVersion = run?.preview?.material.sha256;
 
   const loadHistory = async () => {
+    setHistoryLoading(true);
     try {
       setHistory(await api<CompanyResearchRun[]>('/company-runs'));
       setHistoryError('');
     } catch (cause) {
       setHistoryError(requestErrorText(cause, locale));
+    } finally {
+      setHistoryLoading(false);
     }
   };
   const findCompanies = async (value: string, signal?: AbortSignal) => {
-    if (!value.trim()) return;
+    const publicQuery = interpretStart(value, 'company').companyQuery;
+    if (yearNeedsCorrection) {
+      setError(
+        t(
+          '指定年度不在支持范围，请在检索选项中更正后开始。',
+          'The requested year is outside the supported range. Correct it in retrieval options before starting.'
+        )
+      );
+      return;
+    }
+    if (!publicQuery) {
+      setError(
+        t(
+          '请只输入公司名称或六位证券代码。付款说明不会发送至公开检索。',
+          'Enter only a company name or six-digit security code. Payment descriptions are not sent to public search.'
+        )
+      );
+      return;
+    }
     setSearching(true);
     setError('');
     setResults(null);
     setSelected(null);
     try {
-      setResults(
-        await api<CompanySearchResponse>(
-          `/companies/search?q=${encodeURIComponent(value.trim())}`,
-          { signal }
-        )
+      const response = await api<CompanySearchResponse>(
+        `/companies/search?q=${encodeURIComponent(publicQuery)}`,
+        { signal }
       );
+      if (signal?.aborted) return;
+      setResults(response);
+      if (response.candidates.length === 1) {
+        const identity = response.candidates[0]!;
+        setSelected(identity);
+        if (
+          (/^\d{6}$/.test(publicQuery) ||
+            [identity.shortName, identity.companyName].some(
+              (name) => name && normalizeIdentityName(name) === normalizeIdentityName(publicQuery)
+            )) &&
+          !autoStarted.current.has(publicQuery)
+        ) {
+          autoStarted.current.add(publicQuery);
+          await startRun(identity);
+        }
+      }
     } catch (cause) {
       if (!signal?.aborted) setError(requestErrorText(cause, locale));
     } finally {
@@ -95,10 +175,14 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
   };
   useEffect(() => {
     const controller = new AbortController();
+    setHistoryLoading(true);
     void api<CompanyResearchRun[]>('/company-runs', { signal: controller.signal })
       .then(setHistory)
       .catch((cause) => {
         if (!controller.signal.aborted) setHistoryError(requestErrorText(cause, locale));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setHistoryLoading(false);
       });
     if (runId) {
       setLoadingRun(true);
@@ -143,49 +227,123 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
   useEffect(() => {
     setCandidate(run?.preview?.material || null);
     setConfirmed(false);
-    setPage(null);
+    setSource(null);
   }, [run?.id, previewVersion]);
 
   const submitSearch = (event: FormEvent) => {
     event.preventDefault();
-    if (search.trim() === initialQuery && !runId) void findCompanies(search);
-    else navigate(`/company?query=${encodeURIComponent(search.trim())}&purpose=${purpose}`);
+    const publicQuery = interpretStart(search, 'company').companyQuery;
+    if (!publicQuery) {
+      setError(
+        t(
+          '请只输入公司名称或六位证券代码。付款说明不会发送至公开检索。',
+          'Enter only a company name or six-digit security code. Payment descriptions are not sent to public search.'
+        )
+      );
+      return;
+    }
+    void findCompanies(publicQuery);
   };
-  const start = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!selected || creating) return;
+  const startRun = async (identity: CompanyIdentity) => {
+    if (creating || yearNeedsCorrection) return;
     setCreating(true);
     setError('');
     try {
-      const next = await post<CompanyResearchRun>('/company-runs', {
-        securityCode: selected.securityCode,
-        orgId: selected.orgId,
+      const input: CompanyRunInput = {
+        securityCode: identity.securityCode,
+        orgId: identity.orgId,
         year,
         purpose,
         useModel,
-      } satisfies CompanyRunInput);
-      navigate(`/company?run=${next.id}`);
+      };
+      const inputKey = JSON.stringify(input);
+      const key = runKeys.current.get(inputKey) || crypto.randomUUID();
+      runKeys.current.set(inputKey, key);
+      const next = await api<CompanyResearchRun>('/company-runs', {
+        method: 'POST',
+        body: JSON.stringify(input),
+        headers: { 'Idempotency-Key': key },
+      });
+      navigate(`/company?run=${next.id}`, { replace: true });
     } catch (cause) {
       setError(requestErrorText(cause, locale));
     } finally {
       setCreating(false);
     }
   };
+  const start = (event: FormEvent) => {
+    event.preventDefault();
+    if (selected) void startRun(selected);
+  };
+  const createReview = async (materialId: string, company: string) => {
+    if (!run) return;
+    const existing = workspace?.tasks.find(
+      (item) =>
+        item.company === company &&
+        item.year === run.input.year &&
+        item.materialIds.length === 1 &&
+        item.materialIds[0] === materialId &&
+        !item.excludedMetrics.length &&
+        (item.purpose || 'external') === (run.input.purpose || 'external') &&
+        !item.useModel
+    );
+    if (existing) {
+      navigate(`/tasks/${existing.id}`);
+      return;
+    }
+    const task = await execute(
+      () =>
+        post<AnalysisTask>('/tasks', {
+          title: `${company} · ${run.input.year}`,
+          company,
+          year: run.input.year,
+          materialIds: [materialId],
+          excludedMetrics: [],
+          purpose: run.input.purpose || 'external',
+          useModel: false,
+        } satisfies CreateTaskInput),
+      t('核查已创建', 'Review created')
+    );
+    if (task) navigate(`/tasks/${task.id}`);
+  };
   const adopt = async (event: FormEvent) => {
     event.preventDefault();
     if (!run || !candidate || !confirmed || !candidate.observations.length) return;
+    const response = await execute(() =>
+      post<CompanyAdoptResponse>(`/company-runs/${run.id}/adopt`, {
+        confirmed: true,
+        material: candidate,
+      } satisfies CompanyAdoptInput)
+    );
+    if (response) {
+      setRun(response.run);
+      await createReview(response.material.id, response.material.company);
+    }
+  };
+  const changeRun = async (action: 'cancel' | 'resume') => {
+    if (!run || changingRun) return;
+    setChangingRun(true);
     const response = await execute(
       () =>
-        post<CompanyAdoptResponse>(`/company-runs/${run.id}/adopt`, {
-          confirmed: true,
-          material: candidate,
-        } satisfies CompanyAdoptInput),
-      t('已确认并保存候选材料', 'Candidate evidence confirmed and saved')
+        post<CompanyResearchRun>(`/company-runs/${run.id}/${action}`, {
+          revision: run.agent?.revision,
+        }),
+      action === 'cancel'
+        ? t('已请求取消', 'Cancellation requested')
+        : t('已恢复核查', 'Review resumed')
     );
-    if (response)
-      navigate(
-        `/new?case=custom&material=${response.material.id}&year=${run.input.year}&purpose=${run.input.purpose || 'external'}`
-      );
+    if (response) {
+      setRun(response);
+      setPollError('');
+      setPollVersion((v) => v + 1);
+    } else {
+      try {
+        setRun(await api<CompanyResearchRun>(`/company-runs/${run.id}`));
+      } catch {
+        /* The existing request message remains available. */
+      }
+    }
+    setChangingRun(false);
   };
   const removeRun = (item: CompanyResearchRun) =>
     confirm({
@@ -216,65 +374,173 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
     setConfirmed(false);
   };
   const openPage = (number: number | null) => {
-    setPage(number);
-    if (number != null)
-      requestAnimationFrame(() =>
-        document.getElementById('company-source-preview')?.scrollIntoView({
-          block: 'start',
-          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-            ? 'auto'
-            : 'smooth',
-        })
-      );
+    if (!run?.preview || number == null) return;
+    const original = run.preview.material;
+    setSource({
+      title: original.title,
+      page: number,
+      quote: original.observations
+        .filter((obs) => obs.page === number)
+        .map((obs) => obs.quote)
+        .join('\n\n'),
+      url: original.sourceUrl,
+      sha256: original.sha256,
+      observations: original.observations.filter((obs) => obs.page === number),
+    });
   };
+  const openEvidence = (evidence: CompanyPublicEvidence) =>
+    setSource({
+      title: evidence.title,
+      page: evidence.page,
+      quote: evidence.quote,
+      url: evidence.sourceUrl,
+      sha256: evidence.sha256,
+    });
   const importOwn = () => navigate(`/new?case=custom&purpose=${run?.input.purpose || purpose}`);
   const fileUrl = run ? `/api/company-runs/${run.id}/file` : '';
   const status = (item: CompanyResearchRun) =>
-    item.status === 'ready' && (item.stoppedReason || !item.preview)
-      ? t('材料不足', 'Evidence unavailable')
-      : {
-          queued: t('等待检索', 'Queued'),
-          running: t('正在检索', 'Retrieving'),
-          ready: t('待确认候选', 'Awaiting confirmation'),
-          failed: t('检索停止', 'Retrieval stopped'),
-          adopted: t('材料已采用', 'Evidence adopted'),
-        }[item.status];
+    item.agent?.cancelRequested
+      ? activeRun(item)
+        ? t('正在取消', 'Cancelling')
+        : t('已取消', 'Cancelled')
+      : item.status === 'ready' && (item.stoppedReason || !item.preview)
+        ? t('材料不足', 'Evidence unavailable')
+        : {
+            queued: t('等待检索', 'Queued'),
+            running: t('正在检索', 'Retrieving'),
+            ready: t('待确认候选', 'Awaiting confirmation'),
+            failed: t('检索停止', 'Retrieval stopped'),
+            adopted: t('材料已采用', 'Evidence adopted'),
+          }[item.status];
 
   return (
     <div className="company-agent">
       <PageHeading
-        title={t('企业查询', 'Company lookup')}
+        title={t('公司查询', 'Company search')}
+        action={
+          run ? (
+            <button className="button button-secondary" onClick={() => navigate('/company')}>
+              {t('新查询', 'New search')}
+            </button>
+          ) : undefined
+        }
         description={t(
-          '确认公司主体，检索公开公告，核对原件后采用财务证据。',
-          'Confirm the company, retrieve public disclosures, then review original documents before adopting financial evidence.'
+          '检索公开材料，交叉核对财务字段与经营线索。',
+          'Retrieve public documents and cross-check financial fields and operating evidence.'
         )}
       />
-      <form className="company-search-form" onSubmit={submitSearch}>
-        <label className="form-field">
-          <span>{t('公司名称或证券代码', 'Company name or security code')}</span>
-          <input
-            type="search"
-            required
-            maxLength={80}
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder={t(
-              '例如：松原安全、海康威视、300893',
-              'Chinese company name or code, e.g. 300893'
-            )}
-          />
-        </label>
-        <button className="button button-primary" type="submit" disabled={searching || creating}>
-          {searching ? <LoaderCircle size={16} className="spinner" /> : <Search size={16} />}{' '}
-          {t('查询主体', 'Find company')}
-        </button>
-      </form>
-      <p className="company-coverage-note">
-        {t(
-          '当前检索巨潮资讯的大陆 A 股披露。未匹配或未取得资料，不代表公司没有风险；未接入天眼查或企业信用全库。',
-          'Current coverage is mainland A-share disclosure on CNINFO. No match or unavailable data does not establish the absence of risk. Tianyancha and full company-credit databases are not connected.'
-        )}
-      </p>
+      {!run && (
+        <form className="company-search-form" onSubmit={submitSearch}>
+          <label className="form-field">
+            <span>{t('公司名称或证券代码', 'Company name or security code')}</span>
+            <input
+              type="search"
+              required
+              maxLength={80}
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t('公司名称或证券代码', 'Company name or security code')}
+            />
+          </label>
+          <button className="button button-primary" type="submit" disabled={searching || creating}>
+            {searching ? <LoaderCircle size={16} className="spinner" /> : <Search size={16} />}{' '}
+            {t('查询主体', 'Find company')}
+          </button>
+        </form>
+      )}
+      {!run && (
+        <p className="company-coverage-note">
+          {t(
+            '来源：巨潮资讯大陆 A 股披露。未匹配不代表无风险，也不覆盖所有企业。',
+            'Source: CNINFO mainland A-share disclosures. No match does not mean no risk; coverage is limited.'
+          )}
+        </p>
+      )}
+      {!run && !creating && (
+        <>
+          <p className="company-public-model-note">
+            {useModel
+              ? t(
+                  '模型处理公开披露内容，服务提供方为 TokenFlux；不发送私人说明。',
+                  'Models process public disclosures through TokenFlux; private descriptions are excluded.'
+                )
+              : t(
+                  '仅用规则读取公开披露，不调用模型。',
+                  'Rules read public disclosures without a model call.'
+                )}
+          </p>
+          <details className="company-options">
+            <summary>
+              {t('检索选项', 'Retrieval options')} · {year} · {purposeName(purpose, t)}
+            </summary>
+            <div className="company-run-fields">
+              <label className="form-field">
+                <span>{t('财务年度', 'Financial year')}</span>
+                <input
+                  type="number"
+                  required
+                  min="2010"
+                  max={new Date().getUTCFullYear() - 1}
+                  value={year}
+                  onChange={(event) => {
+                    const value = Number(event.target.value);
+                    setYear(value);
+                    setYearNeedsCorrection(
+                      !Number.isInteger(value) ||
+                        value < 2010 ||
+                        value > new Date().getFullYear() - 1
+                    );
+                  }}
+                />
+              </label>
+              <fieldset className="company-purpose">
+                <legend>{t('核查用途', 'Review purpose')}</legend>
+                <div className="purpose-options">
+                  {(['external', 'handover'] as const).map((value) => (
+                    <label
+                      className={purpose === value ? 'purpose-option selected' : 'purpose-option'}
+                      key={value}
+                    >
+                      <input
+                        type="radio"
+                        name="company-purpose"
+                        checked={purpose === value}
+                        onChange={() => setPurpose(value)}
+                      />
+                      <strong>{purposeName(value, t)}</strong>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            </div>
+            <label className="model-opt-in">
+              <input
+                type="checkbox"
+                checked={useModel}
+                disabled={!workspace?.provider.configured || creating}
+                onChange={(event) => setUseModel(event.target.checked)}
+              />
+              <span>
+                <strong>{t('用模型辅助读公开材料', 'Use a model for public documents')}</strong>
+                <small>
+                  {t(
+                    '将公开主体、公告信息、表格短文及规则财务字段发送至第三方 TokenFlux，辅助读取披露材料；不发送私人说明、备注或现金工作表。金额仍以原件为据。',
+                    'Public company identity, announcement metadata, relevant table excerpts and rule-checked financial facts are sent to third-party TokenFlux for evidence-page selection and explanation. Private descriptions, notes and cash plans are not sent. Amounts remain based on the original documents.'
+                  )}
+                </small>
+                {!workspace?.provider.configured && (
+                  <small>
+                    {t(
+                      '当前未配置模型，可继续规则检索。',
+                      'No model is configured; rules retrieval remains available.'
+                    )}
+                  </small>
+                )}
+              </span>
+            </label>
+          </details>{' '}
+        </>
+      )}
       {error && (
         <div className="inline-error">
           <CircleAlert size={16} />
@@ -297,7 +563,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
           </button>
         </div>
       )}
-      {results && !run && (
+      {results && !run && results.candidates.length !== 1 && (
         <section className="company-identities" aria-labelledby="company-identities-title">
           <div className="report-section-title">
             <h2 id="company-identities-title">{t('选择公司主体', 'Select the company')}</h2>
@@ -321,7 +587,10 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                         : 'company-identity'
                     }
                     key={`${identity.orgId}-${identity.securityCode}`}
-                    onClick={() => setSelected(identity)}
+                    onClick={() => {
+                      setSelected(identity);
+                      void startRun(identity);
+                    }}
                     aria-pressed={sameIdentity(selected, identity)}
                   >
                     <span className="identity-selection" aria-hidden="true">
@@ -366,7 +635,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
           )}
         </section>
       )}
-      {selected && !run && (
+      {selected && !run && !creating && (
         <form className="company-run-config" onSubmit={start}>
           <div className="company-selected-heading">
             <div>
@@ -387,78 +656,36 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               </a>
             )}
           </div>
-          <div className="company-run-fields">
-            <label className="form-field">
-              <span>{t('财务年度', 'Financial year')}</span>
-              <input
-                type="number"
-                required
-                min="2010"
-                max={new Date().getUTCFullYear() - 1}
-                value={year}
-                onChange={(event) => setYear(Number(event.target.value))}
-              />
-            </label>
-            <fieldset className="company-purpose">
-              <legend>{t('核查用途', 'Review purpose')}</legend>
-              <div className="purpose-options">
-                {(['external', 'handover'] as const).map((value) => (
-                  <label
-                    className={purpose === value ? 'purpose-option selected' : 'purpose-option'}
-                    key={value}
-                  >
-                    <input
-                      type="radio"
-                      name="company-purpose"
-                      checked={purpose === value}
-                      onChange={() => setPurpose(value)}
-                    />
-                    <strong>{purposeName(value, t)}</strong>
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-          </div>
-          <label className="model-opt-in">
-            <input
-              type="checkbox"
-              checked={useModel}
-              disabled={!workspace?.provider.configured || creating}
-              onChange={(event) => setUseModel(event.target.checked)}
-            />
-            <span>
-              <strong>
-                {t('启用公开材料智能辅助', 'Enable assistance with public documents')}
-              </strong>
-              <small>
-                {t(
-                  '默认关闭。选中后，将本次公司的公开主体、公告信息、相关表格短文及规则核对的财务事实发送至第三方 TokenFlux，辅助选择证据页与解释。模型生成金额不能作为来源，候选仍须人工确认。',
-                  'Off by default. Selecting this sends the public company identity, announcement metadata, relevant table excerpts and rule-checked financial facts to third-party TokenFlux for evidence-page selection and explanation. Model-generated amounts are not evidence; candidates require your confirmation.'
-                )}
-              </small>
-              {!workspace?.provider.configured && (
-                <small>
-                  {t(
-                    '当前未配置模型，可继续规则检索。',
-                    'No model is configured; rules retrieval remains available.'
-                  )}
-                </small>
-              )}
-            </span>
-          </label>
+          <p className="section-intro">
+            {t(
+              '核对证券代码后开始。将检索年报、附注和近期公告；金额候选采用前仍须确认。',
+              'Confirm the security code to begin. Annual statements, notes and recent disclosures are retrieved; financial candidates still require confirmation before adoption.'
+            )}
+          </p>
+
           <div className="inline-actions">
             <button className="button button-primary" type="submit" disabled={creating}>
               {creating ? <LoaderCircle className="spinner" size={16} /> : <ArrowRight size={16} />}{' '}
-              {t('检索公告与财务证据', 'Retrieve disclosures and evidence')}
+              {t('开始核查', 'Start review')}
             </button>
             <span className="field-note">
               {t(
-                '不会查询私人材料、跟进备注或现金工作表。',
-                'Private evidence, follow-up notes and cash worksheets are not included.'
+                useModel
+                  ? '模型处理公开披露内容，服务提供方为 TokenFlux。'
+                  : '仅用规则读取公开披露，不调用模型。',
+                useModel
+                  ? 'Models process public disclosures through TokenFlux.'
+                  : 'Rules read public disclosures without a model call.'
               )}
             </span>
           </div>
         </form>
+      )}
+      {creating && (
+        <div className="company-run-loading" role="status">
+          <LoaderCircle className="spinner" size={18} />
+          {t('正在建立核查任务…', 'Creating the review task…')}
+        </div>
       )}
       {loadingRun && (
         <div className="company-run-loading">
@@ -478,10 +705,34 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                 {purposeName(run.input.purpose, t)} · {date(run.createdAt, locale)}
               </p>
             </div>
-            <Tag>
-              {activeRun(run) && <LoaderCircle className="spinner" size={12} />} {status(run)}
-            </Tag>
+            <div className="company-run-actions">
+              <Tag>
+                {activeRun(run) && <LoaderCircle className="spinner" size={12} />} {status(run)}
+              </Tag>
+              {run.agent && activeRun(run) && (
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  disabled={changingRun || run.agent.cancelRequested}
+                  onClick={() => changeRun('cancel')}
+                >
+                  {t('取消', 'Cancel')}
+                </button>
+              )}
+              {run.status === 'failed' && run.agent?.recoverable && (
+                <button
+                  type="button"
+                  className="button button-primary"
+                  disabled={changingRun}
+                  onClick={() => changeRun('resume')}
+                >
+                  <RefreshCw size={14} />
+                  {t('恢复核查', 'Resume review')}
+                </button>
+              )}
+            </div>
           </section>
+          {run.agent && <CompanyRunOverview run={run} />}
           {(run.stoppedReason || run.error) && (
             <section className="company-stopped">
               <CircleAlert size={18} />
@@ -521,82 +772,43 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               </button>
             </div>
           )}
-          <section className="company-trace" aria-labelledby="company-trace-title">
-            <div className="report-section-title">
-              <h2 id="company-trace-title">{t('检索记录', 'Retrieval record')}</h2>
-              <span className="field-note">
-                {t('实际工具输入、输出与依据', 'Actual tool inputs, outputs and evidence')}
-              </span>
-            </div>
-            {locale === 'en' &&
-              run.trace.some((step) =>
-                /[\u4e00-\u9fff]/.test(step.outputSummary || step.inputSummary)
-              ) && (
-                <p className="field-note">Original retrieval summaries are retained in Chinese.</p>
-              )}
-            <ol>
-              {run.trace.map((step, index) => (
-                <TraceStep
-                  key={step.id}
-                  step={step}
-                  index={index}
-                  onPage={openPage}
-                  canPreview={Boolean(run.preview)}
-                />
-              ))}
-            </ol>
-            {run.trace.length === 0 && (
-              <p className="section-intro">
-                {t('尚无工具执行记录。', 'No tool execution has been recorded yet.')}
-              </p>
-            )}
-          </section>
-          {run.announcements.length > 0 && (
-            <section className="company-announcements">
-              <div className="report-section-title">
-                <h2>{t('已检索公告', 'Retrieved announcements')}</h2>
-                <Tag>{run.announcements.length}</Tag>
-              </div>
-              <ul>
-                {run.announcements
-                  .filter((item) => item.category === 'annual')
-                  .map((announcement) => (
-                    <AnnouncementRow key={announcement.id} announcement={announcement} />
+          {run.preview && <CompanyFinancialFindings run={run} onPage={openPage} />}
+          {run.preview?.checks.some((check) => check.status === 'fail') && (
+            <div className="company-check-stop" role="note">
+              <CircleAlert size={16} />
+              <div>
+                <strong>{t('财务字段有待复核', 'Financial fields require review')}</strong>
+                {run.preview.checks
+                  .filter((check) => check.status === 'fail')
+                  .map((check) => (
+                    <p key={check.id}>{t(check.message, translateRule(check.message))}</p>
                   ))}
-              </ul>
-              {run.announcements.some((item) => item.category === 'recent') && (
-                <details className="company-recent-announcements">
-                  <summary>
-                    {t('近期公告线索', 'Recent disclosure leads')} ·{' '}
-                    {run.announcements.filter((item) => item.category === 'recent').length}
-                  </summary>
-                  <p className="field-note">
-                    {t(
-                      '此处提供标题和原件链接，尚未逐份阅读；公告本身不等于风险事件。',
-                      'Titles and original links are listed here; each document has not been read. A disclosure is not automatically a risk event.'
-                    )}
-                  </p>
-                  <ul>
-                    {run.announcements
-                      .filter((item) => item.category === 'recent')
-                      .map((announcement) => (
-                        <AnnouncementRow key={announcement.id} announcement={announcement} />
-                      ))}
-                  </ul>
-                </details>
-              )}
-            </section>
+              </div>
+            </div>
           )}
+          {run.agent && <CompanyEvidenceResults run={run} onEvidence={openEvidence} />}
           {run.preview && candidate && (
             <section className="company-candidate">
               <div className="report-section-title">
-                <h2>{t('财务候选项', 'Financial candidates')}</h2>
-                <Tag>{t('待人工确认', 'Requires confirmation')}</Tag>
+                <h2>
+                  {run.status === 'adopted'
+                    ? t('财务材料', 'Financial evidence')
+                    : t('财务候选项', 'Financial candidates')}
+                </h2>
+                <Tag>
+                  {run.status === 'adopted'
+                    ? t('已保存', 'Saved')
+                    : t('待人工确认', 'Requires confirmation')}
+                </Tag>
               </div>
               <p className="section-intro">
                 {t(
-                  '候选来自下载原件的提取，尚未成为核查事实。逐项核对金额、单位、年度、期间与报表范围；输入一致不代表原件真实性已核验。',
-                  'Candidates were extracted from the downloaded source and are not yet adopted facts. Check amounts, units, years, periods and scope; consistent input does not authenticate an original document.'
+                  run.status === 'adopted'
+                    ? '材料已保存，以下保留初始提取检查；所采用输入与结果见核查报告。'
+                    : '采用前核对金额、单位、年度与报表范围；字段一致不认证材料。',
+                  run.status === 'adopted'
+                    ? 'Evidence is saved. The original extraction checks remain below; adopted inputs and results are in the review.'
+                    : 'Check values, units, years and scope before adoption; matching fields do not authenticate documents.'
                 )}
               </p>
               <div className="company-source-summary">
@@ -617,7 +829,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                 </a>
               </div>
               {run.preview.warnings.length > 0 && (
-                <details className="company-candidate-warnings" open>
+                <details className="company-candidate-warnings">
                   <summary>
                     {t('提取中需要核对的事项', 'Extraction checks to review')} ·{' '}
                     {run.preview.warnings.length}
@@ -668,238 +880,264 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   <button
                     className="button button-primary"
                     type="button"
+                    disabled={busy}
                     onClick={() =>
-                      navigate(
-                        `/new?case=custom&material=${run.adoptedMaterialId}&year=${run.input.year}&purpose=${run.input.purpose || 'external'}`
-                      )
+                      run.adoptedMaterialId &&
+                      createReview(run.adoptedMaterialId, candidate.company)
                     }
                   >
-                    {t('用已保存材料核查', 'Review the saved evidence')}
+                    {t('打开核查报告', 'Open financial review')}
                     <ArrowRight size={15} />
                   </button>
                 </div>
               ) : (
                 <form onSubmit={adopt}>
-                  <div className="company-candidate-actions">
-                    <button
-                      type="button"
-                      className="button button-secondary"
-                      onClick={() => {
-                        setCandidate({
-                          ...candidate,
-                          observations: candidate.observations.filter(
+                  <details className="company-candidate-edit">
+                    <summary>
+                      {t('核对与编辑候选', 'Inspect and edit candidates')} ·{' '}
+                      {candidate.observations.length}
+                    </summary>
+                    <div className="company-candidate-actions">
+                      <button
+                        type="button"
+                        className="button button-secondary"
+                        onClick={() => {
+                          setCandidate({
+                            ...candidate,
+                            observations: candidate.observations.filter(
+                              (obs) => obs.scope === 'consolidated' && obs.period === 'annual'
+                            ),
+                          });
+                          setConfirmed(false);
+                        }}
+                        disabled={
+                          !candidate.observations.some(
                             (obs) => obs.scope === 'consolidated' && obs.period === 'annual'
-                          ),
-                        });
-                        setConfirmed(false);
-                      }}
-                      disabled={
-                        !candidate.observations.some(
-                          (obs) => obs.scope === 'consolidated' && obs.period === 'annual'
-                        )
-                      }
-                    >
-                      {t('仅保留合并年度项', 'Keep consolidated annual items')}
-                    </button>
-                    <button
-                      type="button"
-                      className="text-link"
-                      onClick={() => {
-                        setCandidate(run.preview!.material);
-                        setConfirmed(false);
-                      }}
-                    >
-                      {t('恢复提取结果', 'Restore extracted candidates')}
-                      <RefreshCw size={13} />
-                    </button>
-                  </div>
-                  <p className="field-note">
-                    {candidate.observations.length}{' '}
-                    {t(
-                      '项仍保留；未知范围或期间不能自动补为合并年度。',
-                      'items retained. Unknown scope or period is not automatically replaced with consolidated annual scope.'
-                    )}
-                  </p>
-                  <p className="comparison-mobile-hint">
-                    {t(
-                      '左右滑动核对每项金额与口径；点击页码看原文。',
-                      'Swipe to review amounts and scope; select a page to inspect the source.'
-                    )}
-                  </p>
-                  <div className="table-wrap company-candidate-table-wrap">
-                    <table className="company-candidate-table">
-                      <thead>
-                        <tr>
-                          <th>{t('指标', 'Metric')}</th>
-                          <th>{t('金额', 'Amount')}</th>
-                          <th>{t('单位', 'Unit')}</th>
-                          <th>{t('年度', 'Year')}</th>
-                          <th>{t('期间', 'Period')}</th>
-                          <th>{t('范围', 'Scope')}</th>
-                          <th>{t('币种', 'Currency')}</th>
-                          <th>{t('原文', 'Source')}</th>
-                          <th>
-                            <span className="sr-only">{t('删除', 'Remove')}</span>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {candidate.observations.map((obs, index) => (
-                          <tr key={`${obs.id}-${index}`}>
+                          )
+                        }
+                      >
+                        {t('仅保留合并年度项', 'Keep consolidated annual items')}
+                      </button>
+                      <button
+                        type="button"
+                        className="text-link"
+                        aria-pressed={detailedColumns}
+                        onClick={() => setDetailedColumns((v) => !v)}
+                      >
+                        {detailedColumns
+                          ? t('收起期间与币种', 'Hide period and currency')
+                          : t('编辑期间与币种', 'Edit period and currency')}
+                      </button>
+                      <button
+                        type="button"
+                        className="text-link"
+                        onClick={() => {
+                          setCandidate(run.preview!.material);
+                          setConfirmed(false);
+                        }}
+                      >
+                        {t('恢复提取结果', 'Restore extracted candidates')}
+                        <RefreshCw size={13} />
+                      </button>
+                    </div>
+                    <p className="field-note">
+                      {candidate.observations.length}{' '}
+                      {t(
+                        '项仍保留；未知范围或期间不能自动补为合并年度。',
+                        'items retained. Unknown scope or period is not automatically replaced with consolidated annual scope.'
+                      )}
+                    </p>
+                    <p className="comparison-mobile-hint">
+                      {t(
+                        '左右滑动核对每项金额与口径；点击页码看原文。',
+                        'Swipe to review amounts and scope; select a page to inspect the source.'
+                      )}
+                    </p>
+                    <div className="table-wrap company-candidate-table-wrap">
+                      <table
+                        className={`company-candidate-table${detailedColumns ? ' detailed' : ''}`}
+                      >
+                        <thead>
+                          <tr>
+                            <th>{t('指标', 'Metric')}</th>
+                            <th>{t('金额', 'Amount')}</th>
+                            <th>{t('单位', 'Unit')}</th>
+                            <th>{t('年度', 'Year')}</th>
+                            {detailedColumns && <th>{t('期间', 'Period')}</th>}
+                            <th>{t('范围', 'Scope')}</th>
+                            {detailedColumns && <th>{t('币种', 'Currency')}</th>}
+                            <th>{t('原文', 'Source')}</th>
                             <th>
-                              {metricName(obs.key, locale)}
-                              {obs.kind === 'derived' && obs.components?.length ? (
-                                <details className="company-derived-components">
-                                  <summary>
-                                    {t('原文分组求和', 'Sum of source components')} ·{' '}
-                                    {obs.components.length}
-                                  </summary>
-                                  <p className="field-note">
-                                    {t(
-                                      '合计由原始分组计算；不以差额补平。',
-                                      'The total is calculated from source components; no residual is added.'
-                                    )}
-                                  </p>
-                                  <ul>
-                                    {obs.components.map((component, componentIndex) => (
-                                      <li key={componentIndex}>
-                                        <span>{component.label}</span>
-                                        <code>{component.value} CNY</code>
-                                        {component.page != null && (
-                                          <button
-                                            type="button"
-                                            className="text-link"
-                                            onClick={() => openPage(component.page)}
-                                          >
-                                            PDF {component.page}
-                                          </button>
-                                        )}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </details>
-                              ) : null}
+                              <span className="sr-only">{t('删除', 'Remove')}</span>
                             </th>
-                            <td>
-                              <input
-                                required
-                                inputMode="decimal"
-                                pattern="-?[0-9]+([.][0-9]{1,10})?"
-                                value={obs.value}
-                                readOnly={obs.kind === 'derived' && Boolean(obs.components?.length)}
-                                aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('金额', 'amount')}`}
-                                onChange={(event) =>
-                                  updateObservation(index, { value: event.target.value })
-                                }
-                              />
-                            </td>
-                            <td>
-                              <select
-                                aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('单位', 'unit')}`}
-                                value={obs.unit}
-                                onChange={(event) =>
-                                  updateObservation(index, {
-                                    unit: event.target.value as Observation['unit'],
-                                  })
-                                }
-                              >
-                                <option value="yuan">{t('元', 'Yuan')}</option>
-                                <option value="wan">{t('万元', '10,000 yuan')}</option>
-                                <option value="yi">{t('亿元', '100m yuan')}</option>
-                              </select>
-                            </td>
-                            <td>
-                              <input
-                                required
-                                type="number"
-                                min="2000"
-                                max="2100"
-                                value={obs.year}
-                                aria-label={`${metricName(obs.key, locale)} · ${t('年度', 'year')} · ${index + 1}`}
-                                onChange={(event) =>
-                                  updateObservation(index, { year: Number(event.target.value) })
-                                }
-                              />
-                            </td>
-                            <td>
-                              <select
-                                value={obs.period || 'unknown'}
-                                aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('期间', 'period')}`}
-                                onChange={(event) =>
-                                  updateObservation(index, {
-                                    period: event.target.value as Observation['period'],
-                                  })
-                                }
-                              >
-                                <option value="annual">{t('全年', 'Annual')}</option>
-                                <option value="interim">{t('半年', 'Interim')}</option>
-                                <option value="quarterly">{t('季度', 'Quarterly')}</option>
-                                <option value="unknown">{t('待确认', 'Unconfirmed')}</option>
-                              </select>
-                            </td>
-                            <td>
-                              <select
-                                value={obs.scope}
-                                aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('范围', 'scope')}`}
-                                onChange={(event) =>
-                                  updateObservation(index, {
-                                    scope: event.target.value as Observation['scope'],
-                                  })
-                                }
-                              >
-                                <option value="consolidated">{t('合并', 'Consolidated')}</option>
-                                <option value="parent">{t('母公司', 'Parent company')}</option>
-                                <option value="unknown">{t('待确认', 'Unconfirmed')}</option>
-                              </select>
-                            </td>
-                            <td>
-                              <input
-                                required
-                                maxLength={5}
-                                value={obs.currency}
-                                aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('币种', 'currency')}`}
-                                onChange={(event) =>
-                                  updateObservation(index, { currency: event.target.value })
-                                }
-                              />
-                            </td>
-                            <td>
-                              {obs.page != null ? (
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {candidate.observations.map((obs, index) => (
+                            <tr key={`${obs.id}-${index}`}>
+                              <th>
+                                {metricName(obs.key, locale)}
+                                {obs.kind === 'derived' && obs.components?.length ? (
+                                  <details className="company-derived-components">
+                                    <summary>
+                                      {t('原文分组求和', 'Sum of source components')} ·{' '}
+                                      {obs.components.length}
+                                    </summary>
+                                    <p className="field-note">
+                                      {t(
+                                        '合计由原始分组计算；不以差额补平。',
+                                        'The total is calculated from source components; no residual is added.'
+                                      )}
+                                    </p>
+                                    <ul>
+                                      {obs.components.map((component, componentIndex) => (
+                                        <li key={componentIndex}>
+                                          <span>{component.label}</span>
+                                          <code>{component.value} CNY</code>
+                                          {component.page != null && (
+                                            <button
+                                              type="button"
+                                              className="text-link"
+                                              onClick={() => openPage(component.page)}
+                                            >
+                                              PDF {component.page}
+                                            </button>
+                                          )}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </details>
+                                ) : null}
+                              </th>
+                              <td>
+                                <input
+                                  required
+                                  inputMode="decimal"
+                                  pattern="-?[0-9]+([.][0-9]{1,10})?"
+                                  value={obs.value}
+                                  readOnly={
+                                    obs.kind === 'derived' && Boolean(obs.components?.length)
+                                  }
+                                  aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('金额', 'amount')}`}
+                                  onChange={(event) =>
+                                    updateObservation(index, { value: event.target.value })
+                                  }
+                                />
+                              </td>
+                              <td>
+                                <select
+                                  aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('单位', 'unit')}`}
+                                  value={obs.unit}
+                                  onChange={(event) =>
+                                    updateObservation(index, {
+                                      unit: event.target.value as Observation['unit'],
+                                    })
+                                  }
+                                >
+                                  <option value="yuan">{t('元', 'Yuan')}</option>
+                                  <option value="wan">{t('万元', '10,000 yuan')}</option>
+                                  <option value="yi">{t('亿元', '100m yuan')}</option>
+                                </select>
+                              </td>
+                              <td>
+                                <input
+                                  required
+                                  type="number"
+                                  min="2000"
+                                  max="2100"
+                                  value={obs.year}
+                                  aria-label={`${metricName(obs.key, locale)} · ${t('年度', 'year')} · ${index + 1}`}
+                                  onChange={(event) =>
+                                    updateObservation(index, { year: Number(event.target.value) })
+                                  }
+                                />
+                              </td>
+                              {detailedColumns && (
+                                <td>
+                                  <select
+                                    value={obs.period || 'unknown'}
+                                    aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('期间', 'period')}`}
+                                    onChange={(event) =>
+                                      updateObservation(index, {
+                                        period: event.target.value as Observation['period'],
+                                      })
+                                    }
+                                  >
+                                    <option value="annual">{t('全年', 'Annual')}</option>
+                                    <option value="interim">{t('半年', 'Interim')}</option>
+                                    <option value="quarterly">{t('季度', 'Quarterly')}</option>
+                                    <option value="unknown">{t('待确认', 'Unconfirmed')}</option>
+                                  </select>
+                                </td>
+                              )}
+                              <td>
+                                <select
+                                  value={obs.scope}
+                                  aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('范围', 'scope')}`}
+                                  onChange={(event) =>
+                                    updateObservation(index, {
+                                      scope: event.target.value as Observation['scope'],
+                                    })
+                                  }
+                                >
+                                  <option value="consolidated">{t('合并', 'Consolidated')}</option>
+                                  <option value="parent">{t('母公司', 'Parent company')}</option>
+                                  <option value="unknown">{t('待确认', 'Unconfirmed')}</option>
+                                </select>
+                              </td>
+                              {detailedColumns && (
+                                <td>
+                                  <input
+                                    required
+                                    maxLength={5}
+                                    value={obs.currency}
+                                    aria-label={`${metricName(obs.key, locale)} · ${obs.year} · ${t('币种', 'currency')}`}
+                                    onChange={(event) =>
+                                      updateObservation(index, { currency: event.target.value })
+                                    }
+                                  />
+                                </td>
+                              )}
+                              <td>
+                                {obs.page != null ? (
+                                  <button
+                                    type="button"
+                                    className="text-link"
+                                    onClick={() => openPage(obs.page)}
+                                  >
+                                    PDF {obs.page}
+                                    <ArrowUpRight size={12} />
+                                  </button>
+                                ) : (
+                                  <span className="muted">
+                                    {t('页码未确认', 'Page unconfirmed')}
+                                  </span>
+                                )}
+                              </td>
+                              <td>
                                 <button
                                   type="button"
-                                  className="text-link"
-                                  onClick={() => openPage(obs.page)}
+                                  className="icon-button"
+                                  aria-label={`${t('移除候选', 'Remove candidate')} ${metricName(obs.key, locale)} · ${obs.year}`}
+                                  onClick={() => {
+                                    setCandidate({
+                                      ...candidate,
+                                      observations: candidate.observations.filter(
+                                        (_, i) => i !== index
+                                      ),
+                                    });
+                                    setConfirmed(false);
+                                  }}
                                 >
-                                  PDF {obs.page}
-                                  <ArrowUpRight size={12} />
+                                  <Trash2 size={15} />
                                 </button>
-                              ) : (
-                                <span className="muted">{t('页码未确认', 'Page unconfirmed')}</span>
-                              )}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="icon-button"
-                                aria-label={`${t('移除候选', 'Remove candidate')} ${metricName(obs.key, locale)} · ${obs.year}`}
-                                onClick={() => {
-                                  setCandidate({
-                                    ...candidate,
-                                    observations: candidate.observations.filter(
-                                      (_, i) => i !== index
-                                    ),
-                                  });
-                                  setConfirmed(false);
-                                }}
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </details>
                   <label className="company-confirm">
                     <input
                       type="checkbox"
@@ -918,53 +1156,25 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                     <button
                       className="button button-primary"
                       type="submit"
-                      disabled={busy || !confirmed || !candidate.observations.length}
+                      disabled={
+                        busy ||
+                        activeRun(run) ||
+                        run.status === 'failed' ||
+                        !confirmed ||
+                        !candidate.observations.length
+                      }
                     >
                       {busy ? <LoaderCircle className="spinner" size={15} /> : <Check size={15} />}{' '}
-                      {t('确认保存并核查', 'Confirm, save and review')}
+                      {t('采用并核查', 'Adopt and review')}
                     </button>
                     <span className="field-note">
                       {t(
-                        '下一步独立创建财务核查；模型授权默认关闭。',
-                        'The next step creates a separate financial review with model permission off by default.'
+                        '保存材料后直接生成规则报告，不额外调用模型。',
+                        'Evidence is saved and a rules report is created without an additional model call.'
                       )}
                     </span>
                   </div>
                 </form>
-              )}
-              {page != null && (
-                <section className="company-source-preview" id="company-source-preview">
-                  <div className="report-section-title">
-                    <h3>
-                      {t('下载原件', 'Downloaded original')} · PDF {page}
-                    </h3>
-                    <a
-                      className="text-link"
-                      href={`${fileUrl}#page=${page}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t('新标签打开', 'Open in a new tab')}
-                      <ArrowUpRight size={14} />
-                    </a>
-                  </div>
-                  <iframe
-                    src={`${fileUrl}#page=${page}`}
-                    title={`${candidate.title} · PDF ${page}`}
-                  />
-                  <div className="company-original-excerpts">
-                    {candidate.observations
-                      .filter((obs) => obs.page === page)
-                      .map((obs, index) => (
-                        <blockquote key={`${obs.id}-${index}`}>
-                          <span>
-                            {metricName(obs.key, locale)} · {obs.year}
-                          </span>
-                          <p>{obs.quote}</p>
-                        </blockquote>
-                      ))}
-                  </div>
-                </section>
               )}
               <details className="company-file-metadata">
                 <summary>{t('文件与来源信息', 'File and source metadata')}</summary>
@@ -991,8 +1201,91 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               </details>
             </section>
           )}
+
+          <details className="company-trace company-record-details">
+            <summary>{t('检索步骤', 'Retrieval steps')}</summary>
+            <div className="report-section-title">
+              <h2 id="company-trace-title">{t('检索记录', 'Retrieval record')}</h2>
+              <span className="field-note">
+                {t('实际工具输入、输出与依据', 'Actual tool inputs, outputs and evidence')}
+              </span>
+            </div>
+            {locale === 'en' &&
+              run.trace.some((step) =>
+                /[\u4e00-\u9fff]/.test(step.outputSummary || step.inputSummary)
+              ) && (
+                <p className="field-note">Original retrieval summaries are retained in Chinese.</p>
+              )}
+            <ol>
+              {run.trace.map((step, index) => (
+                <TraceStep
+                  key={step.id}
+                  step={step}
+                  index={index}
+                  onPage={(source) => {
+                    if (
+                      source.page != null &&
+                      source.sha256 &&
+                      source.sha256 === run.preview?.material.sha256
+                    )
+                      openPage(source.page);
+                    else
+                      setSource({
+                        title: source.title,
+                        page: source.page ?? null,
+                        quote: '',
+                        url: source.url,
+                        sha256: source.sha256,
+                      });
+                  }}
+                />
+              ))}
+            </ol>
+            {run.trace.length === 0 && (
+              <p className="section-intro">
+                {t('尚无工具执行记录。', 'No tool execution has been recorded yet.')}
+              </p>
+            )}
+          </details>
+          {run.announcements.length > 0 && (
+            <details className="company-announcements company-record-details">
+              <summary>{t('公告与来源', 'Announcements and sources')}</summary>
+              <div className="report-section-title">
+                <h2>{t('已检索公告', 'Retrieved announcements')}</h2>
+                <Tag>{run.announcements.length}</Tag>
+              </div>
+              <ul>
+                {run.announcements
+                  .filter((item) => item.category === 'annual')
+                  .map((announcement) => (
+                    <AnnouncementRow key={announcement.id} announcement={announcement} />
+                  ))}
+              </ul>
+              {run.announcements.some((item) => item.category === 'recent') && (
+                <details className="company-recent-announcements">
+                  <summary>
+                    {t('近期公告线索', 'Recent disclosure leads')} ·{' '}
+                    {run.announcements.filter((item) => item.category === 'recent').length}
+                  </summary>
+                  <p className="field-note">
+                    {t(
+                      '此处提供标题和原件链接，尚未逐份阅读；公告本身不等于风险事件。',
+                      'Titles and original links are listed here; each document has not been read. A disclosure is not automatically a risk event.'
+                    )}
+                  </p>
+                  <ul>
+                    {run.announcements
+                      .filter((item) => item.category === 'recent')
+                      .map((announcement) => (
+                        <AnnouncementRow key={announcement.id} announcement={announcement} />
+                      ))}
+                  </ul>
+                </details>
+              )}
+            </details>
+          )}
           <div className="company-model-status">
-            <span>{t('公开材料智能辅助', 'Public-document model assistance')}</span>
+            <span>{t('公开材料模型辅助', 'Public-document model assistance')}</span>
             <Tag>
               {activeRun(run) && run.model.requested
                 ? t('已授权，等待结果', 'Authorized; awaiting result')
@@ -1001,7 +1294,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   : run.model.status === 'completed'
                     ? t('已调用', 'Called')
                     : run.model.status === 'failed'
-                      ? t('智能辅助未完成', 'Assistance incomplete')
+                      ? t('模型辅助未完成', 'Model assistance incomplete')
                       : run.model.status === 'not-configured'
                         ? t('未配置', 'Not configured')
                         : t('未授权调用', 'Not requested')}
@@ -1015,22 +1308,23 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
           </div>
         </>
       )}
-      {!run && !selected && !searching && !loadingRun && (
-        <section className="company-import-fallback">
-          <h2>{t('使用自己的材料', 'Use your own documents')}</h2>
-          <p>
-            {t(
-              '非上市公司或公开资料不足时，可导入财报与补充材料，确认口径后核查。',
-              'For unlisted companies or insufficient public data, import financial statements and supplementary documents, confirm their scope, then review.'
-            )}
-          </p>
-          <button className="button button-secondary" onClick={importOwn}>
-            {t('导入材料核查', 'Review imported evidence')}
+      {!run && !selected && !searching && !loadingRun && !historyLoading && (
+        <p className="company-import-link">
+          {t('没有公开资料？', 'No public disclosure?')}{' '}
+          <button className="text-link" onClick={importOwn}>
+            {t('上传自己的材料', 'Upload your own evidence')}
+            <ArrowUpRight size={14} />
           </button>
-        </section>
+        </p>
+      )}
+      {historyLoading && !history.length && (
+        <p className="company-import-link" role="status">
+          {t('正在读取已保存的核查…', 'Loading saved research…')}
+        </p>
       )}
       {(history.length > 0 || historyError) && (
-        <section className="company-history">
+        <details className="company-history company-record-details">
+          <summary>{t('查询记录', 'Search history')}</summary>
           <div className="report-section-title">
             <h2>{t('查询历史', 'Retrieval history')}</h2>
             <button className="text-link" type="button" onClick={loadHistory}>
@@ -1072,7 +1366,104 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               </li>
             ))}
           </ul>
-        </section>
+        </details>
+      )}
+      {source && (
+        <Dialog
+          title={t('材料原文', 'Source text')}
+          onClose={() => setSource(null)}
+          variant="drawer"
+          className="company-source-drawer"
+        >
+          <div className="company-source-content">
+            <h3>{source.title}</h3>
+            {source.page != null && <Tag>PDF {source.page}</Tag>}
+            {locale === 'en' && /[\u4e00-\u9fff]/.test(source.quote) && (
+              <p className="field-note">Original source text in Chinese.</p>
+            )}
+            {source.observations?.length ? (
+              <div className="company-source-fields">
+                {source.observations.map((obs) => (
+                  <div key={obs.id}>
+                    <strong>
+                      {metricName(obs.key, locale)} · {obs.year}
+                    </strong>
+                    <span className="mono">
+                      {obs.value}{' '}
+                      {obs.unit === 'yuan'
+                        ? t('元', 'yuan')
+                        : obs.unit === 'wan'
+                          ? t('万元', '10,000 yuan')
+                          : t('亿元', '100m yuan')}{' '}
+                      · {obs.currency}
+                    </span>
+                    <small>
+                      {obs.scope === 'consolidated'
+                        ? t('合并', 'Consolidated')
+                        : obs.scope === 'parent'
+                          ? t('母公司', 'Parent company')
+                          : t('范围待确认', 'Scope unconfirmed')}{' '}
+                      ·{' '}
+                      {obs.period === 'annual'
+                        ? t('全年', 'Annual')
+                        : obs.period === 'interim'
+                          ? t('半年', 'Interim')
+                          : obs.period === 'quarterly'
+                            ? t('季度', 'Quarterly')
+                            : t('期间待确认', 'Period unconfirmed')}
+                    </small>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {source.quote && <blockquote>{source.quote}</blockquote>}
+            <p className="field-note">
+              {t(
+                '定位文本与字段核对不代表材料真实性已经独立验证。',
+                'Text location and field checks do not independently authenticate a document.'
+              )}
+            </p>
+            <div className="inline-actions">
+              {source.sha256 && source.sha256 === run?.preview?.material.sha256 && (
+                <a
+                  className="button button-secondary"
+                  href={`${fileUrl}${source.page != null ? `#page=${source.page}` : ''}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t('打开保留原件', 'Open retained original')}
+                  <ArrowUpRight size={14} />
+                </a>
+              )}
+              {source.url && safeUrl(source.url) && (
+                <a
+                  className="text-link"
+                  href={safeUrl(source.url)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {t('公开来源', 'Public source')}
+                  <ArrowUpRight size={14} />
+                </a>
+              )}
+            </div>
+            {source.page != null && source.sha256 === run?.preview?.material.sha256 && (
+              <details className="company-inline-pdf">
+                <summary>{t('在此查看 PDF 页', 'View PDF page here')}</summary>
+                <iframe
+                  src={`${fileUrl}#page=${source.page}`}
+                  title={`${source.title} · PDF ${source.page}`}
+                />
+              </details>
+            )}
+            {source.sha256 && (
+              <details className="company-file-metadata">
+                <summary>{t('文件标识', 'File identity')}</summary>
+                <code>{source.sha256}</code>
+              </details>
+            )}
+          </div>
+        </Dialog>
       )}
     </div>
   );
@@ -1082,12 +1473,10 @@ function TraceStep({
   step,
   index,
   onPage,
-  canPreview,
 }: {
   step: CompanyAgentTrace;
   index: number;
-  canPreview: boolean;
-  onPage: (page: number | null) => void;
+  onPage: (source: CompanyAgentTrace['sources'][number]) => void;
 }) {
   const { t, locale } = useApp();
   return (
@@ -1155,12 +1544,8 @@ function TraceStep({
                     {source.title}
                     <ArrowUpRight size={12} />
                   </a>
-                  {source.page != null && canPreview && (
-                    <button
-                      className="text-link"
-                      type="button"
-                      onClick={() => onPage(source.page!)}
-                    >
+                  {source.page != null && (
+                    <button className="text-link" type="button" onClick={() => onPage(source)}>
                       PDF {source.page}
                       <FileText size={12} />
                     </button>

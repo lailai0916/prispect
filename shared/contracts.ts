@@ -1,3 +1,5 @@
+import type { CompanyGraphProgress, CompanyBranchId } from './company-contracts.js';
+
 export type MetricKey =
   | 'netProfit'
   | 'operatingCashFlow'
@@ -268,6 +270,7 @@ export interface CompanyAnnouncement {
   reportYear?: number;
 }
 export interface CompanyAgentTrace {
+  branchId?: CompanyBranchId;
   id: string;
   tool: string;
   label: string;
@@ -294,6 +297,7 @@ export interface CompanyRunInput {
   useModel?: boolean;
 }
 export interface CompanyResearchRun {
+  agent?: CompanyGraphProgress;
   id: string;
   input: CompanyRunInput;
   identity?: CompanyIdentity;

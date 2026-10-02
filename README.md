@@ -13,15 +13,15 @@
 
 ## Website Introduction
 
-CashLens (照见) reviews the evidence for a specific company payment: an external prepayment or a new payment after taking over operations. Sourced annual profit and operating cash identify questions to investigate; private transaction records and dated cash plans support separate, conditional calculations. Historical financial signals never fill current cash or future receipts.
+CashLens (照见) starts from a company or a matter to investigate. Its public-evidence Agent checks annual profit, operating cash, relevant notes and recent disclosures, then identifies supported observations and unresolved questions. An external user can continue into a prepayment review; an incoming operator can examine a dated cash plan. Private records support their own conditional calculations. Historical financial signals never fill current cash or future receipts.
 
 Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction. The core analytical question is deliberately narrow. Historical cash ratios are not company ratings, credit decisions, or investment advice. Customer demand and willingness to pay remain research assumptions.
 
 ## Website Features
 
-🔐 **Personal Accounts** — Real registration, login, profile and password changes, expiring sessions, logout, and isolated materials, reviews and exports.
+🔐 **Personal Accounts** — Better Auth registration, avatar and profile settings, password-strength checks, TOTP, one-use recovery codes, passkeys and session management. Materials, reviews and exports are scoped to their owner. Mail verification and recovery require SMTP; absent providers return unavailable.
 
-🗂️ **Public Evidence Agent** — Select an A-share company, retrieve its official annual report, retain the PDF and real tool history, and review extracted candidates before adoption. Optional constrained model planning selects evidence pages; deterministic checks keep missing inputs and source conflicts visible.
+🗂️ **Public Evidence Agent** — A LangGraph workflow checks official A-share annual reports, relevant notes and selected recent announcement originals in parallel. Constrained model actions select public candidate IDs for bounded follow-up; rules extract amounts and preserve conflicts. Failed or cancelled research can resume within 24 hours, with cumulative request budgets. Reviewed candidates become personal materials only after adoption.
 
 🧮 **Reproducible Financial Analysis** — JSON, CSV and text-PDF preview; editable confirmation; period, currency and scope checks; exact integer-fen computation; persisted reports and questions.
 
@@ -43,7 +43,7 @@ npm run build
 npm start
 ```
 
-Open `http://127.0.0.1:4317`, register your own account with a password of at least 10 characters, and start a review. On macOS, `start.command` performs the installation if needed, builds and starts the application. For development use `npm run dev` and open `http://127.0.0.1:4318`.
+Open `http://localhost:4317`, register with a hard-to-guess password of 12–128 characters, and enter a company or a matter to review. New accounts start with an empty workspace. On macOS, `start.command` performs the installation if needed, builds and starts the application. For development use `npm run dev` and open `http://localhost:4318`. Set `APP_ORIGIN` to the actual browser origin when using passkeys on a different port; production requires HTTPS and a persistent `BETTER_AUTH_SECRET`.
 
 ```bash
 npm run check
@@ -53,11 +53,11 @@ npm run data:samples
 
 `check` runs strict types, financial/account/API tests, the client build and formatting checks. `data:fetch` downloads only manifest-listed public reports and verifies SHA256; the original PDFs are excluded from Git. `data:samples` prepares structured import examples. Scanned PDFs and ambiguous table values require confirmation rather than invented extraction.
 
-The default mode uses real deterministic processing and requires no model API. Company research and report explanation each require their own explicit model choice. Optional model configuration belongs only in the server `.env`, using `.env.example`. No model credentials are included. Models receive only the permitted evidence for that operation, never private notes or manual cash plans; citation-ID and numeric validation do not prove semantic correctness. Public retrieval covers the configured A-share disclosure source, without a licensed commercial company-data integration.
+Financial reports use rules by default and require no model API. Public company research initially enables the configured model with an on-screen data disclosure and a rules-only option; report explanation has a separate choice. Model configuration belongs only in the server `.env`, using `.env.example`. Models receive permitted public evidence, never private descriptions, notes or cash plans. Private CSV/JSON cash plans are parsed locally and adopted as draft conditions, not authenticated records. Citation-ID and numeric validation do not prove semantic correctness. Retrieval covers the configured A-share disclosure source, without a licensed commercial company-data integration.
 
-Accounts, sessions and each user's working papers persist in `CASHLENS_DATA_DIR` (default `.cashlens`). Keep the entire directory and read [deployment and backup notes](docs/deployment.md) before deploying or restoring it. The public product is available at [xuejun.cc](https://xuejun.cc), with HTTPS, persistent accounts and working papers. Release checks and verification boundaries are recorded in [the acceptance report](docs/acceptance.md). This is a single-process early product, without email verification, password-reset mail, multi-node availability or measured production capacity.
+Accounts, sessions and each user's working papers persist in `CASHLENS_DATA_DIR` (default `.cashlens`). Preserve the entire directory and authentication secret; read [deployment and backup notes](docs/deployment.md) before deployment or recovery. The public product is available at [xuejun.cc](https://xuejun.cc). Release checks and verification boundaries are recorded in [the acceptance report](docs/acceptance.md). This is a single-process product without measured production capacity or multi-node availability. SMTP and SMS delivery remain unconfigured; the interface reports that state without issuing fake codes.
 
-Main-branch CI gates deployment through a restricted SSH entry, with artifact/source integrity checks, a consistent state backup, asset verification and automatic rollback. See [automatic deployment](docs/actions-deployment.md).
+Main-branch CI gates deployment through a restricted SSH entry, with artifact/source integrity checks, a consistent state backup and asset verification. Rollback is allowed only when the previous release can read the current authentication schema. See [automatic deployment](docs/actions-deployment.md).
 
 See [the plan](docs/plan.md), [method and source research](docs/research.md), [API contract](docs/api.md), [AI-use disclosure](docs/ai-usage.md) and [competition submission requirements](docs/submission-checklist.md). Private-repository badges may be unavailable.
 

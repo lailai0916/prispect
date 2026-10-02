@@ -1,306 +1,370 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import {
   ArrowRight,
-  ArrowUpRight,
-  Check,
-  CircleAlert,
-  Layers,
+  KeyRound,
   LoaderCircle,
+  Eye,
+  EyeOff,
   ShieldCheck,
-  SlidersHorizontal,
-  UserRound,
-  LogOut,
-  LockKeyhole,
+  ArrowLeft,
 } from 'lucide-react';
-import type { AuthSession } from '../../shared/contracts';
-import { api, post } from '../api';
-import { date } from '../format';
-
+import type { LoginResult } from '../../shared/account-contracts';
+import { post } from '../api';
 import { useApp } from '../context';
-import { PageHeading } from '../components';
+import { identityClient, identityResult } from '../auth-client';
+import '../account.css';
+export { AccountPage } from './Account';
 
+export function PasswordMeter({ value, context = [] }: { value: string; context?: string[] }) {
+  const { t } = useApp();
+  const [score, setScore] = useState<number | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+  const contextKey = JSON.stringify(context);
+  useEffect(() => {
+    let active = true;
+    setScore(null);
+    setUnavailable(false);
+    if (value)
+      void import('../../shared/password-strength')
+        .then(({ passwordStrength }) => {
+          if (active) setScore(passwordStrength(value, JSON.parse(contextKey) as string[]));
+        })
+        .catch(() => {
+          if (active) setUnavailable(true);
+        });
+    return () => {
+      active = false;
+    };
+  }, [value, contextKey]);
+  const labels = [
+    t('容易猜测', 'Easy to guess'),
+    t('较弱', 'Weak'),
+    t('尚可', 'Fair'),
+    t('较强', 'Strong'),
+    t('很强', 'Very strong'),
+  ];
+  return (
+    <div className="account-password-meter" aria-live="polite">
+      <div className="account-meter-bars" aria-hidden="true">
+        {[0, 1, 2, 3].map((index) => (
+          <i
+            key={index}
+            data-active={score !== null && index < score}
+            data-score={score ?? undefined}
+          />
+        ))}
+      </div>
+      <span>
+        {value
+          ? score === null
+            ? unavailable
+              ? t('强度检查未载入，请重试。', 'The strength check did not load. Retry.')
+              : t('正在载入本地密码强度检查…', 'Loading the local strength check…')
+            : labels[score]
+          : t(
+              '至少12字符，避免常见词和个人信息。',
+              'Use 12+ characters; avoid common phrases and personal details.'
+            )}
+      </span>
+    </div>
+  );
+}
 export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string }) {
-  const { t, user, execute, navigate, busy } = useApp();
-  const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmation, setConfirmation] = useState('');
-  const [validation, setValidation] = useState('');
-  const isRegister = mode === 'register';
+  const { t, user, execute, navigate, busy, refresh } = useApp();
+  const [email, setEmail] = useState(''),
+    [name, setName] = useState(''),
+    [password, setPassword] = useState(''),
+    [confirmation, setConfirmation] = useState('');
+  const [visible, setVisible] = useState(false),
+    [challenge, setChallenge] = useState(false),
+    [backup, setBackup] = useState(false),
+    [code, setCode] = useState(''),
+    [validation, setValidation] = useState(''),
+    [forgot, setForgot] = useState(false);
+  const register = mode === 'register';
   const destination =
-    next.startsWith('/') &&
-    !next.startsWith('//') &&
-    !next.startsWith('/login') &&
-    !next.startsWith('/register')
+    next.startsWith('/') && !next.startsWith('//') && !/^\/(login|register)/.test(next)
       ? next
       : '/workspace';
   useEffect(() => {
     if (user) navigate(destination);
   }, [user, navigate, destination]);
   useEffect(() => {
-    setValidation('');
     setPassword('');
     setConfirmation('');
+    setChallenge(false);
+    setCode('');
+    setValidation('');
+    setForgot(false);
   }, [mode]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setValidation('');
-    if (isRegister && password !== confirmation) {
+    if (register && password !== confirmation) {
       setValidation(t('两次输入的密码不一致。', 'The passwords do not match.'));
       return;
     }
-    const result = await execute(() =>
-      post<AuthSession>(
-        `/auth/${mode}`,
-        isRegister ? { email, password, name: name.trim() } : { email, password }
-      )
-    );
-    if (result?.user) navigate(destination);
-  };
-  return (
-    <section className="auth-layout">
-      <div className="auth-form-panel">
-        <h1>{isRegister ? t('创建账号', 'Create account') : t('登录', 'Log in')}</h1>
-        <form onSubmit={submit}>
-          {isRegister && (
-            <label className="form-field">
-              <span>{t('姓名 / 昵称', 'Name')}</span>
-              <input
-                name="name"
-                autoComplete="name"
-                required
-                maxLength={80}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder={t('姓名或昵称', 'Name or nickname')}
-              />
-            </label>
-          )}
-          <label className="form-field">
-            <span>{t('邮箱', 'Email')}</span>
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-              maxLength={254}
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-            />
-          </label>
-          <label className="form-field">
-            <span>{t('密码', 'Password')}</span>
-            <input
-              type="password"
-              name="password"
-              autoComplete={isRegister ? 'new-password' : 'current-password'}
-              required
-              minLength={10}
-              maxLength={128}
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-            />
-            {isRegister && <small>{t('至少 10 个字符。', 'At least 10 characters.')}</small>}
-          </label>
-          {isRegister && (
-            <label className="form-field">
-              <span>{t('确认密码', 'Confirm password')}</span>
-              <input
-                type="password"
-                name="confirmPassword"
-                autoComplete="new-password"
-                required
-                minLength={10}
-                maxLength={128}
-                value={confirmation}
-                onChange={(event) => setConfirmation(event.target.value)}
-              />
-            </label>
-          )}
-          {validation && (
-            <p className="inline-error" role="alert">
-              <CircleAlert size={16} />
-              {validation}
-            </p>
-          )}
-          <button
-            className="button button-primary button-large auth-submit"
-            type="submit"
-            disabled={busy}
-          >
-            {busy ? <LoaderCircle size={18} className="spinner" /> : <ArrowRight size={18} />}{' '}
-            {isRegister ? t('创建账号', 'Create account') : t('登录', 'Log in')}
-          </button>
-        </form>
-        <p className="auth-switch">
-          {isRegister
-            ? t('已经有账号？', 'Already have an account?')
-            : t('第一次使用照见？', 'New to CashLens?')}{' '}
-          <a
-            href={`#/${isRegister ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
-          >
-            {isRegister ? t('登录', 'Log in') : t('创建账号', 'Create an account')}
-          </a>
-        </p>
-        <div className="auth-footnote">
-          <LockKeyhole size={15} />
-          <span>
-            {t(
-              '邮箱用于登录；目前不支持邮件找回。',
-              'Email is used to log in. Email recovery is not available.'
-            )}
-            {isRegister && (
-              <a className="privacy-link" href="#/method?section=privacy">
-                {t('数据与隐私', 'Data and privacy')}
-                <ArrowUpRight size={12} />
-              </a>
-            )}
-          </span>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function AccountPage() {
-  const { t, locale, user, execute, busy, navigate } = useApp();
-  const [name, setName] = useState(user!.name);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmation, setConfirmation] = useState('');
-  const [validation, setValidation] = useState('');
-  const saveProfile = async (event: FormEvent) => {
-    event.preventDefault();
-    await execute(
-      () =>
-        api<AuthSession>('/auth/profile', {
-          method: 'PATCH',
-          body: JSON.stringify({ name: name.trim() }),
-        }),
-      t('账号资料已保存', 'Profile saved')
-    );
-  };
-  const savePassword = async (event: FormEvent) => {
-    event.preventDefault();
-    setValidation('');
-    if (newPassword !== confirmation) {
-      setValidation(t('两次输入的新密码不一致。', 'The new passwords do not match.'));
+    let passwordIsWeak = register && password.length < 12;
+    if (register && !passwordIsWeak) {
+      try {
+        passwordIsWeak =
+          (await import('../../shared/password-strength')).passwordStrength(password, [
+            email,
+            name,
+          ]) < 3;
+      } catch {
+        setValidation(
+          t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
+        );
+        return;
+      }
+    }
+    if (passwordIsWeak) {
+      setValidation(
+        t(
+          '请使用至少12字符且不易猜测的密码。',
+          'Choose a hard-to-guess password with at least 12 characters.'
+        )
+      );
       return;
     }
-    const result = await execute(
-      () => post('/auth/password', { currentPassword, newPassword }),
-      t('密码已更新', 'Password updated')
+    const result = await execute(() =>
+      post<LoginResult>(
+        `/auth/${mode}`,
+        register ? { email, password, name: name.trim() } : { email, password }
+      )
     );
-    if (result) {
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmation('');
-    }
+    if (result?.twoFactorRequired) {
+      setPassword('');
+      setChallenge(true);
+      setCode('');
+    } else if (result?.user) navigate(destination);
   };
-  const logout = async () => {
-    const result = await execute(() => post('/auth/logout', {}));
-    if (result) navigate('/');
+  const verify = async (event: FormEvent) => {
+    event.preventDefault();
+    const result = await execute(async () => {
+      const response = backup
+        ? await identityClient.twoFactor.verifyBackupCode({ code, trustDevice: false })
+        : await identityClient.twoFactor.verifyTotp({ code, trustDevice: false });
+      identityResult(response);
+      await refresh();
+      return true;
+    });
+    if (result) navigate(destination);
+  };
+  const passkeyLogin = async () => {
+    const result = await execute(async () => {
+      identityResult(await identityClient.signIn.passkey());
+      await refresh();
+      return true;
+    });
+    if (result) navigate(destination);
   };
   return (
-    <>
-      <PageHeading
-        eyebrow="YOUR ACCOUNT"
-        title={t('账号', 'Account')}
-        action={
-          <button className="button button-secondary" onClick={logout} disabled={busy}>
-            <LogOut size={16} />
-            {t('退出登录', 'Log out')}
-          </button>
-        }
-      />
-      <div className="account-layout">
-        <aside className="account-summary">
-          <h2>{user!.name}</h2>
-          <p>{user!.email}</p>
-          <span>
-            {t('注册时间', 'Registered')} {date(user!.createdAt, locale)}
-          </span>
-        </aside>
-        <div className="account-forms">
-          <form onSubmit={saveProfile} className="form-section">
-            <div className="form-section-heading">
-              <UserRound size={20} />
-              <h2>{t('账号资料', 'Profile')}</h2>
-            </div>
-            <label className="form-field">
-              <span>{t('姓名 / 昵称', 'Name')}</span>
-              <input
-                required
-                maxLength={80}
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                autoComplete="name"
-              />
-            </label>
-            <label className="form-field">
-              <span>{t('邮箱（不可修改）', 'Email (cannot be changed)')}</span>
-              <input value={user!.email} disabled />
-            </label>
-            <button className="button button-primary" disabled={busy} type="submit">
-              <Check size={16} />
-              {t('保存资料', 'Save profile')}
-            </button>
-          </form>
-          <form onSubmit={savePassword} className="form-section">
-            <div className="form-section-heading">
-              <LockKeyhole size={20} />
-              <h2>{t('修改密码', 'Change password')}</h2>
-            </div>
-            <label className="form-field">
-              <span>{t('当前密码', 'Current password')}</span>
-              <input
-                type="password"
-                required
-                autoComplete="current-password"
-                value={currentPassword}
-                onChange={(event) => setCurrentPassword(event.target.value)}
-              />
-            </label>
-            <div className="form-grid">
-              <label className="form-field">
-                <span>{t('新密码', 'New password')}</span>
-                <input
-                  type="password"
-                  required
-                  minLength={10}
-                  maxLength={128}
-                  autoComplete="new-password"
-                  value={newPassword}
-                  onChange={(event) => setNewPassword(event.target.value)}
-                />
-              </label>
-              <label className="form-field">
-                <span>{t('确认新密码', 'Confirm new password')}</span>
-                <input
-                  type="password"
-                  required
-                  minLength={10}
-                  maxLength={128}
-                  autoComplete="new-password"
-                  value={confirmation}
-                  onChange={(event) => setConfirmation(event.target.value)}
-                />
-              </label>
-            </div>
-            <p className="field-note">{t('至少 10 个字符。', 'At least 10 characters.')}</p>
-            {validation && (
-              <p className="inline-error" role="alert">
-                {validation}
-              </p>
-            )}
-            <button className="button button-primary" disabled={busy} type="submit">
-              <Check size={16} />
-              {t('更新密码', 'Update password')}
-            </button>
-          </form>
+    <section className="account-auth-shell">
+      <div className="account-auth-card">
+        <a className="account-back-link" href="#/">
+          <ArrowLeft size={16} />
+          {t('回到首页', 'Back home')}
+        </a>
+        <div className="account-auth-symbol" aria-hidden="true">
+          {challenge ? <ShieldCheck /> : <KeyRound />}
         </div>
+        <h1>
+          {challenge
+            ? t('完成两步验证', 'Two-step verification')
+            : forgot
+              ? t('找回密码', 'Reset your password')
+              : register
+                ? t('创建你的账号', 'Create your account')
+                : t('欢迎回来', 'Welcome back')}
+        </h1>
+        <p className="account-muted">
+          {challenge
+            ? t(
+                '输入验证器中的6位验证码，或使用一次性恢复码。',
+                'Enter a 6-digit authenticator code or a one-time recovery code.'
+              )
+            : t(
+                '你的材料与决定保存在独立的私人工作区。',
+                'Your materials and decisions stay in your private workspace.'
+              )}
+        </p>
+        {challenge ? (
+          <form onSubmit={verify} className="account-form">
+            <label>
+              {backup ? t('恢复码', 'Recovery code') : t('验证码', 'Authenticator code')}
+              <input
+                name="code"
+                autoFocus
+                autoComplete={backup ? 'off' : 'one-time-code'}
+                inputMode={backup ? 'text' : 'numeric'}
+                pattern={backup ? undefined : '[0-9]{6}'}
+                maxLength={backup ? 30 : 6}
+                required
+                value={code}
+                onChange={(event) => setCode(event.target.value.trim())}
+              />
+            </label>
+            <button className="account-action" disabled={busy}>
+              {busy ? <LoaderCircle className="spinner" size={17} /> : <ArrowRight size={17} />}{' '}
+              {t('验证并登录', 'Verify and log in')}
+            </button>
+            <button
+              className="account-link-button"
+              type="button"
+              onClick={() => {
+                setBackup(!backup);
+                setCode('');
+              }}
+            >
+              {backup
+                ? t('使用验证器验证码', 'Use authenticator code')
+                : t('改用一次性恢复码', 'Use a recovery code')}
+            </button>
+            <button
+              className="account-link-button"
+              type="button"
+              onClick={() => {
+                setChallenge(false);
+                setCode('');
+              }}
+            >
+              {t('返回登录', 'Back to login')}
+            </button>
+          </form>
+        ) : forgot ? (
+          <div className="account-form">
+            <div className="account-notice">
+              <ShieldCheck size={18} />
+              <p>
+                {t(
+                  '邮件找回尚未开放。邮件服务未配置，因此不会发送重置链接。若忘记密码，请保留已登录设备；恢复码用于两步验证，不能重置密码。',
+                  'Email recovery is unavailable because email delivery is not configured. Keep a signed-in device if you forgot your password. Recovery codes replace a second factor; they do not reset your password.'
+                )}
+              </p>
+            </div>
+            <button className="account-secondary" onClick={() => setForgot(false)}>
+              {t('返回登录', 'Back to login')}
+            </button>
+          </div>
+        ) : (
+          <>
+            <form onSubmit={submit} className="account-form">
+              {register && (
+                <label>
+                  {t('姓名 / 昵称', 'Name')}
+                  <input
+                    name="name"
+                    autoComplete="name"
+                    maxLength={80}
+                    required
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder={t('希望如何称呼你', 'Your preferred name')}
+                  />
+                </label>
+              )}
+              <label>
+                {t('邮箱', 'Email')}
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  maxLength={254}
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                />
+              </label>
+              <label>
+                {t('密码', 'Password')}
+                <span className="account-password-input">
+                  <input
+                    type={visible ? 'text' : 'password'}
+                    name="password"
+                    autoComplete={register ? 'new-password' : 'current-password'}
+                    minLength={register ? 12 : 1}
+                    maxLength={128}
+                    required
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setVisible(!visible)}
+                    aria-label={
+                      visible ? t('隐藏密码', 'Hide password') : t('显示密码', 'Show password')
+                    }
+                  >
+                    {visible ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </span>
+                {register && <PasswordMeter value={password} context={[email, name]} />}
+              </label>
+              {register && (
+                <label>
+                  {t('确认密码', 'Confirm password')}
+                  <input
+                    type="password"
+                    name="confirmation"
+                    autoComplete="new-password"
+                    required
+                    minLength={12}
+                    maxLength={128}
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                  />
+                </label>
+              )}
+              {validation && (
+                <p className="account-error" role="alert">
+                  {validation}
+                </p>
+              )}
+              <button className="account-action" type="submit" disabled={busy}>
+                {busy ? <LoaderCircle size={18} className="spinner" /> : <ArrowRight size={18} />}{' '}
+                {register ? t('创建账号', 'Create account') : t('登录', 'Log in')}
+              </button>
+            </form>
+            {!register && (
+              <>
+                <div className="account-divider">
+                  <span>{t('或者', 'or')}</span>
+                </div>
+                <button
+                  className="account-secondary account-full"
+                  onClick={passkeyLogin}
+                  disabled={busy || !window.PublicKeyCredential}
+                >
+                  <KeyRound size={17} />
+                  {t('使用通行密钥', 'Use a passkey')}
+                </button>
+                <button
+                  className="account-link-button account-full"
+                  onClick={() => setForgot(true)}
+                >
+                  {t('忘记密码？', 'Forgot password?')}
+                </button>
+              </>
+            )}
+            <p className="account-auth-switch">
+              {register
+                ? t('已有账号？', 'Already have an account?')
+                : t('第一次使用照见？', 'New to CashLens?')}{' '}
+              <a
+                href={`#/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
+              >
+                {register ? t('登录', 'Log in') : t('创建账号', 'Create account')}
+              </a>
+            </p>
+            <p className="account-auth-fineprint">
+              <a href="#/method?section=privacy">{t('数据与隐私', 'Data and privacy')}</a>
+            </p>
+          </>
+        )}
       </div>
-    </>
+    </section>
   );
 }

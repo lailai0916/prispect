@@ -56,8 +56,9 @@ async function request(
   for (let attempt = 0; attempt < 2; attempt++) {
     if (dependencies.signal?.aborted)
       throw new ApiFault(504, 'COMPANY_CANCELLED', '公开资料检索已中止');
-    if (++budget.used > budget.maximum)
+    if (budget.used >= budget.maximum)
       throw new ApiFault(429, 'COMPANY_TOOL_BUDGET', '已达到本次公开检索请求预算');
+    budget.used++;
     try {
       const response = await (dependencies.fetch || fetch)(url, {
         ...init,

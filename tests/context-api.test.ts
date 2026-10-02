@@ -118,6 +118,11 @@ test('task purposes, both-context notes and manual cash assumptions persist with
     const alice = await register(service, 'context-alice@example.com');
     const bob = await register(service, 'context-bob@example.com');
     const demos = (await (await service.request('/api/cases')).json()) as DemoCase[];
+    assert.equal(
+      (await service.request(`/api/cases/${demos[0]!.id}/import`, options(alice, {}, 'POST')))
+        .status,
+      201
+    );
     const input = {
       title: '两视角核验',
       company: demos[0]!.company,
@@ -302,6 +307,11 @@ test('legacy saved tasks without purpose or scenario fields load with external d
   try {
     const client = await register(service, 'legacy-context@example.com');
     const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
+    assert.equal(
+      (await service.request(`/api/cases/${cases[0]!.id}/import`, options(client, {}, 'POST')))
+        .status,
+      201
+    );
     const response = await service.request(
       '/api/tasks',
       options(
@@ -351,6 +361,11 @@ test('scenario notes and cash assumptions remain private when an opted-in task r
   try {
     const client = await register(service, 'context-model@example.com');
     const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
+    assert.equal(
+      (await service.request(`/api/cases/${cases[0]!.id}/import`, options(client, {}, 'POST')))
+        .status,
+      201
+    );
     const response = await service.request(
       '/api/tasks',
       options(

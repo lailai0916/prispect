@@ -1,266 +1,635 @@
 import Database from 'better-sqlite3';
-import {
-  randomBytes,
-  randomUUID,
-  createHash,
-  scrypt as scryptCallback,
-  timingSafeEqual,
-} from 'node:crypto';
-import { mkdir, chmod } from 'node:fs/promises';
+import { randomBytes, randomUUID, createHmac, timingSafeEqual } from 'node:crypto';
+import { mkdir, chmod, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { betterAuth, type BetterAuthOptions } from 'better-auth';
+import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
+import { fromNodeHeaders } from 'better-auth/node';
+import { twoFactor, phoneNumber } from 'better-auth/plugins';
+import { passkey } from '@better-auth/passkey';
 import type { AccountUser, AuthSession } from '../shared/contracts.js';
+import type { AccountProfile, LoginResult } from '../shared/account-contracts.js';
+import { validNewPassword } from '../shared/password-strength.js';
 import { ApiFault } from './validation.js';
+import { migrateAccounts, hashPassword, verifyAccountPassword } from './auth-migration.js';
+import { emailProviderFromEnv, smsProvider } from './auth-providers.js';
 
-const hash = (value: string) => createHash('sha256').update(value).digest('hex');
-const csrfFor = (token: string) => hash(`cashlens-csrf-v1:${token}`);
-const password = z.string().min(10, '密码至少 10 个字符').max(128, '密码最多 128 个字符');
 const email = z
   .string()
   .trim()
-  .email('请输入有效邮箱')
+  .email()
   .max(254)
   .transform((value) => value.toLowerCase());
-export const registerSchema = z.object({ email, password, name: z.string().trim().min(1).max(80) });
+export const registerSchema = z
+  .object({ email, password: z.string().min(12).max(128), name: z.string().trim().min(1).max(80) })
+  .strict();
 export const loginSchema = z.object({ email, password: z.string().min(1).max(128) });
-export const profileSchema = z.object({ name: z.string().trim().min(1).max(80) });
-export const passwordSchema = z.object({
-  currentPassword: z.string().min(1).max(128),
-  newPassword: password,
-});
-interface UserRow {
-  id: string;
-  email: string;
-  name: string;
-  created_at: string;
-  salt: string;
-  password_hash: string;
-}
-interface SessionRow {
-  user_id: string;
-  expires_at: number;
-}
+export const profileSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80),
+    bio: z.string().trim().max(500).optional(),
+    company: z.string().trim().max(120).optional(),
+    timezone: z
+      .string()
+      .max(80)
+      .refine((value) => {
+        try {
+          new Intl.DateTimeFormat('en', { timeZone: value });
+          return true;
+        } catch {
+          return false;
+        }
+      })
+      .optional(),
+  })
+  .strict();
+export const passwordSchema = z
+  .object({ currentPassword: z.string().min(1).max(128), newPassword: z.string().min(12).max(128) })
+  .strict();
 export interface AuthContext {
   user: AccountUser;
   token: string;
+  sessionId: string;
 }
-function account(row: UserRow): AccountUser {
-  return { id: row.id, email: row.email, name: row.name, createdAt: row.created_at };
-}
-function readCookie(req: Request) {
-  const raw = req.headers.cookie || '';
-  for (const pair of raw.split(';')) {
-    const [name, ...values] = pair.trim().split('=');
-    if (name === 'cashlens_session') {
-      const value = values.join('=');
-      return /^[A-Za-z0-9_-]{43}$/.test(value) ? value : null;
-    }
-  }
-  return null;
-}
-async function derive(value: string, salt: string): Promise<Buffer> {
-  return new Promise((resolve, reject) => {
-    scryptCallback(
-      value,
-      salt,
-      64,
-      { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 },
-      (error, derived) => {
-        if (error) reject(error);
-        else resolve(derived);
-      }
-    );
-  });
-}
+const sensitivePaths = new Set([
+  '/change-password',
+  '/set-password',
+  '/two-factor/enable',
+  '/two-factor/disable',
+  '/two-factor/get-totp-uri',
+  '/two-factor/generate-backup-codes',
+  '/passkey/generate-register-options',
+  '/passkey/verify-registration',
+  '/passkey/delete-passkey',
+  '/passkey/update-passkey',
+  '/change-email',
+  '/revoke-sessions',
+]);
 
+async function authSecret(dataDir: string, secure: boolean) {
+  const configured = process.env.BETTER_AUTH_SECRET;
+  if (configured) {
+    if (configured.length < 32) throw new Error('BETTER_AUTH_SECRET 至少32字符');
+    return configured;
+  }
+  if (secure) throw new Error('生产模式必须设置 BETTER_AUTH_SECRET 并安全备份');
+  const file = path.join(dataDir, 'auth-secret');
+  try {
+    await writeFile(file, randomBytes(48).toString('base64url'), { flag: 'wx', mode: 0o600 });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+  }
+  const secret = (await readFile(file, 'utf8')).trim();
+  if (secret.length < 32) throw new Error('本机认证密钥损坏，未启动服务');
+  await chmod(file, 0o600);
+  return secret;
+}
 export class AuthStore {
-  private db: Database.Database;
-  private secure: boolean;
-  private limits = new Map<string, { count: number; until: number }>();
-  private dummySalt = randomBytes(16).toString('hex');
-  constructor(filename: string, secure: boolean) {
+  readonly db: Database.Database;
+  identity!: ReturnType<typeof betterAuth<ReturnType<AuthStore['options']>>>;
+  private trustedOrigins: string[];
+  readonly mail = emailProviderFromEnv();
+  readonly sms = smsProvider;
+  readonly origin: string;
+  private constructor(
+    filename: string,
+    private secret: string,
+    private secure: boolean
+  ) {
+    this.origin = process.env.APP_ORIGIN || 'http://localhost:4318';
+    if (secure && new URL(this.origin).protocol !== 'https:')
+      throw new Error('生产认证必须使用HTTPS APP_ORIGIN');
+    this.trustedOrigins = secure
+      ? [new URL(this.origin).origin]
+      : [
+          ...new Set([
+            new URL(this.origin).origin,
+            'http://127.0.0.1:4317',
+            'http://127.0.0.1:4318',
+            'http://localhost:4317',
+            'http://localhost:4318',
+          ]),
+        ];
     this.db = new Database(filename);
-    this.secure = secure;
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('foreign_keys = ON');
-    this.db.exec(
-      'CREATE TABLE IF NOT EXISTS users (id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, salt TEXT NOT NULL, password_hash TEXT NOT NULL, created_at TEXT NOT NULL); CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, expires_at INTEGER NOT NULL); CREATE INDEX IF NOT EXISTS sessions_by_user ON sessions(user_id);'
-    );
-    this.db.prepare('DELETE FROM sessions WHERE expires_at <= ?').run(Date.now());
+  }
+  private options() {
+    const { trustedOrigins, secure, secret } = this;
+    return {
+      appName: '照见 CashLens',
+      baseURL: this.origin,
+      basePath: '/api/identity',
+      secret,
+      database: this.db,
+      trustedOrigins,
+      logger: { disabled: true },
+      telemetry: { enabled: false },
+      emailAndPassword: {
+        enabled: true,
+        minPasswordLength: 12,
+        maxPasswordLength: 128,
+        password: { hash: hashPassword, verify: verifyAccountPassword },
+        sendResetPassword: async ({ user, url }) => {
+          await this.mail.send(
+            user.email,
+            '照见：重置密码',
+            `请在有效期内打开链接重置密码：\n${url}`
+          );
+        },
+        revokeSessionsOnPasswordReset: true,
+      },
+      emailVerification: {
+        sendVerificationEmail: async ({ user, url }) => {
+          await this.mail.send(
+            user.email,
+            '照见：验证邮箱',
+            `请在有效期内打开链接验证邮箱：\n${url}`
+          );
+        },
+        sendOnSignUp: false,
+        sendOnSignIn: false,
+      },
+      user: {
+        changeEmail: { enabled: true },
+        additionalFields: {
+          bio: { type: 'string', required: false, defaultValue: '', input: false },
+          company: { type: 'string', required: false, defaultValue: '', input: false },
+          timezone: {
+            type: 'string',
+            required: false,
+            defaultValue: 'Asia/Shanghai',
+            input: false,
+          },
+        },
+      },
+      session: { expiresIn: 86400, updateAge: 3600, freshAge: 0, cookieCache: { enabled: false } },
+      advanced: {
+        useSecureCookies: secure,
+        cookiePrefix: 'cashlens-auth',
+        defaultCookieAttributes: { sameSite: 'strict', httpOnly: true, secure, path: '/' },
+        database: { generateId: () => randomUUID() },
+        trustedProxyHeaders: false,
+        ipAddress: { ipAddressHeaders: ['x-cashlens-client-ip'] },
+      },
+      rateLimit: {
+        enabled: true,
+        storage: 'database',
+        window: 60,
+        max: 100,
+        customRules: {
+          '/sign-in/email': { window: 60, max: 10 },
+          '/sign-up/email': { window: 3600, max: 5 },
+          '/two-factor/*': { window: 60, max: 10 },
+          '/passkey/*': { window: 60, max: 20 },
+        },
+      },
+      plugins: [
+        twoFactor({
+          issuer: '照见 CashLens',
+          twoFactorCookieMaxAge: 300,
+          backupCodeOptions: { storeBackupCodes: 'encrypted' },
+        }),
+        phoneNumber({
+          sendOTP: async ({ phoneNumber: phone, code }) => this.sms.send(phone, code),
+        }),
+        passkey({
+          rpID: new URL(this.origin).hostname,
+          rpName: '照见 CashLens',
+          origin: trustedOrigins,
+          authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
+          registration: {
+            requireSession: true,
+            afterVerification: async ({ verification }) => {
+              if (!verification.registrationInfo?.userVerified)
+                throw new APIError('BAD_REQUEST', {
+                  code: 'PASSKEY_UV_REQUIRED',
+                  message: '通行密钥必须完成设备用户验证',
+                });
+            },
+          },
+        }),
+      ],
+      disabledPaths: [
+        '/delete-user',
+        '/delete-user/callback',
+        '/link-social',
+        '/sign-in/social',
+        '/sign-in/phone-number',
+        '/unlink-account',
+      ],
+      hooks: {
+        before: createAuthMiddleware(async (ctx) => {
+          if (ctx.path === '/sign-up/email') {
+            const parsed = registerSchema.safeParse(ctx.body);
+            if (
+              !parsed.success ||
+              !validNewPassword(parsed.data.password, [parsed.data.email, parsed.data.name])
+            )
+              throw new APIError('BAD_REQUEST', {
+                code: 'WEAK_PASSWORD',
+                message: '使用至少12字符且不易猜测的密码',
+              });
+            // Registration may never carry arbitrary avatar URLs or verified claims.
+            return { context: { body: parsed.data } };
+          }
+          if (
+            ctx.path === '/change-password' ||
+            ctx.path === '/reset-password' ||
+            ctx.path === '/set-password'
+          ) {
+            if (!validNewPassword(ctx.body?.newPassword || ctx.body?.password))
+              throw new APIError('BAD_REQUEST', {
+                code: 'WEAK_PASSWORD',
+                message: '使用至少12字符且不易猜测的密码',
+              });
+            if (ctx.path === '/change-password') ctx.body.revokeOtherSessions = true;
+          }
+          if (
+            [
+              '/send-verification-email',
+              '/change-email',
+              '/request-password-reset',
+              '/reset-password',
+              '/verify-email',
+            ].includes(ctx.path) &&
+            !this.mail.configured
+          )
+            throw new APIError('SERVICE_UNAVAILABLE', {
+              code: 'EMAIL_UNAVAILABLE',
+              message: '邮件服务尚未配置，未发送邮件',
+            });
+          if (ctx.path.startsWith('/phone-number/') && !this.sms.configured)
+            throw new APIError('SERVICE_UNAVAILABLE', {
+              code: 'SMS_UNAVAILABLE',
+              message: '短信服务尚未配置，未发送验证码',
+            });
+          if (ctx.body?.trustDevice)
+            throw new APIError('BAD_REQUEST', {
+              code: 'TRUST_DEVICE_DISABLED',
+              message: '本服务每次密码登录均需两步验证',
+            });
+          if (ctx.path === '/update-user')
+            throw new APIError('FORBIDDEN', {
+              code: 'PROFILE_ENDPOINT_REQUIRED',
+              message: '请使用账号资料接口',
+            });
+          if (ctx.path === '/sign-in/email' && typeof ctx.body?.email === 'string') {
+            try {
+              this.rateLimit(`login-email:${ctx.body.email.trim().toLowerCase()}`, 10, 900000);
+            } catch {
+              throw new APIError('TOO_MANY_REQUESTS', {
+                code: 'RATE_LIMITED',
+                message: '尝试过于频繁，请稍后重试',
+              });
+            }
+          }
+          if (ctx.path === '/passkey/verify-authentication') {
+            const data = ctx.body?.response?.response?.authenticatorData;
+            const bytes = typeof data === 'string' ? Buffer.from(data, 'base64url') : null;
+            if (!bytes || bytes.length < 37 || !(bytes[32]! & 4))
+              throw new APIError('BAD_REQUEST', {
+                code: 'PASSKEY_UV_REQUIRED',
+                message: '通行密钥必须完成设备用户验证',
+              });
+          }
+          if (sensitivePaths.has(ctx.path)) {
+            const session = await getSessionFromCtx(ctx);
+            if (!session)
+              throw new APIError('UNAUTHORIZED', { code: 'AUTH_REQUIRED', message: '请先登录' });
+            if (!this.freshUntil(session.session.id, session.user.id))
+              throw new APIError('FORBIDDEN', {
+                code: 'FRESH_AUTH_REQUIRED',
+                message: '请先重新验证密码及已启用的两步验证码',
+              });
+          }
+        }),
+        after: createAuthMiddleware(async (ctx) => {
+          if (
+            ctx.path === '/passkey/generate-authenticate-options' &&
+            ctx.context.returned &&
+            typeof ctx.context.returned === 'object'
+          )
+            return ctx.json({ ...ctx.context.returned, userVerification: 'required' });
+          const session = ctx.context.newSession;
+          if (
+            session &&
+            [
+              '/sign-up/email',
+              '/sign-in/email',
+              '/two-factor/verify-totp',
+              '/two-factor/verify-backup-code',
+              '/passkey/verify-authentication',
+            ].includes(ctx.path)
+          ) {
+            this.markFresh(session.session.id, session.user.id);
+          }
+          const enabledNow =
+            ctx.path === '/two-factor/verify-totp' &&
+            ctx.context.session?.user.id &&
+            !ctx.context.session.user.twoFactorEnabled;
+          if ((enabledNow || ctx.path === '/two-factor/disable') && session) {
+            // A newly enabled/changed factor invalidates older password-only sessions.
+            this.db
+              .prepare('DELETE FROM session WHERE userId = ? AND id != ?')
+              .run(session.user.id, session.session.id);
+            this.db
+              .prepare('DELETE FROM cashlens_stepups WHERE userId = ? AND sessionId != ?')
+              .run(session.user.id, session.session.id);
+          }
+        }),
+      },
+    } satisfies BetterAuthOptions;
   }
   static async open(dataDir: string, secure: boolean) {
     await mkdir(dataDir, { recursive: true, mode: 0o700 });
-    const filename = path.join(dataDir, 'accounts.sqlite');
-    const store = new AuthStore(filename, secure);
-    await chmod(filename, 0o600);
-    return store;
+    const store = new AuthStore(
+      path.join(dataDir, 'accounts.sqlite'),
+      await authSecret(dataDir, secure),
+      secure
+    );
+    try {
+      await migrateAccounts(store.db, store.options());
+      store.identity = betterAuth(store.options());
+      const context = await store.identity.$context;
+      await context.checkSchema?.();
+      await chmod(path.join(dataDir, 'accounts.sqlite'), 0o600);
+      return store;
+    } catch (error) {
+      store.db.close();
+      throw error;
+    }
   }
   close() {
     this.db.close();
   }
   rateLimit(key: string, count: number, duration: number) {
     const now = Date.now();
-    let record = this.limits.get(key);
-    if (!record || record.until < now) {
-      record = { count: 0, until: now + duration };
-      this.limits.set(key, record);
-    }
-    record.count++;
-    if (record.count > count) throw new ApiFault(429, 'RATE_LIMITED', '尝试过于频繁，请稍后重试');
-    if (this.limits.size > 10000)
-      for (const [entry, item] of this.limits) if (item.until < now) this.limits.delete(entry);
+    const allowed = this.db.transaction(() => {
+      const row = this.db
+        .prepare('SELECT count,until FROM cashlens_auth_limits WHERE key = ?')
+        .get(key) as { count: number; until: number } | undefined;
+      const current =
+        !row || row.until <= now
+          ? { count: 1, until: now + duration }
+          : { ...row, count: row.count + 1 };
+      this.db
+        .prepare(
+          'INSERT INTO cashlens_auth_limits (key,count,until) VALUES (?,?,?) ON CONFLICT(key) DO UPDATE SET count=excluded.count,until=excluded.until'
+        )
+        .run(key, current.count, current.until);
+      this.db.prepare('DELETE FROM cashlens_auth_limits WHERE until <= ?').run(now);
+      return current.count <= count;
+    })();
+    if (!allowed) throw new ApiFault(429, 'RATE_LIMITED', '尝试过于频繁，请稍后重试');
   }
-  session(req: Request): AuthContext | null {
-    const token = readCookie(req);
-    if (!token) return null;
-    const session = this.db
-      .prepare('SELECT user_id,expires_at FROM sessions WHERE token_hash = ?')
-      .get(hash(token)) as SessionRow | undefined;
-    if (!session) return null;
-    if (session.expires_at <= Date.now()) {
-      this.db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hash(token));
-      return null;
-    }
-    const row = this.db.prepare('SELECT * FROM users WHERE id = ?').get(session.user_id) as
-      | UserRow
-      | undefined;
-    return row ? { user: account(row), token } : null;
+  private csrfFor(id: string, userId: string) {
+    return createHmac('sha256', this.secret)
+      .update(`cashlens-csrf-v2:${id}:${userId}`)
+      .digest('hex');
   }
-  require(req: Request): AuthContext {
-    const context = this.session(req);
+  async session(req: Request): Promise<AuthContext | null> {
+    const result = await this.identity.api.getSession({ headers: fromNodeHeaders(req.headers) });
+    return result
+      ? {
+          user: {
+            id: result.user.id,
+            email: result.user.email,
+            name: result.user.name,
+            createdAt: new Date(
+              result.user.createdAt instanceof Date
+                ? result.user.createdAt.getTime()
+                : (result.user.createdAt as string | number)
+            ).toISOString(),
+          },
+          token: result.session.token,
+          sessionId: result.session.id,
+        }
+      : null;
+  }
+  async require(req: Request) {
+    const context = await this.session(req);
     if (!context) throw new ApiFault(401, 'AUTH_REQUIRED', '请先登录以打开个人工作区');
     return context;
   }
   verifyCsrf(req: Request, context: AuthContext) {
-    const received = req.get('X-CSRF-Token');
-    const expected = csrfFor(context.token);
+    const got = req.get('X-CSRF-Token'),
+      expected = this.csrfFor(context.sessionId, context.user.id);
     if (
-      !received ||
-      received.length !== expected.length ||
-      !timingSafeEqual(Buffer.from(received), Buffer.from(expected))
+      !got ||
+      got.length !== expected.length ||
+      !timingSafeEqual(Buffer.from(got), Buffer.from(expected))
     )
       throw new ApiFault(403, 'CSRF_INVALID', '请求安全令牌无效，请刷新页面后重试');
   }
   response(context: AuthContext | null): AuthSession {
     return context
-      ? { user: context.user, csrfToken: csrfFor(context.token) }
+      ? { user: context.user, csrfToken: this.csrfFor(context.sessionId, context.user.id) }
       : { user: null, csrfToken: null };
   }
-  private issue(user: AccountUser, res: Response): AuthContext {
-    const token = randomBytes(32).toString('base64url');
-    this.db
-      .prepare('INSERT INTO sessions (token_hash,user_id,expires_at) VALUES (?,?,?)')
-      .run(hash(token), user.id, Date.now() + 24 * 60 * 60 * 1000);
-    res.cookie('cashlens_session', token, {
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: this.secure,
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-    return { user, token };
-  }
-  async register(input: unknown, req: Request, res: Response): Promise<AuthSession> {
-    this.rateLimit(`register:${req.ip}`, 5, 60 * 60 * 1000);
-    const parsed = registerSchema.safeParse(input);
-    if (!parsed.success)
-      throw new ApiFault(400, 'INVALID_ACCOUNT', parsed.error.issues[0]?.message || '账号信息无效');
-    if (this.db.prepare('SELECT id FROM users WHERE email = ?').get(parsed.data.email))
-      throw new ApiFault(409, 'EMAIL_EXISTS', '此邮箱已有账号，请登录');
-    const salt = randomBytes(16).toString('hex'),
-      passwordHash = (await derive(parsed.data.password, salt)).toString('hex');
-    const user: AccountUser = {
-      id: randomUUID(),
-      email: parsed.data.email,
-      name: parsed.data.name,
-      createdAt: new Date().toISOString(),
+  profileFor(id: string): AccountProfile {
+    const user = this.db.prepare('SELECT * FROM "user" WHERE id = ?').get(id) as {
+      id: string;
+      email: string;
+      name: string;
+      createdAt: number;
+      image: string | null;
+      emailVerified: number;
+      phoneNumber: string | null;
+      phoneNumberVerified: number;
+      twoFactorEnabled: number;
+      bio: string;
+      company: string;
+      timezone: string;
     };
-    try {
-      this.db
-        .prepare(
-          'INSERT INTO users (id,email,name,salt,password_hash,created_at) VALUES (?,?,?,?,?,?)'
-        )
-        .run(user.id, user.email, user.name, salt, passwordHash, user.createdAt);
-    } catch (error) {
-      if ((error as { code?: string }).code === 'SQLITE_CONSTRAINT_UNIQUE')
-        throw new ApiFault(409, 'EMAIL_EXISTS', '此邮箱已有账号，请登录');
-      throw error;
-    }
-    const previous = this.session(req);
-    if (previous)
-      this.db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hash(previous.token));
-    return this.response(this.issue(user, res));
+    if (!user) throw new ApiFault(401, 'AUTH_REQUIRED', '请先登录');
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      createdAt: new Date(user.createdAt).toISOString(),
+      image: user.image || null,
+      emailVerified: !!user.emailVerified,
+      phoneNumber: user.phoneNumber || null,
+      phoneNumberVerified: !!user.phoneNumberVerified,
+      twoFactorEnabled: !!user.twoFactorEnabled,
+      bio: user.bio || '',
+      company: user.company || '',
+      timezone: user.timezone || 'Asia/Shanghai',
+    };
   }
-  async login(input: unknown, req: Request, res: Response): Promise<AuthSession> {
-    const parsed = loginSchema.safeParse(input);
-    if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '邮箱或密码格式无效');
-    this.rateLimit(`login-ip:${req.ip}`, 30, 15 * 60 * 1000);
-    this.rateLimit(`login-email:${parsed.data.email}`, 10, 15 * 60 * 1000);
-    const row = this.db.prepare('SELECT * FROM users WHERE email = ?').get(parsed.data.email) as
-      | UserRow
-      | undefined;
-    const computed = await derive(parsed.data.password, row?.salt || this.dummySalt);
-    const expected = row ? Buffer.from(row.password_hash, 'hex') : Buffer.alloc(64);
-    if (!timingSafeEqual(computed, expected) || !row)
-      throw new ApiFault(401, 'INVALID_CREDENTIALS', '邮箱或密码不正确');
-    const previous = this.session(req);
-    if (previous)
-      this.db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hash(previous.token));
-    return this.response(this.issue(account(row), res));
+  freshUntil(sessionId: string, userId: string) {
+    const row = this.db
+      .prepare('SELECT expiresAt FROM cashlens_stepups WHERE sessionId = ? AND userId = ?')
+      .get(sessionId, userId) as { expiresAt: number } | undefined;
+    return row && row.expiresAt > Date.now() ? row.expiresAt : null;
   }
-  logout(context: AuthContext, res: Response) {
-    this.db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(hash(context.token));
-    res.clearCookie('cashlens_session', {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'strict',
-      secure: this.secure,
-    });
-  }
-  profile(input: unknown, context: AuthContext): AuthSession {
-    const parsed = profileSchema.safeParse(input);
-    if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '姓名必须为 1–80 字符');
+  markFresh(sessionId: string, userId: string) {
+    const expires = Date.now() + 300000;
     this.db
-      .prepare('UPDATE users SET name = ? WHERE id = ?')
-      .run(parsed.data.name, context.user.id);
-    context.user.name = parsed.data.name;
-    return this.response(context);
+      .prepare(
+        'INSERT INTO cashlens_stepups (sessionId,userId,expiresAt) VALUES (?,?,?) ON CONFLICT(sessionId) DO UPDATE SET expiresAt=excluded.expiresAt'
+      )
+      .run(sessionId, userId, expires);
+    return expires;
   }
-  async changePassword(
-    input: unknown,
-    context: AuthContext,
-    req: Request,
-    res: Response
-  ): Promise<AuthSession> {
-    this.rateLimit(`password:${context.user.id}`, 10, 15 * 60 * 1000);
-    const parsed = passwordSchema.safeParse(input);
-    if (!parsed.success)
-      throw new ApiFault(400, 'INVALID_ACCOUNT', parsed.error.issues[0]?.message || '密码信息无效');
-    const row = this.db.prepare('SELECT * FROM users WHERE id = ?').get(context.user.id) as UserRow;
-    const computed = await derive(parsed.data.currentPassword, row.salt);
-    if (!timingSafeEqual(computed, Buffer.from(row.password_hash, 'hex')))
-      throw new ApiFault(401, 'INVALID_CREDENTIALS', '当前密码不正确');
-    const salt = randomBytes(16).toString('hex'),
-      passwordHash = (await derive(parsed.data.newPassword, salt)).toString('hex');
-    this.db.transaction(() => {
-      this.db
-        .prepare('UPDATE users SET salt = ?, password_hash = ? WHERE id = ?')
-        .run(salt, passwordHash, context.user.id);
-      this.db.prepare('DELETE FROM sessions WHERE user_id = ?').run(context.user.id);
-    })();
-    return this.response(this.issue(context.user, res));
+  requireFresh(context: AuthContext) {
+    if (!this.freshUntil(context.sessionId, context.user.id))
+      throw new ApiFault(403, 'FRESH_AUTH_REQUIRED', '请先重新验证密码及已启用的两步验证码');
   }
-}
-export function authentication(auth: AuthStore) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const context = auth.require(req);
-      if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) auth.verifyCsrf(req, context);
-      res.locals.auth = context;
-      next();
-    } catch (error) {
-      next(error);
+  async reauthenticate(input: unknown, context: AuthContext, req: Request, res: Response) {
+    this.rateLimit(`reauth:${context.user.id}`, 5, 300000);
+    const parsed = z
+      .object({
+        password: z.string().min(1).max(128),
+        code: z
+          .string()
+          .regex(/^\d{6}$/)
+          .optional(),
+      })
+      .strict()
+      .safeParse(input);
+    if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '重新验证信息无效');
+    const credential = this.db
+      .prepare("SELECT password FROM account WHERE userId = ? AND providerId = 'credential'")
+      .get(context.user.id) as { password: string } | undefined;
+    if (
+      !credential ||
+      !(await verifyAccountPassword({ hash: credential.password, password: parsed.data.password }))
+    )
+      throw new ApiFault(401, 'INVALID_CREDENTIALS', '密码或验证码不正确');
+    if (this.profileFor(context.user.id).twoFactorEnabled) {
+      if (!parsed.data.code) throw new ApiFault(400, 'TOTP_REQUIRED', '请输入两步验证码');
+      const result = await this.identity.api.verifyTOTP({
+        headers: fromNodeHeaders(req.headers),
+        body: { code: parsed.data.code, trustDevice: false },
+        asResponse: true,
+      });
+      await this.accept(result, req, res);
     }
-  };
+    return {
+      freshAuthUntil: new Date(this.markFresh(context.sessionId, context.user.id)).toISOString(),
+    };
+  }
+  private async accept(response: globalThis.Response, req: Request, res: Response) {
+    const cookies = response.headers.getSetCookie();
+    if (cookies.length) res.setHeader('Set-Cookie', cookies);
+    const body = (await response.json()) as Record<string, unknown>;
+    if (!response.ok) {
+      const code = String(body.code || 'AUTH_FAILED');
+      const mapped = code.includes('USER_ALREADY_EXISTS')
+        ? 'EMAIL_EXISTS'
+        : ['INVALID_PASSWORD', 'INVALID_EMAIL_OR_PASSWORD', 'INVALID_CODE'].includes(code)
+          ? 'INVALID_CREDENTIALS'
+          : code;
+      throw new ApiFault(response.status, mapped, String(body.message || '认证请求未完成'));
+    }
+    if (cookies.length) {
+      const jar = new Map(
+        (req.headers.cookie || '')
+          .split(';')
+          .filter(Boolean)
+          .map((part) => {
+            const [name, ...value] = part.trim().split('=');
+            return [name!, value.join('=')];
+          })
+      );
+      for (const cookie of cookies) {
+        const [first] = cookie.split(';');
+        const [name, ...value] = first!.split('=');
+        if (value.join('=')) jar.set(name!, value.join('='));
+        else jar.delete(name!);
+      }
+      req.headers.cookie = [...jar].map(([name, value]) => `${name}=${value}`).join('; ');
+    }
+    return body;
+  }
+  async register(input: unknown, req: Request, res: Response) {
+    this.rateLimit(`register:${req.ip}`, 5, 3600000);
+    const parsed = registerSchema.safeParse(input);
+    if (
+      !parsed.success ||
+      !validNewPassword(parsed.data.password, [parsed.data.email, parsed.data.name])
+    )
+      throw new ApiFault(400, 'WEAK_PASSWORD', '使用12–128字符且不易猜测的密码');
+    const result = await this.identity.api.signUpEmail({
+      body: parsed.data,
+      headers: fromNodeHeaders(req.headers),
+      asResponse: true,
+    });
+    await this.accept(result, req, res);
+    return this.response(await this.session(req));
+  }
+  async login(input: unknown, req: Request, res: Response): Promise<LoginResult> {
+    this.rateLimit(`login:${req.ip}`, 30, 900000);
+    const parsed = loginSchema.safeParse(input);
+    if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '请输入有效邮箱和密码');
+    const result = await this.identity.api.signInEmail({
+      body: parsed.data,
+      headers: fromNodeHeaders(req.headers),
+      asResponse: true,
+    });
+    const body = await this.accept(result, req, res);
+    if (body.twoFactorRedirect)
+      return { ...this.response(null), twoFactorRequired: true, methods: ['totp', 'backup-code'] };
+    return this.response(await this.session(req));
+  }
+  async logout(_context: AuthContext, req: Request, res: Response) {
+    await this.accept(
+      await this.identity.api.signOut({ headers: fromNodeHeaders(req.headers), asResponse: true }),
+      req,
+      res
+    );
+  }
+  profile(input: unknown, context: AuthContext) {
+    const parsed = profileSchema.safeParse(input);
+    if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '资料字段无效');
+    const old = this.profileFor(context.user.id),
+      next = { ...old, ...parsed.data };
+    this.db
+      .prepare('UPDATE "user" SET name=?,bio=?,company=?,timezone=?,updatedAt=? WHERE id=?')
+      .run(
+        next.name,
+        next.bio,
+        next.company,
+        next.timezone,
+        new Date().toISOString(),
+        context.user.id
+      );
+    return this.response({ ...context, user: { ...context.user, name: next.name } });
+  }
+  async changePassword(input: unknown, context: AuthContext, req: Request, res: Response) {
+    this.requireFresh(context);
+    const parsed = passwordSchema.safeParse(input);
+    if (
+      !parsed.success ||
+      !validNewPassword(parsed.data.newPassword, [context.user.name, context.user.email])
+    )
+      throw new ApiFault(400, 'WEAK_PASSWORD', '使用12–128字符且不易猜测的密码');
+    await this.accept(
+      await this.identity.api.changePassword({
+        headers: fromNodeHeaders(req.headers),
+        body: { ...parsed.data, revokeOtherSessions: true },
+        asResponse: true,
+      }),
+      req,
+      res
+    );
+    const next = await this.session(req);
+    if (next) this.markFresh(next.sessionId, next.user.id);
+    return this.response(next);
+  }
 }
+export const authentication =
+  (auth: AuthStore) => (req: Request, res: Response, next: NextFunction) => {
+    void auth
+      .require(req)
+      .then((context) => {
+        if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) auth.verifyCsrf(req, context);
+        res.locals.auth = context;
+        next();
+      })
+      .catch(next);
+  };

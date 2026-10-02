@@ -1,0 +1,262 @@
+.financial-create-page {
+  max-width: 1120px;
+  margin-inline: auto;
+}
+.financial-create-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 28px;
+  align-items: start;
+}
+.financial-source-step,
+.financial-create-form {
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.financial-source-step .form-section-heading,
+.financial-create-form .form-section-heading {
+  margin-bottom: 24px;
+}
+.financial-source-step .form-section-heading h2,
+.financial-create-form .form-section-heading h2 {
+  flex: 1;
+  font-size: 15px;
+}
+.financial-source-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.financial-create-page .material-picker {
+  display: grid;
+  gap: 10px;
+}
+.financial-create-page .material-check {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 16px;
+}
+.financial-create-page .material-check.selected {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+.financial-create-page .material-check strong {
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.financial-create-page .material-check small {
+  font-size: 11px;
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.financial-no-source {
+  padding: 44px 12px;
+  text-align: center;
+  color: var(--muted);
+  border-top: 1px solid var(--line-soft);
+}
+.financial-no-source h3 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  color: var(--ink);
+}
+.financial-no-source p {
+  font-size: 12px;
+  line-height: 1.8;
+  max-width: 340px;
+  margin-inline: auto;
+}
+.financial-create-form > .field-note {
+  margin: 16px 0;
+  line-height: 1.7;
+}
+.financial-create-options {
+  border-top: 1px solid var(--line);
+  margin: 22px 0;
+  padding-top: 14px;
+}
+.financial-create-options > summary {
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 0;
+}
+.financial-create-options .form-field,
+.financial-create-options .new-purpose {
+  margin-top: 18px;
+}
+.financial-create-page .form-submit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.report-content [hidden] {
+  display: none !important;
+}
+.report-local-nav {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  margin: 28px 0;
+  overflow-x: auto;
+}
+.report-local-nav > button {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  min-height: 44px;
+  padding: 12px 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+}
+.report-local-nav > button[aria-current] {
+  color: var(--ink);
+  font-weight: 550;
+  border-bottom-color: var(--accent);
+}
+.report-content .verdict-section {
+  padding: 24px 28px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.report-content .metric-strip {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.report-content .report-two-column {
+  gap: 24px;
+}
+.report-content .report-primary > .report-section,
+.report-content .report-secondary > section {
+  padding: 24px;
+  margin-top: 0;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+}
+.report-content .findings-list,
+.report-content .questions-list {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--paper);
+}
+.report-content .finding-row,
+.report-content .question-row {
+  padding-inline: 22px;
+}
+.report-content .model-status {
+  flex-wrap: wrap;
+  line-height: 1.8;
+}
+.method-layout {
+  max-width: 1000px;
+  margin-inline: auto;
+  gap: 44px;
+}
+.method-content section {
+  scroll-margin-top: 100px;
+}
+.method-content section > h2 {
+  font-size: 19px;
+  letter-spacing: -0.02em;
+}
+.method-content section > p {
+  font-size: 14px;
+  line-height: 1.85;
+}
+.method-content details {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  margin-top: 18px;
+  background: var(--paper);
+}
+.method-content details > summary {
+  min-height: 24px;
+  font-size: 13px;
+}
+.method-content details p,
+.method-content details li {
+  font-size: 13px;
+  line-height: 1.9;
+}
+.compare-selectors {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+@media (max-width: 980px) {
+  .financial-create-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .financial-source-step,
+  .financial-create-form {
+    padding: 20px 16px;
+  }
+  .financial-create-page input,
+  .financial-create-page select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .financial-create-page input[type='radio'],
+  .financial-create-page input[type='checkbox'] {
+    min-height: 16px;
+  }
+  .financial-create-options > summary {
+    min-height: 44px;
+  }
+  .report-local-nav > button {
+    padding-inline: 12px;
+  }
+  .report-content .verdict-section,
+  .report-content .report-primary > .report-section,
+  .report-content .report-secondary > section {
+    padding: 20px 16px;
+  }
+  .method-layout {
+    gap: 20px;
+  }
+  .method-content details {
+    padding: 14px;
+  }
+  .compare-selectors {
+    padding: 18px;
+  }
+}
+@media print {
+  .report-local-nav {
+    display: none;
+  }
+  .report-content [hidden] {
+    display: block !important;
+  }
+}
+.method-page {
+  max-width: 920px;
+  margin-inline: auto;
+}
+.report-context-details {
+  padding: 16px 0;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.report-context-details > summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 32px;
+}

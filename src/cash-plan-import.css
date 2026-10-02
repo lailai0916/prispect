@@ -1,0 +1,48 @@
+.cash-import-dialog .dialog-body {
+  display: grid;
+  gap: 16px;
+}
+.cash-import-dialog .dialog-body > p {
+  margin: 0;
+}
+.cash-import-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cash-import-actions > span {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.cash-import-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+.cash-import-grid > :first-child {
+  grid-column: 1 / -1;
+}
+.cash-import-grid input[type='file'] {
+  max-width: 100%;
+}
+.cash-import-dialog section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+.cash-import-dialog section > p {
+  margin: 0;
+}
+.cash-import-dialog td {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .cash-import-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cash-import-actions .button {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

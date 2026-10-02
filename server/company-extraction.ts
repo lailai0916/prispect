@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import { PDFParse } from 'pdf-parse';
+import { readPdfIsolated } from './pdf-parser.js';
 import type {
   CompanyAnnouncement,
   CompanyCandidatePreview,
@@ -31,46 +31,33 @@ export async function readCompanyPdf(
 ): Promise<CompanyPdfText> {
   if (!buffer.subarray(0, 5).equals(Buffer.from('%PDF-')))
     throw new ApiFault(400, 'COMPANY_INVALID_PDF', '原件没有PDF标记');
-  const parser = new PDFParse({ data: new Uint8Array(buffer), isEvalSupported: false });
-  const timer = setTimeout(() => {
-    void parser.destroy().catch(() => undefined);
-  }, 40000);
-  const abort = () => {
-    void parser.destroy().catch(() => undefined);
-  };
-  signal?.addEventListener('abort', abort, { once: true });
   try {
-    if (signal?.aborted) throw new ApiFault(504, 'COMPANY_CANCELLED', 'PDF读取已中止');
-    const info = await parser.getInfo();
-    if (info.total > 500)
-      throw new ApiFault(413, 'COMPANY_PAGE_LIMIT', 'PDF超过500页预算，请提供相关财务页');
-    const text = await parser.getText({ cellSeparator: '\t' });
-    if (signal?.aborted) throw new ApiFault(504, 'COMPANY_CANCELLED', 'PDF读取已中止');
-    if (text.text.length > 8_000_000)
-      throw new ApiFault(413, 'COMPANY_TEXT_LIMIT', 'PDF文本超过本次处理预算');
-    if (text.text.trim().length < 40)
-      throw new ApiFault(
-        422,
-        'COMPANY_NO_TEXT',
-        '未取得可用PDF文本，当前未运行OCR；请补充文本财报'
-      );
+    const text = await readPdfIsolated(buffer, signal);
     return {
-      pages: text.pages.map((page) => ({ page: page.num, text: page.text })),
-      total: info.total,
+      pages: text.pages,
+      total: text.total,
       sha256: createHash('sha256').update(buffer).digest('hex'),
     };
   } catch (error) {
-    if (error instanceof ApiFault) throw error;
+    if (error instanceof ApiFault) {
+      const codes: Record<string, string> = {
+        PDF_PARSE_CANCELLED: 'COMPANY_CANCELLED',
+        PDF_PARSE_TIMEOUT: 'COMPANY_PDF_TIMEOUT',
+        PDF_PAGE_LIMIT: 'COMPANY_PAGE_LIMIT',
+        PDF_TEXT_LIMIT: 'COMPANY_TEXT_LIMIT',
+        PDF_NO_TEXT: 'COMPANY_NO_TEXT',
+        PDF_PARSE_BUSY: 'COMPANY_PDF_BUSY',
+      };
+      throw new ApiFault(error.status, codes[error.code] || 'COMPANY_PDF_PARSE', error.message);
+    }
     throw new ApiFault(422, 'COMPANY_PDF_PARSE', 'PDF文本读取未完成，未生成替代金额');
-  } finally {
-    clearTimeout(timer);
-    signal?.removeEventListener('abort', abort);
-    await parser.destroy().catch(() => undefined);
   }
 }
 
 const amounts = /\(?[−－-]?\d[\d,]*(?:\.\d+)?\)?/g;
 const compact = (text: string) => text.replace(/\s/g, '').replace(/[−－]/g, '-');
+const cashHeader =
+  /^(?:[一二三四五六七八九十\d、.．]*合并财务报表(?:项目附注|项目注释|附注)(?:[（(]续[）)])?|(?:[（(][\da-zA-Z]+[）)]|\d+[、.．])?现金流量表(?:项目附注|项目注释|补充资料)(?:[（(]续[）)])?)$/;
 function numeric(raw: string): string {
   raw = raw.replace(/,/g, '').replace(/[−－]/g, '-');
   return raw.startsWith('(') ? `-${raw.slice(1, -1)}` : raw;
@@ -82,13 +69,15 @@ function metricFor(label: string): MetricKey | null {
   )
     return 'netProfit';
   if (/^经营活动产生的现金流量净额/.test(label)) return 'operatingCashFlow';
-  if (/^存货的减少/.test(label)) return 'inventoryAdjustment';
-  if (/^经营性应收项目的减少/.test(label)) return 'receivablesAdjustment';
-  if (/^经营性应付项目的增加/.test(label)) return 'payablesAdjustment';
+  if (/^存货的(?:减少|增加)/.test(label)) return 'inventoryAdjustment';
+  if (/^经营性应收项目的(?:减少|增加)/.test(label)) return 'receivablesAdjustment';
+  if (/^经营性应付项目的(?:增加|减少)/.test(label)) return 'payablesAdjustment';
   return null;
 }
 function findUnit(text: string): 'yuan' | 'qian' | 'wan' | 'yi' | null {
-  const matches = [...text.matchAll(/单位[：:]\s*(?:人民币)?\s*(千元|万元|亿元|元)/g)];
+  const matches = [
+    ...text.matchAll(/(?:金额)?单位(?:[：:]|为)\s*(?:人民币)?\s*(千元|万元|亿元|元)/g),
+  ];
   const unit = matches.at(-1)?.[1];
   return unit
     ? ({ 元: 'yuan', 千元: 'qian', 万元: 'wan', 亿元: 'yi' } as const)[
@@ -133,6 +122,7 @@ function supplementHeader(text: string): string {
   if (
     trailing.some(
       (line) =>
+        !cashHeader.test(line) &&
         !/^(?:项目|附注|行次|补充资料|本期金额|上期金额|本年金额|上年金额|本期发生额|上期发生额|本年发生额|上年发生额|20\d{2}(?:年度|年)?|\d+)*$/.test(
           line
         )
@@ -152,6 +142,86 @@ export function candidateCompanyName(pages: CompanyPdfPage[]): string | null {
     })
   );
   return [...new Set(matches)][0] || null;
+}
+
+/** Issuer codes come only from same-page basic-information labels or explicitly aligned A-share rows. */
+export function issuerCodeEvidence(
+  pages: CompanyPdfPage[],
+  exchange: CompanyIdentity['exchange']
+): { code: string; page: number; quote: string }[] {
+  const evidence: { code: string; page: number; quote: string }[] = [];
+  const exchangeLabel = {
+    sse: '上海证券交易所',
+    szse: '深圳证券交易所',
+    bse: '北京证券交易所',
+    unknown: '',
+  }[exchange];
+  const cells = (line: string) =>
+    line.includes('\t')
+      ? line.split(/\t+/).map(compact)
+      : line
+          .trim()
+          .split(/\s{2,}/)
+          .map(compact);
+  for (const page of pages.slice(0, 15)) {
+    if (!Number.isInteger(page.page) || page.page < 1 || page.page > 15) continue;
+    const lines = page.text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+    for (let index = 0; index < lines.length; index++) {
+      const line = compact(lines[index]!);
+      for (const match of line.matchAll(
+        /(?:股票|证券)(?:代码|代号)[：:]?(?:A股)?[：:]?(\d{6})(?!\d)/g
+      )) {
+        const before = line.slice(Math.max(0, match.index! - 5), match.index);
+        const after = line.slice(match.index! + match[0].length);
+        if (/[HB]股[）)]?$/.test(before) || /^(?:[（(][HB]股[）)]|[HB]股)/.test(after)) continue;
+        evidence.push({ code: match[1]!, page: page.page, quote: lines[index]! });
+      }
+      const header = cells(lines[index]!);
+      const labels = new Set([
+        '股票种类',
+        '股票上市交易所',
+        '股票简称',
+        '股票代码',
+        '变更前股票简称',
+      ]);
+      if (
+        !exchangeLabel ||
+        header.length < 4 ||
+        header.length > 5 ||
+        new Set(header).size !== header.length ||
+        header.some((label) => !labels.has(label))
+      )
+        continue;
+      const type = header.indexOf('股票种类'),
+        market = header.indexOf('股票上市交易所'),
+        code = header.indexOf('股票代码');
+      if (type < 0 || market < 0 || code < 0 || !header.includes('股票简称')) continue;
+      if (
+        !lines
+          .slice(Math.max(0, index - 3), index)
+          .some((value) =>
+            /^(?:[一二三四五六七八九十\d]+[、.．])?(?:公司)?股票简况$/.test(compact(value))
+          )
+      )
+        continue;
+      // Never join pages, infer missing cells, or scan unrelated later rows for a matching number.
+      for (let rowIndex = index + 1; rowIndex < Math.min(lines.length, index + 5); rowIndex++) {
+        const row = cells(lines[rowIndex]!);
+        if (row.length !== header.length) break;
+        if (row[type] !== 'A股' || row[market] !== exchangeLabel || !/^\d{6}$/.test(row[code]!))
+          continue;
+        evidence.push({
+          code: row[code]!,
+          page: page.page,
+          quote: `${lines[index]}\n${lines[rowIndex]}`,
+        });
+      }
+    }
+  }
+  return evidence;
 }
 
 /** Only explicit table boundaries, column headers and source units produce candidates. */
@@ -174,6 +244,14 @@ export function extractFinancialCandidates(
   const coverYear =
     compact(cover).includes(`${year}年年度报告`) && announcement.reportYear === year;
   if (!coverYear) warnings.push('官方标题与原件封面年度尚未同时确认，未采用表格金额。');
+  const issuerPages = pdf.pages.slice(0, 15);
+  const issuerEvidence = issuerCodeEvidence(issuerPages, identity.exchange);
+  const issuerCodes = issuerEvidence.map((item) => item.code);
+  const issuerMatches = issuerCodes.includes(identity.securityCode);
+  if (!issuerMatches)
+    warnings.push(
+      '官方代码与原件基本信息中的证券代码尚未同时匹配，未采用金额；不能凭相似名称换主体。'
+    );
   const reportCurrency =
     /(?:人民币(?:元|千元|万元)|(?:记账本位币|编报货币)[\s\S]{0,40}人民币|以人民币为记账本位币)/.test(
       pdf.pages.map((page) => page.text).join('\n')
@@ -244,7 +322,7 @@ export function extractFinancialCandidates(
       (strategy === 'statements' && current.kind === 'supplement')
     )
       return;
-    if (!coverYear || !current.columns || !current.unit) return;
+    if (!coverYear || !issuerMatches || !current.columns || !current.unit) return;
     const total = current.rows.find((row) => metricFor(row.label) === 'operatingCashFlow');
     for (const row of current.rows) {
       const key = metricFor(row.label);
@@ -313,6 +391,8 @@ export function extractFinancialCandidates(
           text
         )
       ) {
+        if (table?.kind === 'supplement' && scope === 'parent' && /[（(]续[）)]$/.test(text))
+          continue;
         finish();
         scope = 'parent';
       }
@@ -321,6 +401,8 @@ export function extractFinancialCandidates(
           text
         )
       ) {
+        if (table?.kind === 'supplement' && scope === 'consolidated' && /[（(]续[）)]$/.test(text))
+          continue;
         finish();
         scope = 'consolidated';
       }
@@ -354,6 +436,14 @@ export function extractFinancialCandidates(
         continue;
       }
       if (!table) continue;
+      if (
+        text === compact(company) ||
+        text === `${year}年度财务报表附注` ||
+        text === `${year}年度财务报表附注(续)` ||
+        text === `${year}年度财务报表附注（续）` ||
+        cashHeader.test(text)
+      )
+        continue;
       const newUnit = findUnit(line);
       if (newUnit) {
         if (table.rows.length && table.unit && newUnit !== table.unit) {
@@ -365,6 +455,7 @@ export function extractFinancialCandidates(
         }
         table.unit = newUnit;
         if (sourceCurrency(line) !== 'XXX') table.currency = sourceCurrency(line);
+        if (!/\d/.test(line)) continue;
       }
       table.header = `${table.header}\n${line}`.slice(-500);
       const columns = tableColumns(table.header, year);
@@ -376,6 +467,7 @@ export function extractFinancialCandidates(
           );
       }
       if (!table.columns) continue;
+      if (tableColumns(line, year) !== null || /^20\d{2}(?:年度|年)?$/.test(text)) continue;
       if (/^2[.．、]/.test(text) && table.kind === 'supplement') {
         finish();
         continue;
@@ -438,6 +530,23 @@ export function extractFinancialCandidates(
   const report = analyze({ title: '公开财报候选核验', company, year, materialIds: ['candidate'] }, [
     { ...material, id: 'candidate', createdAt: new Date().toISOString() },
   ]);
+  report.checks.push({
+    id: 'source-issuer-code',
+    label: '披露主体代码核对',
+    status: issuerMatches ? 'pass' : 'fail',
+    message: issuerMatches
+      ? '官方公告主体代码与原件基本信息一致；不证明合同相对方相同。'
+      : '原件基本信息未匹配所选主体代码；金额未采用。',
+    sourceRefs: issuerEvidence
+      .filter((item) => item.code === identity.securityCode)
+      .slice(0, 2)
+      .map((item) => ({
+        materialId: 'candidate',
+        page: item.page,
+        quote: item.quote,
+        sourceUrl: announcement.sourceUrl,
+      })),
+  });
   appendSourceRowChecks(material, year, report.checks);
   return {
     material,
