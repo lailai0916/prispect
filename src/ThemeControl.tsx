@@ -56,7 +56,7 @@ export function ThemeControl() {
         aria-label={t(`外观：${labels[preference]}`, `Appearance: ${labels[preference]}`)}
         title={t(`外观：${labels[preference]}`, `Appearance: ${labels[preference]}`)}
       >
-        <Icon size={17} aria-hidden="true" />
+        <Icon size={17} strokeWidth={1.75} aria-hidden="true" />
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner

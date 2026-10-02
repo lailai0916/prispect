@@ -455,6 +455,7 @@ export function App() {
             >
               <button
                 className="language-button"
+                data-locale={locale}
                 onClick={() => setLocale(locale === 'en' ? 'zh-Hans' : 'en')}
                 aria-label={t(
                   '当前语言：中文，切换至 English',
