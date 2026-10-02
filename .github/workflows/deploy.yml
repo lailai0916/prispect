@@ -92,6 +92,12 @@ jobs:
           set -euo pipefail
           rm -rf -- dist
           npm run build
+      - name: Retain assets for recently opened clients
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_SHA: ${{ steps.commit.outputs.sha }}
+        run: node --import tsx scripts/retain-frontend-assets.ts "$RELEASE_SHA"
       - name: Package the checked-out commit
         env:
           RELEASE_SHA: ${{ steps.commit.outputs.sha }}

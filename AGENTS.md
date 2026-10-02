@@ -35,6 +35,8 @@ Broader public research uses `server/company-public-signals.ts`: at most six Eas
 
 The shared finishing layer lives in `src/polish.css` and `src/Experience.tsx`. Command search (`src/CommandMenu.tsx`) filters account-local metadata; typing must not send model queries or expose a previous owner's records. Preserve keyboard focus, truthful loading/download states, paused success notices, dismissible persistent errors and system reduced-motion support. Avoid animated numeric counting on financial amounts.
 
+Page modules use `src/lazy-page.ts` for bounded resource retries, with named-export selectors and same-origin hashed-asset recovery. Runtime errors must not be retried as network failures. Never automatically reload a page and discard drafts; keep manual retry and reload distinct, and isolate assistant failures from the main page. Releases retain the three nearest successfully CI-checked main ancestors' hashed frontend assets using `scripts/retain-frontend-assets.ts`; current HTML and appearance bootstrap must not be replaced by historical files. Keep entry HTML uncached and missing-asset responses uncached. See `docs/actions-deployment.md` for the retention and rollback boundary.
+
 Follow the canonical [repository standards](https://github.com/lailai0916/lailai-template/blob/main/SETUP.md).
 The CI workflow uses the reviewed template revision `aab624269fb9cdf18b9da5d11605eb9b0fc79154`.
 Do not copy the generic standards or checker into this repository.

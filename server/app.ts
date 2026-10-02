@@ -5,7 +5,7 @@ import { APIError } from 'better-auth/api';
 import { installAccountRoutes } from './account-routes.js';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { access, readFile } from 'node:fs/promises';
+import { access, readFile, statfs } from 'node:fs/promises';
 import type { AnalysisTask, CreateTaskInput, Material, Stage } from '../shared/contracts.js';
 import { analyze } from './engine.js';
 import { buildReportEvidenceLab } from '../shared/evidence-lab.js';
@@ -38,6 +38,12 @@ export interface AppOptions {
 export async function createApp(options: AppOptions = {}) {
   const root = options.root || process.cwd();
   const dataDir = options.dataDir || process.env.CASHLENS_DATA_DIR || path.join(root, '.cashlens');
+  const releaseCommit = await readFile(path.join(root, 'RELEASE.json'), 'utf8')
+    .then((text) => {
+      const commit: unknown = JSON.parse(text).commit;
+      return typeof commit === 'string' && /^[0-9a-f]{40}$/.test(commit) ? commit : null;
+    })
+    .catch(() => null);
   const auth = await AuthStore.open(
     dataDir,
     process.env.NODE_ENV === 'production',
@@ -213,9 +219,29 @@ export async function createApp(options: AppOptions = {}) {
         status: 'pending',
       })
     );
-  app.get('/api/health', (_req, res) => {
-    res.json({ ok: true });
-  });
+  app.get(
+    '/api/health',
+    wrap(async (_req, res) => {
+      // Coarse release diagnostics expose no account data, paths or disk sizes.
+      // The fixed publisher still owns the disk check and release acceptance.
+      if (releaseCommit) {
+        res.setHeader('X-Prispect-Release', releaseCommit);
+        const storage = await statfs(dataDir)
+          .then(({ blocks, bfree, bavail }) => {
+            const used = blocks - bfree;
+            const available = used + bavail;
+            return available > 0
+              ? Math.ceil((used / available) * 100) >= 85
+                ? 'pressure'
+                : 'healthy'
+              : 'unknown';
+          })
+          .catch(() => 'unknown');
+        res.setHeader('X-Prispect-Storage', storage);
+      }
+      res.json({ ok: true });
+    })
+  );
   app.get('/api/public/research-capabilities', (_req, res) => {
     res.json({
       modelConfigured: Boolean(model.apiKey),
@@ -751,11 +777,28 @@ export async function createApp(options: AppOptions = {}) {
     next(new ApiFault(404, 'ENDPOINT_NOT_FOUND', '未找到接口'));
   });
   const dist = path.join(root, 'dist');
-  app.use(express.static(dist, { dotfiles: 'deny' }));
-  app.use('/assets', (_req, _res, next) => {
+  app.use(
+    express.static(dist, {
+      dotfiles: 'deny',
+      setHeaders(res, filename) {
+        const relative = path.relative(dist, filename);
+        if (relative === 'index.html' || relative === 'appearance-init.js') {
+          res.setHeader('Cache-Control', 'no-store');
+        } else if (
+          path.dirname(relative) === 'assets' &&
+          /-[A-Za-z0-9_-]{8,}\.[A-Za-z0-9]+$/.test(path.basename(relative))
+        ) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      },
+    })
+  );
+  app.use('/assets', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
     next(new ApiFault(404, 'FRONTEND_ASSET_NOT_FOUND', '未找到请求的前端资源，请刷新页面重试'));
   });
   app.get('/{*path}', (_req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store');
     res.sendFile(path.join(dist, 'index.html'), (error) => {
       if (error)
         next(

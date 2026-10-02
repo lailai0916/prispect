@@ -1,5 +1,5 @@
 import { Select } from '../Select';
-import { useContext, useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { useContext, useEffect, useRef, useState, Suspense } from 'react';
 import {
   ArrowUpRight,
   ChevronDown,
@@ -36,8 +36,10 @@ import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyPublicInformation } from '../CompanyPublicInformation';
 import { PageLoading } from '../Experience';
-const OriginalReview = lazy(() =>
-  import('./CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
+import { lazyPage } from '../lazy-page';
+const OriginalReview = lazyPage(
+  () => import('./CompanyAgent'),
+  (module) => module.CompanyAgentPage
 );
 
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {

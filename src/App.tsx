@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import {
   Activity,
   Building2,
@@ -28,6 +28,8 @@ import { api, setCsrfToken, RequestError, requestErrorText } from './api';
 import { type Locale, setDisplayTimeZone } from './format';
 import { changeComposerOwner } from './start-draft';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
+import { AssistantErrorBoundary } from './AssistantErrorBoundary';
+import { lazyPage, resetFailedLazyPages } from './lazy-page';
 import { ThemeControl } from './ThemeControl';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
 import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
@@ -38,8 +40,9 @@ import { PageLoading, ReadingTop, ToastNotice, usePageEntrance } from './Experie
 import './polish.css';
 import './company-workspace.css';
 import { CompanyAssistantContext, type AssistantCompany } from './company-assistant-context';
-const CompanyAssistant = lazy(() =>
-  import('./CompanyAssistant').then((module) => ({ default: module.CompanyAssistant }))
+const CompanyAssistant = lazyPage(
+  () => import('./CompanyAssistant'),
+  (module) => module.CompanyAssistant
 );
 
 import {
@@ -58,42 +61,57 @@ import {
   NavigationPanel,
   Hint,
 } from './components';
-const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
-const Decisions = lazy(() =>
-  import('./pages/Decisions').then((module) => ({ default: module.Decisions }))
+const Home = lazyPage(
+  () => import('./pages/Home'),
+  (module) => module.Home
 );
-const CompanyWorkspacePage = lazy(() =>
-  import('./pages/CompanyWorkspace').then((module) => ({ default: module.CompanyWorkspacePage }))
+const Decisions = lazyPage(
+  () => import('./pages/Decisions'),
+  (module) => module.Decisions
 );
-const CompanyQueryPage = lazy(() =>
-  import('./pages/CompanyQuery').then((module) => ({ default: module.CompanyQueryPage }))
+const CompanyWorkspacePage = lazyPage(
+  () => import('./pages/CompanyWorkspace'),
+  (module) => module.CompanyWorkspacePage
 );
-const AuthPage = lazy(() =>
-  import('./pages/Auth').then((module) => ({ default: module.AuthPage }))
+const CompanyQueryPage = lazyPage(
+  () => import('./pages/CompanyQuery'),
+  (module) => module.CompanyQueryPage
 );
-const AccountPage = lazy(() =>
-  import('./pages/Auth').then((module) => ({ default: module.AccountPage }))
+const AuthPage = lazyPage(
+  () => import('./pages/Auth'),
+  (module) => module.AuthPage
 );
-const WorkspacePage = lazy(() =>
-  import('./pages/Workspace').then((module) => ({ default: module.WorkspacePage }))
+const AccountPage = lazyPage(
+  () => import('./pages/Auth'),
+  (module) => module.AccountPage
 );
-const NewReview = lazy(() =>
-  import('./pages/NewReview').then((module) => ({ default: module.NewReview }))
+const WorkspacePage = lazyPage(
+  () => import('./pages/Workspace'),
+  (module) => module.WorkspacePage
 );
-const MaterialsPage = lazy(() =>
-  import('./pages/NewReview').then((module) => ({ default: module.MaterialsPage }))
+const NewReview = lazyPage(
+  () => import('./pages/NewReview'),
+  (module) => module.NewReview
 );
-const TaskPage = lazy(() =>
-  import('./pages/Report').then((module) => ({ default: module.TaskPage }))
+const MaterialsPage = lazyPage(
+  () => import('./pages/NewReview'),
+  (module) => module.MaterialsPage
 );
-const ComparePage = lazy(() =>
-  import('./pages/Compare').then((module) => ({ default: module.ComparePage }))
+const TaskPage = lazyPage(
+  () => import('./pages/Report'),
+  (module) => module.TaskPage
 );
-const MethodPage = lazy(() =>
-  import('./pages/Method').then((module) => ({ default: module.MethodPage }))
+const ComparePage = lazyPage(
+  () => import('./pages/Compare'),
+  (module) => module.ComparePage
 );
-const DocumentationPage = lazy(() =>
-  import('./pages/Documentation').then((module) => ({ default: module.DocumentationPage }))
+const MethodPage = lazyPage(
+  () => import('./pages/Method'),
+  (module) => module.MethodPage
+);
+const DocumentationPage = lazyPage(
+  () => import('./pages/Documentation'),
+  (module) => module.DocumentationPage
 );
 const documentPaths = ['/about', '/docs', '/privacy', '/terms', '/copyright'] as const;
 const publicPages = ['/', '/method', '/login', '/register', ...documentPaths];
@@ -219,6 +237,7 @@ export function App() {
   }, [refresh]);
   useEffect(() => {
     const sync = () => {
+      resetFailedLazyPages();
       setRoute(readBrowserRoute());
       setMenuOpen(false);
     };
@@ -617,7 +636,11 @@ export function App() {
             }
             tabIndex={-1}
           >
-            <RouteErrorBoundary resetKey={`${user?.id || 'anonymous'}:${route}`} t={t}>
+            <RouteErrorBoundary
+              resetKey={`${user?.id || 'anonymous'}:${route}`}
+              t={t}
+              onRetry={resetFailedLazyPages}
+            >
               <Suspense fallback={<PageLoading label={t('正在打开页面…', 'Opening page…')} />}>
                 {documentPage ? (
                   <DocumentationPage
@@ -706,9 +729,15 @@ export function App() {
             </footer>
           )}
           {sessionAvailable && (
-            <Suspense fallback={null}>
-              <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
-            </Suspense>
+            <AssistantErrorBoundary
+              resetKey={user?.id || 'anonymous'}
+              t={t}
+              onRetry={resetFailedLazyPages}
+            >
+              <Suspense fallback={null}>
+                <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
+              </Suspense>
+            </AssistantErrorBoundary>
           )}
           {(documentationRoute || page === '/company' || page.startsWith('/tasks/')) && (
             <ReadingTop route={route} />

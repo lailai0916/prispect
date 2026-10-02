@@ -8,6 +8,16 @@ Deploy 监听名为 CI 的 workflow_run completed，只接受同仓库 main 的 
 
 工作流只有 contents: read 和 actions: read 权限，后者用于查询 CI 记录。部署采用单组 concurrency，cancel-in-progress 为 false；服务器还有独立 flock，不允许并行切换。checkout 选择经过 CI 的完整 head SHA，使用现 CI 的官方 actions/checkout@v7 和 actions/setup-node@v4，不使用第三方 SSH action。[GitHub workflow_run 规则](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_run)，[官方工作流运行 API](https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-workflow)
 
+### 已打开浏览器的前端资源
+
+`scripts/retain-frontend-assets.ts` 在 fresh build 后、打包前保留当前提交 first-parent 历史中最近三个通过同仓库 main push CI 的祖先构建资源。脚本再次核对当前完整 SHA 等于 HEAD 和 origin/main，并从官方 Actions API 验证当前提交及每个被选祖先的精确 SHA；成功 CI 不代表该祖先曾成功部署。历史源码以 git archive 解包到独立临时目录，仅在 package-lock.json 字节一致时复用 runner 的 node_modules，否则独立执行 npm ci。它不在服务器上执行，也不更改预装 root helper。
+
+历史构建只合入 dist/assets 中的普通、带 hash 文件，包含旧 lazy 页面及其依赖的 JS/CSS；当前 index.html、appearance-init.js 和公开静态文件保持原样。相同文件名必须具有相同字节，查询、构建、路径或冲突检查失败均中止发布，不能静默省略。保留窗口为本次构建加最多三个通过 CI 的祖先；每次重新构建，不累计无限历史，起始历史不足三项时保留全部符合条件的祖先。
+
+这样已经打开的浏览器在正向更新后仍能读取窗口内的 lazy 页面。窗口外的旧客户端需要重新加载；回滚到早先封存的目录也可能缺少后来才生成的资源，因为此步骤不改写旧 release。页面的资源加载恢复流程仍需处理这两种情况。真实构建、旧客户端导航与回滚的验收应分别记录，不能用 CI 单元测试替代浏览器或发布验证。
+
+发行包中的 `/api/health` 继续返回 `{ "ok": true }`，同时用 `X-Prispect-Release` 标识发行提交，用 `X-Prispect-Storage` 表示状态文件系统是否达到 85% 的部署检查阈值（healthy / pressure / unknown）。这些只读诊断不包含账号、路径或磁盘大小，也不取代预装 publisher 的健康与资源校验。未打包的本地运行不提供这两个发行头。
+
 ## GitHub 配置
 
 在本私有仓库配置以下值：
@@ -66,7 +76,7 @@ cashlens-deploy ALL=(root) NOPASSWD: /usr/local/sbin/cashlens-ci-deploy *
 
 ## 打包、安装和切换
 
-1. Runner 对精确提交执行 npm ci、重新构建 dist。package-release.sh 要求 HEAD 等于请求 SHA，拒绝已修改的跟踪文件，以 git archive 取得精确源码，再加入本次 dist 和 RELEASE.json。临时归档剔除非运行 .claude 配置，拒绝运行路径链接；不修改原仓库配置。
+1. Runner 对精确提交执行 npm ci、重新构建 dist，再按上面的窗口保留通过 CI 的祖先 hash 资源。package-release.sh 要求 HEAD 等于请求 SHA，拒绝已修改的跟踪文件，以 git archive 取得精确源码，再加入本次 dist 和 RELEASE.json。临时归档剔除非运行 .claude 配置，拒绝运行路径链接；不修改原仓库配置。
 2. 包不含 Git、node_modules、环境秘密、工作区、持久状态或 data/raw。归档时间、所有者和模式标准化，生成 tar.gz 及独立 SHA-256，SSH stdin 传输。协议仅为 deploy SHA HASH。
 3. publisher 持有部署锁，在接收前调用预装清理 helper 处理历史 job 与旧 release，并保护本轮目标和原 current。接收上限 100 MiB、120 秒，核对 SHA-256。归档最多 30000 成员、展开内容 256 MiB；拒绝绝对路径、路径穿越、重复路径、控制字符、链接、设备、FIFO及排除路径。手工解包，不采纳归档 owner 或 setuid 权限，核对 RELEASE.json 和必需运行文件。
 4. 安装前将原始文件类型、SHA-256 和执行位保存到 root-only manifest。npm ci --omit=dev 在独立 transient systemd unit 以 cashlens-deploy 运行；NoNewPrivileges 阻止 sudo，ProtectSystem=strict，仅本次安装目录及 npm-home 可写，KillMode=control-group、RuntimeMaxSec 限制安装。

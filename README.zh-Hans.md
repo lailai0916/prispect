@@ -77,7 +77,7 @@ npm run data:samples
 
 账号、会话与各用户底稿保存在 `CASHLENS_DATA_DIR`（默认 `.cashlens`）。保留完整目录和认证密钥，部署或恢复前阅读[部署与备份说明](docs/deployment.md)。公网域名为 [prispect.com](https://prispect.com)，域名迁移与新域验收独立于历史发布记录；发布验证和适用范围见[验收记录](docs/acceptance.md)。当前为单进程产品，未测量生产容量或实现多节点高可用。SMTP 尚未配置，界面明确显示邮箱验证不可用。手机号作为可编辑、可清空的资料展示信息保存，无需短信验证码，不用于登录或找回密码。
 
-主分支 CI 通过后，经受限 SSH 入口自动部署；包含归档与源码完整性检查、一致性状态备份和构建资产核对。仅当前认证数据库兼容旧版时允许失败回退。参见[自动部署说明](docs/actions-deployment.md)。
+主分支 CI 通过后，经受限 SSH 入口自动部署；包含归档与源码完整性检查、一致性状态备份和构建资产核对。新包保留最近三个通过 main push CI 的祖先构建的 hash 前端资源，让更新前已打开的浏览器继续加载对应页面；入口 HTML 保持当前版本，窗口外的旧客户端或回滚后可能需要重新加载。仅当前认证数据库兼容旧版时允许失败回退。参见[自动部署说明](docs/actions-deployment.md)。
 
 参见[方案](docs/plan.md)、[方法与数据调研](docs/research.md)、[API 合同](docs/api.md)、[数据链路交接](docs/data-lineage.md)、[参考方案鉴别](docs/reference-data-review.md)、[AI 使用披露](docs/ai-usage.md)及[赛事提交要求](docs/submission-checklist.md)。私有仓库徽章可能无法显示。
 
