@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
@@ -9,6 +16,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  FileSearch,
   LoaderCircle,
   MoreHorizontal,
   X,
@@ -58,13 +66,20 @@ export function EmptyState({
   title,
   text,
   action,
+  icon,
 }: {
   title: string;
   text: string;
   action?: ReactNode;
+  icon?: ReactNode;
 }) {
   return (
     <div className="empty-state">
+      <div className="empty-state-art" aria-hidden="true">
+        <span />
+        <span />
+        <div>{icon || <FileSearch size={25} strokeWidth={1.4} />}</div>
+      </div>
       <h2>{title}</h2>
       <p>{text}</p>
       {action}
@@ -122,6 +137,9 @@ export function Dialog({
   variant = 'dialog',
   className = '',
   closeDisabled = false,
+  closeRequested = false,
+  initialFocus,
+  restoreFocus = true,
 }: {
   title: string;
   onClose: () => void;
@@ -130,10 +148,16 @@ export function Dialog({
   variant?: 'dialog' | 'drawer';
   className?: string;
   closeDisabled?: boolean;
+  closeRequested?: boolean;
+  initialFocus?: RefObject<HTMLElement | null>;
+  restoreFocus?: boolean;
 }) {
   const { t } = useApp();
-  const returnFocus = useReturnFocus();
+  const returnFocus = useReturnFocus(restoreFocus);
   const [open, setOpen] = useState(true);
+  useEffect(() => {
+    if (closeRequested) setOpen(false);
+  }, [closeRequested]);
   return (
     <DialogPrimitive.Root
       open={open}
@@ -152,7 +176,8 @@ export function Dialog({
         <DialogPrimitive.Backdrop className="dialog-backdrop" />
         <DialogPrimitive.Popup
           className={`dialog ${wide ? 'dialog-wide' : ''} ${variant === 'drawer' ? 'dialog-drawer' : ''} ${className}`}
-          finalFocus={returnFocus}
+          finalFocus={restoreFocus ? returnFocus : false}
+          initialFocus={initialFocus}
         >
           <div className="dialog-header">
             <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
@@ -287,8 +312,10 @@ export function NavigationPanel({
   );
 }
 
-function useReturnFocus() {
+function useReturnFocus(restore = true) {
   const target = useRef(document.activeElement as HTMLElement | null);
+  const enabled = useRef(restore);
+  enabled.current = restore;
   const mounted = useRef(false);
   useEffect(() => {
     mounted.current = true;
@@ -298,6 +325,7 @@ function useReturnFocus() {
       queueMicrotask(() => {
         if (
           !mounted.current &&
+          enabled.current &&
           previous?.isConnected &&
           !document.activeElement?.closest('[role="dialog"]')
         )

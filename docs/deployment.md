@@ -12,6 +12,8 @@
 
 ## 单台服务器
 
+注册由 `CASHLENS_REGISTRATION_ENABLED` 控制。未配置时，生产环境默认关闭、开发环境默认开放；显式 `true` / `false` 分别开放 / 关闭，修改后重启服务。关闭时移除登录页的注册入口，旧 `/register` 链接转到登录页，两个注册 API 均拒绝新账号；现有账号的登录和安全设置继续可用。页面不增加关闭说明。
+
 1. 使用专用部署目录、非 root 用户和当前安全维护的 Node 22；拉取私有源码需要团队授权。
 2. 执行 `npm ci`、`npm run check`。配置 `NODE_ENV=production`、`HOST=127.0.0.1`、`PORT=4317`、`APP_ORIGIN=https://prispect.com` 与独立持久化数据目录。
 3. 用服务管理器运行 `npm start`，由 HTTPS 反向代理同源转发。核对 `deploy/Caddyfile.example` 中主域与 www 的配置；DNS 与证书需要真实部署环境。

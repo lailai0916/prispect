@@ -103,6 +103,7 @@ test('authenticated API cases → task → questions → exports → persistence
     assert.deepEqual(await (await service.request('/api/auth/session')).json(), {
       user: null,
       csrfToken: null,
+      registrationEnabled: true,
     });
     const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
     assert.equal(cases.length, 4);

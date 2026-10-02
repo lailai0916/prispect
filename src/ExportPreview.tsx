@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Download, FileText, LoaderCircle, RefreshCw } from 'lucide-react';
+import { Check, Download, FileText, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { AnalysisTask } from '../shared/contracts';
 import type { Locale } from './format';
 import { RequestError, requestErrorText } from './api';
@@ -81,6 +81,7 @@ export function ExportPreview({
   const { t, locale, user, refresh } = useApp();
   const [selectedId, setSelectedId] = useState(initialSourceId || sources[0]?.id || '');
   const [attempt, setAttempt] = useState(0);
+  const [downloadedKey, setDownloadedKey] = useState('');
   const [state, setState] = useState<PreviewState | null>(null);
   const [resolvedTheme, setResolvedTheme] = useState(
     () => document.documentElement.dataset.theme || 'light'
@@ -137,6 +138,7 @@ export function ExportPreview({
     anchor.href = url;
     anchor.download = source.filename;
     anchor.click();
+    setDownloadedKey(key);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   if (!user) return null;
@@ -174,8 +176,10 @@ export function ExportPreview({
           disabled={body === null}
           onClick={download}
         >
-          <Download size={15} />
-          {t('保存文件', 'Save file')}
+          {downloadedKey === key ? <Check size={15} /> : <Download size={15} />}
+          {downloadedKey === key
+            ? t('已开始下载 · 再次保存', 'Download started · save again')
+            : t('保存文件', 'Save file')}
         </button>
       </div>
       <p className="field-note">

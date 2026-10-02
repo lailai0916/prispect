@@ -361,6 +361,10 @@ export const guideDocument: ProductDocument = {
           '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。外观可选择自动、浅色或深色；自动模式跟随系统设置。',
           'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Appearance offers System, Light and Dark; System follows your device preference.',
         ],
+        [
+          '点击顶栏搜索，或按 ⌘ K / Ctrl K，跳转到页面、已保存公司、核查报告和材料。键入时只筛选当前工作区，不发送模型请求；用方向键选择、Enter 打开、Esc 关闭。列表搜索可用 Esc 清除；页面动画遵循系统的减少动态效果设置。',
+          'Use header search or ⌘ K / Ctrl K to jump to pages, saved companies, reports and materials. Typing filters this workspace without a model request. Use arrows to select, Enter to open and Esc to close. Esc clears list searches; page animations respect the system reduced-motion preference.',
+        ],
       ],
       links: [{ label: ['数据与隐私', 'Data and privacy'], href: '/privacy?section=ai' }],
     },

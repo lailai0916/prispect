@@ -52,6 +52,9 @@ import {
 import '../review-pages.css';
 import '../report-enhancements.css';
 import '../company-review.css';
+import '../risk-perspective.css';
+import { RiskOverview } from '../RiskOverview';
+import { RiskDetail } from '../RiskDetail';
 
 type ReviewExportFormat = 'html' | 'json' | 'checklist';
 
@@ -327,6 +330,7 @@ export function ReportView({
   const [section, setSection] = useState<
     'summary' | 'evidence' | 'explanations' | 'requests' | 'scope'
   >('summary');
+  const [viewMode, setViewMode] = useState<'simple' | 'pro'>('simple');
   const [testMetric, setTestMetric] = useState<MetricKey | null>(null);
   const [exportFormat, setExportFormat] = useState<ReviewExportFormat | null>(null);
   const previewExport = onExport || setExportFormat;
@@ -368,7 +372,33 @@ export function ReportView({
         ? 'Some required observations are missing or cannot be confirmed. The review retains supported numbers and withholds unsupported ratios or explanations.'
         : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
   return (
-    <div className="report-content report-content-summary">
+    <div className={`report-content report-content-summary view-${viewMode}`}>
+      <div className="report-view-bar">
+        <span className="report-view-label">{t('查看方式', 'View')}</span>
+        <div
+          className="segmented-control report-view-switch"
+          role="group"
+          aria-label={t('报告视图', 'Report view')}
+        >
+          <button
+            type="button"
+            className={viewMode === 'simple' ? 'active' : ''}
+            aria-pressed={viewMode === 'simple'}
+            onClick={() => setViewMode('simple')}
+          >
+            {t('易懂版', 'Plain')}
+          </button>
+          <button
+            type="button"
+            className={viewMode === 'pro' ? 'active' : ''}
+            aria-pressed={viewMode === 'pro'}
+            onClick={() => setViewMode('pro')}
+          >
+            {t('专业版', 'Pro')}
+          </button>
+        </div>
+      </div>
+      <RiskOverview report={report} />
       <section className={`verdict-section verdict-${report.verdict}`}>
         <div className="verdict-topline">
           <VerdictTag verdict={report.verdict} />
@@ -587,6 +617,7 @@ export function ReportView({
           </div>
         </section>
       </details>
+      <RiskDetail report={report} />
       <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
         {(
           [

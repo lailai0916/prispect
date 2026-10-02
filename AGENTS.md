@@ -27,6 +27,8 @@ Company queries default to a concise selected-year consolidated review. Public-w
 
 ## Standards
 
+The shared finishing layer lives in `src/polish.css` and `src/Experience.tsx`. Command search (`src/CommandMenu.tsx`) filters account-local metadata; typing must not send model queries or expose a previous owner's records. Preserve keyboard focus, truthful loading/download states, paused success notices, dismissible persistent errors and system reduced-motion support. Avoid animated numeric counting on financial amounts.
+
 Follow the canonical [repository standards](https://github.com/lailai0916/lailai-template/blob/main/SETUP.md).
 The CI workflow uses the reviewed template revision `aab624269fb9cdf18b9da5d11605eb9b0fc79154`.
 Do not copy the generic standards or checker into this repository.

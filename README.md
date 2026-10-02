@@ -39,6 +39,8 @@ Product information is available in the [user guide](https://prispect.com/docs),
 
 🌐 **Bilingual Workflow** — Chinese and English product flows, documentation and policies. The language control shows the current language; appearance offers system, light and dark preferences, retained between visits. Materials, cash plans and avatars accept drag-and-drop with validation and retry. Reports expose payment and handover priorities with sourced, ordered evidence requests and suggested contacts. HTML, JSON and Markdown checklists are previewed before saving; the saved content is the previewed snapshot. Original source quotations retain their language.
 
+⌨️ **Workspace Details** — Header search and ⌘ K / Ctrl K jump to pages, saved companies, reports and materials in the current account. List filters show counts; searches clear with Escape, reviews can be sorted, and material results open at the matched record. Shared controls, empty states, loading placeholders and brief transitions respect reduced motion. Success notices pause on hover, focus or hidden tabs; errors remain until dismissed. Export previews confirm download initiation without claiming a file was saved to disk.
+
 ## Getting Started
 
 Use Node.js 22.12 or newer and npm. Access to this private repository requires authorization.

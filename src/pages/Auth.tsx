@@ -59,7 +59,7 @@ export function PasswordMeter({ value, context = [] }: { value: string; context?
   );
 }
 export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string }) {
-  const { t, user, execute, navigate, busy, refresh } = useApp();
+  const { t, user, registrationEnabled, execute, navigate, busy, refresh } = useApp();
   const [email, setEmail] = useState(''),
     [name, setName] = useState(''),
     [password, setPassword] = useState(''),
@@ -70,6 +70,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     [code, setCode] = useState(''),
     [validation, setValidation] = useState(''),
     [forgot, setForgot] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
   const submitLock = useRef(false);
   const submitScope = useRef(0);
   const [submitting, setSubmitting] = useState(false);
@@ -90,7 +91,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
       setSubmitting(false);
     }
   };
-  const register = mode === 'register';
+  const register = mode === 'register' && registrationEnabled;
   const destination = loginDestination(next, location.origin);
   useEffect(() => {
     const invalidate = () => {
@@ -114,12 +115,13 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     setPassword('');
     setConfirmation('');
     setVisible(false);
+    setCapsLock(false);
     setChallenge(false);
     setBackup(false);
     setCode('');
     setValidation('');
     setForgot(false);
-  }, [mode]);
+  }, [mode, register]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     await submitOnce(async (current) => {
@@ -159,7 +161,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
       }
       const result = await execute(() =>
         post<LoginResult>(
-          `/auth/${mode}`,
+          `/auth/${register ? 'register' : 'login'}`,
           register ? { email, password, name: name.trim() } : { email, password }
         )
       );
@@ -327,6 +329,9 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
+                    onKeyDown={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                    onKeyUp={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                    onBlur={() => setCapsLock(false)}
                   />
                   <button
                     type="button"
@@ -339,6 +344,11 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                     {visible ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </span>
+                {capsLock && (
+                  <small className="caps-lock-note" role="status">
+                    {t('大写锁定已开启', 'Caps Lock is on')}
+                  </small>
+                )}
                 {register && <PasswordMeter value={password} context={[email, name]} />}
               </label>
               {register && (
@@ -392,16 +402,18 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 </button>
               </>
             )}
-            <p className="account-auth-switch">
-              {register
-                ? t('已有账号？', 'Already have an account?')
-                : t('第一次使用析光？', 'New to Prispect?')}{' '}
-              <a
-                href={`/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
-              >
-                {register ? t('登录', 'Log in') : t('创建账号', 'Create account')}
-              </a>
-            </p>
+            {(register || registrationEnabled) && (
+              <p className="account-auth-switch">
+                {register
+                  ? t('已有账号？', 'Already have an account?')
+                  : t('第一次使用析光？', 'New to Prispect?')}{' '}
+                <a
+                  href={`/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
+                >
+                  {register ? t('登录', 'Log in') : t('创建账号', 'Create account')}
+                </a>
+              </p>
+            )}
             <p className="account-auth-fineprint">
               {register && (
                 <span>{t('创建账号前，请阅读', 'Before creating an account, read')} </span>

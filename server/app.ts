@@ -27,11 +27,16 @@ export interface AppOptions {
   model?: ModelConfig;
   companyService?: CompanyService;
   companyContextService?: CompanyContextService;
+  registrationEnabled?: boolean;
 }
 export async function createApp(options: AppOptions = {}) {
   const root = options.root || process.cwd();
   const dataDir = options.dataDir || process.env.CASHLENS_DATA_DIR || path.join(root, '.cashlens');
-  const auth = await AuthStore.open(dataDir, process.env.NODE_ENV === 'production');
+  const auth = await AuthStore.open(
+    dataDir,
+    process.env.NODE_ENV === 'production',
+    options.registrationEnabled
+  );
   const initial = await seeds(root);
   const stores = new Map<string, Promise<WorkspaceStore>>();
   const workspaceForUser = async (userId: string) => {
@@ -316,7 +321,7 @@ export async function createApp(options: AppOptions = {}) {
     '/api/auth/logout',
     wrap(async (req, res) => {
       await auth.logout(res.locals.auth as AuthContext, req, res);
-      res.json({ user: null, csrfToken: null });
+      res.json(auth.response(null));
     })
   );
   app.patch('/api/auth/profile', (req, res, next) => {

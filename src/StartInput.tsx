@@ -318,6 +318,10 @@ export function StartInput({
           </span>
         )}
         {toolbar}
+        <span className="start-key-hint" aria-hidden="true">
+          <kbd>↵</kbd>
+          {t('提交', 'submit')}
+        </span>
         <button
           type="submit"
           className="start-submit"

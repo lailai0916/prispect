@@ -9,6 +9,7 @@ import {
   FileText,
   History,
   LoaderCircle,
+  ListChecks,
   Plus,
   RotateCcw,
   X,
@@ -30,7 +31,7 @@ import type { ReviewPurpose } from '../../shared/contracts';
 import { interpretStart } from '../../shared/start-intent';
 import { api, post, requestErrorText } from '../api';
 import { useApp, type Translate } from '../context';
-import { ActionMenu, Dialog, PageHeading, Tag } from '../components';
+import { ActionMenu, Dialog, EmptyState, PageHeading, Tag } from '../components';
 import { date, money, metricName } from '../format';
 import { decisionText } from '../decisionTranslations';
 import { translateRule } from '../ruleTranslations';
@@ -428,22 +429,24 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       )}
       {!id && !isNew && (
         <>
-          <div className="decision-entry-actions">
-            <button
-              className="button button-secondary"
-              onClick={() => navigate('/decisions?new=external')}
-            >
-              {t('付款前核对', 'Before payment')}
-              <ArrowRight size={15} />
-            </button>
-            <button
-              className="button button-secondary"
-              onClick={() => navigate('/decisions?new=handover')}
-            >
-              {t('接手核查', 'Company handover')}
-              <ArrowRight size={15} />
-            </button>
-          </div>
+          {list.length > 0 && (
+            <div className="decision-entry-actions">
+              <button
+                className="button button-secondary"
+                onClick={() => navigate('/decisions?new=external')}
+              >
+                {t('付款前核对', 'Before payment')}
+                <ArrowRight size={15} />
+              </button>
+              <button
+                className="button button-secondary"
+                onClick={() => navigate('/decisions?new=handover')}
+              >
+                {t('接手核查', 'Company handover')}
+                <ArrowRight size={15} />
+              </button>
+            </div>
+          )}
           <div className="decision-list">
             {list.length
               ? list.map((item) => (
@@ -457,13 +460,33 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                     </button>
                   </div>
                 ))
-              : !error && (
-                  <p className="section-intro">
-                    {t(
-                      '还没有核查事项。从付款前核对或公司接手开始。',
-                      'No reviews yet. Start with a payment or company handover.'
+              : !error &&
+                !loading && (
+                  <EmptyState
+                    title={t('暂无核查事项', 'No reviews yet')}
+                    icon={<ListChecks size={25} strokeWidth={1.4} />}
+                    text={t(
+                      '付款前核对签约、收款与履约约定；接手核查现有财务问题和收付款安排。',
+                      'Check contract, payee and delivery terms before payment, or financial questions and cash arrangements before a handover.'
                     )}
-                  </p>
+                    action={
+                      <div className="empty-state-actions">
+                        <button
+                          className="button button-primary"
+                          onClick={() => navigate('/decisions?new=external')}
+                        >
+                          {t('付款前核对', 'Before payment')}
+                          <ArrowRight size={15} />
+                        </button>
+                        <button
+                          className="button button-secondary"
+                          onClick={() => navigate('/decisions?new=handover')}
+                        >
+                          {t('接手核查', 'Company handover')}
+                        </button>
+                      </div>
+                    }
+                  />
                 )}
           </div>
         </>

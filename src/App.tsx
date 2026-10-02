@@ -3,18 +3,16 @@ import {
   Activity,
   Building2,
   ListChecks,
-  CheckCircle2,
   ChevronDown,
   LogOut,
   CircleAlert,
   Columns3,
   Eye,
   FolderOpen,
-  LoaderCircle,
   Menu,
   Plus,
   RefreshCw,
-  X,
+  Search,
   UserRound,
   BookOpen,
 } from 'lucide-react';
@@ -35,6 +33,9 @@ import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance'
 import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
 import type { DocumentPath } from './pages/Documentation';
 import { CompanySidebar } from './CompanySidebar';
+import { CommandMenu } from './CommandMenu';
+import { PageLoading, ReadingTop, ToastNotice, usePageEntrance } from './Experience';
+import './polish.css';
 import './company-workspace.css';
 import { CompanyAssistantContext, type AssistantCompany } from './company-assistant-context';
 const CompanyAssistant = lazy(() =>
@@ -104,11 +105,12 @@ export function App() {
   const [route, setRoute] = useState(readBrowserRoute);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [examples, setExamples] = useState<PublicExample[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [cases, setCases] = useState<DemoCase[]>([]);
   const [loadError, setLoadError] = useState('');
-  const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
+  const [toast, setToast] = useState<{ text: string; error?: boolean; id: number } | null>(null);
   const [pending, setPending] = useState(0);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
   const [confirmFailure, setConfirmFailure] = useState<{
@@ -117,6 +119,7 @@ export function App() {
   } | null>(null);
   const [evidence, setEvidence] = useState<{ refs: EvidenceRef[]; report?: Report } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
   const [assistantCompany, setAssistantCompany] = useState<AssistantCompany | null>(null);
   const refreshGeneration = useRef(0);
   const refreshController = useRef<AbortController | null>(null);
@@ -151,12 +154,15 @@ export function App() {
         setEvidence(null);
         setConfirmRequest(null);
         setConfirmFailure(null);
+        setCommandOpen(false);
+        setToast(null);
       }
       changeComposerOwner(committedOwner.current, owner);
       committedOwner.current = owner;
       setDisplayTimeZone(session.user?.timezone);
       setCsrfToken(session.csrfToken);
       setUser(session.user);
+      setRegistrationEnabled(session.registrationEnabled === true);
       setWorkspace(nextWorkspace);
       setCases(nextCases);
       setExamples(nextExamples);
@@ -168,6 +174,7 @@ export function App() {
         setEvidence(null);
         setConfirmRequest(null);
         setMenuOpen(false);
+        setCommandOpen(false);
         setToast(null);
         throw error;
       }
@@ -184,13 +191,14 @@ export function App() {
         if (committedOwner.current !== actionOwner) return undefined;
         await refresh();
         if (committedOwner.current !== actionOwner) return undefined;
-        if (success) setToast({ text: success });
+        if (success) setToast({ text: success, id: performance.now() });
         return result;
       } catch (error) {
         if (committedOwner.current !== actionOwner) return undefined;
         setToast({
           text: requestErrorText(error, locale),
           error: true,
+          id: performance.now(),
         });
         if (
           error instanceof RequestError &&
@@ -270,23 +278,62 @@ export function App() {
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
   }, []);
+  usePageEntrance(route);
   useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(null), 7000);
-    return () => clearTimeout(timer);
-  }, [toast]);
+    const shortcut = (event: KeyboardEvent) => {
+      if (
+        event.isComposing ||
+        event.altKey ||
+        !(event.metaKey || event.ctrlKey) ||
+        event.key.toLowerCase() !== 'k'
+      )
+        return;
+      if (
+        !loaded ||
+        loadError ||
+        (!commandOpen && document.querySelector('[role="dialog"]:not([hidden])'))
+      )
+        return;
+      event.preventDefault();
+      if (!commandOpen) setCommandOpen(true);
+    };
+    document.addEventListener('keydown', shortcut);
+    return () => document.removeEventListener('keydown', shortcut);
+  }, [loaded, loadError, commandOpen]);
   useEffect(() => {
     if (
       documentPaths.includes(route.split('?')[0] as DocumentPath) ||
       route.split('?')[0] === '/method'
     )
       return;
-    document.title = t('析光 Prispect', 'Prispect');
-  }, [t, route]);
+    const titles: Record<string, string> = {
+      '/query': t('新建查询', 'New query'),
+      '/company': t('公司核查', 'Company review'),
+      '/workspace': t('财报核查', 'Financial reviews'),
+      '/materials': t('材料', 'Materials'),
+      '/account': t('账号设置', 'Account settings'),
+      '/decisions': t('核查事项', 'Reviews'),
+      '/new': t('新建财报核查', 'New financial review'),
+      '/compare': t('核查比较', 'Compare reviews'),
+      '/login': t('登录', 'Log in'),
+      '/register': t('创建账号', 'Create account'),
+    };
+    const title = route.startsWith('/tasks/')
+      ? workspace?.tasks.find((task) => route.split('?')[0] === `/tasks/${task.id}`)?.title ||
+        t('核查报告', 'Review report')
+      : titles[route.split('?')[0]];
+    document.title = title ? `${title} · ${t('析光', 'Prispect')}` : t('析光 Prispect', 'Prispect');
+  }, [t, route, workspace]);
   const page = route.split('?')[0];
   const documentPage = documentPaths.includes(page as DocumentPath);
   const documentationRoute = documentPage || page === '/method';
   const protectedPage = !publicPages.includes(page);
+  useEffect(() => {
+    if (loaded && !loadError && page === '/register' && !registrationEnabled) {
+      const query = route.includes('?') ? route.slice(route.indexOf('?')) : '';
+      navigate(`/login${query}`, { replace: true });
+    }
+  }, [loaded, loadError, page, registrationEnabled, route, navigate]);
   useEffect(() => {
     if (loaded && !user && protectedPage) navigate(`/login?next=${encodeURIComponent(route)}`);
   }, [loaded, user, protectedPage, navigate, route]);
@@ -296,6 +343,7 @@ export function App() {
     workspace,
     cases,
     user,
+    registrationEnabled,
     examples,
     refresh,
     navigate,
@@ -346,6 +394,8 @@ export function App() {
         committedOwner.current = null;
         setDisplayTimeZone();
         setAssistantCompany(null);
+        setCommandOpen(false);
+        setToast(null);
         setUser(null);
         setWorkspace(null);
         setEvidence(null);
@@ -458,6 +508,21 @@ export function App() {
               </nav>
             )}
             <div className="header-actions">
+              {sessionAvailable && (
+                <Hint label={t('搜索与跳转 · ⌘ / Ctrl K', 'Search and jump to · ⌘ / Ctrl K')}>
+                  <button
+                    className="icon-button command-trigger"
+                    onClick={() => setCommandOpen(true)}
+                    aria-label={t('搜索与跳转', 'Search and jump to')}
+                    aria-keyshortcuts="Meta+K Control+K"
+                  >
+                    <Search size={17} />
+                    <kbd aria-hidden="true">
+                      {navigator.platform.includes('Mac') ? '⌘ K' : 'Ctrl K'}
+                    </kbd>
+                  </button>
+                </Hint>
+              )}
               <Hint
                 label={t(
                   '当前语言：中文，切换至 English',
@@ -503,6 +568,15 @@ export function App() {
                 </button>
               )}
             </div>
+            {pending > 0 && (
+              <div
+                className="operation-progress"
+                role="status"
+                aria-label={t('正在处理…', 'Processing…')}
+              >
+                <span />
+              </div>
+            )}
           </header>
           {business && (
             <aside className="workspace-sidebar">
@@ -544,14 +618,7 @@ export function App() {
             tabIndex={-1}
           >
             <RouteErrorBoundary resetKey={`${user?.id || 'anonymous'}:${route}`} t={t}>
-              <Suspense
-                fallback={
-                  <div className="loading-page">
-                    <LoaderCircle className="spinner" />
-                    <p>{t('正在打开页面…', 'Opening page…')}</p>
-                  </div>
-                }
-              >
+              <Suspense fallback={<PageLoading label={t('正在打开页面…', 'Opening page…')} />}>
                 {documentPage ? (
                   <DocumentationPage
                     path={page as DocumentPath}
@@ -573,10 +640,7 @@ export function App() {
                     </button>
                   </div>
                 ) : !loaded ? (
-                  <div className="loading-page">
-                    <LoaderCircle className="spinner" />
-                    <p>{t('正在读取工作区…', 'Loading your workspace…')}</p>
-                  </div>
+                  <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
                 ) : page === '/' ? (
                   user ? (
                     <CompanyQueryPage />
@@ -585,7 +649,7 @@ export function App() {
                   )
                 ) : page === '/login' || page === '/register' || !user || !workspace ? (
                   <AuthPage
-                    mode={page === '/register' ? 'register' : 'login'}
+                    mode={page === '/register' && registrationEnabled ? 'register' : 'login'}
                     next={new URLSearchParams(route.split('?')[1]).get('next') || '/'}
                   />
                 ) : page === '/account' ? (
@@ -604,7 +668,9 @@ export function App() {
                 ) : page === '/new' ? (
                   <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
                 ) : page === '/materials' ? (
-                  <MaterialsPage />
+                  <MaterialsPage
+                    selectedId={new URLSearchParams(route.split('?')[1]).get('material')}
+                  />
                 ) : page.startsWith('/tasks/') ? (
                   <TaskPage key={page.slice(7)} id={page.slice(7)} />
                 ) : page === '/compare' ? (
@@ -644,21 +710,17 @@ export function App() {
               <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
             </Suspense>
           )}
+          {(documentationRoute || page === '/company' || page.startsWith('/tasks/')) && (
+            <ReadingTop route={route} />
+          )}
           {toast && !loadError && confirmFailure?.request !== confirmRequest && (
-            <div
-              role={toast.error ? 'alert' : 'status'}
-              className={`toast ${toast.error ? 'toast-error' : ''}`}
-            >
-              {toast.error ? <CircleAlert size={18} /> : <CheckCircle2 size={18} />}
-              <span>{toast.text}</span>
-              <button
-                className="icon-button"
-                onClick={() => setToast(null)}
-                aria-label={t('关闭提示', 'Dismiss message')}
-              >
-                <X size={16} />
-              </button>
-            </div>
+            <ToastNotice key={toast.id} notice={toast} onDismiss={() => setToast(null)} />
+          )}
+          {commandOpen && sessionAvailable && (
+            <CommandMenu
+              key={`command-${user?.id || 'anonymous'}`}
+              onClose={() => setCommandOpen(false)}
+            />
           )}
           {confirmRequest && sessionAvailable && (
             <Dialog

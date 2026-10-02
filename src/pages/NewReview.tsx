@@ -12,7 +12,6 @@ import {
   FileText,
   LoaderCircle,
   Plus,
-  Search,
   ShieldCheck,
   Trash2,
   Upload,
@@ -34,6 +33,7 @@ import { translateRule } from '../ruleTranslations';
 import { useApp, adjustments } from '../context';
 import { PageHeading, EmptyState, Tag } from '../components';
 import { purposeName } from '../ReviewContext';
+import { SearchField } from '../Experience';
 import { useFileDrop, validateFileSelection, type FileSelectionError } from '../useFileDrop';
 import type { Translate } from '../context';
 import '../review-pages.css';
@@ -251,9 +251,15 @@ export function NewReview({ query }: { query: URLSearchParams }) {
       <div className="financial-create-layout">
         <section className="financial-source-step">
           <div className="form-section-heading">
-            <span className="section-number">1</span>
+            <span className={`section-number ${selectedIds.length ? 'step-filled' : ''}`}>
+              {selectedIds.length ? (
+                <Check size={13} aria-label={t('已选择材料', 'Evidence selected')} />
+              ) : (
+                '1'
+              )}
+            </span>
             <h2>{t('选择材料', 'Choose evidence')}</h2>
-            <span className="field-note">
+            <span className="field-note" role="status">
               {selectedIds.length} {t('份已选', 'selected')}
             </span>
           </div>
@@ -414,10 +420,28 @@ export function NewReview({ query }: { query: URLSearchParams }) {
   );
 }
 
-export function MaterialsPage() {
+export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
   const { t, locale, workspace, execute, confirm, showEvidence } = useApp();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  useEffect(() => {
+    if (selectedId) {
+      setSearch('');
+      setFilter('all');
+    }
+  }, [selectedId]);
+  useEffect(() => {
+    if (!selectedId) return;
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(`material-${selectedId}`);
+      target?.scrollIntoView({
+        block: 'center',
+        behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      });
+      target?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedId]);
   const materialImport = useMaterialImport();
   const materials = workspace!.materials.filter(
     (material) =>
@@ -455,39 +479,57 @@ export function MaterialsPage() {
         }
       />
       <div className="list-toolbar">
-        <div className="segmented-control">
+        <div
+          className="segmented-control"
+          role="group"
+          aria-label={t('材料来源', 'Material origin')}
+        >
           {[
             ['all', t('全部材料', 'All')],
             ['public-report', t('公开年报', 'Public reports')],
             ['user-upload', t('用户导入', 'Imports')],
           ].map(([id, label]) => (
-            <button
-              key={id}
-              className={filter === id ? 'selected' : ''}
-              onClick={() => setFilter(id)}
-            >
+            <button key={id} aria-pressed={filter === id} onClick={() => setFilter(id)}>
               {label}
+              <span className="filter-count">
+                {
+                  workspace!.materials.filter((material) => id === 'all' || material.origin === id)
+                    .length
+                }
+              </span>
             </button>
           ))}
         </div>
-        <label className="search-field">
-          <Search size={16} />
-          <input
-            aria-label={t('搜索材料', 'Search materials')}
-            value={search}
-            placeholder={t('搜索材料或公司', 'Search material or company')}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
+        <SearchField
+          value={search}
+          onChange={setSearch}
+          label={t('搜索材料', 'Search materials')}
+          placeholder={t('搜索材料或公司', 'Search material or company')}
+        />
       </div>
       {!materials.length ? (
         <EmptyState
           title={t('没有找到材料', 'No materials found')}
           text={t('导入一份材料，或调整筛选条件。', 'Import a material or adjust your filter.')}
           action={
-            <button className="button button-primary" onClick={() => materialImport.setOpen(true)}>
-              {t('导入材料', 'Import material')}
-            </button>
+            search || filter !== 'all' ? (
+              <button
+                className="button button-secondary"
+                onClick={() => {
+                  setSearch('');
+                  setFilter('all');
+                }}
+              >
+                {t('清除筛选', 'Clear filters')}
+              </button>
+            ) : (
+              <button
+                className="button button-primary"
+                onClick={() => materialImport.setOpen(true)}
+              >
+                {t('导入材料', 'Import material')}
+              </button>
+            )
           }
         />
       ) : (
@@ -495,9 +537,15 @@ export function MaterialsPage() {
           {materials.map((material) => {
             const used = workspace!.tasks.some((task) => task.materialIds.includes(material.id));
             return (
-              <article className="material-row" key={material.id}>
+              <article
+                className={`material-row ${material.id === selectedId ? 'material-located' : ''}`}
+                key={material.id}
+                id={`material-${material.id}`}
+                tabIndex={-1}
+                aria-label={material.title}
+              >
                 <div className="material-row-icon">
-                  <FileText size={25} />
+                  <FileText size={23} strokeWidth={1.5} />
                   <span>{material.filename.split('.').at(-1)?.toUpperCase() || 'DATA'}</span>
                 </div>
                 <div className="material-row-content">
