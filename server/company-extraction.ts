@@ -19,6 +19,7 @@ import { shanghaiDate } from './company-sources.js';
 export interface CompanyPdfPage {
   page: number;
   text: string;
+  tables?: string[][][];
 }
 export interface CompanyPdfText {
   pages: CompanyPdfPage[];
@@ -32,7 +33,7 @@ export async function readCompanyPdf(
   if (!buffer.subarray(0, 5).equals(Buffer.from('%PDF-')))
     throw new ApiFault(400, 'COMPANY_INVALID_PDF', '原件没有PDF标记');
   try {
-    const text = await readPdfIsolated(buffer, signal);
+    const text = await readPdfIsolated(buffer, signal, 'official');
     return {
       pages: text.pages,
       total: text.total,
@@ -54,12 +55,12 @@ export async function readCompanyPdf(
   }
 }
 
-const amounts = /\(?[−－-]?\d[\d,]*(?:\.\d+)?\)?/g;
+const amounts = /\(?\s*[−－-]?\d[\d,]*(?:\.\d+)?\s*\)?/g;
 const compact = (text: string) => text.replace(/\s/g, '').replace(/[−－]/g, '-');
 const cashHeader =
-  /^(?:[一二三四五六七八九十\d、.．]*合并财务报表(?:项目附注|项目注释|附注)(?:[（(]续[）)])?|(?:[（(][\da-zA-Z]+[）)]|\d+[、.．])?现金流量表(?:项目附注|项目注释|补充资料)(?:[（(]续[）)])?)$/;
+  /^(?:[一二三四五六七八九十\d、.．]*合并财务报表(?:主要)?(?:项目附注|项目注释|附注)(?:[（(]续[）)]|[-—]续)?|(?:[（(][\da-zA-Z]+[）)]|\d+[、.．])?现金流量表(?:项目附注|项目注释|补充资料)(?:[（(]续[）)]|[-—]续)?)$/;
 function numeric(raw: string): string {
-  raw = raw.replace(/,/g, '').replace(/[−－]/g, '-');
+  raw = raw.replace(/[,\s]/g, '').replace(/[−－]/g, '-');
   return raw.startsWith('(') ? `-${raw.slice(1, -1)}` : raw;
 }
 function metricFor(label: string): MetricKey | null {
@@ -69,9 +70,9 @@ function metricFor(label: string): MetricKey | null {
   )
     return 'netProfit';
   if (/^经营活动产生的现金流量净额/.test(label)) return 'operatingCashFlow';
-  if (/^存货的(?:减少|增加)/.test(label)) return 'inventoryAdjustment';
-  if (/^经营性应收项目的(?:减少|增加)/.test(label)) return 'receivablesAdjustment';
-  if (/^经营性应付项目的(?:增加|减少)/.test(label)) return 'payablesAdjustment';
+  if (/^存货的[（(]?(?:减少|增加)/.test(label)) return 'inventoryAdjustment';
+  if (/^经营性应收项目的[（(]?(?:减少|增加)/.test(label)) return 'receivablesAdjustment';
+  if (/^经营性应付项目的[（(]?(?:增加|减少)/.test(label)) return 'payablesAdjustment';
   return null;
 }
 function findUnit(text: string): 'yuan' | 'qian' | 'wan' | 'yi' | null {
@@ -99,7 +100,7 @@ function tableColumns(text: string, year: number): boolean | null {
       /^20\d{2}(?:年度|年)?$/.test(lines[index - 1]!)
     )
       line = lines[index - 1]! + line;
-    if (/^(?:项目|附注|行次|补充资料)?(?:20\d{2}(?:年度|年)?){2}$/.test(line)) {
+    if (/^(?:项目(?:附注|行次)?|附注|行次|补充资料)?(?:20\d{2}(?:年度|年)?){2}$/.test(line)) {
       const years = [...line.matchAll(/20\d{2}/g)].map((match) => Number(match[0]));
       return years[0] === year && years[1] === year - 1;
     }
@@ -112,12 +113,39 @@ function tableColumns(text: string, year: number): boolean | null {
   }
   return null;
 }
+function matchesCoverYear(pages: CompanyPdfPage[], year: number): boolean {
+  return pages
+    .filter((page) => page.page <= 5)
+    .some((page) => {
+      const lines = page.text.split('\n').map(compact);
+      return (
+        new RegExp(`${year}(?:年)?年度报告`).test(lines.join('')) ||
+        lines.some(
+          (line, index) =>
+            line === '年度报告' &&
+            [lines[index - 1], lines[index + 1]].some(
+              (value) => value === `${year}` || value === `${year}年`
+            )
+        )
+      );
+    });
+}
 function supplementHeader(text: string): string {
   const lines = text.split('\n').slice(-10);
   let unitIndex = -1;
   for (let index = 0; index < lines.length; index++)
     if (findUnit(lines[index]!) !== null) unitIndex = index;
   if (unitIndex < 0) return '';
+  if (
+    !lines.slice(Math.max(0, unitIndex - 4), unitIndex).some((line) => {
+      const value = compact(line);
+      return (
+        cashHeader.test(value) ||
+        /^(?:20\d{2}年度)?财务报表附注(?:[（(]续[）)]|[-—]续)?$/.test(value)
+      );
+    })
+  )
+    return '';
   const trailing = lines.slice(unitIndex + 1).map(compact);
   if (
     trailing.some(
@@ -174,12 +202,56 @@ export function issuerCodeEvidence(
       for (const match of line.matchAll(
         /(?:股票|证券)(?:代码|代号)[：:]?(?:A股)?[：:]?(\d{6})(?!\d)/g
       )) {
-        const before = line.slice(Math.max(0, match.index! - 5), match.index);
+        const before = line.slice(0, match.index);
         const after = line.slice(match.index! + match[0].length);
-        if (/[HB]股[）)]?$/.test(before) || /^(?:[（(][HB]股[）)]|[HB]股)/.test(after)) continue;
+        if (
+          /(?:^|[;；：:])[（(]?[HB]股[）)]?$/.test(before) ||
+          /^(?:[（(][HB]股[）)]|[HB]股)/.test(after)
+        )
+          continue;
         evidence.push({ code: match[1]!, page: page.page, quote: lines[index]! });
       }
+      if (page.page <= 5 && /年度报告/.test(compact(page.text)) && /公司简称[：:]/.test(line)) {
+        const code = line.match(/公司代码[：:](\d{6})(?!\d)/)?.[1];
+        if (code) evidence.push({ code, page: page.page, quote: lines[index]! });
+      }
       const header = cells(lines[index]!);
+      if (
+        header[0] === '股票种类' &&
+        header.length >= 2 &&
+        header.length <= 4 &&
+        exchangeLabel &&
+        lines
+          .slice(Math.max(0, index - 30), index)
+          .some((value) => /^(?:公司)?股票(?:简况)?$/.test(compact(value)))
+      ) {
+        const rows = lines.slice(index, index + 4).map(cells);
+        if (
+          rows.length === 4 &&
+          rows.every(
+            (row, offset) =>
+              row.length === header.length &&
+              row[0] === ['股票种类', '股票上市交易所', '股票简称', '股票代码'][offset]
+          )
+        ) {
+          const marketNames = [
+            exchangeLabel,
+            { sse: '上交所', szse: '深交所', bse: '北交所', unknown: '' }[exchange],
+          ];
+          for (let column = 1; column < header.length; column++) {
+            if (
+              rows[0]![column] === 'A股' &&
+              marketNames.includes(rows[1]![column]!) &&
+              /^\d{6}$/.test(rows[3]![column]!)
+            )
+              evidence.push({
+                code: rows[3]![column]!,
+                page: page.page,
+                quote: lines.slice(index, index + 4).join('\n'),
+              });
+          }
+        }
+      }
       const labels = new Set([
         '股票种类',
         '股票上市交易所',
@@ -210,7 +282,9 @@ export function issuerCodeEvidence(
       // Never join pages, infer missing cells, or scan unrelated later rows for a matching number.
       for (let rowIndex = index + 1; rowIndex < Math.min(lines.length, index + 5); rowIndex++) {
         const row = cells(lines[rowIndex]!);
-        if (row.length !== header.length) break;
+        const trailingBlank =
+          header.at(-1) === '变更前股票简称' && row.length === header.length - 1;
+        if (row.length !== header.length && !trailingBlank) break;
         if (row[type] !== 'A股' || row[market] !== exchangeLabel || !/^\d{6}$/.test(row[code]!))
           continue;
         evidence.push({
@@ -237,12 +311,7 @@ export function extractFinancialCandidates(
     '自动提取是候选预览；来源可追溯不等于业务真实性已认证，采用前须核对主体、期间、单位与合并口径。',
   ];
   const company = candidateCompanyName(pdf.pages) || identity.companyName || identity.shortName;
-  const cover = pdf.pages
-    .slice(0, 5)
-    .map((page) => page.text)
-    .join('\n');
-  const coverYear =
-    compact(cover).includes(`${year}年年度报告`) && announcement.reportYear === year;
+  const coverYear = matchesCoverYear(pdf.pages, year) && announcement.reportYear === year;
   if (!coverYear) warnings.push('官方标题与原件封面年度尚未同时确认，未采用表格金额。');
   const issuerPages = pdf.pages.slice(0, 15);
   const issuerEvidence = issuerCodeEvidence(issuerPages, identity.exchange);
@@ -258,6 +327,26 @@ export function extractFinancialCandidates(
     )
       ? 'CNY'
       : 'XXX';
+  const declarations = pdf.pages.flatMap((page) =>
+    page.text.split('\n').flatMap((line) => {
+      const match = compact(line).match(
+        /本财务报表[^。]{0,80}人民币[^。]{0,80}除[^。]{0,30}特别(?:说明|注明)[^。]{0,30}均以人民币(千元|万元|亿元|元)为单位/
+      );
+      return match
+        ? [
+            {
+              page: page.page,
+              quote: line,
+              unit: ({ 元: 'yuan', 千元: 'qian', 万元: 'wan', 亿元: 'yi' } as const)[
+                match[1] as '元' | '千元' | '万元' | '亿元'
+              ],
+            },
+          ]
+        : [];
+    })
+  );
+  const declaredUnit =
+    new Set(declarations.map((item) => item.unit)).size === 1 ? declarations[0] : undefined;
   const observations: Observation[] = [];
   const excerpts: Material['excerpts'] = [];
   const used = new Set<string>();
@@ -271,13 +360,13 @@ export function extractFinancialCandidates(
     currency: string;
     columns: boolean;
     header: string;
-    rows: { label: string; values: string[]; page: number; quote: string }[];
+    rows: { label: string; values: (string | null)[]; page: number; quote: string }[];
     label: string;
     closed: boolean;
     incomplete: boolean;
   } | null = null;
   const add = (
-    row: { label: string; values: string[]; page: number; quote: string },
+    row: { label: string; values: (string | null)[]; page: number; quote: string },
     key: MetricKey,
     column: number,
     unit: NonNullable<ReturnType<typeof findUnit>>,
@@ -285,6 +374,7 @@ export function extractFinancialCandidates(
     statementScope: Observation['scope']
   ) => {
     if (allowed && !allowed.has(row.page)) return;
+    if (row.values[column] === null) return;
     const raw = row.values[column];
     if (raw === undefined) return;
     let value = raw,
@@ -349,6 +439,12 @@ export function extractFinancialCandidates(
       return;
     }
     for (let column = 0; column < 2; column++) {
+      if (other.some((row) => row.values[column] === null)) {
+        warnings.push(
+          `${year - column}年其余调整行含空白单元格，未当作零或用现金桥残差补数；另一年度的已披露金额单独保留。`
+        );
+        continue;
+      }
       const components = other.map((row) => ({
         label: row.label.slice(0, 200),
         value: fenToYuan(
@@ -382,16 +478,43 @@ export function extractFinancialCandidates(
     }
   };
   for (const page of pdf.pages) {
-    for (const line of page.text.split('\n')) {
+    const lines = page.text.split('\n');
+    const pageUnit = lines
+      .slice(0, 6)
+      .some((line) => /^财务报表附注(?:[（(]续[）)]|[-—]续)?$/.test(compact(line)))
+      ? lines
+          .slice(0, 6)
+          .map(
+            (line) => compact(line).match(new RegExp(`^${year}年度人民币(千元|万元|亿元|元)$`))?.[1]
+          )
+          .filter(Boolean)
+          .map(
+            (unit) =>
+              (({ 元: 'yuan', 千元: 'qian', 万元: 'wan', 亿元: 'yi' }) as const)[
+                unit as '元' | '千元' | '万元' | '亿元'
+              ]
+          )[0] || null
+      : null;
+    for (const [lineIndex, line] of lines.entries()) {
       const text = compact(line);
+      if (
+        /(?:20\d{2})(?:年)?年度报告/.test(text) ||
+        ((lineIndex < 5 || lineIndex >= lines.length - 3) &&
+          /^(?:\d+(?:\/\d+)?|[-—]\d+[-—])$/.test(text))
+      )
+        continue;
       const previous = recent;
       recent = `${recent}\n${line}`.slice(-3500);
       if (
-        /^(?:[一二三四五六七八九十\d、.．]*)?(?:母公司(?:财务报表|资产负债表|利润表|现金流量表))/.test(
+        /^(?:[一二三四五六七八九十\d、.．]*)?(?:(?:母公司|公司)(?:财务报表|资产负债表|利润表|现金流量表))/.test(
           text
         )
       ) {
-        if (table?.kind === 'supplement' && scope === 'parent' && /[（(]续[）)]$/.test(text))
+        if (
+          table?.kind === 'supplement' &&
+          scope === 'parent' &&
+          /(?:[（(]续[）)]|[-—]续)$/.test(text)
+        )
           continue;
         finish();
         scope = 'parent';
@@ -401,7 +524,11 @@ export function extractFinancialCandidates(
           text
         )
       ) {
-        if (table?.kind === 'supplement' && scope === 'consolidated' && /[（(]续[）)]$/.test(text))
+        if (
+          table?.kind === 'supplement' &&
+          scope === 'consolidated' &&
+          /(?:[（(]续[）)]|[-—]续)$/.test(text)
+        )
           continue;
         finish();
         scope = 'consolidated';
@@ -419,7 +546,9 @@ export function extractFinancialCandidates(
         table = {
           kind,
           scope,
-          unit: findUnit(context),
+          unit:
+            findUnit(context) ||
+            (kind === 'supplement' ? pageUnit || declaredUnit?.unit || null : null),
           currency: sourceCurrency(context) === 'XXX' ? reportCurrency : sourceCurrency(context),
           columns: tableColumns(context, year) === true,
           header: context,
@@ -433,6 +562,14 @@ export function extractFinancialCandidates(
             page: page.page,
             text: `${context.slice(-900)}\n${page.text.slice(0, 2000)}`.slice(0, 4000),
           });
+        if (
+          kind === 'supplement' &&
+          !findUnit(context) &&
+          declaredUnit &&
+          !pageUnit &&
+          !excerpts.some((item) => item.page === declaredUnit.page)
+        )
+          excerpts.push({ page: declaredUnit.page, text: declaredUnit.quote });
         continue;
       }
       if (!table) continue;
@@ -472,12 +609,38 @@ export function extractFinancialCandidates(
         finish();
         continue;
       }
-      if (!text || /^--|^\d+$|年度报告|^项目|^单位|^本期|^上期|^本年|^上年/.test(text)) continue;
-      const values = [...line.matchAll(amounts)].map((match) => numeric(match[0]));
+      if (
+        !text ||
+        /^--|^\d+$|年度报告|^项目|^单位|^本期|^上期|^本年|^上年|^[（(]经重述[）)]$/.test(text)
+      )
+        continue;
+      let values: (string | null)[] = [...line.matchAll(amounts)].map((match) => numeric(match[0]));
       const label = compact(line.replace(amounts, ''));
+      const cellRow = (page.tables || [])
+        .flat()
+        .find((row) => compact(row[0]!) === `${table!.label}${label}`);
       if (!values.length) {
+        if (cellRow && cellRow.slice(1).every((cell) => !cell.trim())) {
+          table.label = '';
+          continue;
+        }
         table.label = `${table.label}${label}`.slice(0, 600);
         continue;
+      }
+      if (values.length === 1 && cellRow) {
+        const aligned = cellRow.slice(1).map((cell) => {
+          if (!cell.trim()) return null;
+          const matches = [...cell.matchAll(amounts)];
+          return matches.length === 1 && !cell.replace(amounts, '').trim()
+            ? numeric(matches[0]![0])
+            : undefined;
+        });
+        if (
+          !aligned.includes(undefined) &&
+          aligned.filter((value) => value !== null).length === 1 &&
+          aligned.includes(values[0])
+        )
+          values = aligned as (string | null)[];
       }
       if (values.length !== 2) {
         table.incomplete = true;

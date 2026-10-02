@@ -1,11 +1,12 @@
 import { fork, type ChildProcess, type ForkOptions } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { ApiFault } from './validation.js';
+import pdfLimits from './pdf-limits.json' with { type: 'json' };
 
 export interface IsolatedPdfText {
   total: number;
   text: string;
-  pages: { page: number; text: string }[];
+  pages: { page: number; text: string; tables?: string[][][] }[];
 }
 interface PdfReaderOptions {
   timeoutMs?: number;
@@ -17,6 +18,7 @@ interface PdfReaderOptions {
 }
 interface Job {
   buffer: Buffer;
+  maximumBytes: number;
   signal?: AbortSignal;
   resolve: (value: IsolatedPdfText) => void;
   reject: (reason: ApiFault) => void;
@@ -27,10 +29,10 @@ interface Job {
   output?: IsolatedPdfText;
   done: boolean;
 }
-const failure = (code: string): ApiFault => {
+const failure = (code: string, maximumBytes = pdfLimits.uploadBytes): ApiFault => {
   const errors: Record<string, [number, string]> = {
     PDF_INVALID: [400, '原件没有PDF标记'],
-    PDF_SIZE_LIMIT: [413, 'PDF超过25MB读取预算'],
+    PDF_SIZE_LIMIT: [413, `PDF超过${maximumBytes / 1024 / 1024}MB读取预算`],
     PDF_PAGE_LIMIT: [413, 'PDF超过500页处理预算'],
     PDF_TEXT_LIMIT: [413, 'PDF文本超过本次处理预算'],
     PDF_NO_TEXT: [422, '未取得可用PDF文本，当前未运行OCR；请补充文本财报'],
@@ -114,7 +116,7 @@ export function createIsolatedPdfReader(options: PdfReaderOptions = {}) {
         if (job.done || job.failure) return;
         const message = value as Partial<IsolatedPdfText> & { ok?: boolean; code?: string };
         if (message?.ok === false) {
-          job.failure = failure(message.code || 'PDF_PARSE_FAILED');
+          job.failure = failure(message.code || 'PDF_PARSE_FAILED', job.maximumBytes);
           return;
         }
         if (
@@ -132,10 +134,25 @@ export function createIsolatedPdfReader(options: PdfReaderOptions = {}) {
               !Number.isInteger(p.page) ||
               p.page < 1 ||
               p.page > message.total! ||
-              typeof p.text !== 'string'
+              typeof p.text !== 'string' ||
+              (p.tables !== undefined &&
+                (!Array.isArray(p.tables) ||
+                  p.tables.length > 10 ||
+                  p.tables.some(
+                    (table) =>
+                      !Array.isArray(table) ||
+                      table.length > 200 ||
+                      table.some(
+                        (row) =>
+                          !Array.isArray(row) ||
+                          row.length !== 3 ||
+                          row.some((cell) => typeof cell !== 'string' || cell.length > 2000)
+                      )
+                  )))
           ) ||
           message.pages.reduce((sum, p) => sum + p.text.length, 0) > 8_000_000 ||
-          new Set(message.pages.map((p) => p.page)).size !== message.pages.length
+          new Set(message.pages.map((p) => p.page)).size !== message.pages.length ||
+          JSON.stringify(message.pages.map((p) => p.tables || [])).length > 1_000_000
         ) {
           stop(job, failure('PDF_PARSE_FAILED'));
           return;
@@ -147,7 +164,7 @@ export function createIsolatedPdfReader(options: PdfReaderOptions = {}) {
         if (code !== 0) job.failure ||= failure('PDF_PARSE_FAILED');
         finalize(job);
       });
-      child.send({ buffer: job.buffer }, (error) => {
+      child.send({ buffer: job.buffer, maximumBytes: job.maximumBytes }, (error) => {
         if (error) stop(job, failure('PDF_PARSE_FAILED'));
       });
     } catch {
@@ -158,9 +175,15 @@ export function createIsolatedPdfReader(options: PdfReaderOptions = {}) {
   const drain = () => {
     while (active < maximum && queue.length) start(queue.shift()!);
   };
-  return (buffer: Buffer, signal?: AbortSignal): Promise<IsolatedPdfText> => {
+  return (
+    buffer: Buffer,
+    signal?: AbortSignal,
+    source: 'upload' | 'official' = 'upload'
+  ): Promise<IsolatedPdfText> => {
     if (signal?.aborted) return Promise.reject(failure('PDF_PARSE_CANCELLED'));
-    if (buffer.length > 25 * 1024 * 1024) return Promise.reject(failure('PDF_SIZE_LIMIT'));
+    const maximumBytes = source === 'official' ? pdfLimits.officialBytes : pdfLimits.uploadBytes;
+    if (buffer.length > maximumBytes)
+      return Promise.reject(failure('PDF_SIZE_LIMIT', maximumBytes));
     if (!buffer.subarray(0, 5).equals(Buffer.from('%PDF-')))
       return Promise.reject(failure('PDF_INVALID'));
     if (active >= maximum && queue.length >= queueMaximum)
@@ -168,6 +191,7 @@ export function createIsolatedPdfReader(options: PdfReaderOptions = {}) {
     return new Promise((resolve, reject) => {
       const job: Job = {
         buffer,
+        maximumBytes,
         signal,
         resolve,
         reject,

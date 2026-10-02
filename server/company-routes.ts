@@ -129,7 +129,8 @@ export function installCompanyRoutes(
             uploadId ||= await store.retainUpload(
               output.buffer,
               output.preview.material.filename,
-              output.preview.material.sha256
+              output.preview.material.sha256,
+              'official'
             );
             if (!isCurrent()) return;
             output.preview.material.uploadId = uploadId;

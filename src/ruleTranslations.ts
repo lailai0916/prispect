@@ -361,6 +361,15 @@ export function translateRule(text: string): string {
   if (planningInput)
     return `${planningInput[1]} downloaded public-page IDs on the allowlist; the model must not generate amounts`;
   const candidatePrecision = text.match(/^第(\d+)页金额精度或格式无法确认，未采用该行。$/);
+  const blankAdjustment = text.match(
+    /^(20\d{2})年其余调整行含空白单元格，未当作零或用现金桥残差补数；另一年度的已披露金额单独保留。$/
+  );
+  if (blankAdjustment)
+    return `Other adjustment rows for ${blankAdjustment[1]} include blank cells. They remain unknown; no zero or cash-bridge residual was supplied. Disclosed amounts for the other year are retained separately.`;
+  if (text === '近期公告读取达到45秒预算；未读完的原件不表示没有相关变化。')
+    return 'Recent disclosure reading reached its 45-second budget. Unread originals do not imply that nothing changed.';
+  if (text === '官方披露来源未在本次读取预算内完成；未替换为其他主体或年份')
+    return 'The official source did not complete within this reading budget. No other company or year was substituted.';
   if (candidatePrecision)
     return `Amount precision or format on page ${candidatePrecision[1]} could not be confirmed; the row was not adopted.`;
   const parentTable = text.match(/^第 (\d+) 页为母公司表/);

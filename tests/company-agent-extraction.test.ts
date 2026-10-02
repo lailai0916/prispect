@@ -443,3 +443,160 @@ test('a cold issuer cash supplement accepts explicit declarative units and signe
     'declarative units in an unrelated table remain unusable'
   );
 });
+
+test('issuer basics accept a labelled cover, a trailing optional blank, inline A/H names and a transposed stock table without shifting core cells', () => {
+  // Layouts observed in Moutai p1/p5, BYD p9 and Zijin p14, 2025 annual reports.
+  assert.equal(
+    issuerCodeEvidence(
+      [{ page: 1, text: '2025 年年度报告\n公司代码：600519\t公司简称：贵州茅台' }],
+      'sse'
+    )[0]?.code,
+    '600519'
+  );
+  const header = '股票种类\t股票上市交易所\t股票简称\t股票代码\t变更前股票简称';
+  const stock = `公司股票简况\n${header}\nA股\t上海证券交易所\t贵州茅台\t600519`;
+  assert.equal(issuerCodeEvidence([{ page: 5, text: stock }], 'sse')[0]?.code, '600519');
+  assert.deepEqual(
+    issuerCodeEvidence([{ page: 5, text: stock.replace('贵州茅台\t600519', '600519\t/') }], 'sse'),
+    []
+  );
+  assert.equal(
+    issuerCodeEvidence(
+      [
+        {
+          page: 9,
+          text: '股票简称 比亚迪（A 股）、比亚迪股份（H 股） 股票代码 002594、01211、81211',
+        },
+      ],
+      'szse'
+    )[0]?.code,
+    '002594'
+  );
+  const vertical =
+    '公司股票\n股票种类\tH 股\tA 股\n股票上市交易所\t联交所\t上交所\n股票简称\t紫金矿业\t紫金矿业\n股票代码\t2899\t601899';
+  assert.equal(issuerCodeEvidence([{ page: 14, text: vertical }], 'sse')[0]?.code, '601899');
+  for (const text of [
+    vertical.replace('上交所', '深交所'),
+    vertical.replace('公司股票\n', ''),
+    vertical.replace('股票简称\t紫金矿业\t紫金矿业\n', ''),
+  ])
+    assert.deepEqual(issuerCodeEvidence([{ page: 14, text }], 'sse'), []);
+  assert.deepEqual(issuerCodeEvidence([{ page: 1, text: 'H股股票代码：600519' }], 'sse'), []);
+  assert.deepEqual(issuerCodeEvidence([{ page: 1, text: '股票代码：600519（H股）' }], 'sse'), []);
+});
+
+test('cover year can be a separate adjacent line in reading order; another year or another page cannot supply it', () => {
+  const financial = '合并利润表\n单位：人民币元\n项目 附注 2025年度 2024年度\n净利润 100.00 80.00';
+  const candidate = (pages: string[]) =>
+    extractFinancialCandidates(identity, announcement, pdf(pages), 2025);
+  for (const title of ['2025 年度报告', '年 度 报 告\n2025', '2025\n年度报告'])
+    assert.equal(
+      candidate([`测试股份有限公司\n股票代码：300750\n${title}`, financial]).material.observations
+        .length,
+      2
+    );
+  for (const pages of [
+    [`股票代码：300750\n年度报告\n2024`, financial],
+    ['股票代码：300750\n年度报告', '2025', financial],
+    [`股票代码：300750\n2024年年度报告\n其他事项发生于2025年`, financial],
+  ])
+    assert.equal(candidate(pages).material.observations.length, 0);
+});
+
+test('page-scoped financial-note unit and signed restated rows survive table boundaries while company-only notes stay excluded', () => {
+  // Reproduce China State Construction/Zijin note-header layouts with synthetic amounts.
+  const data = pdf([
+    cover,
+    '测试股份有限公司\n财务报表附注 - 续\n2025 年度 人民币千元\n- 151 -\n五、合并财务报表主要项目注释 - 续\n此前说明不涉及现金收支\n现金流量表补充资料\n将净利润调节为经营活动现金流量：\n2025年 2024年\n(经重述)\n净利润 100 80\n加：折旧 10 10\n存货的(增加)/减少 (20 ) (10)\n经营性应收项目的增加 (30) (20)\n经营性应付项目的（减少）/增加 10 10\n经营活动产生的现金流量净额 70 70',
+    '测试股份有限公司\n财务报表附注 - 续\n2025 年度 人民币千元\n十七、公司财务报表主要项目注释 - 续\n现金流量表补充资料\n将净利润调节为经营活动现金流量：\n2025年 2024年\n净利润 999 999\n经营活动产生的现金流量净额 999 999',
+  ]);
+  const result = extractFinancialCandidates(identity, announcement, data, 2025);
+  assert.equal(result.material.observations.length, 12);
+  assert.equal(
+    result.material.observations.find((row) => row.key === 'netProfit' && row.year === 2025)?.value,
+    '100000.00'
+  );
+  assert.equal(
+    result.material.observations.find(
+      (row) => row.key === 'receivablesAdjustment' && row.year === 2025
+    )?.value,
+    '-30000.00'
+  );
+  assert.ok(result.material.observations.every((row) => row.page === 2));
+  assert.equal(result.checks.find((check) => check.id === 'bridge-balance')?.status, 'pass');
+  const missing = extractFinancialCandidates(
+    identity,
+    announcement,
+    pdf([cover, data.pages[1]!.text.replace('财务报表附注 - 续', '此前无关的销量表')]),
+    2025
+  );
+  assert.equal(missing.material.observations.length, 0);
+});
+
+test('an explicit report-wide monetary declaration applies to the supplement and retains its source, but an unrelated table unit cannot', () => {
+  const declaration =
+    '本公司记账本位币和编制本财务报表所采用的货币均为人民币，除有特别说明外，均以人民币千元为单位表示。';
+  const supplement =
+    '七、合并财务报表主要项目注释（续）\n现金流量表补充资料\n将净利润调节为经营活动现金流量：\n2025年 2024年\n净利润 100 80\n加：折旧 10 10\n存货的增加 -20 -10\n经营性应收项目的减少 -30 -20\n经营性应付项目的（减少）/增加 10 10\n经营活动产生的现金流量净额 70 70';
+  const result = extractFinancialCandidates(
+    identity,
+    announcement,
+    pdf([cover, declaration, supplement]),
+    2025
+  );
+  assert.equal(result.material.observations.length, 12);
+  assert.ok(result.material.excerpts.some((item) => item.page === 2 && item.text === declaration));
+  assert.equal(
+    result.material.observations.find((row) => row.key === 'operatingCashFlow' && row.year === 2025)
+      ?.value,
+    '70000.00'
+  );
+  const missing = extractFinancialCandidates(
+    identity,
+    announcement,
+    pdf([cover, '销量表\n单位：千元', supplement]),
+    2025
+  );
+  assert.equal(missing.material.observations.length, 0);
+});
+
+test('vector-grid cell positions preserve one known year without inventing a value for the blank year', () => {
+  const data = pdf([
+    cover,
+    '合并财务报表项目注释\n单位：人民币元\n补充资料 本期金额 上期金额\n1.将净利润调节为经营活动现金流量\n净利润 100 80\n加：折旧 10 10\n投资性房地产摊销 5\n存货的减少 -20 -10\n经营性应收项目的减少 -30 -20\n经营性应付项目的增加 10 10\n经营活动产生的现金流量净额 75 70',
+  ]);
+  data.pages[1]!.tables = [[['投资性房地产摊销', '5', '']]];
+  const result = extractFinancialCandidates(identity, announcement, data, 2025);
+  assert.equal(result.material.observations.length, 11);
+  assert.equal(
+    result.material.observations.find((row) => row.key === 'otherAdjustments' && row.year === 2025)
+      ?.value,
+    '15.00'
+  );
+  assert.equal(
+    result.material.observations.some((row) => row.key === 'otherAdjustments' && row.year === 2024),
+    false
+  );
+  assert.equal(result.checks.find((check) => check.id === 'bridge-balance')?.status, 'pass');
+  assert.match(result.warnings.join(' '), /2024年.*空白/);
+  data.pages[1]!.tables = [[['投资性房地产摊销', '', '5']]];
+  const previousOnly = extractFinancialCandidates(identity, announcement, data, 2025);
+  assert.equal(
+    previousOnly.material.observations.some(
+      (row) => row.key === 'otherAdjustments' && row.year === 2025
+    ),
+    false
+  );
+  assert.equal(
+    previousOnly.material.observations.find(
+      (row) => row.key === 'otherAdjustments' && row.year === 2024
+    )?.value,
+    '15.00'
+  );
+  delete data.pages[1]!.tables;
+  const unknownColumn = extractFinancialCandidates(identity, announcement, data, 2025);
+  assert.equal(
+    unknownColumn.material.observations.some((row) => row.key === 'otherAdjustments'),
+    false
+  );
+});

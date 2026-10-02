@@ -7,7 +7,9 @@ import {
   listCompanyAnnouncements,
   officialPdfUrl,
   searchCompanies,
+  MAX_COMPANY_PDF_BYTES,
 } from '../server/company-sources.js';
+import { ApiFault } from '../server/validation.js';
 import type { CompanyIdentity } from '../shared/contracts.js';
 
 const identity: CompanyIdentity = {
@@ -187,4 +189,84 @@ test('streamed body size is bounded even without Content-Length', async () => {
   });
   await assert.rejects(() => boundedBody(new Response(body), 32), /超过当前大小限制/);
   assert.equal(cancelled, true);
+});
+
+test('the source deadline covers a stalled body after headers and waiting response headers; recent reads do not retry', async () => {
+  const keepAlive = setTimeout(() => undefined, 1000);
+  try {
+    for (const stalled of ['body', 'headers']) {
+      let calls = 0,
+        cancelled = false,
+        retries = 0;
+      const started = Date.now();
+      await assert.rejects(
+        () =>
+          downloadCompanyPdf('https://static.cninfo.com.cn/finalpage/2026-01-01/15.PDF', {
+            timeoutMs: 20,
+            maxAttempts: 1,
+            onRetry: () => {
+              retries++;
+            },
+            fetch: fakeFetch((_url, init) => {
+              calls++;
+              if (stalled === 'headers')
+                return new Promise<Response>((_resolve, reject) => {
+                  init?.signal?.addEventListener('abort', () => reject(init.signal?.reason), {
+                    once: true,
+                  });
+                });
+              return new Response(
+                new ReadableStream<Uint8Array>({
+                  start(controller) {
+                    controller.enqueue(new TextEncoder().encode('%PDF-1.7'));
+                  },
+                  cancel() {
+                    cancelled = true;
+                  },
+                })
+              );
+            }),
+          }),
+        (error) => error instanceof ApiFault && error.code === 'COMPANY_SOURCE_UNAVAILABLE'
+      );
+      assert.equal(calls, 1);
+      assert.equal(retries, 0);
+      if (stalled === 'body') assert.equal(cancelled, true);
+      assert.ok(Date.now() - started < 500);
+    }
+  } finally {
+    clearTimeout(keepAlive);
+  }
+});
+
+test('official originals have a finite larger budget and caller cancellation never reserves a second attempt', async () => {
+  let reads = 0;
+  await assert.rejects(
+    () =>
+      downloadCompanyPdf('https://static.cninfo.com.cn/finalpage/2026-01-01/15.PDF', {
+        fetch: fakeFetch(() => {
+          reads++;
+          return new Response('%PDF-1.7', {
+            headers: { 'Content-Length': String(MAX_COMPANY_PDF_BYTES + 1) },
+          });
+        }),
+      }),
+    (error) => error instanceof ApiFault && error.code === 'COMPANY_SOURCE_TOO_LARGE'
+  );
+  assert.equal(reads, 1);
+  const controller = new AbortController();
+  const aborted = assert.rejects(
+    () =>
+      searchCompanies('300750', {
+        signal: controller.signal,
+        fetch: fakeFetch(() => {
+          reads++;
+          controller.abort();
+          return Promise.reject(new DOMException('Cancelled', 'AbortError'));
+        }),
+      }),
+    (error) => error instanceof ApiFault && error.code === 'COMPANY_CANCELLED'
+  );
+  await aborted;
+  assert.equal(reads, 2);
 });

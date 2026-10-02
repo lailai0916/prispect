@@ -1,4 +1,5 @@
 import { PDFParse } from 'pdf-parse';
+import pdfLimits from './pdf-limits.json' with { type: 'json' };
 
 // Startup may finish after the parent has already crashed or closed its IPC channel.
 if (!process.connected) process.exit(1);
@@ -11,7 +12,12 @@ process.once('message', async (message) => {
   let response;
   try {
     const buffer = Buffer.from(message?.buffer || []);
-    if (buffer.length > 25 * 1024 * 1024) throw { code: 'PDF_SIZE_LIMIT' };
+    const maximumBytes = message?.maximumBytes ?? pdfLimits.uploadBytes;
+    if (
+      ![pdfLimits.uploadBytes, pdfLimits.officialBytes].includes(maximumBytes) ||
+      buffer.length > maximumBytes
+    )
+      throw { code: 'PDF_SIZE_LIMIT' };
     if (!buffer.subarray(0, 5).equals(Buffer.from('%PDF-'))) throw { code: 'PDF_INVALID' };
     parser = new PDFParse({ data: new Uint8Array(buffer), isEvalSupported: false });
     const info = await parser.getInfo();
@@ -20,11 +26,39 @@ process.once('message', async (message) => {
     if (text.text.length > 8_000_000) throw { code: 'PDF_TEXT_LIMIT' };
     if (text.pages.map((page) => page.text.trim()).join('').length < 40)
       throw { code: 'PDF_NO_TEXT' };
+    // Only the cash supplement needs cell geometry to distinguish a blank year
+    // from a missing column. Use the parser's vector-grid tables, never infer zero.
+    const tablePages = text.pages
+      .filter((page) =>
+        /将净利润调节|现金流量表补充资料|经营性应收项目|经营性应付项目/.test(page.text)
+      )
+      .slice(0, 20)
+      .map((page) => page.num);
+    const tables = tablePages.length
+      ? await parser.getTable({ partial: tablePages })
+      : { pages: [] };
+    const byPage = new Map(
+      tables.pages.map((page) => [
+        page.num,
+        page.tables
+          .filter(
+            (table) =>
+              table.length <= 200 &&
+              table.every((row) => row.length === 3 && row.every((cell) => cell.length <= 2000))
+          )
+          .slice(0, 10),
+      ])
+    );
+    if (JSON.stringify([...byPage.values()]).length > 1_000_000) throw { code: 'PDF_TEXT_LIMIT' };
     response = {
       ok: true,
       total: info.total,
       text: text.text,
-      pages: text.pages.map((page) => ({ page: page.num, text: page.text })),
+      pages: text.pages.map((page) => ({
+        page: page.num,
+        text: page.text,
+        ...(byPage.get(page.num)?.length ? { tables: byPage.get(page.num) } : {}),
+      })),
     };
   } catch (error) {
     const code = [

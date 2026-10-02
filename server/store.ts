@@ -11,6 +11,7 @@ import type {
 import type { DecisionCase } from '../shared/decision-contracts.js';
 import type { CompanyGraphProgress } from '../shared/company-contracts.js';
 import { ApiFault, validateMaterial } from './validation.js';
+import pdfLimits from './pdf-limits.json' with { type: 'json' };
 
 export const UPLOAD_QUOTA_BYTES = 250 * 1024 * 1024;
 export const PENDING_UPLOAD_TTL_MS = 24 * 60 * 60 * 1000;
@@ -247,11 +248,17 @@ export class WorkspaceStore {
     if (!force && Date.now() - this.lastUploadCleanup < 60000) return;
     await this.serializeUploads(() => this.cleanupUploadsUnlocked());
   }
-  async retainUpload(buffer: Buffer, filename: string, expectedHash: string): Promise<string> {
+  async retainUpload(
+    buffer: Buffer,
+    filename: string,
+    expectedHash: string,
+    source: 'upload' | 'official' = 'upload'
+  ): Promise<string> {
     return this.serializeUploads(async () => {
       await this.cleanupUploadsUnlocked();
-      if (buffer.length > 25 * 1024 * 1024)
-        throw new ApiFault(413, 'LIMIT_FILE_SIZE', '文件超过 25MB 限制');
+      const maximum = source === 'official' ? pdfLimits.officialBytes : pdfLimits.uploadBytes;
+      if (buffer.length > maximum)
+        throw new ApiFault(413, 'LIMIT_FILE_SIZE', `文件超过 ${maximum / 1024 / 1024}MB 限制`);
       const sha256 = createHash('sha256').update(buffer).digest('hex');
       if (sha256 !== expectedHash)
         throw new ApiFault(400, 'UPLOAD_HASH_MISMATCH', '上传预览与原始文件哈希不一致');

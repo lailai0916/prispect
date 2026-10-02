@@ -57,7 +57,7 @@ const errorMessages: Record<string, string> = {
   COMPANY_SOURCE_EMPTY: 'The official source returned no usable evidence for this request.',
   COMPANY_SOURCE_HTTP:
     'The official source could not serve this request. Retry later or import the original.',
-  COMPANY_SOURCE_TOO_LARGE: 'The official file exceeds the 25 MB limit.',
+  COMPANY_SOURCE_TOO_LARGE: 'The official file exceeds this step’s size budget.',
   COMPANY_SOURCE_URL: 'This document URL is outside the permitted official source.',
   COMPANY_SOURCE_NOT_PDF: 'The official download is not a supported PDF.',
   COMPANY_TOOL_BUDGET:

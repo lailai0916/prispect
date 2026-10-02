@@ -569,6 +569,88 @@ test('the bounded public follow-up selects a new page and then reads it; financi
   assert.ok(output.agent?.competingExplanations.every((item) => item.status === 'hypothesis'));
 });
 
+test('one schema correction remains budgeted and duplicate cross-branch hypotheses retain their combined real references', async () => {
+  const source = fixture();
+  let selections = 0;
+  const output = await runCompanyResearch(
+    { ...input, useModel: true },
+    {
+      root,
+      fetch: source.fetch,
+      model: {
+        apiKey: 'test-only',
+        baseUrl: 'https://model.invalid/v1',
+        model: 'grok-4.7-fast',
+        fetch: async (_url, init) => {
+          const body = JSON.parse(String(init?.body)) as { messages: { content: string }[] };
+          const supplied = JSON.parse(body.messages[1]!.content) as {
+            candidates?: { id: string }[];
+            evidence?: { id: string }[];
+            verdict?: string;
+          };
+          const content = supplied.candidates
+            ? { action: 'select', selectedIds: [supplied.candidates[0]!.id] }
+            : supplied.verdict
+              ? {
+                  explanations: [
+                    { text: '原表仍需核查。', citations: [supplied.evidence![0]!.id] },
+                  ],
+                }
+              : {
+                  selections: [
+                    {
+                      hypothesis:
+                        ++selections === 1
+                          ? 'collection-pressure|payment-timing'
+                          : 'collection-pressure',
+                      evidenceIds: [supplied.evidence![0]!.id],
+                    },
+                  ],
+                };
+          return json({ choices: [{ message: { content: JSON.stringify(content) } }] });
+        },
+      },
+    }
+  );
+  assert.equal(selections, 3, 'two evidence branches and one bounded schema correction');
+  assert.equal(
+    output.agent?.providerDiagnostics?.validationFailures?.filter(
+      (item) => item.category === 'schema'
+    ).length,
+    1
+  );
+  assert.equal(output.agent?.competingExplanations.length, 1);
+  assert.ok(output.agent!.competingExplanations[0]!.evidenceIds.length >= 2);
+  assert.ok(
+    output.agent!.competingExplanations[0]!.evidenceIds.every((id) =>
+      output.agent!.evidence.some((item) => item.id === id)
+    )
+  );
+  assert.ok(output.agent!.budget.modelRequests <= output.agent!.budget.maxModelRequests);
+  assert.equal(output.preview?.material.observations.length, 12);
+});
+
+test('a large recent appendix stops within its smaller budget while the confirmed annual finance evidence remains available', async () => {
+  const source = fixture();
+  const traces: { tool: string; status: string }[] = [];
+  const output = await runCompanyResearch(input, {
+    root,
+    fetch: async (url, init) =>
+      String(url).endsWith('/16.PDF')
+        ? new Response('%PDF-1.7', { headers: { 'Content-Length': String(26 * 1024 * 1024) } })
+        : source.fetch(url, init),
+    onUpdate: (trace) => {
+      traces.push(trace);
+    },
+  });
+  assert.equal(output.preview?.material.observations.length, 12);
+  assert.equal(output.agent?.coverage.recentFullTexts, 0);
+  assert.ok(
+    traces.some((trace) => trace.tool === 'read_announcement_pdf' && trace.status === 'failed')
+  );
+  assert.ok(output.agent?.coverage.warnings.some((warning) => warning.includes('原件未读完')));
+});
+
 test('a recovered model budget stays consumed and cannot silently restart or substitute a model', async () => {
   const source = fixture();
   let requests = 0;

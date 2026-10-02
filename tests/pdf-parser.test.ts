@@ -11,10 +11,12 @@ import { createHash } from 'node:crypto';
 import { createIsolatedPdfReader, readPdfIsolated } from '../server/pdf-parser.js';
 import { readCompanyPdf } from '../server/company-extraction.js';
 import { ApiFault } from '../server/validation.js';
+import pdfLimits from '../server/pdf-limits.json' with { type: 'json' };
 
 function samplePdf(
   pageCount = 1,
-  text = 'Independent real PDF parsing fixture: exact textual content remains on the local server.'
+  text = 'Independent real PDF parsing fixture: exact textual content remains on the local server.',
+  padding = 0
 ) {
   const stream = `BT /F1 12 Tf 20 200 Td (${text}) Tj ET`;
   const font = pageCount + 3,
@@ -36,6 +38,7 @@ function samplePdf(
     offsets.push(Buffer.byteLength(result));
     result += `${i + 1} 0 obj\n${body}\nendobj\n`;
   });
+  if (padding) result += `%${' '.repeat(padding)}\n`;
   const start = Buffer.byteLength(result);
   result += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets
     .slice(1)
@@ -57,6 +60,18 @@ test('real PDF is parsed in the isolated process with identical pages and origin
   assert.equal(company.sha256, createHash('sha256').update(bytes).digest('hex'));
   await assert.rejects(readPdfIsolated(Buffer.from('%PDF-broken')), isCode('PDF_PARSE_FAILED'));
   await assert.rejects(readPdfIsolated(Buffer.from('not a PDF')), isCode('PDF_INVALID'));
+});
+test('a valid original larger than the upload budget uses the same isolated worker only through the official path', async () => {
+  const bytes = samplePdf(
+    1,
+    'Larger official original preserves exact source text.',
+    pdfLimits.uploadBytes
+  );
+  await assert.rejects(readPdfIsolated(bytes), isCode('PDF_SIZE_LIMIT'));
+  const parsed = await readCompanyPdf(bytes);
+  assert.equal(parsed.total, 1);
+  assert.match(parsed.pages[0]!.text, /preserves exact source text/);
+  assert.equal(parsed.sha256, createHash('sha256').update(bytes).digest('hex'));
 });
 test('CPU-bound child leaves the parent HTTP loop responsive; timeout kills and waits for exit', async () => {
   let pid = 0,

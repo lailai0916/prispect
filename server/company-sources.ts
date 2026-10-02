@@ -5,6 +5,7 @@ import type {
   CompanySearchResponse,
 } from '../shared/contracts.js';
 import { ApiFault } from './validation.js';
+import pdfLimits from './pdf-limits.json' with { type: 'json' };
 
 export interface CompanySourceDependencies {
   fetch?: typeof fetch;
@@ -12,17 +13,48 @@ export interface CompanySourceDependencies {
   now?: () => Date;
   onRetry?: (message: string) => void | Promise<void>;
   budget?: { used: number; maximum: number };
+  timeoutMs?: number;
+  maxAttempts?: 1 | 2;
+  maximumPdfBytes?: number;
 }
 const SEARCH = 'https://www.cninfo.com.cn/new/information/topSearch/query';
 const ANNOUNCEMENTS = 'https://www.cninfo.com.cn/new/hisAnnouncement/query';
-export const MAX_COMPANY_PDF_BYTES = 25 * 1024 * 1024;
+export const MAX_COMPANY_PDF_BYTES = pdfLimits.officialBytes;
 export const shanghaiDate = (value: Date | string) =>
   new Date(value).toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
 
-export async function boundedBody(response: Response, maximum: number): Promise<Buffer> {
+function awaitSource<T>(operation: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return operation;
+  return new Promise<T>((resolve, reject) => {
+    const abort = () =>
+      reject(signal.reason || new DOMException('Source request aborted', 'AbortError'));
+    const finish = () => signal.removeEventListener('abort', abort);
+    signal.addEventListener('abort', abort, { once: true });
+    operation.then(
+      (value) => {
+        finish();
+        resolve(value);
+      },
+      (error) => {
+        finish();
+        reject(error);
+      }
+    );
+    if (signal.aborted) {
+      finish();
+      abort();
+    }
+  });
+}
+
+export async function boundedBody(
+  response: Response,
+  maximum: number,
+  signal?: AbortSignal
+): Promise<Buffer> {
   const declared = response.headers.get('content-length');
   if (declared && Number(declared) > maximum) {
-    await response.body?.cancel();
+    void response.body?.cancel().catch(() => undefined);
     throw new ApiFault(413, 'COMPANY_SOURCE_TOO_LARGE', '官方来源文件超过当前大小限制');
   }
   if (!response.body) throw new ApiFault(502, 'COMPANY_SOURCE_EMPTY', '官方来源响应为空');
@@ -31,15 +63,19 @@ export async function boundedBody(response: Response, maximum: number): Promise<
   let size = 0;
   try {
     while (true) {
-      const { value, done } = await reader.read();
+      signal?.throwIfAborted();
+      const { value, done } = await awaitSource(reader.read(), signal);
       if (done) break;
       size += value.byteLength;
       if (size > maximum) {
-        await reader.cancel();
+        void reader.cancel().catch(() => undefined);
         throw new ApiFault(413, 'COMPANY_SOURCE_TOO_LARGE', '官方来源文件超过当前大小限制');
       }
       chunks.push(Buffer.from(value));
     }
+  } catch (error) {
+    void reader.cancel().catch(() => undefined);
+    throw error;
   } finally {
     reader.releaseLock();
   }
@@ -53,20 +89,31 @@ async function request(
   dependencies: CompanySourceDependencies
 ): Promise<Buffer> {
   const budget = dependencies.budget || { used: 0, maximum: 2 };
-  for (let attempt = 0; attempt < 2; attempt++) {
+  const attempts = dependencies.maxAttempts ?? 2;
+  const timeoutMs = dependencies.timeoutMs ?? (maximum > 2_000_000 ? 30000 : 15000);
+  if (
+    ![1, 2].includes(attempts) ||
+    !Number.isFinite(timeoutMs) ||
+    timeoutMs < 1 ||
+    timeoutMs > 30000
+  )
+    throw new RangeError('Invalid source request limits');
+  for (let attempt = 0; attempt < attempts; attempt++) {
     if (dependencies.signal?.aborted)
       throw new ApiFault(504, 'COMPANY_CANCELLED', '公开资料检索已中止');
     if (budget.used >= budget.maximum)
       throw new ApiFault(429, 'COMPANY_TOOL_BUDGET', '已达到本次公开检索请求预算');
     budget.used++;
     try {
+      const signal = AbortSignal.any([
+        AbortSignal.timeout(timeoutMs),
+        ...(dependencies.signal ? [dependencies.signal] : []),
+      ]);
+      signal.throwIfAborted();
       const response = await (dependencies.fetch || fetch)(url, {
         ...init,
         redirect: 'error',
-        signal: AbortSignal.any([
-          AbortSignal.timeout(maximum > 2_000_000 ? 30000 : 15000),
-          ...(dependencies.signal ? [dependencies.signal] : []),
-        ]),
+        signal,
       });
       if (!response.ok) {
         if ([403, 429].includes(response.status))
@@ -83,16 +130,18 @@ async function request(
           `官方来源请求未完成（HTTP ${response.status}）`
         );
       }
-      return await boundedBody(response, maximum);
+      return await boundedBody(response, maximum, signal);
     } catch (error) {
       if (error instanceof ApiFault) throw error;
       if (dependencies.signal?.aborted)
         throw new ApiFault(504, 'COMPANY_CANCELLED', '公开资料检索已中止');
-      if (attempt === 1)
+      if (attempt === attempts - 1)
         throw new ApiFault(
           502,
           'COMPANY_SOURCE_UNAVAILABLE',
-          '官方披露来源暂不可达，已完成一次重试；未替换为其他主体或年份'
+          attempts === 2
+            ? '官方披露来源暂不可达，已完成一次重试；未替换为其他主体或年份'
+            : '官方披露来源未在本次读取预算内完成；未替换为其他主体或年份'
         );
       await dependencies.onRetry?.('官方来源首次请求未完成，正在进行本工具的唯一一次重试。');
     }
@@ -266,7 +315,7 @@ export async function listCompanyAnnouncements(
       )
         continue;
       const title = row.announcementTitle.replace(/<[^>]*>/g, '').slice(0, 240);
-      const reportYear = title.match(/(20\d{2})\s*年\s*年度报告/)?.[1];
+      const reportYear = title.match(/(20\d{2})\s*(?:年\s*)?年度报告/)?.[1];
       if (
         category === 'annual' &&
         (!reportYear ||
@@ -314,10 +363,13 @@ export async function downloadCompanyPdf(
   dependencies: CompanySourceDependencies = {}
 ): Promise<{ buffer: Buffer; sha256: string; bytes: number }> {
   const safe = officialPdfUrl(sourceUrl);
+  const maximum = dependencies.maximumPdfBytes ?? MAX_COMPANY_PDF_BYTES;
+  if (!Number.isInteger(maximum) || maximum < 1 || maximum > MAX_COMPANY_PDF_BYTES)
+    throw new RangeError('Invalid official PDF size limit');
   const buffer = await request(
     safe,
     { headers: { 'User-Agent': 'Mozilla/5.0', Referer: 'https://www.cninfo.com.cn/' } },
-    MAX_COMPANY_PDF_BYTES,
+    maximum,
     dependencies
   );
   if (!buffer.subarray(0, 5).equals(Buffer.from('%PDF-')))
