@@ -255,11 +255,16 @@ export function App() {
     return () => clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
-    if (documentPaths.includes(route.split('?')[0] as DocumentPath)) return;
+    if (
+      documentPaths.includes(route.split('?')[0] as DocumentPath) ||
+      route.split('?')[0] === '/method'
+    )
+      return;
     document.title = t('析光 Prispect', 'Prispect');
   }, [t, route]);
   const page = route.split('?')[0];
   const documentPage = documentPaths.includes(page as DocumentPath);
+  const documentationRoute = documentPage || page === '/method';
   const protectedPage = !publicPages.includes(page);
   useEffect(() => {
     if (loaded && !user && protectedPage) navigate(`/login?next=${encodeURIComponent(route)}`);
@@ -290,7 +295,7 @@ export function App() {
   const navigation = [...primaryNavigation, ...secondaryNavigation];
   const sessionAvailable = loaded && !loadError;
   const business = Boolean(
-    sessionAvailable && user && !['/login', '/register', ...documentPaths].includes(page)
+    sessionAvailable && user && !['/login', '/register', '/method', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
     ? t('财报核查', 'Financial review')
@@ -524,7 +529,11 @@ export function App() {
           key={user?.id || 'anonymous'}
           id="main"
           className={
-            page === '/' ? `main-home ${business ? 'main-app business-home' : ''}` : 'main-app'
+            documentationRoute
+              ? 'main-documents'
+              : page === '/'
+                ? `main-home ${business ? 'main-app business-home' : ''}`
+                : 'main-app'
           }
           tabIndex={-1}
         >
@@ -542,6 +551,8 @@ export function App() {
                   path={page as DocumentPath}
                   section={new URLSearchParams(route.split('?')[1]).get('section')}
                 />
+              ) : page === '/method' ? (
+                <MethodPage section={new URLSearchParams(route.split('?')[1]).get('section')} />
               ) : loadError ? (
                 <div className="connection-error">
                   <CircleAlert />
@@ -562,8 +573,6 @@ export function App() {
                 </div>
               ) : page === '/' ? (
                 <Home />
-              ) : page === '/method' ? (
-                <MethodPage />
               ) : page === '/login' || page === '/register' || !user || !workspace ? (
                 <AuthPage
                   mode={page === '/register' ? 'register' : 'login'}
