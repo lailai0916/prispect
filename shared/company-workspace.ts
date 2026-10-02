@@ -5,11 +5,10 @@ export const companySections = [
   ['industry', '行业对比', 'Industry comparison'],
   ['disclosures', '公告线索', 'Announcements'],
   ['profile', '扩展核查', 'Further checks'],
-  ['qa', '企业问答', 'Company questions'],
   ['coverage', '数据覆盖', 'Data coverage'],
   ['sources', '来源比对', 'Source comparison'],
 ] as const;
-export type CompanySection = (typeof companySections)[number][0] | 'evidence';
+export type CompanySection = (typeof companySections)[number][0] | 'evidence' | 'qa';
 
 export function companyPath(runId: string, section: CompanySection = 'overview'): string {
   const query = new URLSearchParams({ run: runId });

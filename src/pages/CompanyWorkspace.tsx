@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, lazy, Suspense } from 'react';
+import { useContext, useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { ArrowUpRight, FileSearch, LoaderCircle, RefreshCw, Trash2 } from 'lucide-react';
 import type { CompanyResearchRun } from '../../shared/contracts';
 import { companyPath, companySections, type CompanySection } from '../../shared/company-workspace';
@@ -16,7 +16,7 @@ import {
 import { CompanyContextHistory } from '../CompanyContextHistory';
 import { CompanyDisclosuresView } from '../CompanyDisclosuresView';
 import { CompanyIndustryView } from '../CompanyIndustryView';
-import { CompanyQuestionsView } from '../CompanyQuestionsView';
+import { CompanyAssistantContext } from '../company-assistant-context';
 import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
@@ -25,7 +25,8 @@ const OriginalReview = lazy(() =>
 );
 
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
-  const { t, locale, navigate, confirm } = useApp();
+  const { t, locale, navigate, confirm, user } = useApp();
+  const { publish } = useContext(CompanyAssistantContext);
   const id = query.get('run');
   const section: CompanySection =
     query.get('section') === 'evidence'
@@ -91,6 +92,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     window.addEventListener('prispect:company-run-updated', update);
     return () => window.removeEventListener('prispect:company-run-updated', update);
   }, [id]);
+  useEffect(() => {
+    if (run && user) publish({ owner: user.id, run, basis, changeBasis: setBasis });
+  }, [run, basis, user?.id, publish]);
   const refresh = async () => {
     if (!run || updating) return;
     setUpdating(true);
@@ -327,23 +331,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               {section === 'industry' && <CompanyIndustryView run={run} />}
               {section === 'disclosures' && <CompanyDisclosuresView snapshot={snapshot} />}
               {section === 'profile' && <CompanyProfileView snapshot={snapshot} />}
-              {section === 'qa' && (
-                <CompanyQuestionsView
-                  key={run.id}
-                  run={run}
-                  basis={basis}
-                  onAnswer={(answer) =>
-                    setRun((previous) =>
-                      previous
-                        ? {
-                            ...previous,
-                            questions: [...(previous.questions || []), answer].slice(-50),
-                          }
-                        : previous
-                    )
-                  }
-                />
-              )}
               {section === 'coverage' && <CompanyCoverageView snapshot={snapshot} run={run} />}
               {section === 'sources' && <CompanySourcesView snapshot={snapshot} />}
             </>

@@ -67,16 +67,16 @@ export const guideDocument: ProductDocument = {
           'After signing in, New query shows a single company composer. Suggestions appear while typing; choose an entity to open its details. Retrieved context appears first while annual originals continue in the background. Loaded companies remain in the sidebar, with only the history list scrolling.',
         ],
         [
-          '侧边栏提供公司概览、历史财务走势、行业对比、公告线索、扩展核查、企业问答、数据覆盖和来源比对。财报工作台、材料中心、付款与交接、核查比较位于“核查工具”菜单。',
-          'The sidebar opens Company overview, Financial history, Industry comparison, Announcements, Further checks, Company questions, Data coverage and Source comparison. The financial workbench, Materials, Payments and handovers, and Compare reviews remain in Review tools.',
+          '侧边栏提供公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个页面。企业问答改为右下角的圆形助手，点击打开小对话框。财报工作台、材料中心、付款与交接、核查比较位于“核查工具”菜单。',
+          'The sidebar opens seven pages: Company overview, Financial history, Industry comparison, Announcements, Further checks, Data coverage and Source comparison. Click the lower-right circular assistant to open company questions in a compact chat. The financial workbench, Materials, Payments and handovers, and Compare reviews remain in Review tools.',
         ],
         [
           '公众与管理者视角只改变阅读方式；外部付款与内部交接是独立的核查目的。网页概览保留归母与合并两种利润口径，并注明近三年合计；原件现金桥继续使用同年度合并净利润。行业均值只比较同年度同行、剔除本企业；有效同行不足五家时不输出均值。',
           'Public and management views change presentation only; external payment and internal handover remain separate review purposes. Web context retains attributable and consolidated profit bases and labels three-year totals. The original cash bridge uses same-year consolidated profit. Industry averages use same-year peers, excluding the target, and are withheld below five valid peers.',
         ],
         [
-          '企业问答默认按当前公开快照生成规则回答，回答与来源随企业记录保存。可主动选择服务端模型辅助解释；失败时回落规则。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
-          'Company questions default to rules over the current public snapshot, saving answers and sources with the company record. Server-side model assistance is optional and falls back to rules on failure. Missing fields stay unknown. Failed refreshes retain earlier timestamps and do not imply no risk.',
+          '助手在公司页面沿用当前企业和利润口径；在其他页面，可以选择账号内已保存的企业。企业问答默认按当前公开快照生成规则回答，回答与来源随企业记录保存。可主动选择服务端模型辅助解释；失败时回落规则。未登录或尚未载入企业时，助手提供本地产品帮助，以及文档、登录或新建查询入口。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
+          'On company pages, the assistant uses the current company and profit basis. Elsewhere, you can select a company saved in your account. Company questions default to rules over the current public snapshot, saving answers and sources with the company record. Server-side model assistance is optional and falls back to rules on failure. Signed-out visitors and accounts without a loaded company receive local product help and links to documentation, sign-in or a new query. Missing fields stay unknown. Failed refreshes retain earlier timestamps and do not imply no risk.',
         ],
         [
           '输入准确公司名称或证券代码。准确唯一匹配可直接开始；简称有歧义时选择披露主体。当前覆盖巨潮大陆 A 股披露，未匹配不等于公司不存在或没有风险。',

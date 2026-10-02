@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ArrowUp, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type { CompanyQuestionAnswer } from '../shared/company-workspace';
@@ -11,18 +11,25 @@ export function CompanyQuestionsView({
   run,
   basis,
   onAnswer,
+  compact = false,
 }: {
   run: CompanyResearchRun;
   basis: CompanyReadingBasis;
   onAnswer: (answer: CompanyQuestionAnswer) => void;
+  compact?: boolean;
 }) {
   const { t, locale } = useApp(),
     [question, setQuestion] = useState(''),
     [sending, setSending] = useState(false),
+    [pendingQuestion, setPendingQuestion] = useState(''),
     [error, setError] = useState(''),
     [useModel, setUseModel] = useState(false);
   const controller = useRef<AbortController | null>(null),
-    active = useRef(true);
+    active = useRef(true),
+    draft = useRef(''),
+    draftRevision = useRef(0),
+    scrolling = useRef<HTMLDivElement | null>(null),
+    inputId = useId();
   useEffect(() => {
     active.current = true;
     return () => {
@@ -30,11 +37,19 @@ export function CompanyQuestionsView({
       controller.current?.abort();
     };
   }, []);
+  useEffect(() => {
+    if (compact && scrolling.current) {
+      scrolling.current.scrollTop = scrolling.current.scrollHeight;
+    }
+  }, [compact, run.questions?.length, sending]);
   const ask = async (value: string) => {
-    if (sending || !value.trim()) return;
+    if (controller.current || !value.trim()) return;
     const request = new AbortController();
+    const submittedRevision = draftRevision.current;
+    const submittedFromDraft = value === draft.current;
     controller.current = request;
     setSending(true);
+    setPendingQuestion(value.trim());
     setError('');
     try {
       const answer = await api<CompanyQuestionAnswer>(`/company-runs/${run.id}/questions`, {
@@ -44,12 +59,19 @@ export function CompanyQuestionsView({
       });
       if (active.current && !request.signal.aborted) {
         onAnswer(answer);
-        setQuestion('');
+        if (submittedFromDraft && draftRevision.current === submittedRevision) {
+          draft.current = '';
+          setQuestion('');
+        }
       }
     } catch (cause) {
       if (active.current && !request.signal.aborted) setError(requestErrorText(cause, locale));
     } finally {
-      if (active.current && !request.signal.aborted) setSending(false);
+      if (controller.current === request) controller.current = null;
+      if (active.current && !request.signal.aborted) {
+        setSending(false);
+        setPendingQuestion('');
+      }
     }
   };
   const submit = (event: FormEvent) => {
@@ -62,106 +84,141 @@ export function CompanyQuestionsView({
     t('有哪些需要核实的公告？', 'Which disclosures need verification?'),
     t('接手前需要哪些材料？', 'What evidence is needed before a handover?'),
   ];
+  const modelNotice = (
+    <p className="context-data-note">
+      {t(
+        '问题与当前企业的公开资料将发送至服务端配置的模型服务；不包含私人核查材料、付款计划或账号资料。请勿在此输入私人信息。',
+        'Your question and current public company context will be sent to the configured model provider. Private review materials, payment plans and account data are excluded. Do not enter private information here.'
+      )}{' '}
+      <a href="/privacy">{t('隐私说明', 'Privacy details')}</a>
+    </p>
+  );
   return (
-    <section className="context-questions">
-      <p className="context-data-note">
-        {t(
-          '围绕当前企业已取得的公开材料提问。默认使用规则；回答和来源按数据快照保存。',
-          'Ask about retrieved public company evidence. Rules are the default; answers and sources are saved against their data snapshot.'
-        )}
-      </p>
-      <div className="context-question-suggestions">
-        {suggested.map((item) => (
-          <button type="button" key={item} disabled={sending} onClick={() => void ask(item)}>
-            {item}
-          </button>
-        ))}
-      </div>
-      <div className="context-question-history" aria-live="polite">
-        {(run.questions || []).map((answer, index) => (
-          <article key={`${answer.createdAt}:${index}`}>
-            <h3>{answer.question}</h3>
-            <p className="context-answer-text">{answer.text}</p>
-            {answer.warning && <p className="context-data-note">{answer.warning}</p>}
-            <div className="context-answer-citations">
-              {answer.citations.map((source, index) => (
-                <a
-                  key={`${source.url}:${index}`}
-                  href={`${source.url}${source.page ? `#page=${source.page}` : ''}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {source.label}
-                  {source.page ? ` · ${t(`第 ${source.page} 页`, `page ${source.page}`)}` : ''}
-                  <ArrowUpRight size={12} />
-                </a>
-              ))}
-            </div>
-            <small>
-              {answer.mode === 'model'
-                ? t('模型解释与规则底稿', 'Model explanation and rules')
-                : answer.mode === 'rules-fallback'
-                  ? t('回落规则回答', 'Rules fallback')
-                  : t('规则回答', 'Rules answer')}{' '}
-              · {t('数据获取于', 'Data retrieved at')} {date(answer.snapshotFetchedAt, locale)}
-              {answer.snapshotFetchedAt !== run.context?.fetchedAt
-                ? ` · ${t('基于先前快照', 'based on a previous snapshot')}`
-                : ''}
-            </small>
-          </article>
-        ))}
-      </div>
-      <form className="start-input context-question-composer" onSubmit={submit}>
-        <label className="sr-only" htmlFor="company-question-input">
-          {t('企业问题', 'Company question')}
-        </label>
-        <textarea
-          id="company-question-input"
-          value={question}
-          maxLength={500}
-          rows={2}
-          placeholder={t('针对这家公司的公开材料提问', 'Ask about this company’s public evidence')}
-          onChange={(event) => setQuestion(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
-              event.preventDefault();
-              event.currentTarget.form?.requestSubmit();
-            }
-          }}
-        />
-        <div className="start-input-toolbar">
-          <label className="context-model-choice">
-            <input
-              type="checkbox"
-              checked={useModel}
-              onChange={(event) => setUseModel(event.target.checked)}
-            />
-            {t('使用大模型解释', 'Use model explanation')}
-          </label>
-          <button
-            type="submit"
-            className="start-submit"
-            disabled={sending || !question.trim()}
-            aria-label={t('发送问题', 'Send question')}
-          >
-            {sending ? <LoaderCircle size={17} className="spinner" /> : <ArrowUp size={18} />}
-          </button>
-        </div>
-      </form>
-      {useModel && (
+    <section className={`context-questions${compact ? ' context-questions-compact' : ''}`}>
+      <div className="context-question-scroll" ref={scrolling}>
         <p className="context-data-note">
           {t(
-            '问题与当前企业的公开资料将发送至服务端配置的模型服务；不包含私人核查材料、付款计划或账号资料。请勿在此输入私人信息。',
-            'Your question and current public company context will be sent to the configured model provider. Private review materials, payment plans and account data are excluded. Do not enter private information here.'
-          )}{' '}
-          <a href="/privacy">{t('隐私说明', 'Privacy details')}</a>
+            '围绕当前企业已取得的公开材料提问。默认使用规则；回答和来源按数据快照保存。',
+            'Ask about retrieved public company evidence. Rules are the default; answers and sources are saved against their data snapshot.'
+          )}
         </p>
-      )}
-      {error && (
-        <p className="inline-error" role="alert">
-          {error}
-        </p>
-      )}
+        <div className="context-question-suggestions">
+          {suggested.map((item) => (
+            <button type="button" key={item} disabled={sending} onClick={() => void ask(item)}>
+              {item}
+            </button>
+          ))}
+        </div>
+        <div
+          className="context-question-history"
+          role="log"
+          aria-label={t('企业问答记录', 'Company question history')}
+          aria-live="polite"
+          aria-relevant="additions"
+        >
+          {(run.questions || []).map((answer, index) => (
+            <article key={`${answer.createdAt}:${index}`}>
+              <h3>{answer.question}</h3>
+              <p className="context-answer-text">{answer.text}</p>
+              {answer.warning && <p className="context-data-note">{answer.warning}</p>}
+              <div className="context-answer-citations">
+                {answer.citations.map((source, index) => (
+                  <a
+                    key={`${source.url}:${index}`}
+                    href={`${source.url}${source.page ? `#page=${source.page}` : ''}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {source.label}
+                    {source.page ? ` · ${t(`第 ${source.page} 页`, `page ${source.page}`)}` : ''}
+                    <ArrowUpRight size={12} />
+                  </a>
+                ))}
+              </div>
+              <small>
+                {answer.mode === 'model'
+                  ? t('模型解释与规则底稿', 'Model explanation and rules')
+                  : answer.mode === 'rules-fallback'
+                    ? t('回落规则回答', 'Rules fallback')
+                    : t('规则回答', 'Rules answer')}{' '}
+                · {t('数据获取于', 'Data retrieved at')} {date(answer.snapshotFetchedAt, locale)}
+                {answer.snapshotFetchedAt !== run.context?.fetchedAt
+                  ? ` · ${t('基于先前快照', 'based on a previous snapshot')}`
+                  : ''}
+              </small>
+            </article>
+          ))}
+          {compact && sending && (
+            <article className="context-question-pending">
+              <h3>{pendingQuestion}</h3>
+              <p role="status">
+                <LoaderCircle size={14} className="spinner" />
+                {t('正在整理回答…', 'Preparing an answer…')}
+              </p>
+            </article>
+          )}
+        </div>
+      </div>
+      <div className="context-question-footer">
+        <form className="start-input context-question-composer" onSubmit={submit}>
+          <label className="sr-only" htmlFor={inputId}>
+            {t('企业问题', 'Company question')}
+          </label>
+          <textarea
+            id={inputId}
+            value={question}
+            maxLength={500}
+            rows={2}
+            placeholder={t(
+              '针对这家公司的公开材料提问',
+              'Ask about this company’s public evidence'
+            )}
+            onChange={(event) => {
+              draft.current = event.target.value;
+              draftRevision.current += 1;
+              setQuestion(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+          />
+          <div className="start-input-toolbar">
+            <label className="context-model-choice">
+              <input
+                type="checkbox"
+                checked={useModel}
+                onChange={(event) => setUseModel(event.target.checked)}
+              />
+              {t('使用大模型解释', 'Use model explanation')}
+            </label>
+            <button
+              type="submit"
+              className="start-submit"
+              disabled={sending || !question.trim()}
+              aria-label={t('发送问题', 'Send question')}
+            >
+              {sending ? <LoaderCircle size={17} className="spinner" /> : <ArrowUp size={18} />}
+            </button>
+          </div>
+        </form>
+        {useModel &&
+          (compact ? (
+            <details className="context-question-model-notice">
+              <summary>{t('模型使用与隐私说明', 'Model use and privacy')}</summary>
+              {modelNotice}
+            </details>
+          ) : (
+            modelNotice
+          ))}
+        {error && (
+          <p className="inline-error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

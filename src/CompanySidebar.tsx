@@ -5,7 +5,6 @@ import {
   Table2,
   ListChecks,
   FolderSearch,
-  MessagesSquare,
   ScanSearch,
   GitCompareArrows,
   LoaderCircle,
@@ -23,7 +22,6 @@ const icons = [
   Table2,
   ListChecks,
   FolderSearch,
-  MessagesSquare,
   ScanSearch,
   GitCompareArrows,
 ];
