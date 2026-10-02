@@ -27,6 +27,15 @@ const email = z
   .email()
   .max(254)
   .transform((value) => value.toLowerCase());
+export function registrationEnabledFromEnv(
+  secure: boolean,
+  configured = process.env.CASHLENS_REGISTRATION_ENABLED
+) {
+  if (configured === undefined || configured === '') return !secure;
+  if (configured !== 'true' && configured !== 'false')
+    throw new Error('CASHLENS_REGISTRATION_ENABLED must be true or false');
+  return configured === 'true';
+}
 export const registerSchema = z
   .object({
     email,
@@ -124,7 +133,8 @@ export class AuthStore {
   private constructor(
     filename: string,
     private secret: string,
-    private secure: boolean
+    private secure: boolean,
+    readonly registrationEnabled: boolean
   ) {
     this.origin = process.env.APP_ORIGIN || 'http://localhost:4318';
     if (secure && new URL(this.origin).protocol !== 'https:')
@@ -157,6 +167,7 @@ export class AuthStore {
       telemetry: { enabled: false },
       emailAndPassword: {
         enabled: true,
+        disableSignUp: !this.registrationEnabled,
         minPasswordLength: PASSWORD_MIN_LENGTH,
         maxPasswordLength: PASSWORD_MAX_LENGTH,
         password: { hash: hashPassword, verify: verifyAccountPassword },
@@ -241,6 +252,7 @@ export class AuthStore {
         }),
       ],
       disabledPaths: [
+        ...(!this.registrationEnabled ? ['/sign-up/email'] : []),
         '/delete-user',
         '/delete-user/callback',
         '/link-social',
@@ -371,12 +383,17 @@ export class AuthStore {
       },
     } satisfies BetterAuthOptions;
   }
-  static async open(dataDir: string, secure: boolean) {
+  static async open(
+    dataDir: string,
+    secure: boolean,
+    registrationEnabled = registrationEnabledFromEnv(secure)
+  ) {
     await mkdir(dataDir, { recursive: true, mode: 0o700 });
     const store = new AuthStore(
       path.join(dataDir, 'accounts.sqlite'),
       await authSecret(dataDir, secure),
-      secure
+      secure,
+      registrationEnabled
     );
     try {
       await migrateAccounts(store.db, store.options());
@@ -464,8 +481,12 @@ export class AuthStore {
   }
   response(context: AuthContext | null): AuthSession {
     return context
-      ? { user: context.user, csrfToken: this.csrfFor(context.sessionId, context.user.id) }
-      : { user: null, csrfToken: null };
+      ? {
+          user: context.user,
+          csrfToken: this.csrfFor(context.sessionId, context.user.id),
+          registrationEnabled: this.registrationEnabled,
+        }
+      : { user: null, csrfToken: null, registrationEnabled: this.registrationEnabled };
   }
   profileFor(id: string): AccountProfile {
     const user = this.db
@@ -588,6 +609,7 @@ export class AuthStore {
     return body;
   }
   async register(input: unknown, req: Request, res: Response) {
+    if (!this.registrationEnabled) throw new ApiFault(404, 'NOT_FOUND', '未找到接口');
     this.rateLimit(`register:${req.ip}`, 5, 3600000);
     const parsed = registerSchema.safeParse(input);
     if (

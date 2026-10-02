@@ -25,6 +25,7 @@ export type AppContextValue = {
   workspace: Workspace | null;
   cases: DemoCase[];
   user: AccountUser | null;
+  registrationEnabled: boolean;
   examples: PublicExample[];
   refresh: () => Promise<void>;
   navigate: (path: string, options?: { replace?: boolean }) => void;

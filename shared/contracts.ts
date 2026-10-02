@@ -289,6 +289,7 @@ export interface AccountUser {
 export interface AuthSession {
   user: AccountUser | null;
   csrfToken: string | null;
+  registrationEnabled: boolean;
 }
 
 export interface CompanyIdentity {

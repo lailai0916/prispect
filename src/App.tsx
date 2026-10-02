@@ -103,6 +103,7 @@ export function App() {
   const [route, setRoute] = useState(readBrowserRoute);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
+  const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [examples, setExamples] = useState<PublicExample[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [cases, setCases] = useState<DemoCase[]>([]);
@@ -153,6 +154,7 @@ export function App() {
       committedOwner.current = owner;
       setCsrfToken(session.csrfToken);
       setUser(session.user);
+      setRegistrationEnabled(session.registrationEnabled === true);
       setWorkspace(nextWorkspace);
       setCases(nextCases);
       setExamples(nextExamples);
@@ -319,6 +321,12 @@ export function App() {
   const documentationRoute = documentPage || page === '/method';
   const protectedPage = !publicPages.includes(page);
   useEffect(() => {
+    if (loaded && !loadError && page === '/register' && !registrationEnabled) {
+      const query = route.includes('?') ? route.slice(route.indexOf('?')) : '';
+      navigate(`/login${query}`, { replace: true });
+    }
+  }, [loaded, loadError, page, registrationEnabled, route, navigate]);
+  useEffect(() => {
     if (loaded && !user && protectedPage) navigate(`/login?next=${encodeURIComponent(route)}`);
   }, [loaded, user, protectedPage, navigate, route]);
   const value: AppContextValue = {
@@ -327,6 +335,7 @@ export function App() {
     workspace,
     cases,
     user,
+    registrationEnabled,
     examples,
     refresh,
     navigate,
@@ -631,7 +640,7 @@ export function App() {
                   )
                 ) : page === '/login' || page === '/register' || !user || !workspace ? (
                   <AuthPage
-                    mode={page === '/register' ? 'register' : 'login'}
+                    mode={page === '/register' && registrationEnabled ? 'register' : 'login'}
                     next={new URLSearchParams(route.split('?')[1]).get('next') || '/'}
                   />
                 ) : page === '/account' ? (

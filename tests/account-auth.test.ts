@@ -7,7 +7,7 @@ import path from 'node:path';
 import os from 'node:os';
 import type { AddressInfo } from 'node:net';
 import sharp from 'sharp';
-import { AuthStore } from '../server/auth.js';
+import { AuthStore, registrationEnabledFromEnv } from '../server/auth.js';
 import { createApp } from '../server/app.js';
 import type { AuthSession } from '../shared/contracts.js';
 import type { AccountOverview } from '../shared/account-contracts.js';
@@ -26,8 +26,13 @@ function totp(secret: string, at = Date.now()) {
   const offset = digest[19]! & 15;
   return ((digest.readUInt32BE(offset) & 0x7fffffff) % 1000000).toString().padStart(6, '0');
 }
-async function open(directory: string) {
-  const service = await createApp({ root: process.cwd(), dataDir: directory, model: {} });
+async function open(directory: string, registrationEnabled?: boolean) {
+  const service = await createApp({
+    root: process.cwd(),
+    dataDir: directory,
+    model: {},
+    registrationEnabled,
+  });
   const server = service.app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -83,6 +88,65 @@ function client(service: Awaited<ReturnType<typeof open>>) {
     },
   };
 }
+
+test('registration is closed by default in production and can be explicitly reopened', () => {
+  assert.equal(registrationEnabledFromEnv(true, ''), false);
+  assert.equal(registrationEnabledFromEnv(false, ''), true);
+  assert.equal(registrationEnabledFromEnv(true, 'true'), true);
+  assert.equal(registrationEnabledFromEnv(false, 'false'), false);
+  assert.throws(() => registrationEnabledFromEnv(true, 'yes'), /true or false/);
+});
+
+test('closing registration blocks both public creation routes while preserving existing sessions and login', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-registration-'));
+  let service = await open(directory, true);
+  try {
+    const original = client(service);
+    const account = await original.register('existing-registration@example.test');
+    const savedCookies = [...original.cookies];
+    await service.stop();
+    service = await open(directory, false);
+    const existing = client(service);
+    for (const [name, value] of savedCookies) existing.cookies.set(name, value);
+    const session = await existing.sync();
+    assert.equal(session.user?.id, account.user!.id);
+    assert.equal(session.registrationEnabled, false);
+    assert.equal((await existing.send('/api/workspace')).status, 200);
+
+    const anonymous = client(service);
+    assert.deepEqual(await anonymous.sync(), {
+      user: null,
+      csrfToken: null,
+      registrationEnabled: false,
+    });
+    for (const route of ['/api/auth/register', '/api/identity/sign-up/email']) {
+      for (const body of [
+        {},
+        { email: 'blocked-registration@example.test', name: 'Blocked', password },
+      ]) {
+        const response = await anonymous.send(route, body);
+        assert.equal(response.status, 404, await response.clone().text());
+        assert.equal(response.headers.getSetCookie().length, 0);
+      }
+    }
+    const count = (
+      service.auth.db.prepare('SELECT count(*) AS count FROM "user"').get() as { count: number }
+    ).count;
+    assert.equal(count, 1);
+    for (const route of ['/api/auth/login', '/api/identity/sign-in/email']) {
+      const returning = client(service);
+      const response = await returning.send(route, {
+        email: 'existing-registration@example.test',
+        password,
+      });
+      assert.equal(response.status, 200, await response.clone().text());
+      assert.equal((await returning.sync()).user?.id, account.user!.id);
+    }
+  } finally {
+    await service.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test('transaction migration preserves legacy UUID, exact Unicode scrypt semantics and private workspace; old cookie never authenticates', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-auth-migrate-'));

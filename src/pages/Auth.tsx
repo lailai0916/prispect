@@ -59,7 +59,7 @@ export function PasswordMeter({ value, context = [] }: { value: string; context?
   );
 }
 export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string }) {
-  const { t, user, execute, navigate, busy, refresh } = useApp();
+  const { t, user, registrationEnabled, execute, navigate, busy, refresh } = useApp();
   const [email, setEmail] = useState(''),
     [name, setName] = useState(''),
     [password, setPassword] = useState(''),
@@ -71,7 +71,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     [validation, setValidation] = useState(''),
     [forgot, setForgot] = useState(false);
   const [capsLock, setCapsLock] = useState(false);
-  const register = mode === 'register';
+  const register = mode === 'register' && registrationEnabled;
   const destination = loginDestination(next, location.origin);
   useEffect(() => {
     if (user) navigate(destination);
@@ -343,16 +343,18 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 </button>
               </>
             )}
-            <p className="account-auth-switch">
-              {register
-                ? t('已有账号？', 'Already have an account?')
-                : t('第一次使用析光？', 'New to Prispect?')}{' '}
-              <a
-                href={`/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
-              >
-                {register ? t('登录', 'Log in') : t('创建账号', 'Create account')}
-              </a>
-            </p>
+            {(register || registrationEnabled) && (
+              <p className="account-auth-switch">
+                {register
+                  ? t('已有账号？', 'Already have an account?')
+                  : t('第一次使用析光？', 'New to Prispect?')}{' '}
+                <a
+                  href={`/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
+                >
+                  {register ? t('登录', 'Log in') : t('创建账号', 'Create account')}
+                </a>
+              </p>
+            )}
             <p className="account-auth-fineprint">
               {register && (
                 <span>{t('创建账号前，请阅读', 'Before creating an account, read')} </span>
