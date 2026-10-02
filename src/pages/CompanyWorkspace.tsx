@@ -31,6 +31,7 @@ import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
 import { CompanyReview } from '../CompanyReview';
 import { resolveCompanySection } from '../routing';
+import { CompanyAssessment } from '../CompanyAssessment';
 import { PageLoading } from '../Experience';
 const OriginalReview = lazy(() =>
   import('./CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
@@ -47,7 +48,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const [basis, setBasis] = useState<CompanyReadingBasis>('consolidated');
   const [view, setView] = useState<'public' | 'manager'>('public');
   const [updating, setUpdating] = useState(false);
+  const [assessmentUpdating, setAssessmentUpdating] = useState(false);
   const request = useRef<AbortController | null>(null);
+  const assessmentRequested = useRef(new Set<string>());
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
@@ -77,13 +80,36 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           });
         }
         if (controller.signal.aborted) return;
+        const assessmentKey = next.context ? `${id}:${next.context.fetchedAt}` : '';
+        if (
+          assessmentKey &&
+          !next.informationGap &&
+          !next.assessment &&
+          next.contextStatus !== 'loading' &&
+          next.assessmentStatus !== 'loading' &&
+          next.assessmentStatus !== 'failed' &&
+          !assessmentRequested.current.has(assessmentKey)
+        ) {
+          assessmentRequested.current.add(assessmentKey);
+          setRun(next);
+          next = await api<CompanyResearchRun>(
+            `/company-runs/${encodeURIComponent(id)}/assessment`,
+            {
+              method: 'POST',
+              body: '{}',
+              signal: controller.signal,
+            }
+          );
+        }
+        if (controller.signal.aborted) return;
         setRun(next);
         setError('');
         window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
         if (
           next.status === 'queued' ||
           next.status === 'running' ||
-          next.contextStatus === 'loading'
+          next.contextStatus === 'loading' ||
+          next.assessmentStatus === 'loading'
         )
           timer = setTimeout(() => void load(), 1500);
       } catch (cause) {
@@ -124,6 +150,35 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       if (!signal?.aborted) setError(requestErrorText(cause, locale));
     } finally {
       setUpdating(false);
+    }
+  };
+  const refreshAssessment = async (focus?: string) => {
+    if (
+      !run?.context ||
+      run.contextStatus === 'loading' ||
+      assessmentUpdating ||
+      run.assessmentStatus === 'loading'
+    )
+      return;
+    const signal = request.current?.signal;
+    setAssessmentUpdating(true);
+    try {
+      const next = await api<CompanyResearchRun>(
+        `/company-runs/${encodeURIComponent(run.id)}/assessment`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ refresh: true, focus }),
+          signal,
+        }
+      );
+      if (!signal?.aborted) {
+        setRun(next);
+        setVersion((value) => value + 1);
+      }
+    } catch (cause) {
+      if (!signal?.aborted) setError(requestErrorText(cause, locale));
+    } finally {
+      setAssessmentUpdating(false);
     }
   };
   const remove = () =>
@@ -216,7 +271,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         <div>
           <p className="context-eyebrow">
             {section === 'overview'
-              ? t('核查报告', 'Review report')
+              ? t('分析报告', 'Analysis report')
               : run.informationGap?.name ||
                 run.identity?.companyName ||
                 snapshot?.companyName ||
@@ -233,7 +288,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <p className="context-data-note">
             {run.input.securityCode || t('主体待定位', 'Entity unconfirmed')} · {run.input.year}{' '}
             {section === 'overview'
-              ? t('年度核查 · 合并口径', 'annual review · consolidated scope')
+              ? t('年度分析 · 合并口径', 'annual analysis · consolidated scope')
               : t('年报原件', 'annual original')}{' '}
             ·{' '}
             {run.input.purpose === 'handover'
@@ -262,7 +317,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           )}
           <button
             className="icon-button"
-            disabled={active || run.contextStatus === 'loading'}
+            disabled={
+              active || run.contextStatus === 'loading' || run.assessmentStatus === 'loading'
+            }
             aria-label={t('删除企业记录', 'Delete company record')}
             onClick={remove}
           >
@@ -318,6 +375,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               </button>
             </p>
           )}
+          <CompanyAssessment
+            key={'assessment-' + run.id}
+            run={run}
+            onRefresh={(focus) => void refreshAssessment(focus)}
+            refreshing={assessmentUpdating}
+          />
           <CompanyReview key={run.id} run={run} />
           <details className="company-review-details">
             <summary>

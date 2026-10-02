@@ -4,17 +4,18 @@ The canonical types live in `shared/contracts.ts`, `shared/account-contracts.ts`
 
 ## Accounts and access
 
-| Method and path                            | Input                              | Response / effect                                                  |
-| ------------------------------------------ | ---------------------------------- | ------------------------------------------------------------------ |
-| GET /api/auth/session                      | —                                  | `AuthSession`; anonymous returns null user and token               |
-| POST /api/auth/register                    | `{ email, password, name }`        | New account, session cookie, user and CSRF token                   |
-| POST /api/auth/login                       | `{ email, password }`              | AuthSession, or an explicit two-factor challenge                   |
-| POST /api/auth/logout                      | —                                  | Revokes the current session                                        |
-| PATCH /api/auth/profile                    | `{ name }`                         | Updates the current user's profile                                 |
-| POST /api/auth/password                    | `{ currentPassword, newPassword }` | Changes password, revokes old sessions, issues new current session |
-| GET /api/public/examples                   | —                                  | Verified public historical sample summaries and sources            |
-| GET /api/public/input-template?format=json | —                                  | A downloadable structured JSON example                             |
-| GET /api/public/input-template?format=csv  | —                                  | A downloadable CSV example                                         |
+| Method and path                            | Input                              | Response / effect                                                                                    |
+| ------------------------------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| GET /api/auth/session                      | —                                  | `AuthSession`; anonymous returns null user and token                                                 |
+| POST /api/auth/register                    | `{ email, password, name }`        | New account, session cookie, user and CSRF token                                                     |
+| POST /api/auth/login                       | `{ email, password }`              | AuthSession, or an explicit two-factor challenge                                                     |
+| POST /api/auth/logout                      | —                                  | Revokes the current session                                                                          |
+| PATCH /api/auth/profile                    | `{ name }`                         | Updates the current user's profile                                                                   |
+| POST /api/auth/password                    | `{ currentPassword, newPassword }` | Changes password, revokes old sessions, issues new current session                                   |
+| GET /api/public/examples                   | —                                  | Verified public historical sample summaries and sources                                              |
+| GET /api/public/research-capabilities      | —                                  | Model configured flag/name, supported tools and bounded research limits; no credentials or user data |
+| GET /api/public/input-template?format=json | —                                  | A downloadable structured JSON example                                                               |
+| GET /api/public/input-template?format=csv  | —                                  | A downloadable CSV example                                                                           |
 
 Project compatibility, account and workspace writes send `X-CSRF-Token` returned by the session endpoint. Native identity endpoints have separate library protections, described below. Authentication uses a server-side session with an HttpOnly cookie; no password or session bearer is placed in browser localStorage. The user ID comes from the session, never from a client-provided tenant selector. Workspace, materials, tasks, questions, exports, local PDF sources and reset require login and are scoped to that user where applicable. Public health, cases and examples do not expose private workspace records.
 
@@ -193,14 +194,17 @@ The client-only `calculateCashStress` experiment uses the saved plan, an integer
 
 ## Company workspace extensions (version C)
 
+Public snapshots automatically schedule company research after retrieval. Optional run fields include `assessment`, `assessmentStatus`, `assessmentError`, `assessmentRevision`, `assessmentInputHash`, `assessmentFocus` and `assessmentTrace`; `shared/company-assessment.ts` defines scores, source-bound judgments and actual research steps. Manual assessment requests have a separate twelve-per-hour account budget; cached reads consume no model work. Omitted focus retains the saved goal, an empty string restores standard research, and changing an active goal returns 409. Identical in-flight requests return 202. Results are bound to the public snapshot and revision: a changed or deleted record cannot receive an older result. Failed refreshes retain the previous analysis with its original snapshot timestamp. Model configuration/output failure retains transparent rule results. The public capabilities endpoint indicates configuration, not successful provider verification. See [the research method and budgets](company-research-agent.md).
+
 These endpoints require the existing account session; writes require the existing origin and CSRF checks. Every company ID is resolved inside the signed-in user's store.
 
-| Method and path                      | Input                                                                 | Response / effect                                                                                                               |
-| ------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| GET /api/company-records             | —                                                                     | Lightweight `CompanyRecordSummary[]` for sidebar history, excluding evidence and full snapshots                                 |
-| POST /api/company-gaps               | `{ name, year, purpose }`                                             | Saves an information-gap record only if official search has no candidates; never fabricates financial fields                    |
-| POST /api/company-runs/:id/context   | `{ refresh?: boolean }`                                               | Returns the record; 202 while a deduplicated retrieval job runs. GET the existing run endpoint for intermediate/final snapshots |
-| POST /api/company-runs/:id/industry  | `{ period: "YYYY-12-31", refresh?: boolean }`                         | `{ snapshot, stale, cached, warning? }`; failures may retain an earlier cached snapshot with its original timestamp             |
-| POST /api/company-runs/:id/questions | `{ question, basis: "parent" \| "consolidated", useModel?: boolean }` | A snapshot-bound `CompanyQuestionAnswer`; configured model with rule fallback, last fifty answers retained                      |
+| Method and path                       | Input                                                                 | Response / effect                                                                                                               |
+| ------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| GET /api/company-records              | —                                                                     | Lightweight `CompanyRecordSummary[]` for sidebar history, excluding evidence and full snapshots                                 |
+| POST /api/company-gaps                | `{ name, year, purpose }`                                             | Saves an information-gap record only if official search has no candidates; never fabricates financial fields                    |
+| POST /api/company-runs/:id/context    | `{ refresh?: boolean }`                                               | Returns the record; 202 while a deduplicated retrieval job runs. GET the existing run endpoint for intermediate/final snapshots |
+| POST /api/company-runs/:id/assessment | `{ refresh?: boolean, focus?: string }`                               | Returns the record; cached 200 or research job 202. Focus ≤1,000 characters; poll GET run for actual steps and final assessment |
+| POST /api/company-runs/:id/industry   | `{ period: "YYYY-12-31", refresh?: boolean }`                         | `{ snapshot, stale, cached, warning? }`; failures may retain an earlier cached snapshot with its original timestamp             |
+| POST /api/company-runs/:id/questions  | `{ question, basis: "parent" \| "consolidated", useModel?: boolean }` | A snapshot-bound `CompanyQuestionAnswer`; configured model with rule fallback, last fifty answers retained                      |
 
 `shared/company-workspace.ts` and `shared/company-analysis.ts` define these extensions. Company-question requests normalize `useModel` to true, including false or omitted legacy values; missing evidence, unconfigured models and failed calls retain rule answers. Local product help does not call this endpoint or an external model. Old records remain compatible because extension fields are optional. Context/industry caches last 24 hours unless explicitly refreshed. Source outages, incomplete pagination and subject conflicts remain explicit; webpage amounts are never adopted into original-report materials automatically. See [the integration record](version-c-integration.md) for budgets and validation scope.

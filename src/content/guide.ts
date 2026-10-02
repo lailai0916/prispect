@@ -3,8 +3,8 @@ import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './documen
 export const guideDocument: ProductDocument = {
   title: ['使用文档', 'Documentation'],
   description: [
-    '从查询公司到保存核查：材料、证据、现金条件与账号的使用方法。',
-    'From company lookup to saved reviews: materials, evidence, cash conditions and accounts.',
+    '从公司分析到保存核查：评级依据、研究目标、材料与现金条件的使用方法。',
+    'From company analysis to saved reviews: grading evidence, research goals, materials and cash conditions.',
   ],
   version: DOCUMENT_VERSION,
   updatedAt: DOCUMENT_DATE,
@@ -63,8 +63,8 @@ export const guideDocument: ProductDocument = {
       title: ['查询公司与确认候选', 'Look up a company and confirm candidates'],
       bullets: [
         [
-          '登录后点击“新建查询”，默认只显示公司搜索框；输入时展开候选列表，选择主体后进入详情。概览先显示已取得字段，年报原件继续在后台核查；执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。',
-          'After signing in, New query shows a single company composer. Suggestions appear while typing; choose an entity to open its details. Retrieved context appears first while annual originals continue in the background. Loaded companies remain in the sidebar, with only the history list scrolling.',
+          '登录后点击“新建查询”，输入公司名称或证券代码，选择披露主体后进入详情。公开资料返回后自动研究，概览先展示分析判断、评级和风险，年报原件继续在后台核查；执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。',
+          'After signing in, select New query, enter a company name or security code and choose its disclosure identity. Research starts automatically when public data is available. The overview leads with judgments, a grade and risks while annual originals continue in the background. Execution and data gaps have separate states. Loaded companies remain in the sidebar, with only that list scrolling.',
         ],
         [
           '侧边栏提供公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个页面。企业问答改为右下角的圆形助手，点击打开小对话框。财报工作台、材料中心、付款与交接、核查比较位于“核查工具”菜单。',
@@ -91,8 +91,8 @@ export const guideDocument: ProductDocument = {
           'During execution, inspect task tracks and actual activity. Completion, failure, cancellation and recoverability have distinct states. Cancellation retains obtained content; resume is offered only for recoverable runs. Returning to an existing run does not require creating it again.',
         ],
         [
-          '结果先看财务观察，再打开来源核对金额、年度、单位和合并范围。核对候选后点击“采用并核查”；析光保存材料、建立规则报告，并自动进行 AI 解读。必要证据缺失或输入冲突时，暂停依赖这些字段的解释。',
-          'Read financial observations first, then open their sources to check amounts, year, units and consolidated scope. After reviewing candidates, select “Adopt and review.” Prispect saves the material, creates a rules report and automatically runs AI interpretation. Missing required evidence or conflicting inputs pauses explanations that depend on those fields.',
+          '先看公司分析的判断、评级与主要风险，点击“依据”核对指标、公式和来源。公开研究不会自动采用年报候选；核对原件的金额、年度、单位和合并范围后，才点击“采用并核查”。析光保存材料、建立规则报告，并自动进行 AI 解读；缺失或冲突时暂停依赖相应字段的解释。',
+          'Start with the company judgment, grade and main risks, then select Evidence to check metrics, formulas and sources. Public research does not automatically adopt annual-report candidates. Check original amounts, year, units and consolidated scope before selecting Adopt and review. Prispect saves the material, creates a rules report and automatically runs AI interpretation; missing or conflicting fields pause dependent explanations.',
         ],
         [
           '历史财务图表并行读取东方财富公开网页的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',
@@ -104,6 +104,39 @@ export const guideDocument: ProductDocument = {
         ],
       ],
       links: [{ label: ['打开公司查询', 'Open company lookup'], href: '/query' }],
+    },
+    {
+      id: 'company-analysis',
+      title: ['阅读公司分析与继续研究', 'Read company analysis and research further'],
+      paragraphs: [
+        [
+          '公司分析使用所选年度合并财务、最多六个年度的历史资料、同年度同行、公告和新闻。AI 根据现有资料与研究目标选择补查方向，给出总体判断、优势、风险、后续核查及判断变化条件。研究有范围和使用频率限制，页面显示实际执行过程与资料覆盖。',
+          'Company analysis uses selected-year consolidated financials, up to six annual periods of history, same-year peers, disclosures and news. AI chooses further research based on available information and the research goal, then reports an overall judgment, strengths, risks, next checks and conditions for reassessment. Research has scope and usage limits; the page shows actual steps and coverage.',
+        ],
+      ],
+      bullets: [
+        [
+          '六个维度分别是盈利成长、经营现金质量、偿付杠杆、营运占用、同行位置、事件与治理。前四个核心财务维度各占综合分的 25%；同行与事件提供定性判断，不因一条新闻标题自动扣分。',
+          'The six dimensions are profitability and growth, operating-cash quality, solvency and leverage, working-capital pressure, industry position, and events and governance. The first four each contribute 25% of the score. Peers and events add qualitative context; a news headline does not automatically deduct points.',
+        ],
+        [
+          '基础评级为 A：至少 80 分；B：60–79.99；C：40–59.99；D：低于 40。一个核心维度低于 40 分，最终评级最高 C；两个及以上低于 40 分，最高 D。综合分保留原值，评级旁显示触发原因。四个核心维度缺少关键数据或存在冲突时为 NR（暂不评级），不补零或调整缺失权重。',
+          'Base grades are A: at least 80; B: 60–79.99; C: 40–59.99; D: below 40. One core dimension below 40 caps the final grade at C; two or more cap it at D. The original score remains visible alongside the cap reason. Missing or conflicting key data in any core dimension produces NR (not rated), without filling zeros or redistributing missing weights.',
+        ],
+        [
+          '“依据”和“指标与计算依据”展示精确金额、公式与对应来源；“评级方法与阈值”说明具体规则。评级属于析光公开财务筛选方法，不是评级机构的信用等级。历史金额不代表当前可用现金；标题线索、网页字段和已取得的原文节选分别标注。',
+          'Evidence and Metrics and calculations show exact amounts, formulas and supporting sources; Grade methodology and thresholds explains the rules. The grade is Prispect’s public-financial screening method, not a credit-agency rating. Historical amounts are not current available cash. Headline leads, web fields and retrieved source excerpts are labeled separately.',
+        ],
+        [
+          '需要补查时打开“进一步研究”，填写重点，例如“比较现金质量与同行，梳理近一年重大事项”，再点击“开始研究”。研究目标会发送给分析模型，请只填写公开公司问题。留空回到常规研究范围；不需要填写目标才能得到默认分析。',
+          'For a focused follow-up, open Research further, enter a goal such as “compare cash quality with peers and review major events over the past year,” and select Start research. The goal is sent to the analysis model; include public-company questions only. Leaving it blank restores the standard scope. A goal is not required for the default analysis.',
+        ],
+        [
+          '研究过程区分执行中、完成与未完成。模型未配置或失败时保留规则评级与指标，缺失项保持未知；重试未完成时保留上一份分析，并注明对应的资料快照与生成时间。没有查到新闻或公告，不代表没有风险。',
+          'Research steps distinguish running, completed and failed states. An unconfigured or failed model retains rule-based grades and metrics, with missing fields left unknown. An incomplete retry retains the previous analysis and its data-snapshot and generation times. Finding no news or disclosure does not establish absence of risk.',
+        ],
+      ],
+      links: [{ label: ['开始公司研究', 'Start company research'], href: '/query' }],
     },
     {
       id: 'import',

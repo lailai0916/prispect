@@ -938,7 +938,7 @@ test('a late model reservation cannot send after a parallel progress persistence
       new Promise<void>((_, reject) => {
         timer = setTimeout(
           () => reject(new Error('fixture second model reservation did not arrive')),
-          1500
+          5000 // Allow concurrent PDF fixtures to finish; this is not a latency assertion.
         );
       }),
     ]);
