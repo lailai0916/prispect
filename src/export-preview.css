@@ -1,0 +1,106 @@
+.export-preview-dialog {
+  width: min(960px, calc(100vw - 48px));
+}
+.export-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.export-preview-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.export-preview-formats button {
+  min-height: 36px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 12px;
+}
+.export-preview-formats button:hover {
+  background: var(--hover);
+  color: var(--ink);
+}
+.export-preview-formats button[aria-pressed='true'] {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+}
+.export-preview-file {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+}
+.export-preview-file > span:first-of-type {
+  flex: 1;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.export-preview-file svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.export-preview-file > .mono {
+  white-space: nowrap;
+}
+.export-preview-html {
+  display: block;
+  width: 100%;
+  height: min(58vh, 620px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.export-preview-text {
+  max-height: min(58vh, 620px);
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface-subtle);
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.export-preview-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 220px;
+  color: var(--muted);
+  text-align: center;
+}
+@media (max-width: 600px), (pointer: coarse) {
+  .export-preview-formats button {
+    min-height: 44px;
+  }
+}
+@media (max-width: 600px) {
+  .export-preview-dialog {
+    width: calc(100vw - 24px);
+  }
+  .export-preview-toolbar {
+    gap: 8px;
+  }
+  .export-preview-toolbar > .button {
+    margin-left: auto;
+  }
+  .export-preview-file {
+    flex-wrap: wrap;
+  }
+}

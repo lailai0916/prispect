@@ -43,6 +43,130 @@ test('two real cases recompute amounts, independent remaining rows and percentag
   assert.equal(hik.bridge?.length, 6);
   assert.equal(metric(hik, 'netProfit').value, '15433655239.83');
 });
+test('annual amount changes retain both original sources and do not require cash-bridge adjustments', () => {
+  const material = structuredClone(fixture.materials[0]!);
+  material.observations = material.observations.filter((row) =>
+    ['netProfit', 'operatingCashFlow'].includes(row.key)
+  );
+  const report = run(material);
+  assert.equal(report.bridge, null);
+  assert.equal(report.verdict, 'insufficient');
+  assert.equal(metric(report, 'profitChange').value, '105988319.86');
+  assert.equal(metric(report, 'cashChange').value, '-113326575.44');
+  assert.equal(metric(report, 'profitGrowth').value, '40.70');
+  assert.equal(metric(report, 'cashGrowth').value, '-81.22');
+  for (const [changeKey, sourceKey] of [
+    ['profitChange', 'netProfit'],
+    ['cashChange', 'operatingCashFlow'],
+  ] as const) {
+    const change = metric(report, changeKey);
+    assert.equal(change.unit, 'CNY');
+    assert.equal(change.kind, 'calculated');
+    assert.equal(change.sourceRefs.length, 2);
+    for (const row of material.observations.filter((item) => item.key === sourceKey))
+      assert.ok(change.sourceRefs.some((ref) => ref.quote === row.quote && ref.page === row.page));
+  }
+});
+test('nonpositive prior amounts retain signed changes while conventional growth stays inapplicable', () => {
+  const material = structuredClone(fixture.materials[0]!);
+  material.observations = material.observations.filter((row) =>
+    ['netProfit', 'operatingCashFlow'].includes(row.key)
+  );
+  for (const row of material.observations) {
+    row.value =
+      row.key === 'netProfit'
+        ? row.year === 2025
+          ? '-100.00'
+          : '0.00'
+        : row.year === 2025
+          ? '-3.00'
+          : '-8.00';
+    row.quote = `Synthetic amount-change fixture: ${row.year} ${row.key} ${row.value} CNY.`;
+  }
+  const report = run(material);
+  assert.equal(metric(report, 'profitChange').value, '-100.00');
+  assert.equal(metric(report, 'cashChange').value, '5.00');
+  assert.equal(metric(report, 'profitGrowth').value, null);
+  assert.equal(metric(report, 'cashGrowth').value, null);
+  material.observations.find((row) => row.key === 'netProfit' && row.year === 2025)!.value = '0.00';
+  assert.equal(metric(run(material), 'profitChange').value, '0.00');
+});
+test('amount changes preserve a one-cent movement above floating-point safe-integer precision', () => {
+  const material = structuredClone(fixture.materials[0]!);
+  material.observations = material.observations.filter((row) => row.key === 'netProfit');
+  material.observations.find((row) => row.year === 2025)!.value = '90071992547409.92';
+  material.observations.find((row) => row.year === 2024)!.value = '90071992547409.91';
+  assert.equal(metric(run(material), 'profitChange').value, '0.01');
+});
+test('excluded, missing and unconfirmed comparison observations never yield an amount change', () => {
+  const excluded = run(fixture.materials[0]!, ['netProfit']);
+  assert.equal(metric(excluded, 'profitChange').value, null);
+  assert.equal(metric(excluded, 'profitGrowth').value, null);
+  assert.deepEqual(metric(excluded, 'profitChange').sourceRefs, []);
+  assert.equal(metric(excluded, 'cashChange').value, '-113326575.44');
+
+  const nonconsecutive = structuredClone(fixture.materials[0]!);
+  nonconsecutive.observations.find((row) => row.year === 2024 && row.key === 'netProfit')!.year =
+    2023;
+  assert.equal(metric(run(nonconsecutive), 'profitChange').value, null);
+  assert.equal(metric(run(nonconsecutive), 'profitGrowth').value, null);
+
+  for (const field of ['scope', 'period'] as const) {
+    const unconfirmed = structuredClone(fixture.materials[0]!);
+    const previous = unconfirmed.observations.find(
+      (row) => row.year === 2024 && row.key === 'operatingCashFlow'
+    )!;
+    previous[field] = 'unknown';
+    const report = run(unconfirmed);
+    assert.equal(metric(report, 'cashChange').value, null);
+    assert.equal(metric(report, 'cashGrowth').value, null);
+    assert.equal(metric(report, 'profitChange').value, '105988319.86');
+  }
+});
+test('declared and reconciliation conflicts withhold amount changes and conventional growth', () => {
+  const cases: Material[] = [];
+  const different = structuredClone(fixture.materials[0]!);
+  const cash = different.observations.find(
+    (row) => row.year === 2025 && row.key === 'operatingCashFlow'
+  )!;
+  different.observations.push({ ...cash, id: 'change-value-conflict', value: '1.00' });
+  cases.push(different);
+  const currency = structuredClone(fixture.materials[0]!);
+  currency.observations.find((row) => row.year === 2024 && row.key === 'netProfit')!.currency =
+    'USD';
+  cases.push(currency);
+  const scope = structuredClone(fixture.materials[0]!);
+  scope.observations.find((row) => row.year === 2024 && row.key === 'operatingCashFlow')!.scope =
+    'parent';
+  cases.push(scope);
+  const period = structuredClone(fixture.materials[0]!);
+  period.observations.find((row) => row.year === 2024 && row.key === 'operatingCashFlow')!.period =
+    'interim';
+  cases.push(period);
+  const bridgeConflict = structuredClone(fixture.materials[0]!);
+  bridgeConflict.observations.find(
+    (row) => row.year === 2025 && row.key === 'operatingCashFlow'
+  )!.value = '26197123.71';
+  cases.push(bridgeConflict);
+  const extraConflict = structuredClone(fixture.materials[0]!);
+  extraConflict.observations.find(
+    (row) => row.year === 2024 && row.key === 'payablesAdjustment'
+  )!.scope = 'parent';
+  cases.push(extraConflict);
+
+  for (const material of cases) {
+    const report = run(material);
+    assert.equal(report.verdict, 'conflict');
+    for (const key of ['profitChange', 'cashChange', 'profitGrowth', 'cashGrowth'])
+      assert.equal(metric(report, key).value, null);
+  }
+  const subject = analyze(
+    { title: '主体冲突', company: '其他公司', year: 2025, materialIds: [different.id] },
+    [different]
+  );
+  assert.equal(metric(subject, 'profitChange').value, null);
+  assert.equal(metric(subject, 'cashChange').value, null);
+});
 test('paired real-year movement and working-capital adjustments produce a sourced, reversible cross-signal', () => {
   const material = fixture.materials[0]!;
   const complete = run(material);

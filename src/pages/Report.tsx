@@ -28,13 +28,16 @@ import type {
   CrossSignalCheck,
   MetricKey,
   Report,
+  ReviewPurpose,
   Workspace,
 } from '../../shared/contracts';
 import { api, post } from '../api';
 import { chartScale, reviewVariantTitle, date, metricName, metricValue, money } from '../format';
 import { translateRule } from '../ruleTranslations';
 import { ModelExplanation } from '../ModelExplanation';
-import { ReviewContext, purposeName } from '../ReviewContext';
+import { ReviewContext, purposeName, type ReviewContextHandle } from '../ReviewContext';
+import { buildReviewChecklist, rankReviewQuestions } from '../reviewChecklist';
+import { ExportPreview, exportFilename, taskExportSource } from '../ExportPreview';
 
 import { useApp, adjustments } from '../context';
 import {
@@ -47,11 +50,15 @@ import {
   Dialog,
 } from '../components';
 import '../review-pages.css';
+import '../report-enhancements.css';
+
+type ReviewExportFormat = 'html' | 'json' | 'checklist';
 
 export function TaskPage({ id }: { id: string }) {
   const { t, locale, workspace, execute, navigate, refresh } = useApp();
   const task = workspace!.tasks.find((item) => item.id === id);
   const [stressOpen, setStressOpen] = useState(false);
+  const [exportFormat, setExportFormat] = useState<ReviewExportFormat | null>(null);
   if (!task)
     return (
       <EmptyState
@@ -100,14 +107,19 @@ export function TaskPage({ id }: { id: string }) {
                   label={t('报告操作', 'Report actions')}
                   items={[
                     {
-                      label: t('下载报告（HTML）', 'Download report (HTML)'),
+                      label: t('预览核查报告（HTML）', 'Preview report (HTML)'),
                       icon: <Download size={15} />,
-                      onSelect: () => {
-                        const anchor = document.createElement('a');
-                        anchor.href = `/api/tasks/${task.id}/export?format=html`;
-                        anchor.download = '';
-                        anchor.click();
-                      },
+                      onSelect: () => setExportFormat('html'),
+                    },
+                    {
+                      label: t('预览询证清单（Markdown）', 'Preview evidence requests (Markdown)'),
+                      icon: <FileText size={15} />,
+                      onSelect: () => setExportFormat('checklist'),
+                    },
+                    {
+                      label: t('预览完整数据（JSON）', 'Preview full data (JSON)'),
+                      icon: <Layers size={15} />,
+                      onSelect: () => setExportFormat('json'),
                     },
                     {
                       label: t('打印报告', 'Print report'),
@@ -176,7 +188,7 @@ export function TaskPage({ id }: { id: string }) {
           )}
         </section>
       ) : report ? (
-        <ReportView task={task} report={report} />
+        <ReportView task={task} report={report} onExport={setExportFormat} />
       ) : (
         <div className="inline-error">
           {t(
@@ -199,7 +211,50 @@ export function TaskPage({ id }: { id: string }) {
         </details>
       )}
       {stressOpen && <StressDialog task={task} onClose={() => setStressOpen(false)} />}
+      {report && exportFormat && (
+        <ReviewExportDialog
+          task={task}
+          format={exportFormat}
+          onClose={() => setExportFormat(null)}
+        />
+      )}
     </>
+  );
+}
+
+function ReviewExportDialog({
+  task,
+  format,
+  onClose,
+}: {
+  task: AnalysisTask;
+  format: ReviewExportFormat;
+  onClose: () => void;
+}) {
+  const { t, locale } = useApp();
+  const checklistTitle =
+    task.purpose === 'handover'
+      ? t('接手前询证清单', 'Handover-evidence-requests')
+      : t('付款前询证清单', 'Prepayment-evidence-requests');
+  return (
+    <ExportPreview
+      title={t('导出预览', 'Export preview')}
+      snapshotKey={`${task.id}:${task.updatedAt}`}
+      initialSourceId={format}
+      onClose={onClose}
+      sources={[
+        taskExportSource(task, 'html', locale),
+        taskExportSource(task, 'json', locale),
+        {
+          id: 'checklist',
+          label: t('询证清单 · Markdown', 'Evidence requests · Markdown'),
+          filename: exportFilename(`${task.company}-${task.year}-${checklistTitle}`, 'md'),
+          mimeType: 'text/markdown;charset=utf-8',
+          preview: 'text',
+          load: () => buildReviewChecklist(task, locale),
+        },
+      ]}
+    />
   );
 }
 
@@ -250,12 +305,41 @@ export function StageList({ task }: { task: AnalysisTask }) {
   );
 }
 
-export function ReportView({ task, report }: { task: AnalysisTask; report: Report }) {
+export function ReportView({
+  task,
+  report,
+  onExport,
+}: {
+  task: AnalysisTask;
+  report: Report;
+  onExport?: (format: ReviewExportFormat) => void;
+}) {
   const { t, locale, execute, showEvidence, navigate, busy } = useApp();
+  const purpose = task.purpose || 'external';
+  const contextControl = useRef<ReviewContextHandle>(null);
   const [section, setSection] = useState<'evidence' | 'explanations' | 'requests' | 'scope'>(
-    'evidence'
+    purpose === 'handover' ? 'requests' : 'evidence'
   );
   const [testMetric, setTestMetric] = useState<MetricKey | null>(null);
+  const [exportFormat, setExportFormat] = useState<ReviewExportFormat | null>(null);
+  const previewExport = onExport || setExportFormat;
+  const questions = rankReviewQuestions(report, purpose);
+  const nextQuestion = questions.find((item) => item.question.status !== 'done');
+  const changePurpose = async (next: ReviewPurpose) => {
+    if (next === purpose) return;
+    if (await contextControl.current?.changePurpose(next)) {
+      setSection(next === 'handover' ? 'requests' : 'evidence');
+    }
+  };
+  const openRequests = () => {
+    setSection('requests');
+    requestAnimationFrame(() =>
+      document.getElementById('report-panel-requests')?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      })
+    );
+  };
   const getMetric = (key: string) => report.metrics.find((metric) => metric.key === key);
   const metrics = [
     getMetric('netProfit'),
@@ -278,16 +362,97 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
         : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
   return (
     <div className="report-content">
-      <div className="report-decision-entry">
-        <span>{t('继续核查本次安排', 'Continue this review')}</span>
-        <button
-          className="text-link"
-          onClick={() => navigate(`/decisions?new=${task.purpose || 'external'}&task=${task.id}`)}
-        >
-          {t('新建核查事项', 'New review matter')}
-          <ArrowRight size={14} />
-        </button>
-      </div>
+      <section className="report-purpose-overview" aria-labelledby="report-purpose-heading">
+        <div className="report-purpose-topline">
+          <h2 id="report-purpose-heading">{t('本次核查重点', 'Focus for this review')}</h2>
+          <div
+            className="segmented-control purpose-switch"
+            aria-label={t('选择核查用途', 'Choose review purpose')}
+          >
+            {(['external', 'handover'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={purpose === value ? 'active' : ''}
+                aria-pressed={purpose === value}
+                disabled={busy}
+                onClick={() => changePurpose(value)}
+              >
+                {purposeName(value, t)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="report-purpose-body">
+          <div>
+            <h3>
+              {purpose === 'handover'
+                ? t(
+                    '先核对接手时的可用资金与到期付款',
+                    'Confirm cash available at handover and payments due'
+                  )
+                : t(
+                    '先核对签约主体、收款安排与承诺条款',
+                    'Check the contracting entity, payment arrangements and written promises'
+                  )}
+            </h3>
+            <p>
+              {purpose === 'handover'
+                ? t(
+                    '历史利润和经营现金净额用于定位核查事项。当前余额、未来回款和到期义务，需要另取材料并逐笔确认。',
+                    'Historical profit and operating cash help locate questions. Current balances, future collections and obligations due require separate records and reconciliation.'
+                  )
+                : t(
+                    '财报能支持经营线索，不能证明这次付款的本金安全或交付承诺。先确认对方是谁、钱付给谁，以及交付与退出条件。',
+                    'Financial statements support operating clues, but do not establish the safety of this payment or a delivery promise. Confirm the entities, receiving account, delivery and exit terms.'
+                  )}
+            </p>
+            <button
+              type="button"
+              className="text-link"
+              onClick={() => navigate(`/decisions?new=${purpose}&task=${task.id}`)}
+            >
+              {purpose === 'handover'
+                ? t('建立接手核查事项', 'Start a handover review matter')
+                : t('建立付款核查事项', 'Start a payment review matter')}
+              <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="report-next-request">
+            <span>{t('下一项材料核查', 'Next evidence request')}</span>
+            <h3>
+              {nextQuestion
+                ? t(nextQuestion.question.text, translateRule(nextQuestion.question.text))
+                : questions.length
+                  ? t(
+                      '已记录全部询证跟进，继续核对场景材料',
+                      'All follow-ups recorded; check the context records next'
+                    )
+                  : t(
+                      '核对本次安排所需的直接材料',
+                      'Check the direct records needed for this arrangement'
+                    )}
+            </h3>
+            <p>
+              {nextQuestion
+                ? t(nextQuestion.orderReason.zh, nextQuestion.orderReason.en)
+                : questions.length
+                  ? t(
+                      '跟进完成不代表结论已经证实。核对本次付款或接手安排所需的直接材料。',
+                      'Recorded follow-up does not authenticate a conclusion. Review the direct records needed for this payment or handover.'
+                    )
+                  : t(
+                      '本报告没有已保存的询证项。请核对场景材料，不从空清单推断本次安排可靠。',
+                      'This report has no saved evidence requests. Check the context records; an empty checklist does not establish that this arrangement is reliable.'
+                    )}
+            </p>
+            <button type="button" className="text-link" onClick={openRequests}>
+              {t('查看材料清单', 'View evidence requests')}
+              <ArrowRight size={14} />
+            </button>
+          </div>
+        </div>
+      </section>
       <section className={`verdict-section verdict-${report.verdict}`}>
         <div className="verdict-topline">
           <VerdictTag verdict={report.verdict} />
@@ -504,6 +669,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                 </div>
               </div>
               <TrendChart report={report} />
+              <AnnualChanges report={report} />
               <p className="chart-caption">
                 {t(
                   '同一家公司、同一报表范围。同比基数为零或负值时，不给出通常增长率。',
@@ -727,18 +893,41 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
       </div>
       <div id="report-panel-requests" hidden={section !== 'requests'}>
         <details className="report-context-details">
-          <summary>{t('付款背景与跟进', 'Payment context and follow-up')}</summary>
-          <ReviewContext task={task} report={report} />
+          <summary>
+            {purpose === 'handover'
+              ? t('接手背景与跟进', 'Handover context and follow-up')
+              : t('付款背景与跟进', 'Payment context and follow-up')}
+          </summary>
+          <ReviewContext
+            task={task}
+            report={report}
+            controlRef={contextControl}
+            hidePurposeSelector
+          />
         </details>
         <section className="report-section questions-section" id="questions">
           <div className="report-section-title">
             <div>
-              <h2>{t('待询证清单', 'Evidence requests')}</h2>
+              <h2>
+                {purpose === 'handover'
+                  ? t('接手前询证清单', 'Handover evidence requests')
+                  : t('付款前询证清单', 'Prepayment evidence requests')}
+              </h2>
             </div>
-            <Tag tone="green">
-              {report.questions.filter((question) => question.status === 'done').length}/
-              {report.questions.length} {t('已完成', 'done')}
-            </Tag>
+            <div className="report-request-actions">
+              <button
+                type="button"
+                className="text-link"
+                onClick={() => previewExport('checklist')}
+              >
+                <Download size={14} />
+                {t('预览清单', 'Preview checklist')}
+              </button>
+              <Tag tone="green">
+                {report.questions.filter((question) => question.status === 'done').length}/
+                {report.questions.length} {t('已完成', 'done')}
+              </Tag>
+            </div>
           </div>
           <p className="section-intro">
             {t(
@@ -747,7 +936,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
             )}
           </p>
           <div className="question-list">
-            {report.questions.map((question, index) => (
+            {questions.map(({ question, priority, orderReason, recipient }, index) => (
               <div
                 className={`question-row ${question.status === 'done' ? 'question-done' : ''}`}
                 key={question.id}
@@ -776,9 +965,22 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                   </span>
                 </label>
                 <div>
-                  <span className="question-number">Q{String(index + 1).padStart(2, '0')}</span>
+                  <div className="question-order-label">
+                    <span className="question-number">Q{String(index + 1).padStart(2, '0')}</span>
+                    <span>
+                      {priority === 'prerequisite'
+                        ? t('先补依据', 'Evidence prerequisite')
+                        : priority === 'recorded'
+                          ? t('已记录跟进', 'Follow-up recorded')
+                          : t('继续核查', 'Further inquiry')}
+                    </span>
+                  </div>
                   <h3>{t(question.text, translateRule(question.text))}</h3>
                   <p>{t(question.reason, translateRule(question.reason))}</p>
+                  <p className="question-order-reason">
+                    <strong>{t('顺序依据', 'Order reason')}</strong>{' '}
+                    {t(orderReason.zh, orderReason.en)}
+                  </p>
                   {question.trigger && (
                     <div className="question-trigger">
                       <span>
@@ -802,6 +1004,9 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                       {t(question.requestedEvidence, translateRule(question.requestedEvidence))}
                     </span>
                   </div>
+                  <p className="question-recipient">
+                    <strong>{t('向谁索取', 'Request from')}</strong> {t(recipient.zh, recipient.en)}
+                  </p>
                 </div>
               </div>
             ))}
@@ -864,14 +1069,14 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
             )}
           </div>
           <div className="report-bottom-actions">
-            <a
+            <button
               className="button button-secondary"
-              href={`/api/tasks/${task.id}/export?format=json`}
-              download
+              type="button"
+              onClick={() => previewExport('json')}
             >
               <Download size={16} />
-              {t('下载完整 JSON', 'Download full JSON')}
-            </a>
+              {t('预览完整 JSON', 'Preview full JSON')}
+            </button>
             <button
               className="button button-secondary"
               onClick={() => navigate(`/compare?left=${task.id}`)}
@@ -899,6 +1104,13 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           focusedMetric={testMetric}
           initialExcluded={[...new Set([...task.excludedMetrics, testMetric])]}
           onClose={() => setTestMetric(null)}
+        />
+      )}
+      {exportFormat && (
+        <ReviewExportDialog
+          task={task}
+          format={exportFormat}
+          onClose={() => setExportFormat(null)}
         />
       )}
     </div>
@@ -1434,6 +1646,157 @@ export function TrendChart({ report }: { report: Report }) {
           <FileText size={13} />
         </button>
       </div>
+    </div>
+  );
+}
+
+function AnnualChanges({ report }: { report: Report }) {
+  const { locale, t, showEvidence } = useApp();
+  return (
+    <div
+      className="annual-changes"
+      aria-label={t('两期变化与计算', 'Two-period changes and calculations')}
+    >
+      {(
+        [
+          ['netProfit', 'profitChange', 'profitGrowth'],
+          ['operatingCashFlow', 'cashChange', 'cashGrowth'],
+        ] as const
+      ).map(([key, changeKey, growthKey]) => {
+        const metric = report.metrics.find((item) => item.key === key);
+        const change = report.metrics.find((item) => item.key === changeKey);
+        const growth = report.metrics.find((item) => item.key === growthKey);
+        const calculated = change?.value !== null && change?.value !== undefined;
+        const unavailable =
+          report.verdict === 'conflict'
+            ? t(
+                '输入或核对存在冲突，变化计算已暂停。',
+                'Input or reconciliation conflicts have paused change calculations.'
+              )
+            : t(
+                '缺少可采用的同口径两期金额，未计算变动额。',
+                'Adoptable amounts for both periods on a consistent scope are unavailable; the amount change was not calculated.'
+              );
+        return (
+          <details className="annual-change-row" key={key}>
+            <summary>
+              <span>{metricName(key, locale)}</span>
+              <strong className="mono">
+                {calculated ? (
+                  <>
+                    {metricValue(change, locale)} <small>CNY</small>
+                  </>
+                ) : change ? (
+                  t('变动额未计算', 'Amount change unavailable')
+                ) : (
+                  t('历史报告未保存', 'Not saved in this report')
+                )}
+              </strong>
+              <span className="annual-growth-label">
+                {growth?.value != null ? (
+                  <>
+                    {t('同比', 'YoY')} {metricValue(growth, locale)}
+                  </>
+                ) : (
+                  t('同比未计算', 'YoY unavailable')
+                )}
+                <ChevronDown size={14} />
+              </span>
+            </summary>
+            <div className="annual-change-body">
+              <dl className="annual-period-amounts">
+                {[
+                  { year: report.previousYear, value: metric?.previousValue },
+                  { year: report.year, value: metric?.value },
+                ].map(({ year, value }) => {
+                  const refs =
+                    report.checks.find((check) => check.id === `${year}-${key}`)?.sourceRefs || [];
+                  return (
+                    <div key={year}>
+                      <dt>
+                        {year} {t('年度', 'FY')}
+                      </dt>
+                      <dd className="mono">{money(value ?? null, locale, false)} CNY</dd>
+                      {refs.length ? (
+                        <button
+                          type="button"
+                          className="text-link"
+                          onClick={() => showEvidence(refs, report)}
+                        >
+                          {t('查看该期来源与口径', 'Inspect this period’s sources and scope')}
+                          <ArrowUpRight size={13} />
+                        </button>
+                      ) : (
+                        <span className="annual-source-missing">
+                          {t(
+                            '本次未保存该期引用',
+                            'No reference saved for this period in this review'
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </dl>
+              <div className="annual-change-formula">
+                <strong>{t('金额变化', 'Amount change')}</strong>
+                {change ? (
+                  <>
+                    <p>{t(change.formula, translateRule(change.formula))}</p>
+                    {calculated && metric?.value != null && metric.previousValue != null ? (
+                      <p className="mono">
+                        ({money(metric.value, locale, false)}) − (
+                        {money(metric.previousValue, locale, false)}) ={' '}
+                        {money(change.value, locale, false)} CNY
+                      </p>
+                    ) : (
+                      <p>{unavailable}</p>
+                    )}
+                  </>
+                ) : (
+                  <p>
+                    {t(
+                      '此历史报告未保存变动额；原报告和输入保持原样。',
+                      'This historical report did not save the amount change. Its original report and inputs are retained.'
+                    )}
+                  </p>
+                )}
+              </div>
+              <div className="annual-change-formula">
+                <strong>{t('通常同比率', 'Conventional YoY rate')}</strong>
+                {growth && <p>{t(growth.formula, translateRule(growth.formula))}</p>}
+                {growth?.value != null ? (
+                  calculated && metric?.previousValue != null ? (
+                    <p className="mono">
+                      ({money(change?.value ?? null, locale, false)}) ÷ (
+                      {money(metric.previousValue, locale, false)}) × 100% ={' '}
+                      {metricValue(growth, locale)}
+                    </p>
+                  ) : (
+                    <p>
+                      {t('已保存的同比结果：', 'Saved YoY result:')} {metricValue(growth, locale)}
+                    </p>
+                  )
+                ) : (
+                  <p>
+                    {report.verdict === 'conflict'
+                      ? unavailable
+                      : metric?.previousValue != null && Number(metric.previousValue) <= 0
+                        ? t(
+                            '上年基数为零或负数，不给出通常同比率；可查看已保存的金额变化。',
+                            'The prior-year base is zero or negative, so a conventional YoY rate is withheld. Inspect the saved amount change instead.'
+                          )
+                        : t(
+                            '缺少适用的同口径两期数据，未给出同比率。',
+                            'Suitable amounts for both periods on a consistent scope are unavailable; no YoY rate is given.'
+                          )}
+                  </p>
+                )}
+              </div>
+            </div>
+          </details>
+        );
+      })}
     </div>
   );
 }

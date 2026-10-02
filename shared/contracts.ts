@@ -112,7 +112,7 @@ export interface Stage {
 }
 
 export interface ComputedMetric {
-  key: MetricKey | 'cashConversion' | 'profitGrowth' | 'cashGrowth';
+  key: MetricKey | 'cashConversion' | 'profitGrowth' | 'cashGrowth' | 'profitChange' | 'cashChange';
   label: string;
   value: string | null;
   previousValue: string | null;

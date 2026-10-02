@@ -297,8 +297,8 @@ export const guideDocument: ProductDocument = {
           'Materials and source windows distinguish public originals, retained uploads and confirmed fields. PDFs can be viewed by page; original CSV and JSON files can be downloaded. Manual structured inputs without an uploaded file do not receive a fabricated original download.',
         ],
         [
-          '财报结果可导出自包含 HTML 或 JSON，并通过浏览器打印；私人事项可导出当前底稿，保留版本、假设与记录标签。下载文件由你自行保管，导出不代表对方资料或计算条件已经认证。',
-          'Financial results can export self-contained HTML or JSON and print through the browser. Private reviews can export the current working paper with its version, assumption and record labels. You manage downloaded files; export does not certify counterparty material or calculation conditions.',
+          '在报告操作菜单选择预览：HTML 为完整报告，JSON 为保存的数据，Markdown 为按本次用途排序的询证清单。确认内容后点击“保存文件”；私人事项也可预览并保存正在查看的版本。若报告被另一页面更新，请重新读取后再导出。下载文件可能包含个人备注和原文摘录，请自行妥善保管。',
+          'Choose a preview from the report actions: HTML contains the full report, JSON contains saved data, and Markdown contains ordered evidence requests for this review purpose. Check the content, then select Save file. Private reviews can also preview and save the version being viewed. If another page updates the report, refresh it before exporting. Downloads may contain personal notes and source excerpts; store them appropriately.',
         ],
       ],
     },

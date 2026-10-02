@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useImperativeHandle, useState, type FormEvent, type Ref } from 'react';
 import { ArrowRight, ArrowUpRight, Check, FileText, Save } from 'lucide-react';
 import type {
   AnalysisTask,
@@ -108,7 +108,21 @@ function scopeItems(
       ];
 }
 
-export function ReviewContext({ task, report }: { task: AnalysisTask; report: Report }) {
+export interface ReviewContextHandle {
+  changePurpose: (next: ReviewPurpose) => Promise<boolean>;
+}
+
+export function ReviewContext({
+  task,
+  report,
+  controlRef,
+  hidePurposeSelector = false,
+}: {
+  task: AnalysisTask;
+  report: Report;
+  controlRef?: Ref<ReviewContextHandle>;
+  hidePurposeSelector?: boolean;
+}) {
   const { t, locale, execute, busy, showEvidence } = useApp();
   const purpose = task.purpose || 'external';
   const [notes, setNotes] = useState<ContextNotes>(task.contextNotes || {});
@@ -139,10 +153,10 @@ export function ReviewContext({ task, report }: { task: AnalysisTask; report: Re
       </button>
     ) : null;
   const changePurpose = async (next: ReviewPurpose) => {
-    if (next === purpose) return;
+    if (next === purpose) return true;
     const contextNotes: ContextNotes = {};
     for (const item of items) if (notes[item.key]) contextNotes[item.key] = notes[item.key];
-    await execute(() =>
+    const result = await execute(() =>
       api<AnalysisTask>(`/tasks/${task.id}/context`, {
         method: 'PATCH',
         body: JSON.stringify({
@@ -151,7 +165,9 @@ export function ReviewContext({ task, report }: { task: AnalysisTask; report: Re
         } satisfies TaskContextPatch),
       })
     );
+    return Boolean(result);
   };
+  useImperativeHandle(controlRef, () => ({ changePurpose }));
   const save = async (event: FormEvent) => {
     event.preventDefault();
     const contextNotes: ContextNotes = {};
@@ -192,24 +208,32 @@ export function ReviewContext({ task, report }: { task: AnalysisTask; report: Re
   return (
     <section className="review-context" aria-labelledby="context-heading">
       <div className="context-heading">
-        <h2 id="context-heading">{t('核查用途', 'Review purpose')}</h2>
-        <div
-          className="segmented-control purpose-switch"
-          aria-label={t('选择核查用途', 'Choose review purpose')}
-        >
-          {(['external', 'handover'] as const).map((value) => (
-            <button
-              key={value}
-              type="button"
-              className={purpose === value ? 'active' : ''}
-              aria-pressed={purpose === value}
-              disabled={busy}
-              onClick={() => changePurpose(value)}
-            >
-              {purposeName(value, t)}
-            </button>
-          ))}
-        </div>
+        <h2 id="context-heading">
+          {hidePurposeSelector
+            ? purpose === 'handover'
+              ? t('接手背景与跟进', 'Handover context and follow-up')
+              : t('付款背景与跟进', 'Payment context and follow-up')
+            : t('核查用途', 'Review purpose')}
+        </h2>
+        {!hidePurposeSelector && (
+          <div
+            className="segmented-control purpose-switch"
+            aria-label={t('选择核查用途', 'Choose review purpose')}
+          >
+            {(['external', 'handover'] as const).map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={purpose === value ? 'active' : ''}
+                aria-pressed={purpose === value}
+                disabled={busy}
+                onClick={() => changePurpose(value)}
+              >
+                {purposeName(value, t)}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
       <details className="review-path" open>
         <summary>{t('从财报到下一步', 'From financial statements to next steps')}</summary>

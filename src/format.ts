@@ -59,8 +59,10 @@ export const metricNames = {
   payablesAdjustment: ['经营性应付调整', 'Operating payables'],
   otherAdjustments: ['其余已披露调整', 'Other disclosed adjustments'],
   cashConversion: ['现金利润比', 'Cash-to-profit ratio'],
-  profitGrowth: ['净利润同比', 'Profit change'],
-  cashGrowth: ['经营现金同比', 'Cash flow change'],
+  profitGrowth: ['净利润同比', 'Profit change (YoY %)'],
+  cashGrowth: ['经营现金同比', 'Operating cash change (YoY %)'],
+  profitChange: ['净利润变动额', 'Profit amount change'],
+  cashChange: ['经营现金变动额', 'Operating cash amount change'],
 } as const;
 
 export function metricName(key: keyof typeof metricNames, locale: Locale): string {

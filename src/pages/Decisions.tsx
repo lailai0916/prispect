@@ -34,6 +34,7 @@ import { date, money, metricName } from '../format';
 import { decisionText } from '../decisionTranslations';
 import { translateRule } from '../ruleTranslations';
 import { CashPlanImport } from '../CashPlanImport';
+import { ExportPreview, exportFilename } from '../ExportPreview';
 import '../decision.css';
 
 const EvidenceRecordContext = createContext<(id: string) => void>(() => {});
@@ -128,7 +129,7 @@ const revisionName = (reason: string, t: Translate) =>
   })[reason] || reason;
 
 export function Decisions({ query }: { query: URLSearchParams }) {
-  const { t, locale, workspace, navigate, execute, busy, confirm, showEvidence } = useApp();
+  const { t, locale, user, workspace, navigate, execute, busy, confirm, showEvidence } = useApp();
   const id = query.get('id');
   const requestedRevision = query.get('revision');
   const isNew = query.has('new');
@@ -177,6 +178,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
   }, [editing, focusInput]);
   const [evidenceSlot, setEvidenceSlot] = useState<DecisionEvidenceSlot | null>(null);
   const [scopeEvidence, setScopeEvidence] = useState<DecisionEvidence | null>(null);
+  const [exportSnapshot, setExportSnapshot] = useState<{
+    ownerId: string;
+    detail: DecisionDetail;
+  } | null>(null);
+  useEffect(() => setExportSnapshot(null), [id, requestedRevision, user?.id]);
   const [section, setSection] = useState<
     'overview' | 'scenarios' | 'conditions' | 'evidence' | 'history'
   >('overview');
@@ -331,14 +337,8 @@ export function Decisions({ query }: { query: URLSearchParams }) {
     }
   };
   const exportDetail = () => {
-    if (!detail) return;
-    const blob = new Blob([JSON.stringify(detail, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `prispect-decision-${detail.decision.id}-v${detail.version.revision}.json`;
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (!detail || loading || !user) return;
+    setExportSnapshot({ ownerId: user.id, detail: structuredClone(detail) });
   };
   const blocking = detail?.evaluation.gates.find(
     (gate) => gate.status !== 'matched' && gate.id !== 'historical-scope'
@@ -647,9 +647,10 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               label={t('事项操作', 'Review actions')}
               items={[
                 {
-                  label: t('导出当前版本', 'Export this version'),
+                  label: t('预览并导出这个版本', 'Preview and export this version'),
                   icon: <Download size={15} />,
                   onSelect: exportDetail,
+                  disabled: loading,
                 },
                 {
                   label: t('重新读取', 'Reload'),
@@ -1216,6 +1217,26 @@ export function Decisions({ query }: { query: URLSearchParams }) {
           evidence={scopeEvidence}
           onClose={() => setScopeEvidence(null)}
           onSave={correctScope}
+        />
+      )}
+      {exportSnapshot && exportSnapshot.ownerId === user?.id && (
+        <ExportPreview
+          title={t('导出事项版本', 'Export review version')}
+          snapshotKey={`${exportSnapshot.detail.decision.id}:${exportSnapshot.detail.version.revision}`}
+          sources={[
+            {
+              id: 'json',
+              label: `JSON · ${t('版本', 'Version')} ${exportSnapshot.detail.version.revision}`,
+              filename: exportFilename(
+                `${exportSnapshot.detail.version.input.title}-v${exportSnapshot.detail.version.revision}`,
+                'json'
+              ),
+              mimeType: 'application/json;charset=utf-8',
+              preview: 'text',
+              load: () => JSON.stringify(exportSnapshot.detail, null, 2),
+            },
+          ]}
+          onClose={() => setExportSnapshot(null)}
         />
       )}
     </div>

@@ -148,6 +148,8 @@ const rules: Record<string, string> = {
   '原表其余已披露调整逐行分组求和，另与差额核对':
     'Sum the remaining disclosed source adjustments; reconcile against the gap separately.',
   '原表金额 × 单位换算系数；人民币元': 'Source amount × unit multiplier; CNY yuan.',
+  '本年金额 − 上年金额；同主体、相邻年度、人民币合并口径；按分计算':
+    'Current year amount − previous year amount; same company, consecutive annual periods and CNY consolidated scope; calculated in cents.',
   '经营现金净额 ÷ 合并净利润 × 100%；利润必须为正':
     'Operating cash flow ÷ consolidated net profit × 100%; profit must be positive.',
   '（本年 − 上年）÷ 上年 × 100%；上年基数必须为正':

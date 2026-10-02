@@ -662,6 +662,11 @@ export async function createApp(options: AppOptions = {}) {
   app.get('/api/tasks/:id/export', (req, res, next) => {
     try {
       const task = taskById(String(req.params.id), res.locals.store as WorkspaceStore);
+      if (
+        req.query.expectedUpdatedAt !== undefined &&
+        req.query.expectedUpdatedAt !== task.updatedAt
+      )
+        throw new ApiFault(409, 'TASK_EXPORT_CHANGED', '报告已更新，请重新读取报告后再导出。');
       if (task.status !== 'completed' || !task.report)
         throw new ApiFault(409, 'REPORT_NOT_READY', '报告尚未完成');
       if (req.query.format === 'json')

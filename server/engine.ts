@@ -201,21 +201,6 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
     formula: '经营现金净额 ÷ 合并净利润 × 100%；利润必须为正',
     sourceRefs: [...(profit?.refs || []), ...(cash?.refs || [])],
   });
-  for (const [key, label, current, previous] of [
-    ['profitGrowth', '净利润同比', profit, previousProfit],
-    ['cashGrowth', '经营现金同比', cash, previousCash],
-  ] as const) {
-    metrics.push({
-      key,
-      label,
-      value: current && previous ? percent(current.fen - previous.fen, previous.fen) : null,
-      previousValue: null,
-      unit: '%',
-      kind: 'calculated',
-      formula: '（本年 − 上年）÷ 上年 × 100%；上年基数必须为正',
-      sourceRefs: [...(current?.refs || []), ...(previous?.refs || [])],
-    });
-  }
   if (profit && profit.fen <= 0n)
     checks.push({
       id: 'positive-profit',
@@ -303,6 +288,37 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
       message: '提供材料不足，无法重建现金桥；不会从样本库或隐藏材料补数。',
       sourceRefs: [],
     });
+  }
+  // Compare only adopted annual observations. A complete cash bridge is not
+  // required, but a declared or reconciliation conflict withholds comparisons.
+  for (const [growthKey, changeKey, growthLabel, changeLabel, current, previous] of [
+    ['profitGrowth', 'profitChange', '净利润同比', '净利润变动额', profit, previousProfit],
+    ['cashGrowth', 'cashChange', '经营现金同比', '经营现金变动额', cash, previousCash],
+  ] as const) {
+    const change = !conflict && current && previous ? current.fen - previous.fen : null;
+    const sourceRefs = [...(current?.refs || []), ...(previous?.refs || [])];
+    metrics.push(
+      {
+        key: growthKey,
+        label: growthLabel,
+        value: change !== null && previous ? percent(change, previous.fen) : null,
+        previousValue: null,
+        unit: '%',
+        kind: 'calculated',
+        formula: '（本年 − 上年）÷ 上年 × 100%；上年基数必须为正',
+        sourceRefs,
+      },
+      {
+        key: changeKey,
+        label: changeLabel,
+        value: change === null ? null : fenToYuan(change),
+        previousValue: null,
+        unit: 'CNY',
+        kind: 'calculated',
+        formula: '本年金额 − 上年金额；同主体、相邻年度、人民币合并口径；按分计算',
+        sourceRefs,
+      }
+    );
   }
   const addQuestion = (id: string, text: string, reason: string, requestedEvidence: string) => {
     questions.push({ id, text, reason, requestedEvidence, status: 'open' });

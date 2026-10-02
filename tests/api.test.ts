@@ -166,6 +166,59 @@ test('authenticated API cases → task → questions → exports → persistence
     await service.close();
   }
 });
+test('task export binds both formats to the requested saved version without returning newer content', async () => {
+  const service = await setup();
+  try {
+    const alice = await register(service, 'export-version@example.com');
+    const bob = await register(service, 'export-other@example.com');
+    const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
+    const original = await createTask(service, alice, cases[0]!);
+    const exportUrl = (format: 'html' | 'json', updatedAt?: string) =>
+      `/api/tasks/${original.id}/export?format=${format}${updatedAt === undefined ? '' : `&expectedUpdatedAt=${encodeURIComponent(updatedAt)}`}`;
+    for (const format of ['html', 'json'] as const) {
+      assert.equal(
+        (await service.request(exportUrl(format, original.updatedAt), options(alice))).status,
+        200
+      );
+    }
+    const marker = 'new-version-private-note';
+    const update = await service.request(
+      `/api/tasks/${original.id}/context`,
+      options(
+        alice,
+        { contextNotes: { 'external.promise': { done: false, note: marker } } },
+        'PATCH'
+      )
+    );
+    assert.equal(update.status, 200);
+    const current = (await update.json()) as AnalysisTask;
+    assert.notEqual(current.updatedAt, original.updatedAt);
+    for (const format of ['html', 'json'] as const) {
+      const stale = await service.request(exportUrl(format, original.updatedAt), options(alice));
+      assert.equal(stale.status, 409);
+      assert.equal(stale.headers.get('content-disposition'), null);
+      const error = await stale.json();
+      assert.deepEqual(error, {
+        error: '报告已更新，请重新读取报告后再导出。',
+        code: 'TASK_EXPORT_CHANGED',
+      });
+      assert.doesNotMatch(JSON.stringify(error), new RegExp(marker));
+      const fresh = await service.request(exportUrl(format, current.updatedAt), options(alice));
+      assert.equal(fresh.status, 200);
+      assert.match(await fresh.text(), new RegExp(marker));
+      const compatible = await service.request(exportUrl(format), options(alice));
+      assert.equal(compatible.status, 200);
+      assert.match(await compatible.text(), new RegExp(marker));
+      assert.equal(
+        (await service.request(exportUrl(format, original.updatedAt), options(bob))).status,
+        404
+      );
+    }
+  } finally {
+    await service.close();
+  }
+});
+
 test('real login/logout, CSRF, password change, invalid formats and credentials', async () => {
   const service = await setup();
   try {

@@ -28,6 +28,7 @@ const errorMessages: Record<string, string> = {
   MATERIAL_NOT_FOUND: 'The selected material no longer exists. Refresh your evidence library.',
   TASK_RUNNING: 'A review is still running. Wait for completion before this action.',
   TASK_NOT_FOUND: 'This review was not found. It may have been deleted.',
+  TASK_EXPORT_CHANGED: 'The report has changed. Reload the report before exporting it again.',
   INVALID_COMPANY_QUERY:
     'Enter a company short name or six-digit security code, up to 80 characters.',
   COMPANY_INPUT_INVALID:
