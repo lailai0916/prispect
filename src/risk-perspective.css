@@ -1,5 +1,34 @@
 /* 风险透视：第一部分总览仪表 + 第二部分四维详情 */
 
+/* ---------- 双视图切换条 ---------- */
+.report-view-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0 0 12px;
+}
+.report-view-label {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.report-view-switch {
+  width: auto;
+}
+
+/* 易懂版：隐藏专业区块 */
+.report-content.view-simple .verdict-section,
+.report-content.view-simple .metric-strip,
+.report-content.view-simple .report-purpose-details,
+.report-content.view-simple .report-local-nav,
+.report-content.view-simple [id^='report-panel'] {
+  display: none !important;
+}
+/* 专业版：隐藏易懂详情卡（总览环保留作定位） */
+.report-content.view-pro .risk-detail {
+  display: none !important;
+}
+
 /* ---------- 总览仪表（深色面板） ---------- */
 .risk-overview {
   background: linear-gradient(180deg, #161a24 0%, #10131b 100%);
