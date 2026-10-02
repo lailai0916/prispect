@@ -373,6 +373,6 @@ if __name__ == '__main__':
     parser.add_argument('--tests', type=int, help='Actually passed final test count')
     parser.add_argument('--release-sha', help='Full commit actually verified on the deployed release')
     parser.add_argument('--ci-url', help='Successful final CI run URL')
-    parser.add_argument('--live-url', default='https://xuejun.cc')
+    parser.add_argument('--live-url', default='https://prispect.com')
     parser.add_argument('--draft', action='store_true', help='Permit pending final CI metadata for ignored layout review only')
     build(parser.parse_args())

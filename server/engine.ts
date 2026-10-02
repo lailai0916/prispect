@@ -3,6 +3,7 @@ import type {
   Check,
   ComputedMetric,
   CreateTaskInput,
+  CrossSignal,
   EvidenceRef,
   Finding,
   Material,
@@ -415,6 +416,98 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
         questionIds: ['collections'],
       });
   }
+  const crossSignals: CrossSignal[] = [];
+  const fact = (year: number, key: MetricKey): CrossSignal['facts'][number] => {
+    const item = get(year, key)!;
+    return { year, metric: key, amount: fenToYuan(item.fen), sourceRefs: item.refs };
+  };
+  // A combination is only issued after the source-backed bridge closes. Missing,
+  // conflicting or explicitly withdrawn inputs never become neutral scores.
+  if (bridge) {
+    const receivables = get(input.year, 'receivablesAdjustment');
+    const inventory = get(input.year, 'inventoryAdjustment');
+    if (
+      profit &&
+      previousProfit &&
+      cash &&
+      previousCash &&
+      previousProfit.fen > 0n &&
+      profit.fen > previousProfit.fen &&
+      cash.fen < previousCash.fen &&
+      receivables &&
+      inventory &&
+      receivables.fen < 0n &&
+      inventory.fen < 0n
+    ) {
+      crossSignals.push({
+        id: 'profit-cash-working-capital',
+        title: { zh: '利润在增长，经营现金在下降', en: 'Profit rose while operating cash fell' },
+        reading: {
+          zh: '两期同口径金额显示方向背离；本期经营性应收和存货调整同时占用现金。这是需要解释的组合，不是违约或造假的证据。',
+          en: 'Comparable annual amounts move in opposite directions while receivables and inventory adjustments both consume cash. This combination needs explanation; it does not establish default or fraud.',
+        },
+        facts: [
+          fact(input.year - 1, 'netProfit'),
+          fact(input.year, 'netProfit'),
+          fact(input.year - 1, 'operatingCashFlow'),
+          fact(input.year, 'operatingCashFlow'),
+          fact(input.year, 'receivablesAdjustment'),
+          fact(input.year, 'inventoryAdjustment'),
+        ],
+        explanations: [
+          {
+            zh: '订单增长、备货或结算周期变化，使现金暂时留在应收和存货中。',
+            en: 'Order growth, stocking or settlement timing temporarily ties up cash in receivables and inventory.',
+          },
+          {
+            zh: '部分客户回款延迟或库存去化不及计划，也会形成相同的报表形态。',
+            en: 'Delayed customer collections or slower inventory turnover could produce the same pattern.',
+          },
+        ],
+        nextEvidence: {
+          external: {
+            zh: '付款前核对合同相对方、实际收款主体与退款责任；索取近期履约和可核对的回款证明，不能仅凭年度利润决定付款。',
+            en: 'Before paying, verify the contracting and receiving entities and refund obligation; request recent delivery and verifiable collection records rather than relying on annual profit.',
+          },
+          handover: {
+            zh: '向财务和业务负责人取得客户账龄、期后回款、订单覆盖、库龄与期后出库；再用当前余额及逐日收付款计划核查接手后的资金安排。',
+            en: 'Request customer ageing, subsequent collections, order coverage, inventory ageing and subsequent shipments; then check the handover cash schedule using current balances and dated flows.',
+          },
+        },
+      });
+    }
+    if (profit && cash && profit.fen > 0n && cash.fen < 0n) {
+      crossSignals.push({
+        id: 'profit-with-cash-outflow',
+        title: { zh: '账面盈利，经营现金净流出', en: 'Profit with negative operating cash flow' },
+        reading: {
+          zh: '同一年度的合并利润为正，经营现金净额为负。年报支持金额关系，不能单独说明原因或认定利润失真。',
+          en: 'Consolidated profit is positive and operating cash flow is negative in the same year. The report supports these amounts, not a cause or a claim of misstated profit.',
+        },
+        facts: [fact(input.year, 'netProfit'), fact(input.year, 'operatingCashFlow')],
+        explanations: [
+          {
+            zh: '备货、项目交付和客户结算时间可能把现金流出提前、回款推后。',
+            en: 'Stocking, project delivery and customer settlement timing may put cash outflows before receipts.',
+          },
+          {
+            zh: '逾期回款、存货积压或到期付款压力，也可能造成持续的现金缺口。',
+            en: 'Overdue collections, slow inventory or payments coming due may also create a sustained cash gap.',
+          },
+        ],
+        nextEvidence: {
+          external: {
+            zh: '先核对交易合同、收款主体、付款节点及退款或担保条款；向对方索取近期履约与收款证据。',
+            en: 'Check the contract, receiving entity, payment milestones and refund or guarantee terms; request recent delivery and collection evidence.',
+          },
+          handover: {
+            zh: '取得当前可用现金、应收账龄、期后回款和未来90天到期付款清单；用带日期的收付款计划寻找最早的资金缺口。',
+            en: 'Obtain current available cash, receivables ageing, subsequent receipts and payments due over 90 days; use a dated plan to locate the earliest cash shortfall.',
+          },
+        },
+      });
+    }
+  }
   const verdict = conflict
     ? 'conflict'
     : insufficient
@@ -448,6 +541,7 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
     bridge,
     checks,
     findings,
+    crossSignals,
     questions,
     coverage: {
       present: metricKeys.filter((key) => get(input.year, key)).length,

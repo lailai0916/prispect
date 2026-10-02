@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { analyze } from '../server/engine.js';
 import { seeds } from '../server/store.js';
-import { moneyToFen, validateMaterial } from '../server/validation.js';
+import { fenToYuan, moneyToFen, validateMaterial } from '../server/validation.js';
 import { explainWithModel as applyModel, type ModelConfig } from '../server/model.js';
 import type { Material } from '../shared/contracts.js';
 const fixture = await seeds(process.cwd());
@@ -42,6 +42,58 @@ test('two real cases recompute amounts, independent remaining rows and percentag
   assert.equal(metric(hik, 'cashConversion').value, '164.18');
   assert.equal(hik.bridge?.length, 6);
   assert.equal(metric(hik, 'netProfit').value, '15433655239.83');
+});
+test('paired real-year movement and working-capital adjustments produce a sourced, reversible cross-signal', () => {
+  const material = fixture.materials[0]!;
+  const complete = run(material);
+  const signal = complete.crossSignals?.find((item) => item.id === 'profit-cash-working-capital');
+  assert.ok(signal);
+  assert.equal(signal.facts.length, 6);
+  assert.ok(signal.facts.every((fact) => fact.sourceRefs.length > 0));
+  assert.match(signal.reading.zh, /不是违约或造假的证据/);
+  assert.ok(signal.nextEvidence.external.zh.includes('收款主体'));
+  assert.ok(signal.nextEvidence.handover.zh.includes('期后回款'));
+  assert.equal(run(fixture.materials[1]!).crossSignals?.length, 0);
+
+  for (const key of [
+    'netProfit',
+    'operatingCashFlow',
+    'receivablesAdjustment',
+    'inventoryAdjustment',
+  ] as const) {
+    const withdrawn = run(material, [key]);
+    assert.equal(
+      withdrawn.crossSignals?.some((item) => item.id === signal.id),
+      false,
+      `${key} withdrawal must remove the dependent combination`
+    );
+  }
+  assert.ok(run(material).crossSignals?.some((item) => item.id === signal.id));
+  const conflict = structuredClone(material);
+  conflict.observations.push({ ...conflict.observations[0]!, id: 'cross-conflict', value: '1.00' });
+  assert.equal(run(conflict).crossSignals?.length, 0);
+});
+test('profitable company with negative operating cash yields a question, not a fraud verdict', () => {
+  const material = structuredClone(fixture.materials[0]!);
+  const cash = material.observations.find(
+    (item) => item.year === 2025 && item.key === 'operatingCashFlow'
+  )!;
+  const other = material.observations.find(
+    (item) => item.year === 2025 && item.key === 'otherAdjustments'
+  )!;
+  const delta = -100000000n - moneyToFen(cash.value, cash.unit);
+  cash.value = fenToYuan(-100000000n);
+  other.value = fenToYuan(moneyToFen(other.value, other.unit) + delta);
+  other.components![0]!.value = fenToYuan(
+    moneyToFen(other.components![0]!.value, other.unit) + delta
+  );
+  const report = run(material);
+  assert.ok(report.bridge);
+  const signal = report.crossSignals?.find((item) => item.id === 'profit-with-cash-outflow');
+  assert.ok(signal);
+  assert.equal(signal.facts.length, 2);
+  assert.match(signal.reading.zh, /不能单独说明原因/);
+  assert.equal(run(material, ['operatingCashFlow']).crossSignals?.length, 0);
 });
 test('a zero aggregate receivables adjustment does not claim a cash release', () => {
   const material = structuredClone(fixture.materials[0]!);

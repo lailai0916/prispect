@@ -71,7 +71,7 @@ cashlens-deploy ALL=(root) NOPASSWD: /usr/local/sbin/cashlens-ci-deploy *
 6. 新目录封存为 root:cashlens，目录和可执行文件 0750、普通文件 0640；加入指向预装 source-data 的唯一原件链接。移动到 releases/完整SHA，保留旧 release。
 7. 调用预装的一致性备份 helper，完成后原子切换 current，重启服务。最多 12 次健康检查；除 API、磁盘检查，还逐字节比较正在提供的首页及 HTML 所引用资源与新 dist，不能用仅 HTTP 200 冒充新构建已经运行。
 8. 失败时恢复旧 current 并重启，保留诊断且返回非零；不自动覆盖持久状态。同提交同包已经 current 且健康时幂等返回成功。相同提交包哈希不同则拒绝，需要人工核对。
-9. SSH 发布成功后，workflow 用无 cookie 的严格 HTTPS curl 核对 https://xuejun.cc/api/health。公网检查失败会将 workflow 标为失败；它不另发未经核对的回滚命令。
+9. SSH 发布成功后，workflow 用无 cookie 的严格 HTTPS curl 核对 https://prispect.com/api/health。公网检查失败会将 workflow 标为失败；它不另发未经核对的回滚命令。
 
 代码回滚不回滚持久状态。数据格式变更需要旧版本兼容性验收；一致性备份用于明确的恢复操作。publisher 保留每次 job 的包、安装与健康诊断，不自动清理状态、旧 release 或备份；保留策略由管理者按磁盘记录处理。
 
@@ -85,7 +85,7 @@ cashlens-deploy ALL=(root) NOPASSWD: /usr/local/sbin/cashlens-ci-deploy *
 
 首次依赖安装因 esbuild 正常内部硬链接而在封存前拒绝，旧站未切换。补充全树 inode 名称核对后，实际非 root systemd 安装、一致性备份、原子切换、API 及构建资产逐字节校验成功；重复同包返回已 current 且健康。错误包哈希实际拒绝，current 保持不变。没有在生产站注入启动故障来验证切换后的回滚；回滚逻辑经审查，不能把哈希拒绝称为已实际执行代码回滚。
 
-首次 GitHub 自动链路的 [CI 36907501972](https://github.com/lailai0916/prispect/actions/runs/36907501972) 与 [Deploy 36907590434](https://github.com/lailai0916/prispect/actions/runs/36907590434) 均为 success，对应同一 `53983713f8562dd5227ef3243f5ccfc990e4670b`。管理连接只读核对 `/opt/cashlens/current` 和 `RELEASE.json` 均指向该提交，`https://xuejun.cc/api/health` 返回 `{"ok":true}`。这次发布证明自动链路；随后产品功能版本须另记录其对应 SHA 与运行验收。
+首次 GitHub 自动链路的 [CI 36907501972](https://github.com/lailai0916/prispect/actions/runs/36907501972) 与 [Deploy 36907590434](https://github.com/lailai0916/prispect/actions/runs/36907590434) 均为 success，对应同一 `53983713f8562dd5227ef3243f5ccfc990e4670b`。管理连接只读核对 `/opt/cashlens/current` 和 `RELEASE.json` 均指向该提交，当时旧域名的 `/api/health` 返回 `{"ok":true}`。这次发布证明自动链路；随后产品功能版本须另记录其对应 SHA 与运行验收。
 
 ## 新版功能的真实发布
 

@@ -127,6 +127,6 @@ jobs:
           set -euo pipefail
           curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
             --retry 5 --retry-delay 2 --retry-connrefused --max-time 10 \
-            https://xuejun.cc/api/health > "$RUNNER_TEMP/cashlens-public-health.json"
+            https://prispect.com/api/health > "$RUNNER_TEMP/cashlens-public-health.json"
           python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1])).get("ok") is True else 1)' \
             "$RUNNER_TEMP/cashlens-public-health.json"

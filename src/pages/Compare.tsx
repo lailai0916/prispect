@@ -40,6 +40,18 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
           (finding) => !leftReport.findings.some((item) => item.id === finding.id)
         )
       : [];
+  const withdrawnSignals =
+    leftReport?.crossSignals && rightReport?.crossSignals
+      ? leftReport.crossSignals.filter(
+          (signal) => !rightReport.crossSignals!.some((item) => item.id === signal.id)
+        )
+      : [];
+  const addedSignals =
+    leftReport?.crossSignals && rightReport?.crossSignals
+      ? rightReport.crossSignals.filter(
+          (signal) => !leftReport.crossSignals!.some((item) => item.id === signal.id)
+        )
+      : [];
   const restore = async () => {
     if (!right) return;
     const next = await execute(() =>
@@ -233,6 +245,23 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                       </td>
                     </tr>
                     <tr>
+                      <th>{t('组合线索', 'Combined signals')}</th>
+                      {[leftReport, rightReport].map((report, index) => (
+                        <td key={index}>
+                          {report.crossSignals === undefined
+                            ? t('旧版报告未评估', 'Not evaluated in this older report')
+                            : report.crossSignals.length
+                              ? report.crossSignals.map((signal) => (
+                                  <p key={signal.id}>{t(signal.title.zh, signal.title.en)}</p>
+                                ))
+                              : t(
+                                  '未触发已实现的组合规则',
+                                  'No implemented combination rule triggered'
+                                )}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
                       <th>{t('后续问题', 'Follow-up questions')}</th>
                       <td>
                         {leftReport.questions.map((question) => (
@@ -248,6 +277,30 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   </tbody>
                 </table>
               </div>
+              {left.company === right.company &&
+                (withdrawnSignals.length > 0 || addedSignals.length > 0) && (
+                  <div className="info-strip">
+                    <Layers size={19} />
+                    <p>
+                      {withdrawnSignals.map((signal) => (
+                        <span className="compare-signal-change" key={`withdrawn-${signal.id}`}>
+                          {t(
+                            `「${signal.title.zh}」在对照任务中不再成立，请核对金额及采用材料的变化。`,
+                            `“${signal.title.en}” no longer holds in the comparison. Check the changed amounts and adopted evidence.`
+                          )}
+                        </span>
+                      ))}
+                      {addedSignals.map((signal) => (
+                        <span className="compare-signal-change" key={`added-${signal.id}`}>
+                          {t(
+                            `「${signal.title.zh}」在对照任务中开始成立，请核对金额及采用材料的变化。`,
+                            `“${signal.title.en}” now holds in the comparison. Check the changed amounts and adopted evidence.`
+                          )}
+                        </span>
+                      ))}
+                    </p>
+                  </div>
+                )}
               {left.company === right.company && (
                 <section className="comparison-changes">
                   <div className="report-section-title">

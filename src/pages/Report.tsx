@@ -321,6 +321,28 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           <p>{t(report.headline, englishHeadline)}</p>
           <p>{t(report.summary, englishSummary)}</p>
         </details>
+        {!!report.crossSignals?.length && (
+          <button
+            type="button"
+            className="cross-signal-entry text-link"
+            onClick={() => {
+              setSection('explanations');
+              requestAnimationFrame(() =>
+                document.getElementById('cross-signals')?.scrollIntoView({
+                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                    ? 'auto'
+                    : 'smooth',
+                })
+              );
+            }}
+          >
+            {t(
+              `${report.crossSignals.length} 条组合线索需要进一步核查`,
+              `${report.crossSignals.length} combined signal${report.crossSignals.length === 1 ? '' : 's'} to investigate`
+            )}
+            <ArrowRight size={15} />
+          </button>
+        )}
       </section>
       <section className="metric-strip" aria-label={t('核心财务指标', 'Core financial metrics')}>
         {metrics.map((metric, index) => (
@@ -374,7 +396,12 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
         {(
           [
             ['evidence', t('图表与来源', 'Charts and sources')],
-            ['explanations', t('解释', 'Explanations')],
+            [
+              'explanations',
+              report.crossSignals?.length
+                ? t('组合与解释', 'Signals & explanations')
+                : t('解释', 'Explanations'),
+            ],
             ['requests', t('待询证', 'Evidence requests')],
             ['scope', t('模型与范围', 'Model and scope')],
           ] as const
@@ -523,6 +550,100 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
         </div>
       </div>
       <div id="report-panel-explanations" hidden={section !== 'explanations'}>
+        <section className="report-section cross-signals-section" id="cross-signals">
+          <div className="report-section-title">
+            <h2>{t('组合线索', 'Combined signals')}</h2>
+            <Tag>{report.crossSignals === undefined ? '—' : report.crossSignals.length}</Tag>
+          </div>
+          <p className="section-intro">
+            {t(
+              '只有所需的同口径金额齐全、现金桥闭合时才显示组合。它提出核查方向，不给企业打分。',
+              'Combinations appear only when comparable amounts are present and the cash bridge reconciles. They suggest checks, not a company score.'
+            )}
+          </p>
+          {report.crossSignals === undefined ? (
+            <p className="cross-signal-empty">
+              {t(
+                '这份旧版报告尚未评估组合线索。使用原材料创建新核查后，可查看当前规则的结果。',
+                'This older report has no combined-signal evaluation. Create a new review from its evidence to apply the current rules.'
+              )}
+            </p>
+          ) : report.crossSignals.length ? (
+            <div className="cross-signal-list">
+              {report.crossSignals.map((signal) => {
+                const next =
+                  signal.nextEvidence[task.purpose === 'handover' ? 'handover' : 'external'];
+                return (
+                  <article className="cross-signal-card" key={signal.id}>
+                    <div className="cross-signal-heading">
+                      <span className="cross-signal-index">{t('交叉核对', 'Cross-check')}</span>
+                      <h3>{t(signal.title.zh, signal.title.en)}</h3>
+                      <p>{t(signal.reading.zh, signal.reading.en)}</p>
+                    </div>
+                    <div
+                      className="cross-signal-facts"
+                      aria-label={t('触发事实', 'Triggering facts')}
+                    >
+                      {signal.facts.map((fact) => (
+                        <button
+                          type="button"
+                          key={`${fact.year}-${fact.metric}`}
+                          onClick={() => showEvidence(fact.sourceRefs, report)}
+                          aria-label={`${fact.year} ${metricName(fact.metric, locale)}: ${money(fact.amount, locale, false)} CNY · ${t('查看来源', 'View source')}`}
+                        >
+                          <span>
+                            {fact.year} · {metricName(fact.metric, locale)}
+                          </span>
+                          <strong className="mono">
+                            {money(fact.amount, locale)} <small>CNY</small>
+                          </strong>
+                          <ArrowUpRight size={14} aria-hidden="true" />
+                        </button>
+                      ))}
+                    </div>
+                    <div className="cross-signal-explanations">
+                      <span className="cross-signal-label">
+                        {t('两种待检验的解释', 'Two explanations to test')}
+                      </span>
+                      {signal.explanations.map((explanation, index) => (
+                        <p key={index}>
+                          <b>{index + 1}</b>
+                          {t(explanation.zh, explanation.en)}
+                        </p>
+                      ))}
+                    </div>
+                    <div className="cross-signal-next">
+                      <div>
+                        <span className="cross-signal-label">
+                          {task.purpose === 'handover'
+                            ? t('接手前核查', 'Check before handover')
+                            : t('付款前核查', 'Check before payment')}
+                        </span>
+                        <p>{t(next.zh, next.en)}</p>
+                      </div>
+                      <button
+                        className="text-link"
+                        onClick={() =>
+                          navigate(`/decisions?new=${task.purpose || 'external'}&task=${task.id}`)
+                        }
+                      >
+                        {t('进入事项核查', 'Open decision review')}
+                        <ArrowRight size={14} />
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="cross-signal-empty">
+              {t(
+                '本次没有形成已实现规则所需的完整组合；这不表示企业没有风险。单项事实与待询证事项仍见下方。',
+                'No complete combination matched the implemented rules. This does not imply the company has no risk. Individual facts and evidence requests remain below.'
+              )}
+            </p>
+          )}
+        </section>
         <section className="report-section findings-section">
           <div className="report-section-title">
             <div>

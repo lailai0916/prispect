@@ -159,6 +159,153 @@
   flex-wrap: wrap;
   line-height: 1.8;
 }
+.cross-signal-entry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+.cross-signals-section {
+  scroll-margin-top: 96px;
+}
+.cross-signal-list {
+  display: grid;
+  gap: 16px;
+}
+.cross-signal-card {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+.cross-signal-heading,
+.cross-signal-explanations,
+.cross-signal-next {
+  padding: 22px 26px;
+}
+.cross-signal-index,
+.cross-signal-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+.cross-signal-heading h3 {
+  margin: 0 0 9px;
+  font-size: clamp(19px, 2vw, 24px);
+  font-weight: 590;
+  letter-spacing: -0.025em;
+}
+.cross-signal-heading p,
+.cross-signal-next p {
+  max-width: 78ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+.cross-signal-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border-block: 1px solid var(--line);
+}
+.cross-signal-facts button {
+  position: relative;
+  min-width: 0;
+  padding: 16px 34px 16px 26px;
+  text-align: left;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+}
+.cross-signal-facts button:hover,
+.cross-signal-facts button:focus-visible {
+  background: var(--accent-soft);
+}
+.cross-signal-facts button > span {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.cross-signal-facts strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 570;
+}
+.cross-signal-facts small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+}
+.cross-signal-facts svg {
+  position: absolute;
+  right: 14px;
+  top: 17px;
+  color: var(--muted);
+}
+.cross-signal-explanations {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.cross-signal-explanations .cross-signal-label {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+.cross-signal-explanations p {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.75;
+}
+.cross-signal-explanations b {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+.cross-signal-next {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 18px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-subtle);
+}
+.cross-signal-next p {
+  color: var(--ink);
+}
+.cross-signal-next .text-link {
+  flex: none;
+}
+.cross-signal-empty {
+  margin: 0;
+  padding: 20px 22px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.75;
+}
+.compare-signal-change {
+  display: block;
+}
+.compare-signal-change + .compare-signal-change {
+  margin-top: 6px;
+}
 .method-layout {
   max-width: 1000px;
   margin-inline: auto;
@@ -203,6 +350,30 @@
   }
 }
 @media (max-width: 600px) {
+  .cross-signal-heading,
+  .cross-signal-explanations,
+  .cross-signal-next {
+    padding: 18px;
+  }
+  .cross-signal-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cross-signal-facts button {
+    padding: 14px 28px 14px 18px;
+  }
+  .cross-signal-facts svg {
+    right: 10px;
+    top: 15px;
+  }
+  .cross-signal-explanations {
+    grid-template-columns: 1fr;
+  }
+  .cross-signal-next {
+    display: block;
+  }
+  .cross-signal-next .text-link {
+    margin-top: 14px;
+  }
   .financial-source-step,
   .financial-create-form {
     padding: 20px 16px;

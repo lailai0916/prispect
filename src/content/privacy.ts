@@ -14,8 +14,8 @@ export const privacyDocument: ProductDocument = {
       title: ['适用范围与联系方式', 'Scope and contact'],
       paragraphs: [
         [
-          '析光 / Prispect 由析光团队运营，是企业资料核查与条件计算产品。本政策适用于 xuejun.cc 的网站、账号、个人工作区及相关服务。',
-          'Prispect is a company-evidence review and conditional-calculation product operated by the Prispect team. This policy covers xuejun.cc, its accounts, personal workspaces and related services.',
+          '析光 / Prispect 由析光团队运营，是企业资料核查与条件计算产品。本政策适用于 prispect.com 的网站、账号、个人工作区及相关服务。',
+          'Prispect is a company-evidence review and conditional-calculation product operated by the Prispect team. This policy covers prispect.com, its accounts, personal workspaces and related services.',
         ],
         [
           '个人信息或数据处理问题，请联系 lailai0x394@gmail.com。你打开的外部披露网站、模型服务及其他外部页面还适用各自的规则；本政策不能替代这些服务的隐私说明。',

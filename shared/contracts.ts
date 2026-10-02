@@ -163,6 +163,23 @@ export interface Question {
   };
 }
 
+export interface CrossSignal {
+  id: 'profit-cash-working-capital' | 'profit-with-cash-outflow';
+  title: { zh: string; en: string };
+  reading: { zh: string; en: string };
+  facts: {
+    year: number;
+    metric: MetricKey;
+    amount: string;
+    sourceRefs: EvidenceRef[];
+  }[];
+  explanations: [{ zh: string; en: string }, { zh: string; en: string }];
+  nextEvidence: {
+    external: { zh: string; en: string };
+    handover: { zh: string; en: string };
+  };
+}
+
 export interface Report {
   verdict: Verdict;
   headline: string;
@@ -174,6 +191,8 @@ export interface Report {
   bridge: BridgeStep[] | null;
   checks: Check[];
   findings: Finding[];
+  /** Optional for reports saved before cross-signal analysis was introduced. */
+  crossSignals?: CrossSignal[];
   questions: Question[];
   coverage: { present: number; total: number };
   limitations: string[];

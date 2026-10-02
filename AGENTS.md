@@ -2,7 +2,7 @@
 
 ## Project
 
-Company/team and product share one brand: 析光 in Simplified Chinese, Prispect in English. Preserve the existing geometric logo and xuejun.cc domain. Do not invent a registered legal entity.
+Company/team and product share one brand: 析光 in Simplified Chinese, Prispect in English. Preserve the existing geometric logo. The public product domain is prispect.com; domain-specific configuration and links must use that domain. Do not invent a registered legal entity.
 
 Public product copy uses 析光 / Prispect, and explains the customer's evidence and decisions. Keep competition rules, development process, SDK/provider implementation details and validation claims in repository documentation rather than business flows. Necessary data-use disclosures belong in privacy details linked from explicit AI choices. Preserve truthful uncertainty, hypothetical-plan labels, source coverage and unavailable-feature states.
 

@@ -56,4 +56,8 @@ test('HTML export preserves private context, exact cash assumptions and unknown 
   assert.ok(html.includes('26197123.70'));
   assert.ok(html.includes('7.15'));
   assert.ok(html.includes('PDF 第 191 页'));
+  assert.ok(html.includes('组合线索与下一项核查'));
+  assert.ok(html.includes('利润在增长，经营现金在下降'));
+  assert.ok(html.includes('客户账龄、期后回款'));
+  assert.ok(html.includes('解释一'));
 });
