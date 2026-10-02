@@ -63,8 +63,8 @@ export const guideDocument: ProductDocument = {
       title: ['查询公司与确认候选', 'Look up a company and confirm candidates'],
       bullets: [
         [
-          '登录后点击“新建查询”，输入公司名称或证券代码，选择披露主体后进入详情。公开资料返回后自动研究，概览先展示企业证据实验室；展开“核查报告与综合评级”查看完整分析。年报原件继续在后台核查，执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。点击记录右侧的 × 可直接删除本次查询和问答，已采用的材料保留；查询或分析进行中暂不可删除。',
-          'After signing in, select New query, enter a company name or security code and choose its disclosure identity. Research starts automatically when public data is available. The overview opens with the evidence lab; expand Review report and financial grade for the full analysis. Original annual reports continue in the background, with separate execution and gap states. Loaded companies remain in the sidebar, with only that list scrolling. Click the × beside a record to delete that query and its answers; adopted materials remain. Deletion is unavailable during an active query or analysis.',
+          '登录后点击“新建查询”，输入公司名称或证券代码，选择披露主体后进入详情。公开资料返回后自动研究，概览先展示企业简报与分析摘要，再呈现证据实验室；展开“核查报告与综合评级”查看完整分析。年报原件继续在后台核查，执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。点击记录右侧的 × 可直接删除本次查询和问答，已采用的材料保留；查询或分析进行中暂不可删除。',
+          'After signing in, select New query, enter a company name or security code and choose its disclosure identity. Research starts automatically when public data is available. The overview presents the company brief and analysis summary before the evidence lab; expand Review report and financial grade for the full analysis. Original annual reports continue in the background, with separate execution and gap states. Loaded companies remain in the sidebar, with only that list scrolling. Click the × beside a record to delete that query and its answers; adopted materials remain. Deletion is unavailable during an active query or analysis.',
         ],
         [
           '侧边栏提供公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个页面。企业问答改为右下角的圆形助手，点击打开小对话框。财报工作台、材料中心、付款与交接、核查比较位于“核查工具”菜单。',
@@ -159,8 +159,8 @@ export const guideDocument: ProductDocument = {
           'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or grades or sending a model request.',
         ],
         [
-          '公司概览先展示实验室，完整报告与评级可展开。已保存的原件报告另有“证据实验室”栏目，原有易懂版、专业版及证据栏目继续保留。首页公开年报实例只做历史资料的本地试验；查询并打开公司后，才能执行该公司的解释补查。',
-          'Company overview starts with the lab; expand the full report and grade when needed. Saved original reports have an Evidence lab tab alongside Plain, Pro and the existing evidence tabs. Homepage annual-report examples are local historical trials; look up and open a company to run its explanation research.',
+          '公司概览先展示企业简报与分析摘要，随后可操作实验室或展开完整报告与评级。已保存的原件报告先呈现摘要与下一步核查，继续展开可查看证据实验室、原件、计算与解释。首页公开年报实例只做历史资料的本地试验；查询并打开公司后，才能执行该公司的解释补查。',
+          'Company overview presents the company brief and analysis summary first, followed by the interactive lab and expandable full report and grade. Saved original reports start with a summary and next checks; expand the report to inspect the evidence lab, originals, calculations and explanations. Homepage annual-report examples are local historical trials; look up and open a company to run its explanation research.',
         ],
         [
           '恢复已撤回事实后，选择扩张备货、存货去化压力或回款压力，再点击“挑战这个解释”，补查公开新闻、公告及有限原文，分别查看支持、反向线索与资料缺口。模型未配置或失败时保留实际补查和规则线索；“所需材料”仍表示尚未取得，不代表已经拿到订单、库龄或期后流水。',
@@ -203,6 +203,10 @@ export const guideDocument: ProductDocument = {
       id: 'report',
       title: ['阅读财报核查', 'Read a financial review'],
       paragraphs: [
+        [
+          '报告先展示核查摘要、核心金额和下一步材料，不需要选择阅读模式。继续向下可展开各维度状况，以及原件、计算、解释、询证清单和范围记录；打开相关入口时会直接展开对应内容。核查比较先呈现各报告的风险状态矩阵，再展开两份核查的材料与计算差异。',
+          'Reports present the review summary, core amounts and next evidence first, without a reading-mode choice. Continue down the page to expand dimension details, originals, calculations, explanations, evidence requests and scope records; related links open the relevant content directly. Review comparison starts with the risk-state matrix, followed by an expandable comparison of the evidence and calculations in two reviews.',
+        ],
         [
           '报告采用同主体、完整年度、人民币与合并口径的数据。先看净利润、经营现金净额及现金利润比，再看有来源的现金桥与年度对比。现金利润比 = 经营现金净额 ÷ 合并净利润；比例来源应分别核对分子与分母。它不表示销售回款率、可用现金或本金安全。',
           'Reports use data for the same entity, full financial year, CNY currency and consolidated scope. Read net profit, operating cash flow and their ratio before the sourced cash bridge and annual comparison. Cash-to-profit ratio = operating cash flow ÷ consolidated net profit. Check both numerator and denominator sources. It does not represent sales collections, available cash or principal safety.',

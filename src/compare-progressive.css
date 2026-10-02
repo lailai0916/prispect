@@ -1,0 +1,34 @@
+.compare-evidence-details {
+  margin-top: 28px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.compare-evidence-details > summary {
+  min-height: 56px;
+  padding: 18px 4px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.compare-evidence-details > summary:hover {
+  color: var(--accent);
+}
+
+.compare-evidence-content {
+  padding: 4px 0 24px;
+}
+
+@media (max-width: 600px) {
+  .compare-evidence-details {
+    margin-top: 20px;
+  }
+
+  .compare-evidence-details > summary {
+    padding-inline: 0;
+    font-size: 13px;
+  }
+}

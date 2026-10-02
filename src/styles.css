@@ -422,35 +422,6 @@ pre {
   align-items: center;
   gap: 8px;
 }
-.view-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  padding: 2px;
-  background: var(--surface);
-}
-.view-toggle button {
-  appearance: none;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  line-height: 1;
-  padding: 6px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition:
-    background 180ms ease,
-    color 180ms ease;
-}
-.view-toggle button.active {
-  background: #2b3442;
-  color: #fff;
-}
 .login-link,
 .account-link {
   min-height: 32px;
@@ -1950,9 +1921,9 @@ thead th {
   }
 }
 
-/* ================= 易懂版 · 金融科技深色（FinTech） ================= */
+/* ================= 工作区深色外观 ================= */
 @media screen {
-  :root[data-theme='dark'] body.view-plain-shell {
+  :root[data-theme='dark'] body:has(.business-shell) {
     color-scheme: dark;
     background:
       radial-gradient(1100px 520px at 12% -6%, rgba(56, 132, 255, 0.12), transparent 62%),

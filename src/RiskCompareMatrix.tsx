@@ -12,7 +12,7 @@ const statusColor: Record<RiskStatus, string> = {
   unknown: '#8a8f98',
 };
 
-/** 易懂版 · 多公司风险对比矩阵：行=公司，列=四维，色块一眼看出状态 */
+/** 公司状态对比：行对应公司，列对应有依据的核查维度。 */
 export function RiskCompareMatrix({ tasks }: { tasks: AnalysisTask[] }) {
   const { t, locale, navigate } = useApp();
   const rows = useMemo(

@@ -747,11 +747,6 @@ kbd {
   .business-shell > .site-header .header-actions {
     gap: 0;
   }
-  .business-shell > .site-header .view-toggle button {
-    min-width: 30px;
-    padding-inline: 4px;
-    font-size: 12px;
-  }
   .business-shell
     > .site-header
     .header-actions

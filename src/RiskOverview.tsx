@@ -16,7 +16,13 @@ const statusColor: Record<RiskStatus, string> = {
  * 大圆环 + 中心结论（低风险 / 需要关注 / 发现风险信号 / 待补充），
  * 下方四个维度胶囊显示状态灯与大白话说明。
  */
-export function RiskOverview({ report }: { report: Report }) {
+export function RiskOverview({
+  report,
+  onSelectDimension,
+}: {
+  report: Report;
+  onSelectDimension?: (key: string) => void;
+}) {
   const { t, locale } = useApp();
   const perspective = useMemo(() => deriveRiskPerspective(report, locale), [report, locale]);
   const [entered, setEntered] = useState(false);
@@ -41,6 +47,10 @@ export function RiskOverview({ report }: { report: Report }) {
   const dash = arc - 5;
 
   const scrollTo = (key: string) => {
+    if (onSelectDimension) {
+      onSelectDimension(key);
+      return;
+    }
     const node = document.getElementById(`risk-detail-${key}`);
     node?.scrollIntoView({
       behavior: reduceMotion ? 'auto' : 'smooth',

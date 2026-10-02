@@ -21,7 +21,6 @@ import { EvidenceLab } from '../EvidenceLab';
 import { buildExampleEvidenceLab } from '../../shared/evidence-lab';
 import { api, requestErrorText } from '../api';
 import { useApp } from '../context';
-import { useViewMode } from '../ViewModeContext';
 import { HomeRiskCards } from '../HomeRiskCards';
 import { date, money } from '../format';
 import '../home.css';
@@ -374,7 +373,6 @@ function CashPreview() {
 
 export function Home() {
   const { t, user, locale, navigate, workspace } = useApp();
-  const { viewMode } = useViewMode();
   const root = useRef<HTMLDivElement>(null);
   const [recent, setRecent] = useState<DecisionSummary[]>([]);
   const [recentError, setRecentError] = useState('');
@@ -437,16 +435,11 @@ export function Home() {
     return (
       <div className="home-workspace" ref={root}>
         <section className="workspace-start">
-          <h1>
-            {t(
-              viewMode === 'simple' ? '一眼看出公司有没有风险' : '开始一项核查',
-              viewMode === 'simple' ? 'See company risk at a glance' : 'Start a review'
-            )}
-          </h1>
+          <h1>{t('开始一项核查', 'Start a review')}</h1>
           <StartInput compact />
         </section>
+        {workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
         <FinancialPreview />
-        {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
         {recentOwner === user.id && (recent.length > 0 || recentError) && (
           <section className="home-recent">
             <div className="home-recent-heading">

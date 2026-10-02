@@ -19,7 +19,7 @@ const dimensionShort: Record<string, { zh: string; en: string }> = {
   risk: { zh: '风险', en: 'Risk' },
 };
 
-/** 易懂版首页：已核查公司的风险状态卡 */
+/** 首页已核查公司的状态摘要。 */
 export function HomeRiskCards({ tasks }: { tasks: AnalysisTask[] }) {
   const { t, locale, navigate } = useApp();
   const rows = useMemo(

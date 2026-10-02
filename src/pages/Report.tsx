@@ -59,6 +59,7 @@ import { EvidenceLab } from '../EvidenceLab';
 import { buildReportEvidenceLab } from '../../shared/evidence-lab';
 
 type ReviewExportFormat = 'html' | 'json' | 'checklist';
+type ReportSection = 'evidence' | 'explanations' | 'requests' | 'scope' | 'lab';
 
 export function TaskPage({ id }: { id: string }) {
   const { t, locale, workspace, execute, navigate, refresh, busy } = useApp();
@@ -329,10 +330,9 @@ export function ReportView({
   const { t, locale, execute, showEvidence, navigate, busy } = useApp();
   const purpose = task.purpose || 'external';
   const contextControl = useRef<ReviewContextHandle>(null);
-  const [section, setSection] = useState<
-    'summary' | 'evidence' | 'explanations' | 'requests' | 'scope' | 'lab'
-  >('summary');
-  const [viewMode, setViewMode] = useState<'simple' | 'pro'>('simple');
+  const [section, setSection] = useState<ReportSection>('evidence');
+  const [analysisOpen, setAnalysisOpen] = useState(false);
+  const analysisRef = useRef<HTMLDetailsElement>(null);
   const [testMetric, setTestMetric] = useState<MetricKey | null>(null);
   const [exportFormat, setExportFormat] = useState<ReviewExportFormat | null>(null);
   const previewExport = onExport || setExportFormat;
@@ -341,18 +341,24 @@ export function ReportView({
   const changePurpose = async (next: ReviewPurpose) => {
     if (next === purpose) return;
     if (await contextControl.current?.changePurpose(next)) {
-      setSection('summary');
+      setSection('evidence');
     }
   };
-  const openRequests = () => {
-    setSection('requests');
-    requestAnimationFrame(() =>
-      document.getElementById('report-panel-requests')?.scrollIntoView({
+  const revealAnalysis = (nextSection: ReportSection, targetId = `report-panel-${nextSection}`) => {
+    setAnalysisOpen(true);
+    setSection(nextSection);
+    if (analysisRef.current) analysisRef.current.open = true;
+    requestAnimationFrame(() => {
+      const target = document.getElementById(targetId);
+      target?.scrollIntoView({
         behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'start',
-      })
-    );
+      });
+      if (target && !target.hasAttribute('tabindex')) target.tabIndex = -1;
+      target?.focus({ preventScroll: true });
+    });
   };
+  const openRequests = () => revealAnalysis('requests');
   const getMetric = (key: string) => report.metrics.find((metric) => metric.key === key);
   const metrics = [
     getMetric('netProfit'),
@@ -374,33 +380,7 @@ export function ReportView({
         ? 'Some required observations are missing or cannot be confirmed. The review retains supported numbers and withholds unsupported ratios or explanations.'
         : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
   return (
-    <div className={`report-content report-content-summary view-${viewMode}`}>
-      <div className="report-view-bar">
-        <span className="report-view-label">{t('查看方式', 'View')}</span>
-        <div
-          className="segmented-control report-view-switch"
-          role="group"
-          aria-label={t('报告视图', 'Report view')}
-        >
-          <button
-            type="button"
-            className={viewMode === 'simple' ? 'active' : ''}
-            aria-pressed={viewMode === 'simple'}
-            onClick={() => setViewMode('simple')}
-          >
-            {t('易懂版', 'Plain')}
-          </button>
-          <button
-            type="button"
-            className={viewMode === 'pro' ? 'active' : ''}
-            aria-pressed={viewMode === 'pro'}
-            onClick={() => setViewMode('pro')}
-          >
-            {t('专业版', 'Pro')}
-          </button>
-        </div>
-      </div>
-      <RiskOverview report={report} />
+    <div className="report-content report-content-summary">
       <section className={`verdict-section verdict-${report.verdict}`}>
         <div className="verdict-topline">
           <VerdictTag verdict={report.verdict} />
@@ -455,16 +435,7 @@ export function ReportView({
           <button
             type="button"
             className="cross-signal-entry text-link"
-            onClick={() => {
-              setSection('explanations');
-              requestAnimationFrame(() =>
-                document.getElementById('cross-signals')?.scrollIntoView({
-                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                    ? 'auto'
-                    : 'smooth',
-                })
-              );
-            }}
+            onClick={() => revealAnalysis('explanations', 'cross-signals')}
           >
             {t(
               `${report.crossSignals.length} 条组合线索需要进一步核查`,
@@ -522,6 +493,69 @@ export function ReportView({
           </div>
         ))}
       </section>
+      <div id="report-summary-findings" className="company-review">
+        <section className="company-review-section">
+          <h2>{t('核查事项', 'Review matters')}</h2>
+          <ol className="company-review-findings">
+            {report.findings
+              .filter((item) => item.basis !== 'management')
+              .slice(0, 3)
+              .map((finding, index) => (
+                <li key={finding.id}>
+                  <span className="company-review-number" aria-hidden="true">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <h3>{t(finding.label, translateRule(finding.label))}</h3>
+                    <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
+                  </div>
+                  <button
+                    className="text-link"
+                    onClick={() => showEvidence(finding.sourceRefs, report)}
+                    disabled={!finding.sourceRefs.length}
+                  >
+                    {t('查看依据', 'View evidence')}
+                    <ArrowUpRight size={12} />
+                  </button>
+                </li>
+              ))}
+          </ol>
+          <button
+            className="text-link report-summary-detail-link"
+            onClick={() => revealAnalysis('explanations')}
+          >
+            {t('全部观察与解释', 'All observations and explanations')}
+            <ArrowRight size={13} />
+          </button>
+        </section>
+        <section className="company-review-section company-review-followup">
+          <h2>{t('后续材料', 'Follow-up evidence')}</h2>
+          <p>
+            {nextQuestion
+              ? t(nextQuestion.question.text, translateRule(nextQuestion.question.text))
+              : t(
+                  '继续核对本次付款或交接所需的直接材料；跟进状态不代表事项已证实。',
+                  'Continue checking the direct evidence for this payment or handover; follow-up status does not authenticate a matter.'
+                )}
+          </p>
+          <div className="company-review-actions">
+            <button className="button button-primary" onClick={openRequests}>
+              {t('查看核查清单', 'Review checklist')}
+              <ArrowRight size={14} />
+            </button>
+            <button className="text-link" onClick={() => revealAnalysis('evidence')}>
+              {t('原件与计算', 'Sources and calculations')}
+              <ArrowRight size={13} />
+            </button>
+          </div>
+        </section>
+        <p className="company-review-footnote">
+          {t(
+            '本报告核对所采用材料中的历史金额；当前付款和履约需要另取直接依据。',
+            'This report checks historical amounts in adopted evidence; current payments and fulfilment need separate direct records.'
+          )}
+        </p>
+      </div>
       <details className="report-purpose-details">
         <summary>
           <ChevronDown size={14} />
@@ -619,611 +653,572 @@ export function ReportView({
           </div>
         </section>
       </details>
-      <RiskDetail report={report} />
-      <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
-        {(
-          [
-            ['summary', t('核查事项', 'Review matters')],
-            ['lab', t('证据实验室', 'Evidence lab')],
-            ['evidence', t('图表与来源', 'Charts and sources')],
-            [
-              'explanations',
-              report.crossSignals?.length
-                ? t('组合与解释', 'Signals & explanations')
-                : t('解释', 'Explanations'),
-            ],
-            ['requests', t('待询证', 'Evidence requests')],
-            ['scope', t('模型与范围', 'Model and scope')],
-          ] as const
-        ).map(([value, label]) => (
-          <button
-            key={value}
-            aria-current={section === value ? 'page' : undefined}
-            aria-controls={`report-panel-${value}`}
-            onClick={() => setSection(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-      {section === 'lab' && (
-        <div id="report-panel-lab">
-          <EvidenceLab
-            graph={buildReportEvidenceLab(report)}
-            onStartResearch={() => navigate('/query?query=' + encodeURIComponent(report.company))}
+      <details
+        className="report-analysis-details"
+        ref={analysisRef}
+        open={analysisOpen}
+        onToggle={(event) => setAnalysisOpen(event.currentTarget.open)}
+      >
+        <summary>
+          <ChevronDown size={16} aria-hidden="true" />
+          <span>{t('分析依据与核查记录', 'Analysis evidence and review records')}</span>
+        </summary>
+        <div className="report-analysis-content">
+          <RiskOverview
+            report={report}
+            onSelectDimension={(key) => revealAnalysis(section, `risk-detail-${key}`)}
           />
-        </div>
-      )}
-      <div id="report-panel-summary" hidden={section !== 'summary'} className="company-review">
-        <section className="company-review-section">
-          <h2>{t('核查事项', 'Review matters')}</h2>
-          <ol className="company-review-findings">
-            {report.findings
-              .filter((item) => item.basis !== 'management')
-              .slice(0, 3)
-              .map((finding, index) => (
-                <li key={finding.id}>
-                  <span className="company-review-number" aria-hidden="true">
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  <div>
-                    <h3>{t(finding.label, translateRule(finding.label))}</h3>
-                    <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
-                  </div>
-                  <button
-                    className="text-link"
-                    onClick={() => showEvidence(finding.sourceRefs, report)}
-                    disabled={!finding.sourceRefs.length}
-                  >
-                    {t('查看依据', 'View evidence')}
-                    <ArrowUpRight size={12} />
-                  </button>
-                </li>
-              ))}
-          </ol>
-          <button
-            className="text-link report-summary-detail-link"
-            onClick={() => setSection('explanations')}
-          >
-            {t('全部观察与解释', 'All observations and explanations')}
-            <ArrowRight size={13} />
-          </button>
-        </section>
-        <section className="company-review-section company-review-followup">
-          <h2>{t('后续材料', 'Follow-up evidence')}</h2>
-          <p>
-            {nextQuestion
-              ? t(nextQuestion.question.text, translateRule(nextQuestion.question.text))
-              : t(
-                  '继续核对本次付款或交接所需的直接材料；跟进状态不代表事项已证实。',
-                  'Continue checking the direct evidence for this payment or handover; follow-up status does not authenticate a matter.'
-                )}
-          </p>
-          <div className="company-review-actions">
-            <button className="button button-primary" onClick={openRequests}>
-              {t('查看核查清单', 'Review checklist')}
-              <ArrowRight size={14} />
-            </button>
-            <button className="text-link" onClick={() => setSection('evidence')}>
-              {t('原件与计算', 'Sources and calculations')}
-              <ArrowRight size={13} />
-            </button>
-          </div>
-        </section>
-        <p className="company-review-footnote">
-          {t(
-            '本报告核对所采用材料中的历史金额；当前付款和履约需要另取直接依据。',
-            'This report checks historical amounts in adopted evidence; current payments and fulfilment need separate direct records.'
+          <RiskDetail report={report} />
+          <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
+            {(
+              [
+                ['lab', t('证据实验室', 'Evidence lab')],
+                ['evidence', t('图表与来源', 'Charts and sources')],
+                [
+                  'explanations',
+                  report.crossSignals?.length
+                    ? t('组合与解释', 'Signals & explanations')
+                    : t('解释', 'Explanations'),
+                ],
+                ['requests', t('待询证', 'Evidence requests')],
+                ['scope', t('模型与范围', 'Model and scope')],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                aria-current={section === value ? 'page' : undefined}
+                aria-controls={`report-panel-${value}`}
+                onClick={() => setSection(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          {section === 'lab' && (
+            <div id="report-panel-lab" tabIndex={-1}>
+              <EvidenceLab
+                graph={buildReportEvidenceLab(report)}
+                onStartResearch={() =>
+                  navigate('/query?query=' + encodeURIComponent(report.company))
+                }
+              />
+            </div>
           )}
-        </p>
-      </div>
-      <div id="report-panel-evidence" hidden={section !== 'evidence'}>
-        <div className="report-two-column">
-          <div className="report-primary">
-            <section className="report-section">
-              <div className="report-section-title">
-                <div>
-                  <h2>{t('现金桥', 'Cash bridge')}</h2>
-                </div>
-                <Tag>{report.year} · CNY</Tag>
-              </div>
-              {report.bridge ? (
-                <>
-                  <p className="section-intro">
+          <div id="report-panel-evidence" tabIndex={-1} hidden={section !== 'evidence'}>
+            <div className="report-two-column">
+              <div className="report-primary">
+                <section className="report-section">
+                  <div className="report-section-title">
+                    <div>
+                      <h2>{t('现金桥', 'Cash bridge')}</h2>
+                    </div>
+                    <Tag>{report.year} · CNY</Tag>
+                  </div>
+                  {report.bridge ? (
+                    <>
+                      <p className="section-intro">
+                        {t(
+                          '选择柱形，查看金额、页码与原文。',
+                          'Select a bar to inspect its amount, page and source.'
+                        )}
+                      </p>
+                      <CashBridge steps={report.bridge} report={report} />
+                      <div className="chart-legend">
+                        <span>
+                          <i className="legend-dot ink" />
+                          {t('起点与终点', 'Starting and ending amounts')}
+                        </span>
+                        <span>
+                          <i className="legend-dot teal" />
+                          {t('正向调整', 'Positive adjustments')}
+                        </span>
+                        <span>
+                          <i className="legend-dot amber" />
+                          {t('负向调整', 'Negative adjustments')}
+                        </span>
+                      </div>
+                      <details className="chart-caption chart-notes">
+                        <summary>{t('图表口径', 'Chart scope')}</summary>
+                        <p>
+                          {t(
+                            '调整项不是现金余额或未来预测。图形标签已舍入，精确金额显示在所选项中；经营性应收调整不等于单一应收账款余额变化，负向调整不能直接证明坏账或滞销。',
+                            'Adjustments are not cash balances or forecasts. Plot labels are rounded; the selected item shows exact amounts. Operating receivables adjustments are not simply changes in accounts receivable, and negative adjustments alone do not prove bad debt or slow inventory.'
+                          )}
+                        </p>
+                      </details>
+                    </>
+                  ) : (
+                    <div className="bridge-unavailable">
+                      <h3>{t('现金桥未生成', 'Cash bridge unavailable')}</h3>
+                      <p>
+                        {report.verdict === 'conflict'
+                          ? t(
+                              '现有输入或现金桥核对存在冲突。金额与原文保留，请先复核下方口径检查，再解释经营原因。',
+                              'The inputs or bridge reconciliation conflict. Amounts and sources remain visible; resolve the scope checks below before attributing operating causes.'
+                            )
+                          : t(
+                              '缺少同口径调整项。请补充下方待询证材料；利润与现金的差额不能代替原因解释。',
+                              'Consistent adjustment items are missing. Request the evidence below; a profit-to-cash gap does not explain its causes.'
+                            )}
+                      </p>
+                      <a
+                        className="text-link"
+                        href="#questions"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          revealAnalysis('requests', 'questions');
+                        }}
+                      >
+                        {t('查看补件问题', 'See evidence requests')}
+                        <ArrowDown size={15} />
+                      </a>
+                    </div>
+                  )}
+                </section>
+                <section className="report-section">
+                  <div className="report-section-title">
+                    <div>
+                      <h2>{t('年度对比', 'Annual comparison')}</h2>
+                    </div>
+                  </div>
+                  <TrendChart report={report} />
+                  <AnnualChanges report={report} />
+                  <p className="chart-caption">
                     {t(
-                      '选择柱形，查看金额、页码与原文。',
-                      'Select a bar to inspect its amount, page and source.'
+                      '同一家公司、同一报表范围。同比基数为零或负值时，不给出通常增长率。',
+                      'One company and one reporting scope. Conventional growth rates are withheld for zero or negative prior-year bases.'
                     )}
                   </p>
-                  <CashBridge steps={report.bridge} report={report} />
-                  <div className="chart-legend">
-                    <span>
-                      <i className="legend-dot ink" />
-                      {t('起点与终点', 'Starting and ending amounts')}
-                    </span>
-                    <span>
-                      <i className="legend-dot teal" />
-                      {t('正向调整', 'Positive adjustments')}
-                    </span>
-                    <span>
-                      <i className="legend-dot amber" />
-                      {t('负向调整', 'Negative adjustments')}
-                    </span>
-                  </div>
-                  <details className="chart-caption chart-notes">
-                    <summary>{t('图表口径', 'Chart scope')}</summary>
-                    <p>
-                      {t(
-                        '调整项不是现金余额或未来预测。图形标签已舍入，精确金额显示在所选项中；经营性应收调整不等于单一应收账款余额变化，负向调整不能直接证明坏账或滞销。',
-                        'Adjustments are not cash balances or forecasts. Plot labels are rounded; the selected item shows exact amounts. Operating receivables adjustments are not simply changes in accounts receivable, and negative adjustments alone do not prove bad debt or slow inventory.'
-                      )}
-                    </p>
-                  </details>
-                </>
-              ) : (
-                <div className="bridge-unavailable">
-                  <h3>{t('现金桥未生成', 'Cash bridge unavailable')}</h3>
-                  <p>
-                    {report.verdict === 'conflict'
-                      ? t(
-                          '现有输入或现金桥核对存在冲突。金额与原文保留，请先复核下方口径检查，再解释经营原因。',
-                          'The inputs or bridge reconciliation conflict. Amounts and sources remain visible; resolve the scope checks below before attributing operating causes.'
+                </section>
+              </div>
+              <aside className="report-secondary">
+                <ChecksPanel report={report} />
+                <section className="source-panel">
+                  <h2>{t('所用材料', 'Materials used')}</h2>
+                  {report.snapshot.map((material) => (
+                    <button
+                      className="source-snapshot-row"
+                      key={material.id}
+                      onClick={() =>
+                        showEvidence(
+                          material.observations.slice(0, 8).map((obs) => ({
+                            materialId: material.id,
+                            page: obs.page,
+                            quote: obs.quote,
+                            sourceUrl: material.sourceUrl,
+                          })),
+                          report
                         )
-                      : t(
-                          '缺少同口径调整项。请补充下方待询证材料；利润与现金的差额不能代替原因解释。',
-                          'Consistent adjustment items are missing. Request the evidence below; a profit-to-cash gap does not explain its causes.'
-                        )}
+                      }
+                    >
+                      <FileText size={20} />
+                      <span>
+                        <strong>{material.title}</strong>
+                        <small>
+                          {material.documentDate} ·{' '}
+                          {t('查看原文与口径', 'Inspect source and scope')}
+                        </small>
+                      </span>
+                      <ArrowUpRight size={16} />
+                    </button>
+                  ))}
+                  <p>
+                    {t(
+                      '历史报告使用已保存的输入快照，不会被新的导入覆盖。',
+                      'Historical reports use their saved inputs. New imports do not overwrite them.'
+                    )}
                   </p>
-                  <a
-                    className="text-link"
-                    href="#questions"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      setSection('requests');
-                      requestAnimationFrame(() =>
-                        document.getElementById('questions')?.scrollIntoView({
-                          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                            ? 'auto'
-                            : 'smooth',
-                        })
-                      );
-                    }}
-                  >
-                    {t('查看补件问题', 'See evidence requests')}
-                    <ArrowDown size={15} />
-                  </a>
+                </section>
+              </aside>
+            </div>
+          </div>
+          <div id="report-panel-explanations" tabIndex={-1} hidden={section !== 'explanations'}>
+            <section
+              className="report-section cross-signals-section"
+              id="cross-signals"
+              tabIndex={-1}
+            >
+              <div className="report-section-title">
+                <h2>{t('组合线索', 'Combined signals')}</h2>
+                <Tag>{report.crossSignals === undefined ? '—' : report.crossSignals.length}</Tag>
+              </div>
+              <p className="section-intro">
+                {t(
+                  '只有所需的同口径金额齐全、现金桥闭合时才显示组合。它提出核查方向，不给企业打分。',
+                  'Combinations appear only when comparable amounts are present and the cash bridge reconciles. They suggest checks, not a company score.'
+                )}
+              </p>
+              <CrossSignalChecks report={report} />
+              {report.crossSignals === undefined ? (
+                <p className="cross-signal-empty">
+                  {t(
+                    '这份旧版报告尚未评估组合线索。使用原材料创建新核查后，可查看当前规则的结果。',
+                    'This older report has no combined-signal evaluation. Create a new review from its evidence to apply the current rules.'
+                  )}
+                </p>
+              ) : report.crossSignals.length ? (
+                <div className="cross-signal-list">
+                  {report.crossSignals.map((signal) => {
+                    const next =
+                      signal.nextEvidence[task.purpose === 'handover' ? 'handover' : 'external'];
+                    return (
+                      <article className="cross-signal-card" key={signal.id}>
+                        <div className="cross-signal-heading">
+                          <span className="cross-signal-index">{t('交叉核对', 'Cross-check')}</span>
+                          <h3>{t(signal.title.zh, signal.title.en)}</h3>
+                          <p>{t(signal.reading.zh, signal.reading.en)}</p>
+                        </div>
+                        <div
+                          className="cross-signal-facts"
+                          aria-label={t('触发事实', 'Triggering facts')}
+                        >
+                          {signal.facts.map((fact) => (
+                            <button
+                              type="button"
+                              key={`${fact.year}-${fact.metric}`}
+                              onClick={() => showEvidence(fact.sourceRefs, report)}
+                              aria-label={`${fact.year} ${metricName(fact.metric, locale)}: ${money(fact.amount, locale, false)} CNY · ${t('查看来源', 'View source')}`}
+                            >
+                              <span>
+                                {fact.year} · {metricName(fact.metric, locale)}
+                              </span>
+                              <strong className="mono">
+                                {money(fact.amount, locale)} <small>CNY</small>
+                              </strong>
+                              <ArrowUpRight size={14} aria-hidden="true" />
+                            </button>
+                          ))}
+                        </div>
+                        <div className="cross-signal-explanations">
+                          <span className="cross-signal-label">
+                            {t('两种待检验的解释', 'Two explanations to test')}
+                          </span>
+                          {signal.explanations.map((explanation, index) => (
+                            <p key={index}>
+                              <b>{index + 1}</b>
+                              {t(explanation.zh, explanation.en)}
+                            </p>
+                          ))}
+                        </div>
+                        <div className="cross-signal-next">
+                          <div>
+                            <span className="cross-signal-label">
+                              {task.purpose === 'handover'
+                                ? t('接手前核查', 'Check before handover')
+                                : t('付款前核查', 'Check before payment')}
+                            </span>
+                            <p>{t(next.zh, next.en)}</p>
+                            <SignalMaterialRequest
+                              key={`${signal.id}-${locale}-${task.purpose}`}
+                              text={`${task.company} · ${task.year}\n${t(next.zh, next.en)}`}
+                            />
+                          </div>
+                          <button
+                            className="text-link"
+                            onClick={() =>
+                              navigate(
+                                `/decisions?new=${task.purpose || 'external'}&task=${task.id}`
+                              )
+                            }
+                          >
+                            {t('进入事项核查', 'Open decision review')}
+                            <ArrowRight size={14} />
+                          </button>
+                        </div>
+                        <div className="cross-signal-test">
+                          <button
+                            type="button"
+                            className="text-link"
+                            onClick={() =>
+                              setTestMetric(
+                                signal.id === 'profit-cash-working-capital'
+                                  ? 'inventoryAdjustment'
+                                  : 'operatingCashFlow'
+                              )
+                            }
+                          >
+                            <SlidersHorizontal size={14} />
+                            {t('检验关键依据', 'Test a key dependency')}
+                            <ArrowRight size={14} />
+                          </button>
+                          <span>
+                            {t(
+                              '调整本次采用的指标，保存新的核查。',
+                              'Change the adopted metrics and save a new review.'
+                            )}
+                          </span>
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
+              ) : (
+                <p className="cross-signal-empty">
+                  {t(
+                    report.crossSignalChecks === undefined
+                      ? '本次没有显示组合线索。单项事实与待询证事项仍见下方，未显示组合不表示企业没有风险。'
+                      : report.crossSignalChecks.some((check) => check.status === 'blocked')
+                        ? '部分组合条件暂不能核对，所需材料与缺口见上方。未显示组合不表示企业没有风险。'
+                        : '已核对的组合条件未全部满足。未显示组合不表示企业没有风险，单项事实与待询证事项仍见下方。',
+                    report.crossSignalChecks === undefined
+                      ? 'No combination is displayed. Individual facts and evidence requests remain below. This does not imply the company has no risk.'
+                      : report.crossSignalChecks.some((check) => check.status === 'blocked')
+                        ? 'Some combinations cannot be evaluated yet. Required evidence and gaps are listed above. No displayed combination does not imply no risk.'
+                        : 'The evaluated combination conditions are not all met. No displayed combination does not imply no risk; individual facts and evidence requests remain below.'
+                  )}
+                </p>
               )}
             </section>
-            <section className="report-section">
+            <section className="report-section findings-section">
               <div className="report-section-title">
                 <div>
-                  <h2>{t('年度对比', 'Annual comparison')}</h2>
+                  <h2>{t('可能解释', 'Possible explanations')}</h2>
                 </div>
               </div>
-              <TrendChart report={report} />
-              <AnnualChanges report={report} />
-              <p className="chart-caption">
-                {t(
-                  '同一家公司、同一报表范围。同比基数为零或负值时，不给出通常增长率。',
-                  'One company and one reporting scope. Conventional growth rates are withheld for zero or negative prior-year bases.'
-                )}
-              </p>
-            </section>
-          </div>
-          <aside className="report-secondary">
-            <ChecksPanel report={report} />
-            <section className="source-panel">
-              <h2>{t('所用材料', 'Materials used')}</h2>
-              {report.snapshot.map((material) => (
-                <button
-                  className="source-snapshot-row"
-                  key={material.id}
-                  onClick={() =>
-                    showEvidence(
-                      material.observations.slice(0, 8).map((obs) => ({
-                        materialId: material.id,
-                        page: obs.page,
-                        quote: obs.quote,
-                        sourceUrl: material.sourceUrl,
-                      })),
-                      report
-                    )
-                  }
-                >
-                  <FileText size={20} />
-                  <span>
-                    <strong>{material.title}</strong>
-                    <small>
-                      {material.documentDate} · {t('查看原文与口径', 'Inspect source and scope')}
-                    </small>
-                  </span>
-                  <ArrowUpRight size={16} />
-                </button>
-              ))}
-              <p>
-                {t(
-                  '历史报告使用已保存的输入快照，不会被新的导入覆盖。',
-                  'Historical reports use their saved inputs. New imports do not overwrite them.'
-                )}
-              </p>
-            </section>
-          </aside>
-        </div>
-      </div>
-      <div id="report-panel-explanations" hidden={section !== 'explanations'}>
-        <section className="report-section cross-signals-section" id="cross-signals">
-          <div className="report-section-title">
-            <h2>{t('组合线索', 'Combined signals')}</h2>
-            <Tag>{report.crossSignals === undefined ? '—' : report.crossSignals.length}</Tag>
-          </div>
-          <p className="section-intro">
-            {t(
-              '只有所需的同口径金额齐全、现金桥闭合时才显示组合。它提出核查方向，不给企业打分。',
-              'Combinations appear only when comparable amounts are present and the cash bridge reconciles. They suggest checks, not a company score.'
-            )}
-          </p>
-          <CrossSignalChecks report={report} />
-          {report.crossSignals === undefined ? (
-            <p className="cross-signal-empty">
-              {t(
-                '这份旧版报告尚未评估组合线索。使用原材料创建新核查后，可查看当前规则的结果。',
-                'This older report has no combined-signal evaluation. Create a new review from its evidence to apply the current rules.'
-              )}
-            </p>
-          ) : report.crossSignals.length ? (
-            <div className="cross-signal-list">
-              {report.crossSignals.map((signal) => {
-                const next =
-                  signal.nextEvidence[task.purpose === 'handover' ? 'handover' : 'external'];
-                return (
-                  <article className="cross-signal-card" key={signal.id}>
-                    <div className="cross-signal-heading">
-                      <span className="cross-signal-index">{t('交叉核对', 'Cross-check')}</span>
-                      <h3>{t(signal.title.zh, signal.title.en)}</h3>
-                      <p>{t(signal.reading.zh, signal.reading.en)}</p>
-                    </div>
-                    <div
-                      className="cross-signal-facts"
-                      aria-label={t('触发事实', 'Triggering facts')}
-                    >
-                      {signal.facts.map((fact) => (
-                        <button
-                          type="button"
-                          key={`${fact.year}-${fact.metric}`}
-                          onClick={() => showEvidence(fact.sourceRefs, report)}
-                          aria-label={`${fact.year} ${metricName(fact.metric, locale)}: ${money(fact.amount, locale, false)} CNY · ${t('查看来源', 'View source')}`}
-                        >
-                          <span>
-                            {fact.year} · {metricName(fact.metric, locale)}
-                          </span>
-                          <strong className="mono">
-                            {money(fact.amount, locale)} <small>CNY</small>
-                          </strong>
-                          <ArrowUpRight size={14} aria-hidden="true" />
-                        </button>
-                      ))}
-                    </div>
-                    <div className="cross-signal-explanations">
-                      <span className="cross-signal-label">
-                        {t('两种待检验的解释', 'Two explanations to test')}
-                      </span>
-                      {signal.explanations.map((explanation, index) => (
-                        <p key={index}>
-                          <b>{index + 1}</b>
-                          {t(explanation.zh, explanation.en)}
-                        </p>
-                      ))}
-                    </div>
-                    <div className="cross-signal-next">
-                      <div>
-                        <span className="cross-signal-label">
-                          {task.purpose === 'handover'
-                            ? t('接手前核查', 'Check before handover')
-                            : t('付款前核查', 'Check before payment')}
-                        </span>
-                        <p>{t(next.zh, next.en)}</p>
-                        <SignalMaterialRequest
-                          key={`${signal.id}-${locale}-${task.purpose}`}
-                          text={`${task.company} · ${task.year}\n${t(next.zh, next.en)}`}
-                        />
+              <div className="findings-list">
+                {report.findings.map((finding, index) => (
+                  <article className={`finding-row finding-${finding.severity}`} key={finding.id}>
+                    <span className="finding-number">{index + 1}</span>
+                    <div>
+                      <div className="finding-title">
+                        <h3>{t(finding.label, translateRule(finding.label))}</h3>
+                        <Tag tone={finding.basis === 'management' ? 'amber' : 'neutral'}>
+                          {finding.basis === 'management'
+                            ? t('管理层说法', 'Management claim')
+                            : finding.basis === 'calculation'
+                              ? t('派生计算', 'Derived calculation')
+                              : t('来源事实', 'Source evidence')}
+                        </Tag>
                       </div>
-                      <button
-                        className="text-link"
-                        onClick={() =>
-                          navigate(`/decisions?new=${task.purpose || 'external'}&task=${task.id}`)
-                        }
-                      >
-                        {t('进入事项核查', 'Open decision review')}
-                        <ArrowRight size={14} />
-                      </button>
+                      <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
+                      {finding.questionIds.length > 0 && (
+                        <span className="finding-question-link">
+                          {finding.questionIds.length} {t('条待询证问题', 'evidence requests')}
+                        </span>
+                      )}
                     </div>
-                    <div className="cross-signal-test">
+                    {finding.sourceRefs.length > 0 && (
                       <button
-                        type="button"
-                        className="text-link"
-                        onClick={() =>
-                          setTestMetric(
-                            signal.id === 'profit-cash-working-capital'
-                              ? 'inventoryAdjustment'
-                              : 'operatingCashFlow'
+                        className="button button-secondary"
+                        onClick={() => showEvidence(finding.sourceRefs, report)}
+                      >
+                        <FileText size={15} />
+                        {t('来源', 'Source')}
+                      </button>
+                    )}
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
+          <div id="report-panel-requests" tabIndex={-1} hidden={section !== 'requests'}>
+            <details className="report-context-details">
+              <summary>
+                {purpose === 'handover'
+                  ? t('接手背景与跟进', 'Handover context and follow-up')
+                  : t('付款背景与跟进', 'Payment context and follow-up')}
+              </summary>
+              <ReviewContext
+                task={task}
+                report={report}
+                controlRef={contextControl}
+                hidePurposeSelector
+              />
+            </details>
+            <section className="report-section questions-section" id="questions" tabIndex={-1}>
+              <div className="report-section-title">
+                <div>
+                  <h2>
+                    {purpose === 'handover'
+                      ? t('接手前询证清单', 'Handover evidence requests')
+                      : t('付款前询证清单', 'Prepayment evidence requests')}
+                  </h2>
+                </div>
+                <div className="report-request-actions">
+                  <button
+                    type="button"
+                    className="text-link"
+                    onClick={() => previewExport('checklist')}
+                  >
+                    <Download size={14} />
+                    {t('预览清单', 'Preview checklist')}
+                  </button>
+                  <Tag tone="green">
+                    {report.questions.filter((question) => question.status === 'done').length}/
+                    {report.questions.length} {t('已完成', 'done')}
+                  </Tag>
+                </div>
+              </div>
+              <p className="section-intro">
+                {t(
+                  '勾选仅记录跟进完成，不代表财务问题已证实或解决。',
+                  'Checking an item records follow-up only; it does not prove a financial issue is resolved.'
+                )}
+              </p>
+              <div className="question-list">
+                {questions.map(({ question, priority, orderReason, recipient }, index) => (
+                  <div
+                    className={`question-row ${question.status === 'done' ? 'question-done' : ''}`}
+                    key={question.id}
+                  >
+                    <label className="question-checkbox">
+                      <input
+                        aria-label={`${t('标记完成', 'Mark complete')}: ${t(question.text, translateRule(question.text))}`}
+                        type="checkbox"
+                        checked={question.status === 'done'}
+                        disabled={busy}
+                        onChange={(event) =>
+                          execute(
+                            () =>
+                              api<AnalysisTask>(`/tasks/${task.id}/questions/${question.id}`, {
+                                method: 'PATCH',
+                                body: JSON.stringify({
+                                  status: event.target.checked ? 'done' : 'open',
+                                }),
+                              }),
+                            t('跟进状态已保存', 'Follow-up saved')
                           )
                         }
-                      >
-                        <SlidersHorizontal size={14} />
-                        {t('检验关键依据', 'Test a key dependency')}
-                        <ArrowRight size={14} />
-                      </button>
+                      />
                       <span>
-                        {t(
-                          '调整本次采用的指标，保存新的核查。',
-                          'Change the adopted metrics and save a new review.'
-                        )}
+                        <Check size={16} />
                       </span>
+                    </label>
+                    <div>
+                      <div className="question-order-label">
+                        <span className="question-number">
+                          Q{String(index + 1).padStart(2, '0')}
+                        </span>
+                        <span>
+                          {priority === 'prerequisite'
+                            ? t('先补依据', 'Evidence prerequisite')
+                            : priority === 'recorded'
+                              ? t('已记录跟进', 'Follow-up recorded')
+                              : t('继续核查', 'Further inquiry')}
+                        </span>
+                      </div>
+                      <h3>{t(question.text, translateRule(question.text))}</h3>
+                      <p>{t(question.reason, translateRule(question.reason))}</p>
+                      <p className="question-order-reason">
+                        <strong>{t('顺序依据', 'Order reason')}</strong>{' '}
+                        {t(orderReason.zh, orderReason.en)}
+                      </p>
+                      {question.trigger && (
+                        <div className="question-trigger">
+                          <span>
+                            {question.trigger.year} · {metricName(question.trigger.metric, locale)}
+                          </span>
+                          <strong className="mono">
+                            {money(question.trigger.amount, locale, false)} CNY
+                          </strong>
+                          <button
+                            className="text-link"
+                            onClick={() => showEvidence(question.trigger!.sourceRefs, report)}
+                          >
+                            {t('查看触发依据', 'Inspect triggering evidence')}
+                            <ArrowUpRight size={14} />
+                          </button>
+                        </div>
+                      )}
+                      <div className="requested-evidence">
+                        <FileText size={15} />
+                        <span>
+                          {t(question.requestedEvidence, translateRule(question.requestedEvidence))}
+                        </span>
+                      </div>
+                      <p className="question-recipient">
+                        <strong>{t('向谁索取', 'Request from')}</strong>{' '}
+                        {t(recipient.zh, recipient.en)}
+                      </p>
                     </div>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="cross-signal-empty">
-              {t(
-                report.crossSignalChecks === undefined
-                  ? '本次没有显示组合线索。单项事实与待询证事项仍见下方，未显示组合不表示企业没有风险。'
-                  : report.crossSignalChecks.some((check) => check.status === 'blocked')
-                    ? '部分组合条件暂不能核对，所需材料与缺口见上方。未显示组合不表示企业没有风险。'
-                    : '已核对的组合条件未全部满足。未显示组合不表示企业没有风险，单项事实与待询证事项仍见下方。',
-                report.crossSignalChecks === undefined
-                  ? 'No combination is displayed. Individual facts and evidence requests remain below. This does not imply the company has no risk.'
-                  : report.crossSignalChecks.some((check) => check.status === 'blocked')
-                    ? 'Some combinations cannot be evaluated yet. Required evidence and gaps are listed above. No displayed combination does not imply no risk.'
-                    : 'The evaluated combination conditions are not all met. No displayed combination does not imply no risk; individual facts and evidence requests remain below.'
-              )}
-            </p>
-          )}
-        </section>
-        <section className="report-section findings-section">
-          <div className="report-section-title">
-            <div>
-              <h2>{t('可能解释', 'Possible explanations')}</h2>
-            </div>
-          </div>
-          <div className="findings-list">
-            {report.findings.map((finding, index) => (
-              <article className={`finding-row finding-${finding.severity}`} key={finding.id}>
-                <span className="finding-number">{index + 1}</span>
-                <div>
-                  <div className="finding-title">
-                    <h3>{t(finding.label, translateRule(finding.label))}</h3>
-                    <Tag tone={finding.basis === 'management' ? 'amber' : 'neutral'}>
-                      {finding.basis === 'management'
-                        ? t('管理层说法', 'Management claim')
-                        : finding.basis === 'calculation'
-                          ? t('派生计算', 'Derived calculation')
-                          : t('来源事实', 'Source evidence')}
-                    </Tag>
                   </div>
-                  <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
-                  {finding.questionIds.length > 0 && (
-                    <span className="finding-question-link">
-                      {finding.questionIds.length} {t('条待询证问题', 'evidence requests')}
-                    </span>
-                  )}
-                </div>
-                {finding.sourceRefs.length > 0 && (
-                  <button
-                    className="button button-secondary"
-                    onClick={() => showEvidence(finding.sourceRefs, report)}
-                  >
-                    <FileText size={15} />
-                    {t('来源', 'Source')}
-                  </button>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-      </div>
-      <div id="report-panel-requests" hidden={section !== 'requests'}>
-        <details className="report-context-details">
-          <summary>
-            {purpose === 'handover'
-              ? t('接手背景与跟进', 'Handover context and follow-up')
-              : t('付款背景与跟进', 'Payment context and follow-up')}
-          </summary>
-          <ReviewContext
-            task={task}
-            report={report}
-            controlRef={contextControl}
-            hidePurposeSelector
-          />
-        </details>
-        <section className="report-section questions-section" id="questions">
-          <div className="report-section-title">
-            <div>
-              <h2>
-                {purpose === 'handover'
-                  ? t('接手前询证清单', 'Handover evidence requests')
-                  : t('付款前询证清单', 'Prepayment evidence requests')}
-              </h2>
-            </div>
-            <div className="report-request-actions">
-              <button
-                type="button"
-                className="text-link"
-                onClick={() => previewExport('checklist')}
-              >
-                <Download size={14} />
-                {t('预览清单', 'Preview checklist')}
-              </button>
-              <Tag tone="green">
-                {report.questions.filter((question) => question.status === 'done').length}/
-                {report.questions.length} {t('已完成', 'done')}
-              </Tag>
-            </div>
-          </div>
-          <p className="section-intro">
-            {t(
-              '勾选仅记录跟进完成，不代表财务问题已证实或解决。',
-              'Checking an item records follow-up only; it does not prove a financial issue is resolved.'
-            )}
-          </p>
-          <div className="question-list">
-            {questions.map(({ question, priority, orderReason, recipient }, index) => (
-              <div
-                className={`question-row ${question.status === 'done' ? 'question-done' : ''}`}
-                key={question.id}
-              >
-                <label className="question-checkbox">
-                  <input
-                    aria-label={`${t('标记完成', 'Mark complete')}: ${t(question.text, translateRule(question.text))}`}
-                    type="checkbox"
-                    checked={question.status === 'done'}
-                    disabled={busy}
-                    onChange={(event) =>
-                      execute(
-                        () =>
-                          api<AnalysisTask>(`/tasks/${task.id}/questions/${question.id}`, {
-                            method: 'PATCH',
-                            body: JSON.stringify({
-                              status: event.target.checked ? 'done' : 'open',
-                            }),
-                          }),
-                        t('跟进状态已保存', 'Follow-up saved')
-                      )
-                    }
-                  />
-                  <span>
-                    <Check size={16} />
-                  </span>
-                </label>
-                <div>
-                  <div className="question-order-label">
-                    <span className="question-number">Q{String(index + 1).padStart(2, '0')}</span>
-                    <span>
-                      {priority === 'prerequisite'
-                        ? t('先补依据', 'Evidence prerequisite')
-                        : priority === 'recorded'
-                          ? t('已记录跟进', 'Follow-up recorded')
-                          : t('继续核查', 'Further inquiry')}
-                    </span>
-                  </div>
-                  <h3>{t(question.text, translateRule(question.text))}</h3>
-                  <p>{t(question.reason, translateRule(question.reason))}</p>
-                  <p className="question-order-reason">
-                    <strong>{t('顺序依据', 'Order reason')}</strong>{' '}
-                    {t(orderReason.zh, orderReason.en)}
-                  </p>
-                  {question.trigger && (
-                    <div className="question-trigger">
-                      <span>
-                        {question.trigger.year} · {metricName(question.trigger.metric, locale)}
-                      </span>
-                      <strong className="mono">
-                        {money(question.trigger.amount, locale, false)} CNY
-                      </strong>
-                      <button
-                        className="text-link"
-                        onClick={() => showEvidence(question.trigger!.sourceRefs, report)}
-                      >
-                        {t('查看触发依据', 'Inspect triggering evidence')}
-                        <ArrowUpRight size={14} />
-                      </button>
-                    </div>
-                  )}
-                  <div className="requested-evidence">
-                    <FileText size={15} />
-                    <span>
-                      {t(question.requestedEvidence, translateRule(question.requestedEvidence))}
-                    </span>
-                  </div>
-                  <p className="question-recipient">
-                    <strong>{t('向谁索取', 'Request from')}</strong> {t(recipient.zh, recipient.en)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-      <div id="report-panel-scope" hidden={section !== 'scope'}>
-        <section className="report-limitations">
-          <div>
-            <h3>
-              <ShieldCheck size={18} />
-              {t('核查范围', 'Review scope')}
-            </h3>
-            <p className="scope-line">
-              {t(
-                '仅核对历史年度合并报表，不作投资、授信或合作决策。',
-                'Historical consolidated financial evidence only; no investment, credit or partnership decisions.'
-              )}
-            </p>
-            <details>
-              <summary>{t('范围详情', 'Scope details')}</summary>
-              <ul>
-                {report.limitations.map((item, index) => (
-                  <li key={index}>{t(item, translateRule(item))}</li>
                 ))}
-              </ul>
-            </details>
-            <p className="model-status">
-              <Activity size={15} />
-              {report.model.status === 'not-requested'
-                ? t('未生成 AI 解读', 'AI interpretation not generated')
-                : report.model.status === 'not-configured'
-                  ? t('AI 解读暂不可用', 'AI interpretation unavailable')
-                  : report.model.status === 'failed'
-                    ? report.model.error?.includes('未调用')
-                      ? t('材料不足，未生成 AI 解读', 'Insufficient evidence for AI interpretation')
-                      : t(
-                          '解读未完成，核对结果已保留',
-                          'Interpretation incomplete; financial checks retained'
-                        )
-                    : t('AI 解读已完成', 'AI interpretation complete')}
-            </p>
-            {report.model.text && (
-              <details className="model-explanation">
-                <summary>{t('查看 AI 解读', 'View AI interpretation')}</summary>
-                <div className="info-strip">
-                  <CircleAlert size={16} />
-                  <p>
-                    {t(
-                      '解读不是新增证据，可沿引用核对原始材料。',
-                      'Interpretation is not new evidence. Follow its references to inspect the source.'
-                    )}
-                  </p>
-                </div>
-                <ModelExplanation
-                  report={report}
-                  onSource={(_title, refs) => showEvidence(refs, report)}
-                />
-              </details>
-            )}
+              </div>
+            </section>
           </div>
-          <div className="report-bottom-actions">
-            <button
-              className="button button-secondary"
-              type="button"
-              onClick={() => previewExport('json')}
-            >
-              <Download size={16} />
-              {t('预览完整 JSON', 'Preview full JSON')}
-            </button>
-            <button
-              className="button button-secondary"
-              onClick={() => navigate(`/compare?left=${task.id}`)}
-            >
-              <Columns3 size={16} />
-              {t('与历史任务比较', 'Compare with history')}
-            </button>
-            <a href="/method" className="text-link">
-              {t('阅读方法说明', 'Read the methodology')}
-              <ArrowUpRight size={15} />
-            </a>
+          <div id="report-panel-scope" tabIndex={-1} hidden={section !== 'scope'}>
+            <section className="report-limitations">
+              <div>
+                <h3>
+                  <ShieldCheck size={18} />
+                  {t('核查范围', 'Review scope')}
+                </h3>
+                <p className="scope-line">
+                  {t(
+                    '仅核对历史年度合并报表，不作投资、授信或合作决策。',
+                    'Historical consolidated financial evidence only; no investment, credit or partnership decisions.'
+                  )}
+                </p>
+                <details>
+                  <summary>{t('范围详情', 'Scope details')}</summary>
+                  <ul>
+                    {report.limitations.map((item, index) => (
+                      <li key={index}>{t(item, translateRule(item))}</li>
+                    ))}
+                  </ul>
+                </details>
+                <p className="model-status">
+                  <Activity size={15} />
+                  {report.model.status === 'not-requested'
+                    ? t('未生成 AI 解读', 'AI interpretation not generated')
+                    : report.model.status === 'not-configured'
+                      ? t('AI 解读暂不可用', 'AI interpretation unavailable')
+                      : report.model.status === 'failed'
+                        ? report.model.error?.includes('未调用')
+                          ? t(
+                              '材料不足，未生成 AI 解读',
+                              'Insufficient evidence for AI interpretation'
+                            )
+                          : t(
+                              '解读未完成，核对结果已保留',
+                              'Interpretation incomplete; financial checks retained'
+                            )
+                        : t('AI 解读已完成', 'AI interpretation complete')}
+                </p>
+                {report.model.text && (
+                  <details className="model-explanation">
+                    <summary>{t('查看 AI 解读', 'View AI interpretation')}</summary>
+                    <div className="info-strip">
+                      <CircleAlert size={16} />
+                      <p>
+                        {t(
+                          '解读不是新增证据，可沿引用核对原始材料。',
+                          'Interpretation is not new evidence. Follow its references to inspect the source.'
+                        )}
+                      </p>
+                    </div>
+                    <ModelExplanation
+                      report={report}
+                      onSource={(_title, refs) => showEvidence(refs, report)}
+                    />
+                  </details>
+                )}
+              </div>
+              <div className="report-bottom-actions">
+                <button
+                  className="button button-secondary"
+                  type="button"
+                  onClick={() => previewExport('json')}
+                >
+                  <Download size={16} />
+                  {t('预览完整 JSON', 'Preview full JSON')}
+                </button>
+                <button
+                  className="button button-secondary"
+                  onClick={() => navigate(`/compare?left=${task.id}`)}
+                >
+                  <Columns3 size={16} />
+                  {t('与历史任务比较', 'Compare with history')}
+                </button>
+                <a href="/method" className="text-link">
+                  {t('阅读方法说明', 'Read the methodology')}
+                  <ArrowUpRight size={15} />
+                </a>
+              </div>
+            </section>
           </div>
-        </section>
-      </div>
+        </div>
+      </details>
       <div className="print-footer">
         Prispect / {task.id} · {report.year} ·{' '}
         {t(

@@ -1,32 +1,82 @@
 /* 风险透视：第一部分总览仪表 + 第二部分四维详情 */
 
-/* ---------- 双视图切换条 ---------- */
-.report-view-bar {
+/* ---------- 报告的依据与核查记录 ---------- */
+.report-analysis-details {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+}
+.report-analysis-details > summary {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
   gap: 10px;
-  margin: 0 0 12px;
+  min-height: 48px;
+  padding: 12px 0;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
 }
-.report-view-label {
-  font-size: 11.5px;
+.report-analysis-details > summary::-webkit-details-marker {
+  display: none;
+}
+.report-analysis-details > summary svg {
   color: var(--muted);
+  flex: 0 0 auto;
+  transform: rotate(-90deg);
+  transition: transform 160ms ease;
 }
-.report-view-switch {
-  width: auto;
+.report-analysis-details[open] > summary svg {
+  transform: none;
 }
-
-/* 易懂版：隐藏专业区块 */
-.report-content.view-simple .verdict-section,
-.report-content.view-simple .metric-strip,
-.report-content.view-simple .report-purpose-details,
-.report-content.view-simple .report-local-nav,
-.report-content.view-simple [id^='report-panel'] {
-  display: none !important;
+.report-analysis-details > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 3px;
 }
-/* 专业版：隐藏易懂详情卡（总览环保留作定位） */
-.report-content.view-pro .risk-detail {
-  display: none !important;
+.report-analysis-content {
+  padding-top: 12px;
+}
+.report-content-summary #report-summary-findings > .company-review-section:first-child {
+  border-top: 0;
+  margin-top: 24px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .report-analysis-details > summary svg {
+    transition: none;
+  }
+}
+@media print {
+  .report-content details::details-content {
+    display: block !important;
+    content-visibility: visible !important;
+  }
+  .report-analysis-details > summary {
+    display: none;
+  }
+  .report-analysis-content {
+    display: block !important;
+  }
+  .report-content .risk-card {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .report-content .risk-overview {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  .report-content .risk-dim-pill {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line);
+  }
+  .report-content .risk-overview-kicker,
+  .report-content .risk-overview-scope,
+  .report-content .risk-overview-note,
+  .report-content .risk-dim-plain {
+    color: var(--muted);
+  }
 }
 
 /* ---------- 总览仪表（深色面板） ---------- */
@@ -65,13 +115,13 @@
 }
 .risk-ring-wrap {
   position: relative;
-  width: 220px;
-  height: 220px;
+  width: min(220px, 100%);
+  aspect-ratio: 1;
   flex: 0 0 auto;
 }
 .risk-ring {
-  width: 220px;
-  height: 220px;
+  width: 100%;
+  height: 100%;
   display: block;
 }
 .risk-ring-track {
@@ -110,7 +160,9 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  min-width: 260px;
+  flex: 1 1 260px;
+  min-width: 0;
+  max-width: 320px;
 }
 .risk-dim-pill {
   display: flex;
@@ -180,7 +232,7 @@
 }
 .risk-detail-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: 12px;
 }
 .risk-card {
@@ -512,7 +564,7 @@
   }
 }
 
-/* ---------- 多公司风险对比矩阵（易懂版） ---------- */
+/* ---------- 多公司风险对比矩阵 ---------- */
 .risk-matrix {
   margin-bottom: 24px;
 }
@@ -632,7 +684,7 @@
   }
 }
 
-/* ---------- 易懂版首页状态卡 ---------- */
+/* ---------- 首页状态卡 ---------- */
 .home-risk-cards {
   margin-top: 26px;
 }
@@ -745,173 +797,175 @@
   }
 }
 
-/* ================= FinTech 质感与动效（易懂版，body.view-plain-shell 作用域） ================= */
-body.view-plain-shell .risk-overview {
-  background: linear-gradient(180deg, rgba(22, 28, 44, 0.82), rgba(13, 18, 32, 0.7));
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-  border: 1px solid rgba(148, 163, 184, 0.16);
-  box-shadow:
-    0 18px 50px rgba(2, 6, 16, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  border-radius: 14px;
-  position: relative;
-  overflow: hidden;
-  animation: risk-panel-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-body.view-plain-shell .risk-overview::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(90, 167, 255, 0.85),
-    rgba(34, 211, 238, 0.7),
-    transparent
-  );
-  opacity: 0.9;
-}
-@keyframes risk-panel-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.992);
+@media screen {
+  /* ---------- 深色工作区的质感与动效 ---------- */
+  :root[data-theme='dark'] .business-shell .risk-overview {
+    background: linear-gradient(180deg, rgba(22, 28, 44, 0.82), rgba(13, 18, 32, 0.7));
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow:
+      0 18px 50px rgba(2, 6, 16, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.045);
+    border-radius: 14px;
+    position: relative;
+    overflow: hidden;
+    animation: risk-panel-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
-  to {
-    opacity: 1;
-    transform: none;
+  :root[data-theme='dark'] .business-shell .risk-overview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1.5px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(90, 167, 255, 0.85),
+      rgba(34, 211, 238, 0.7),
+      transparent
+    );
+    opacity: 0.9;
   }
-}
-body.view-plain-shell .risk-ring-track {
-  stroke: rgba(148, 163, 184, 0.16);
-}
-body.view-plain-shell .risk-dim-pill {
-  background: rgba(148, 163, 184, 0.055);
-  border: 1px solid rgba(148, 163, 184, 0.13);
-  border-radius: 10px;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  transition:
-    border-color 180ms ease,
-    background 180ms ease,
-    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 180ms ease;
-}
-body.view-plain-shell .risk-dim-pill:hover {
-  border-color: rgba(90, 167, 255, 0.5);
-  background: rgba(90, 167, 255, 0.1);
-  transform: translateY(-1px);
-  box-shadow:
-    0 8px 22px rgba(6, 12, 26, 0.4),
-    0 0 0 1px rgba(90, 167, 255, 0.12);
-}
-body.view-plain-shell .risk-dim-pill.is-active {
-  border-color: rgba(90, 167, 255, 0.6);
-  background: rgba(90, 167, 255, 0.13);
-}
-body.view-plain-shell .risk-dim-dot {
-  box-shadow: 0 0 10px currentColor;
-}
-body.view-plain-shell .risk-dim-pill:hover .risk-dim-dot {
-  animation: risk-dot-pulse 1.2s ease-in-out infinite;
-}
-@keyframes risk-dot-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 4px currentColor;
+  @keyframes risk-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.992);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
   }
-  50% {
-    box-shadow: 0 0 12px currentColor;
+  :root[data-theme='dark'] .business-shell .risk-ring-track {
+    stroke: rgba(148, 163, 184, 0.16);
   }
-}
-body.view-plain-shell .risk-card {
-  background: rgba(17, 24, 39, 0.6);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-body.view-plain-shell .risk-card.is-visible:hover {
-  transform: translateY(-2px);
-  border-color: rgba(90, 167, 255, 0.42);
-  box-shadow:
-    0 14px 34px rgba(4, 10, 24, 0.45),
-    0 0 0 1px rgba(90, 167, 255, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition:
-    opacity 480ms ease,
-    transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 200ms ease,
-    box-shadow 200ms ease,
-    background 200ms ease;
-}
-body.view-plain-shell .risk-finance-bar {
-  background: rgba(148, 163, 184, 0.12);
-}
-body.view-plain-shell .risk-bridge-mini {
-  border-color: rgba(148, 163, 184, 0.18);
-  background: rgba(148, 163, 184, 0.05);
-}
-body.view-plain-shell .risk-bridge-track {
-  background: rgba(148, 163, 184, 0.12);
-}
-body.view-plain-shell .risk-pending-note {
-  border-color: rgba(148, 163, 184, 0.22);
-}
-body.view-plain-shell .risk-reputation-list a {
-  border-color: rgba(148, 163, 184, 0.14);
-  background: rgba(148, 163, 184, 0.04);
-}
-body.view-plain-shell .risk-reputation-list a:hover {
-  border-color: rgba(90, 167, 255, 0.5);
-  background: rgba(90, 167, 255, 0.1);
-}
-body.view-plain-shell .risk-matrix-head,
-body.view-plain-shell .risk-matrix-data-row {
-  background: rgba(17, 24, 39, 0.6);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-color: rgba(148, 163, 184, 0.14);
-}
-body.view-plain-shell .risk-matrix-data-row:hover {
-  border-color: rgba(90, 167, 255, 0.45);
-  background: rgba(90, 167, 255, 0.09);
-}
-body.view-plain-shell .home-risk-card {
-  background: rgba(17, 24, 39, 0.6);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border-color: rgba(148, 163, 184, 0.14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-}
-body.view-plain-shell .home-risk-card:hover {
-  border-color: rgba(90, 167, 255, 0.45);
-  box-shadow:
-    0 14px 34px rgba(4, 10, 24, 0.42),
-    0 0 0 1px rgba(90, 167, 255, 0.08);
-  transform: translateY(-3px);
-}
-@media (prefers-reduced-motion: reduce) {
-  body.view-plain-shell .risk-overview,
-  body.view-plain-shell .risk-dim-pill,
-  body.view-plain-shell .risk-dim-dot,
-  body.view-plain-shell .risk-card.is-visible:hover,
-  body.view-plain-shell .home-risk-card,
-  body.view-plain-shell .home-risk-card:hover {
-    animation: none;
-    transform: none;
-    transition: none !important;
+  :root[data-theme='dark'] .business-shell .risk-dim-pill {
+    background: rgba(148, 163, 184, 0.055);
+    border: 1px solid rgba(148, 163, 184, 0.13);
+    border-radius: 10px;
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    transition:
+      border-color 180ms ease,
+      background 180ms ease,
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 180ms ease;
   }
-}
-body.view-plain-shell .risk-reputation-source {
-  font-style: normal;
-  color: var(--accent);
-  opacity: 0.85;
-}
-.risk-reputation-source {
-  font-style: normal;
+  :root[data-theme='dark'] .business-shell .risk-dim-pill:hover {
+    border-color: rgba(90, 167, 255, 0.5);
+    background: rgba(90, 167, 255, 0.1);
+    transform: translateY(-1px);
+    box-shadow:
+      0 8px 22px rgba(6, 12, 26, 0.4),
+      0 0 0 1px rgba(90, 167, 255, 0.12);
+  }
+  :root[data-theme='dark'] .business-shell .risk-dim-pill.is-active {
+    border-color: rgba(90, 167, 255, 0.6);
+    background: rgba(90, 167, 255, 0.13);
+  }
+  :root[data-theme='dark'] .business-shell .risk-dim-dot {
+    box-shadow: 0 0 10px currentColor;
+  }
+  :root[data-theme='dark'] .business-shell .risk-dim-pill:hover .risk-dim-dot {
+    animation: risk-dot-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes risk-dot-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 4px currentColor;
+    }
+    50% {
+      box-shadow: 0 0 12px currentColor;
+    }
+  }
+  :root[data-theme='dark'] .business-shell .risk-card {
+    background: rgba(17, 24, 39, 0.6);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  :root[data-theme='dark'] .business-shell .risk-card.is-visible:hover {
+    transform: translateY(-2px);
+    border-color: rgba(90, 167, 255, 0.42);
+    box-shadow:
+      0 14px 34px rgba(4, 10, 24, 0.45),
+      0 0 0 1px rgba(90, 167, 255, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition:
+      opacity 480ms ease,
+      transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      background 200ms ease;
+  }
+  :root[data-theme='dark'] .business-shell .risk-finance-bar {
+    background: rgba(148, 163, 184, 0.12);
+  }
+  :root[data-theme='dark'] .business-shell .risk-bridge-mini {
+    border-color: rgba(148, 163, 184, 0.18);
+    background: rgba(148, 163, 184, 0.05);
+  }
+  :root[data-theme='dark'] .business-shell .risk-bridge-track {
+    background: rgba(148, 163, 184, 0.12);
+  }
+  :root[data-theme='dark'] .business-shell .risk-pending-note {
+    border-color: rgba(148, 163, 184, 0.22);
+  }
+  :root[data-theme='dark'] .business-shell .risk-reputation-list a {
+    border-color: rgba(148, 163, 184, 0.14);
+    background: rgba(148, 163, 184, 0.04);
+  }
+  :root[data-theme='dark'] .business-shell .risk-reputation-list a:hover {
+    border-color: rgba(90, 167, 255, 0.5);
+    background: rgba(90, 167, 255, 0.1);
+  }
+  :root[data-theme='dark'] .business-shell .risk-matrix-head,
+  :root[data-theme='dark'] .business-shell .risk-matrix-data-row {
+    background: rgba(17, 24, 39, 0.6);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-color: rgba(148, 163, 184, 0.14);
+  }
+  :root[data-theme='dark'] .business-shell .risk-matrix-data-row:hover {
+    border-color: rgba(90, 167, 255, 0.45);
+    background: rgba(90, 167, 255, 0.09);
+  }
+  :root[data-theme='dark'] .business-shell .home-risk-card {
+    background: rgba(17, 24, 39, 0.6);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    border-color: rgba(148, 163, 184, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  :root[data-theme='dark'] .business-shell .home-risk-card:hover {
+    border-color: rgba(90, 167, 255, 0.45);
+    box-shadow:
+      0 14px 34px rgba(4, 10, 24, 0.42),
+      0 0 0 1px rgba(90, 167, 255, 0.08);
+    transform: translateY(-3px);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :root[data-theme='dark'] .business-shell .risk-overview,
+    :root[data-theme='dark'] .business-shell .risk-dim-pill,
+    :root[data-theme='dark'] .business-shell .risk-dim-dot,
+    :root[data-theme='dark'] .business-shell .risk-card.is-visible:hover,
+    :root[data-theme='dark'] .business-shell .home-risk-card,
+    :root[data-theme='dark'] .business-shell .home-risk-card:hover {
+      animation: none;
+      transform: none;
+      transition: none !important;
+    }
+  }
+  :root[data-theme='dark'] .business-shell .risk-reputation-source {
+    font-style: normal;
+    color: var(--accent);
+    opacity: 0.85;
+  }
+  .risk-reputation-source {
+    font-style: normal;
+  }
 }
