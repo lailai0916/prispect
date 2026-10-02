@@ -1,39 +1,51 @@
 .home-landing {
   --home-line: color-mix(in srgb, var(--ink) 12%, transparent);
-  --home-secondary: color-mix(in srgb, var(--ink) 63%, var(--paper));
+  --home-secondary: var(--muted);
   --home-soft: color-mix(in srgb, var(--ink) 3%, var(--paper));
+  --home-frame-shadow:
+    0 1px 2px color-mix(in srgb, var(--ink) 3%, transparent),
+    0 14px 44px -16px color-mix(in srgb, var(--ink) 12%, transparent);
   overflow: clip;
 }
 .landing-start {
   position: relative;
-  min-height: min(800px, calc(100svh - 56px));
+  min-height: 448px;
   display: grid;
   place-items: center;
-  padding: 80px 24px 100px;
+  padding: 64px 24px 52px;
 }
 .landing-start-inner {
-  width: min(100%, 700px);
+  width: min(100%, 660px);
   text-align: center;
 }
 .landing-product-name {
   color: var(--home-secondary);
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: 11px;
+  letter-spacing: 0.035em;
 }
 .landing-start h1 {
-  margin: 22px 0 32px;
-  font-size: clamp(28px, 3vw, 42px);
-  font-weight: 550;
+  margin: 16px 0 12px;
+  font-size: clamp(30px, 3vw, 42px);
+  font-weight: 500;
   line-height: 1.25;
   letter-spacing: -0.035em;
+}
+.landing-start-description {
+  color: var(--home-secondary);
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 0 auto 26px;
+  text-wrap: balance;
 }
 .start-input {
   width: 100%;
   border: 1px solid var(--control-border);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--paper);
   padding: 16px;
-  box-shadow: 0 5px 24px color-mix(in srgb, var(--ink) 4%, transparent);
+  box-shadow:
+    0 1px 3px color-mix(in srgb, var(--ink) 3%, transparent),
+    0 8px 28px -8px color-mix(in srgb, var(--ink) 8%, transparent);
   text-align: left;
   transition:
     border-color 160ms,
@@ -154,7 +166,7 @@
   display: inline-flex;
   gap: 7px;
   align-items: center;
-  margin-top: 28px;
+  margin-top: 22px;
   font-size: 12px;
   color: var(--home-secondary);
 }
@@ -168,61 +180,48 @@
 .landing-text-action:hover svg {
   transform: translate(1px, -1px);
 }
-.landing-scroll-mark {
-  position: absolute;
-  bottom: 30px;
-  left: calc(50% - 1px);
-  height: 36px;
-  width: 1px;
-  background: var(--home-line);
-}
-.landing-scroll-mark span {
-  display: block;
-  width: 1px;
-  height: 14px;
-  background: var(--muted);
-}
 .landing-product-section {
   scroll-margin-top: 100px;
   max-width: 1180px;
   margin: 0 auto;
-  padding: 100px 32px 80px;
+  padding: 88px 32px 80px;
   border-top: 1px solid var(--home-line);
 }
 .landing-section-intro {
   display: grid;
-  grid-template-columns: 1fr 0.72fr;
-  gap: 80px;
+  grid-template-columns: 1fr 0.82fr;
+  gap: 72px;
   align-items: start;
-  margin-bottom: 64px;
+  margin-bottom: 40px;
 }
 .landing-section-intro h2,
 .landing-method h2 {
-  font-size: clamp(28px, 3.1vw, 42px);
+  font-size: clamp(28px, 2.7vw, 38px);
   line-height: 1.2;
-  font-weight: 550;
+  font-weight: 500;
   letter-spacing: -0.035em;
   white-space: pre-line;
   margin: 0;
 }
 .landing-section-intro p {
   margin: 4px 0 0;
-  font-size: 17px;
+  font-size: 15px;
   line-height: 1.75;
   color: var(--home-secondary);
   max-width: 420px;
 }
 .product-window-stage {
   perspective: 1600px;
-  padding: 4px;
+  padding: 18px;
+  background: var(--home-soft);
+  border: 1px solid var(--home-line);
+  border-radius: 16px;
 }
 .product-window {
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 10px;
   border: 1px solid var(--home-line);
-  box-shadow:
-    0 18px 70px color-mix(in srgb, var(--ink) 6%, transparent),
-    0 2px 8px color-mix(in srgb, var(--ink) 3%, transparent);
+  box-shadow: var(--home-frame-shadow);
   background: var(--paper);
   transform-origin: center;
 }
@@ -248,21 +247,25 @@
 .landing-financial-section {
   max-width: 1180px;
   margin: 0 auto;
-  padding: 108px 28px 28px;
+  padding: 48px 32px 72px;
+}
+.landing-financial-section .landing-section-intro {
+  margin-bottom: 32px;
 }
 .financial-preview {
-  margin-top: 48px;
+  margin-top: 0;
   border: 1px solid var(--home-line);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   background: var(--paper);
+  box-shadow: var(--home-frame-shadow);
 }
 .financial-preview-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  padding: 18px 26px;
+  padding: 14px 26px;
   border-bottom: 1px solid var(--home-line);
   background: var(--home-soft);
   font-size: 12px;
@@ -277,19 +280,28 @@
   display: flex;
   flex-wrap: wrap;
   max-width: 100%;
-  gap: 3px;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--home-line);
+  border-radius: 7px;
 }
 .financial-company-switch button {
   border: 0;
   color: var(--muted);
   background: transparent;
   border-radius: 5px;
-  padding: 5px 8px;
+  padding: 5px 10px;
   cursor: pointer;
   font-size: 12px;
   max-width: 100%;
   text-align: left;
   overflow-wrap: anywhere;
+  transition:
+    color 160ms,
+    background-color 160ms;
+}
+.financial-company-switch button:hover {
+  color: var(--ink);
 }
 .financial-company-switch button[aria-pressed='true'] {
   color: var(--ink);
@@ -303,8 +315,8 @@
 .financial-preview-metrics {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 44px 30px;
-  gap: 20px;
+  padding: 32px 24px;
+  gap: 12px;
 }
 .financial-metric {
   display: flex;
@@ -312,13 +324,16 @@
   text-align: left;
   background: transparent;
   border: 0;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 14px 16px;
+  border-radius: 8px;
   cursor: pointer;
   transition: background-color 160ms;
   color: var(--home-secondary);
 }
 .financial-metric.selected {
+  background: var(--home-soft);
+}
+.financial-metric:hover {
   background: var(--home-soft);
 }
 .financial-metric > span:first-child {
@@ -327,7 +342,7 @@
 .financial-metric strong {
   font-size: clamp(22px, 2.3vw, 32px);
   color: var(--ink);
-  font-weight: 550;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.025em;
   margin-top: 14px;
@@ -338,7 +353,7 @@
 .financial-metric-bar {
   display: block;
   width: 100%;
-  height: 4px;
+  height: 5px;
   background: var(--home-line);
   border-radius: 2px;
   margin: 24px 0 12px;
@@ -348,18 +363,46 @@
   height: 100%;
   background: var(--accent);
   border-radius: 2px;
+  transition: width 220ms ease-out;
 }
 .financial-preview-source {
   border-left: 1px solid var(--home-line);
-  padding: 30px;
+  padding: 28px 30px;
+  background: var(--surface-subtle);
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
+.financial-source-document {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--home-secondary);
+  font-size: 11px;
+  line-height: 1.65;
+  margin-bottom: 18px;
+}
+.financial-source-document svg {
+  margin-top: 2px;
+}
 .financial-preview-source blockquote {
-  margin: 18px 0;
+  border-left: 2px solid var(--home-line);
+  padding-left: 14px;
+  margin: 6px 0 16px;
   font-size: 13px;
   line-height: 1.8;
+}
+.financial-preview-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  border-top: 1px solid var(--home-line);
+  padding: 12px 26px;
+  color: var(--home-secondary);
+  font-size: 11px;
+  background: var(--home-soft);
 }
 .financial-preview-source a {
   display: inline-flex;
@@ -385,7 +428,7 @@
 }
 @media (max-width: 560px) {
   .landing-financial-section {
-    padding: 64px 20px 0;
+    padding: 32px 20px 48px;
   }
   .financial-preview-heading {
     flex-wrap: wrap;
@@ -398,6 +441,9 @@
   }
   .financial-preview-source {
     padding: 24px 20px;
+  }
+  .financial-preview-footer {
+    padding: 12px 20px;
   }
 }
 .preview-event {
@@ -717,7 +763,7 @@
   margin: 20px 0 16px;
   font-size: 26px;
   letter-spacing: -0.025em;
-  font-weight: 550;
+  font-weight: 500;
 }
 .landing-perspective > p {
   font-size: 14px;
@@ -746,7 +792,8 @@
   border: 1px solid var(--home-line);
   border-radius: 10px;
   padding: 22px;
-  background: var(--home-soft);
+  background: var(--surface-subtle);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 3%, transparent);
 }
 .perspective-document > div,
 .perspective-versions > div:first-child {
@@ -825,7 +872,7 @@
 .home-workspace {
   width: min(100%, 880px);
   margin: 0 auto;
-  padding: 70px 36px 80px;
+  padding: 64px 36px 80px;
 }
 .workspace-start {
   max-width: 680px;
@@ -899,8 +946,8 @@
 }
 @media (max-width: 800px) {
   .landing-start {
-    min-height: 660px;
-    padding: 70px 24px 100px;
+    min-height: 430px;
+    padding: 54px 24px 44px;
   }
   .landing-product-section {
     padding: 65px 24px 40px;
@@ -916,6 +963,9 @@
   }
   .preview-workspace {
     grid-template-columns: 1fr;
+  }
+  .product-window-stage {
+    padding: 12px;
   }
   .preview-evidence {
     border-left: 0;
@@ -960,13 +1010,28 @@
 }
 @media (max-width: 560px) {
   .landing-start {
-    min-height: min(740px, calc(100svh - 60px));
+    min-height: 410px;
+    padding: 48px 20px 40px;
   }
   .landing-start h1 {
-    font-size: 28px;
+    font-size: 30px;
+  }
+  .landing-start-description {
+    max-width: 320px;
+    font-size: 13px;
+  }
+  .landing-explore,
+  .landing-text-action,
+  .landing-method a,
+  .financial-preview-source a {
+    min-height: 44px;
+    align-items: center;
+  }
+  .financial-company-switch button {
+    min-height: 44px;
   }
   .start-input {
-    border-radius: 16px;
+    border-radius: 12px;
     padding: 14px;
   }
   .start-input textarea {
@@ -982,6 +1047,11 @@
   }
   .product-preview-body {
     padding: 22px 18px;
+  }
+  .product-window-stage {
+    padding: 7px;
+    margin-inline: -7px;
+    border-radius: 14px;
   }
   .product-window-chrome {
     padding: 12px 16px;
@@ -1055,6 +1125,9 @@
   .start-input,
   .start-submit,
   .start-mode-popup {
+    transition: none;
+  }
+  .financial-metric-bar i {
     transition: none;
   }
   .start-submit:hover {

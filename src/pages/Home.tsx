@@ -105,6 +105,10 @@ function FinancialPreview() {
             )}
           </div>
           <aside className="financial-preview-source">
+            <div className="financial-source-document">
+              <FileText size={14} aria-hidden="true" />
+              <span>{item.source.title}</span>
+            </div>
             <span className="preview-section-label">
               {t('原表核对记录', 'Source reference')} ·{' '}
               {reference?.page
@@ -130,6 +134,12 @@ function FinancialPreview() {
               )}
             </small>
           </aside>
+        </div>
+        <div className="financial-preview-footer">
+          <span>
+            {t('选择一个金额，查看对应原文。', 'Select an amount to inspect its source.')}
+          </span>
+          <span>{t('公开年报 · 历史披露', 'Public annual report · historical disclosure')}</span>
         </div>
       </div>
     </section>
@@ -548,6 +558,12 @@ export function Home() {
         <div className="landing-start-inner">
           <span className="landing-product-name">Prispect · 析光</span>
           <h1>{t('你想核查什么？', 'What would you like to review?')}</h1>
+          <p className="landing-start-description">
+            {t(
+              '核对公开财报，厘清付款与交接的依据。',
+              'Review public financials and the evidence behind payments and handovers.'
+            )}
+          </p>
           <StartInput />
           <a
             className="landing-explore"
@@ -564,9 +580,6 @@ export function Home() {
             {t('了解工作方式', 'See how it works')}
             <ArrowRight size={14} />
           </a>
-        </div>
-        <div className="landing-scroll-mark" aria-hidden="true">
-          <span />
         </div>
       </section>
       <div id="product">
