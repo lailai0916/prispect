@@ -142,9 +142,15 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
     status: creditStatus,
     summary:
       creditStatus === 'good'
-        ? { zh: '全部材料来自官方披露，页码与校验完整', en: 'All materials are official with pages and hashes' }
+        ? {
+            zh: '全部材料来自官方披露，页码与校验完整',
+            en: 'All materials are official with pages and hashes',
+          }
         : creditStatus === 'warn'
-          ? { zh: '部分材料缺少官方来源或页码，需留意', en: 'Some materials lack official sources or pages' }
+          ? {
+              zh: '部分材料缺少官方来源或页码，需留意',
+              en: 'Some materials lack official sources or pages',
+            }
           : creditStatus === 'unknown'
             ? { zh: '尚未核对披露来源', en: 'No disclosure source checked yet' }
             : { zh: '来源无法核实', en: 'Sources cannot be verified' },
@@ -164,10 +170,7 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
       },
       {
         label: { zh: '页码覆盖', en: 'Page coverage' },
-        value:
-          observationTotal > 0
-            ? `${observationWithPage}/${observationTotal}`
-            : '—',
+        value: observationTotal > 0 ? `${observationWithPage}/${observationTotal}` : '—',
         tone: observationTotal > 0 && observationWithPage === observationTotal ? 'good' : 'warn',
         refs: [],
       },
@@ -227,7 +230,10 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
       riskStatus === 'good'
         ? { zh: '现金桥核对通过，未发现冲突', en: 'Cash bridge reconciled with no conflicts' }
         : riskStatus === 'bad'
-          ? { zh: '发现证据冲突，现金桥已暂停', en: 'Evidence conflicts; bridge attribution stopped' }
+          ? {
+              zh: '发现证据冲突，现金桥已暂停',
+              en: 'Evidence conflicts; bridge attribution stopped',
+            }
           : { zh: '存在待核实的信号', en: 'Signals need further verification' },
     metrics: [
       {
@@ -272,7 +278,10 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
             : { zh: '低风险', en: 'Low risk' },
     subtitle:
       overallStatus === 'bad'
-        ? { zh: '部分维度查出风险信号，请查看对应维度', en: 'Some dimensions show risk; check the details' }
+        ? {
+            zh: '部分维度查出风险信号，请查看对应维度',
+            en: 'Some dimensions show risk; check the details',
+          }
         : overallStatus === 'warn'
           ? { zh: '部分维度需要进一步核实', en: 'Some dimensions need further review' }
           : overallStatus === 'unknown'

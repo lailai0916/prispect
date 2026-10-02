@@ -55,7 +55,12 @@ export function RiskOverview({ report }: { report: Report }) {
       </div>
       <div className="risk-overview-body">
         <div className="risk-ring-wrap">
-          <svg viewBox="0 0 220 220" className="risk-ring" role="img" aria-label={t(overall.title.zh, overall.title.en)}>
+          <svg
+            viewBox="0 0 220 220"
+            className="risk-ring"
+            role="img"
+            aria-label={t(overall.title.zh, overall.title.en)}
+          >
             <circle className="risk-ring-track" cx="110" cy="110" r="96" />
             <circle
               className="risk-ring-fill"
@@ -66,7 +71,9 @@ export function RiskOverview({ report }: { report: Report }) {
                 stroke: color,
                 strokeDasharray: ringLength,
                 strokeDashoffset: entered ? 0 : ringLength,
-                transition: reduceMotion ? 'none' : 'stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
+                transition: reduceMotion
+                  ? 'none'
+                  : 'stroke-dashoffset 1.2s cubic-bezier(0.22, 1, 0.36, 1)',
               }}
             />
           </svg>
@@ -92,14 +99,14 @@ export function RiskOverview({ report }: { report: Report }) {
                 onClick={() => scrollTo(dimension.key)}
                 aria-label={`${t(dimension.label.zh, dimension.label.en)} · ${t(dimension.plain.zh, dimension.plain.en)}`}
               >
-                <span className="risk-dim-dot" style={{ background: dimColor, boxShadow: `0 0 8px ${dimColor}66` }} />
+                <span
+                  className="risk-dim-dot"
+                  style={{ background: dimColor, boxShadow: `0 0 8px ${dimColor}66` }}
+                />
                 <span className="risk-dim-name">{t(dimension.label.zh, dimension.label.en)}</span>
                 <span className="risk-dim-plain">{t(dimension.plain.zh, dimension.plain.en)}</span>
                 <span className="risk-dim-status" style={{ color: dimColor }}>
-                  {t(
-                    riskStatusText[dimension.status].zh,
-                    riskStatusText[dimension.status].en
-                  )}
+                  {t(riskStatusText[dimension.status].zh, riskStatusText[dimension.status].en)}
                 </span>
               </button>
             );

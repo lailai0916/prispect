@@ -33,9 +33,7 @@ export function RiskDetail({ report }: { report: Report }) {
   return (
     <section className="risk-detail" aria-label={t('第二部分 · 详细状况', 'Part 2 · Details')}>
       <div className="risk-detail-head">
-        <span className="risk-overview-kicker">
-          {t('第二部分 · 详细状况', 'Part 2 · Details')}
-        </span>
+        <span className="risk-overview-kicker">{t('第二部分 · 详细状况', 'Part 2 · Details')}</span>
         <span className="risk-detail-hint">
           {t('每条数据可点击回溯原文', 'Each figure links back to its source')}
         </span>
@@ -54,29 +52,24 @@ export function RiskDetail({ report }: { report: Report }) {
                 <div>
                   <div className="risk-card-title">
                     {t(dimension.label.zh, dimension.label.en)}
-                    <span className="risk-card-chip" style={{ color, borderColor: `${color}55`, background: `${color}14` }}>
+                    <span
+                      className="risk-card-chip"
+                      style={{ color, borderColor: `${color}55`, background: `${color}14` }}
+                    >
                       {t(riskStatusText[dimension.status].zh, riskStatusText[dimension.status].en)}
                     </span>
                   </div>
-                  <p className="risk-card-plain">
-                    {t(dimension.plain.zh, dimension.plain.en)}
-                  </p>
+                  <p className="risk-card-plain">{t(dimension.plain.zh, dimension.plain.en)}</p>
                 </div>
               </header>
 
-              <p className="risk-card-summary">
-                {t(dimension.summary.zh, dimension.summary.en)}
-              </p>
+              <p className="risk-card-summary">{t(dimension.summary.zh, dimension.summary.en)}</p>
 
               {dimension.key === 'finance' && <FinanceBars report={report} />}
 
               <div className="risk-metrics">
                 {dimension.metrics.map((metric, index) => (
-                  <MetricRow
-                    key={index}
-                    metric={metric}
-                    onShowRefs={openRefs}
-                  />
+                  <MetricRow key={index} metric={metric} onShowRefs={openRefs} />
                 ))}
               </div>
 
@@ -104,8 +97,7 @@ function MetricRow({
   onShowRefs: (refs: EvidenceRef[]) => void;
 }) {
   const { t } = useApp();
-  const toneColor =
-    metric.tone === 'plain' ? undefined : statusColor[metric.tone as RiskStatus];
+  const toneColor = metric.tone === 'plain' ? undefined : statusColor[metric.tone as RiskStatus];
   return (
     <div className="risk-metric-row">
       <span className="risk-metric-label">{t(metric.label.zh, metric.label.en)}</span>
@@ -147,7 +139,9 @@ function FinanceBars({ report }: { report: Report }) {
   if (netNumber < 0) {
     return (
       <div className="risk-finance-loss" role="note">
-        <span className="risk-finance-loss-mark" aria-hidden="true">▲</span>
+        <span className="risk-finance-loss-mark" aria-hidden="true">
+          ▲
+        </span>
         <span>
           {t(
             '公司在亏钱：净利润为负，现金利润比不适用；请以净利润金额为准。',
@@ -166,7 +160,10 @@ function FinanceBars({ report }: { report: Report }) {
       <div className="risk-finance-bar-col">
         <span className="risk-finance-bar-value">{netHeight.toFixed(0)}%</span>
         <div className="risk-finance-bar">
-          <i className="risk-finance-bar-fill risk-finance-bar-profit" style={{ height: `${netHeight}%` }} />
+          <i
+            className="risk-finance-bar-fill risk-finance-bar-profit"
+            style={{ height: `${netHeight}%` }}
+          />
         </div>
         <span className="risk-finance-bar-label">
           {t('赚到的钱', 'Profit')}（{net.value}）
@@ -175,7 +172,10 @@ function FinanceBars({ report }: { report: Report }) {
       <div className="risk-finance-bar-col">
         <span className="risk-finance-bar-value">{cashHeight.toFixed(0)}%</span>
         <div className="risk-finance-bar">
-          <i className="risk-finance-bar-fill risk-finance-bar-cash" style={{ height: `${cashHeight}%` }} />
+          <i
+            className="risk-finance-bar-fill risk-finance-bar-cash"
+            style={{ height: `${cashHeight}%` }}
+          />
         </div>
         <span className="risk-finance-bar-label">
           {t('收到的现金', 'Cash')}（{cash.value}）

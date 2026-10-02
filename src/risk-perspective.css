@@ -96,7 +96,9 @@
   color: #f2f4f8;
   font: inherit;
   cursor: pointer;
-  transition: border-color 160ms ease, background 160ms ease;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
 }
 .risk-dim-pill:hover {
   border-color: #3a4456;
