@@ -180,6 +180,29 @@ export interface CrossSignal {
   };
 }
 
+export interface CrossSignalCheck {
+  id: CrossSignal['id'];
+  title: { zh: string; en: string };
+  status: 'triggered' | 'not-triggered' | 'blocked';
+  requirements: {
+    year: number;
+    metric: MetricKey;
+    state: 'available' | 'excluded' | 'missing' | 'conflict' | 'invalid';
+    amount: string | null;
+    sourceRefs: EvidenceRef[];
+  }[];
+  conditions: {
+    id: string;
+    label: { zh: string; en: string };
+    status: 'met' | 'not-met' | 'unknown';
+  }[];
+  blockers: {
+    code: string;
+    message: { zh: string; en: string };
+    sourceRefs: EvidenceRef[];
+  }[];
+}
+
 export interface Report {
   verdict: Verdict;
   headline: string;
@@ -193,6 +216,8 @@ export interface Report {
   findings: Finding[];
   /** Optional for reports saved before cross-signal analysis was introduced. */
   crossSignals?: CrossSignal[];
+  /** Saved evaluations only; missing on historical reports and never computed while rendering. */
+  crossSignalChecks?: CrossSignalCheck[];
   questions: Question[];
   coverage: { present: number; total: number };
   limitations: string[];

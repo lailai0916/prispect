@@ -8,7 +8,7 @@ import {
   Plus,
   RotateCcw,
 } from 'lucide-react';
-import type { AnalysisTask, CreateTaskInput } from '../../shared/contracts';
+import type { AnalysisTask, CreateTaskInput, CrossSignalCheck } from '../../shared/contracts';
 import { post } from '../api';
 import { reviewVariantTitle, date, metricName, metricValue } from '../format';
 import { translateRule } from '../ruleTranslations';
@@ -51,6 +51,30 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
       ? rightReport.crossSignals.filter(
           (signal) => !leftReport.crossSignals!.some((item) => item.id === signal.id)
         )
+      : [];
+  const ruleChecks = [
+    ...new Map(
+      [...(leftReport?.crossSignalChecks || []), ...(rightReport?.crossSignalChecks || [])].map(
+        (check) => [check.id, check]
+      )
+    ).values(),
+  ];
+  const checkStatus = (status: CrossSignalCheck['status']) =>
+    status === 'triggered'
+      ? t('组合成立', 'Combination holds')
+      : status === 'not-triggered'
+        ? t('条件未全部满足', 'Conditions not all met')
+        : t('暂不能核对', 'Cannot evaluate yet');
+  const checkChanges =
+    leftReport?.crossSignalChecks && rightReport?.crossSignalChecks
+      ? leftReport.crossSignalChecks.flatMap((baseline) => {
+          const comparison = rightReport.crossSignalChecks!.find(
+            (check) => check.id === baseline.id
+          );
+          return comparison && comparison.status !== baseline.status
+            ? [{ baseline, comparison }]
+            : [];
+        })
       : [];
   const restore = async () => {
     if (!right) return;
@@ -261,6 +285,60 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                         </td>
                       ))}
                     </tr>
+                    {ruleChecks.length ? (
+                      ruleChecks.map((rule) => (
+                        <tr key={`rule-${rule.id}`}>
+                          <th>
+                            <span className="compare-rule-label">
+                              {t('条件核对', 'Condition check')}
+                            </span>
+                            {t(rule.title.zh, rule.title.en)}
+                          </th>
+                          {[leftReport, rightReport].map((report, index) => {
+                            const check = report.crossSignalChecks?.find(
+                              (item) => item.id === rule.id
+                            );
+                            return (
+                              <td key={index}>
+                                {check ? (
+                                  <div className="compare-rule-check">
+                                    <strong>{checkStatus(check.status)}</strong>
+                                    {check.blockers.map((blocker) => (
+                                      <p key={blocker.code}>
+                                        {t(blocker.message.zh, blocker.message.en)}
+                                        {blocker.sourceRefs.length > 0 && (
+                                          <button
+                                            type="button"
+                                            className="text-link"
+                                            onClick={() => showEvidence(blocker.sourceRefs, report)}
+                                          >
+                                            {t('核对来源', 'Inspect sources')}
+                                            <ArrowUpRight size={12} />
+                                          </button>
+                                        )}
+                                      </p>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  t('本报告未评估这项条件', 'Not evaluated in this report')
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <th>{t('组合条件核对', 'Combination checks')}</th>
+                        {[leftReport, rightReport].map((report, index) => (
+                          <td key={index}>
+                            {report.crossSignalChecks === undefined
+                              ? t('旧版报告未评估', 'Not evaluated in this older report')
+                              : t('没有保存的条件核对', 'No condition checks saved')}
+                          </td>
+                        ))}
+                      </tr>
+                    )}
                     <tr>
                       <th>{t('后续问题', 'Follow-up questions')}</th>
                       <td>
@@ -277,7 +355,30 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   </tbody>
                 </table>
               </div>
+              {left.company === right.company && checkChanges.length > 0 && (
+                <div className="info-strip">
+                  <Layers size={19} />
+                  <div className="compare-rule-changes">
+                    {checkChanges.map(({ baseline, comparison }) => (
+                      <p key={baseline.id}>
+                        <strong>{t(comparison.title.zh, comparison.title.en)}</strong>
+                        <span>
+                          {checkStatus(baseline.status)} <ArrowRight size={12} aria-hidden="true" />{' '}
+                          {checkStatus(comparison.status)}
+                        </span>
+                      </p>
+                    ))}
+                    <small>
+                      {t(
+                        '这是两份已保存报告的条件结果；核对各自的金额、采用材料与缺口。',
+                        'These are saved condition results. Check each review’s amounts, adopted evidence and gaps.'
+                      )}
+                    </small>
+                  </div>
+                </div>
+              )}
               {left.company === right.company &&
+                checkChanges.length === 0 &&
                 (withdrawnSignals.length > 0 || addedSignals.length > 0) && (
                   <div className="info-strip">
                     <Layers size={19} />

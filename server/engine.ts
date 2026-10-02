@@ -4,6 +4,7 @@ import type {
   ComputedMetric,
   CreateTaskInput,
   CrossSignal,
+  CrossSignalCheck,
   EvidenceRef,
   Finding,
   Material,
@@ -21,6 +22,14 @@ export const metricLabels: Record<MetricKey, string> = {
   receivablesAdjustment: '经营性应收调整',
   payablesAdjustment: '经营性应付调整',
   otherAdjustments: '其余已披露调整',
+};
+const metricEnglishLabels: Record<MetricKey, string> = {
+  netProfit: 'Consolidated net profit',
+  operatingCashFlow: 'Operating cash flow',
+  inventoryAdjustment: 'Inventory adjustment',
+  receivablesAdjustment: 'Operating receivables adjustment',
+  payablesAdjustment: 'Operating payables adjustment',
+  otherAdjustments: 'Other disclosed adjustments',
 };
 type Located = { observation: Observation; material: Material };
 function evidence(items: Located[]): EvidenceRef[] {
@@ -416,6 +425,232 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
         questionIds: ['collections'],
       });
   }
+  const requirement = (year: number, key: MetricKey): CrossSignalCheck['requirements'][number] => {
+    if (excluded.has(key))
+      return { year, metric: key, state: 'excluded', amount: null, sourceRefs: [] };
+    const values = selected.filter(
+      (item) => item.observation.year === year && item.observation.key === key
+    );
+    if (!values.length)
+      return { year, metric: key, state: 'missing', amount: null, sourceRefs: [] };
+    const item = get(year, key);
+    const amount = metricAmount(year, key);
+    const sourceRefs = evidence(values);
+    if (item && amount !== null)
+      return { year, metric: key, state: 'available', amount, sourceRefs };
+    const different =
+      new Set(
+        values.map(({ observation }) => String(moneyToFen(observation.value, observation.unit)))
+      ).size > 1;
+    return {
+      year,
+      metric: key,
+      state: subjectMismatch || different ? 'conflict' : 'invalid',
+      amount: null,
+      sourceRefs,
+    };
+  };
+  const condition = (
+    id: string,
+    zh: string,
+    en: string,
+    values: ReturnType<typeof get>[],
+    met: () => boolean
+  ): CrossSignalCheck['conditions'][number] => ({
+    id,
+    label: { zh, en },
+    status: values.some((item) => !item) ? 'unknown' : met() ? 'met' : 'not-met',
+  });
+  const signalTitles: Record<CrossSignal['id'], CrossSignal['title']> = {
+    'profit-cash-working-capital': {
+      zh: '利润在增长，经营现金在下降',
+      en: 'Profit rose while operating cash fell',
+    },
+    'profit-with-cash-outflow': {
+      zh: '账面盈利，经营现金净流出',
+      en: 'Profit with negative operating cash flow',
+    },
+  };
+  const evaluateSignal = (
+    id: CrossSignal['id'],
+    comparative: boolean,
+    numericConditions: CrossSignalCheck['conditions']
+  ): CrossSignalCheck => {
+    const requirements = [
+      ...metricKeys.map((key) => requirement(input.year, key)),
+      ...(comparative
+        ? [
+            requirement(input.year - 1, 'netProfit'),
+            requirement(input.year - 1, 'operatingCashFlow'),
+          ]
+        : []),
+    ];
+    const blockers: CrossSignalCheck['blockers'] = [];
+    for (const row of requirements) {
+      if (row.state === 'available') continue;
+      const check = checks.find((item) => item.id === `${row.year}-${row.metric}`);
+      const group =
+        row.metric === 'otherAdjustments' && get(row.year, row.metric)
+          ? row.year === input.year
+            ? checks.find((item) => item.id === 'group-sum')
+            : undefined
+          : undefined;
+      const invalidGroup = row.metric === 'otherAdjustments' && !!get(row.year, row.metric);
+      const reason =
+        row.state === 'excluded'
+          ? {
+              zh: '本次主动排除，不采用金额或从原文补回。',
+              en: 'Explicitly excluded; no amount or excerpt is adopted or restored.',
+            }
+          : row.state === 'missing'
+            ? {
+                zh: '材料没有这一年度的指标，不填零。',
+                en: 'No observation for this year and metric; the missing amount is not zero.',
+              }
+            : row.state === 'conflict'
+              ? {
+                  zh: check?.message || '主体或同项数值冲突，停止采用。',
+                  en: subjectMismatch
+                    ? 'The evidence subject differs from the review company; the amount is withheld.'
+                    : 'Conflicting amounts exist for the same metric; no value is selected.',
+                }
+              : {
+                  zh: invalidGroup
+                    ? group?.message || '原始调整行未提供或求和与分组金额不一致，该金额停止采用。'
+                    : check?.message || '指标口径或原始调整行未通过核对。',
+                  en: invalidGroup
+                    ? 'The original adjustment rows are absent or do not sum to the disclosed group; the group is withheld.'
+                    : 'The declared scope, period or currency is unknown or unsupported; the amount is withheld.',
+                };
+      blockers.push({
+        code: `${row.state}:${row.year}:${row.metric}`,
+        message: {
+          zh: `${row.year} ${metricLabels[row.metric]}：${reason.zh}`,
+          en: `${row.year} ${metricEnglishLabels[row.metric]}: ${reason.en}`,
+        },
+        sourceRefs: row.sourceRefs,
+      });
+    }
+    // The existing engine withholds the bridge on any declared input conflict,
+    // including a conflicting comparison field outside this rule's numeric conditions.
+    const requirementIds = new Set(requirements.map((row) => `${row.year}-${row.metric}`));
+    for (const check of checks.filter(
+      (item) =>
+        item.status === 'fail' &&
+        !requirementIds.has(item.id) &&
+        !(
+          item.id === 'group-sum' &&
+          requirements.some((row) => row.metric === 'otherAdjustments' && row.state === 'invalid')
+        )
+    ))
+      blockers.push({
+        code: check.id,
+        message: {
+          zh: `${check.label}：${check.message}`,
+          en:
+            check.id === 'bridge-balance'
+              ? 'The profit-plus-adjustments total does not equal operating cash flow; no residual is used to force reconciliation.'
+              : check.id === 'subject'
+                ? 'Evidence and review company subjects differ; a combined bridge is withheld.'
+                : `Input check ${check.id} failed; the bridge and dependent combination are withheld.`,
+        },
+        sourceRefs: check.sourceRefs,
+      });
+    if (!bridge && !blockers.length)
+      blockers.push({
+        code: 'bridge-unavailable',
+        message: {
+          zh: '本期现金桥未通过全部原始调整行与口径核对，暂停组合解释。',
+          en: 'The current cash bridge has not passed all original-row and input checks; the combination is withheld.',
+        },
+        sourceRefs: [],
+      });
+    const conditions: CrossSignalCheck['conditions'] = [
+      ...numericConditions,
+      {
+        id: 'bridge-reconciled',
+        label: {
+          zh: '本期现金桥与原始调整行、口径核对通过',
+          en: 'The current cash bridge passes original-row and input checks',
+        },
+        status: bridge
+          ? 'met'
+          : checks.some((item) => item.status === 'fail')
+            ? 'not-met'
+            : 'unknown',
+      },
+    ];
+    return {
+      id,
+      title: signalTitles[id],
+      status:
+        blockers.length || requirements.some((row) => row.state !== 'available')
+          ? 'blocked'
+          : conditions.every((item) => item.status === 'met')
+            ? 'triggered'
+            : 'not-triggered',
+      requirements,
+      conditions,
+      blockers,
+    };
+  };
+  const receivables = get(input.year, 'receivablesAdjustment');
+  const inventory = get(input.year, 'inventoryAdjustment');
+  const crossSignalChecks = [
+    evaluateSignal('profit-cash-working-capital', true, [
+      condition(
+        'positive-prior-profit',
+        '上年合并净利润为正',
+        'Previous consolidated profit is positive',
+        [previousProfit],
+        () => previousProfit!.fen > 0n
+      ),
+      condition(
+        'profit-increased',
+        '本年合并净利润高于上年',
+        'Current consolidated profit exceeds the previous year',
+        [profit, previousProfit],
+        () => profit!.fen > previousProfit!.fen
+      ),
+      condition(
+        'cash-decreased',
+        '本年经营现金低于上年',
+        'Current operating cash is below the previous year',
+        [cash, previousCash],
+        () => cash!.fen < previousCash!.fen
+      ),
+      condition(
+        'receivables-outflow',
+        '本年经营性应收调整为负',
+        'Current operating receivables adjustment is negative',
+        [receivables],
+        () => receivables!.fen < 0n
+      ),
+      condition(
+        'inventory-outflow',
+        '本年存货调整为负',
+        'Current inventory adjustment is negative',
+        [inventory],
+        () => inventory!.fen < 0n
+      ),
+    ]),
+    evaluateSignal('profit-with-cash-outflow', false, [
+      condition(
+        'positive-profit',
+        '本年合并净利润为正',
+        'Current consolidated profit is positive',
+        [profit],
+        () => profit!.fen > 0n
+      ),
+      condition(
+        'negative-cash',
+        '本年经营现金为负',
+        'Current operating cash is negative',
+        [cash],
+        () => cash!.fen < 0n
+      ),
+    ]),
+  ];
   const crossSignals: CrossSignal[] = [];
   const fact = (year: number, key: MetricKey): CrossSignal['facts'][number] => {
     const item = get(year, key)!;
@@ -424,24 +659,10 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
   // A combination is only issued after the source-backed bridge closes. Missing,
   // conflicting or explicitly withdrawn inputs never become neutral scores.
   if (bridge) {
-    const receivables = get(input.year, 'receivablesAdjustment');
-    const inventory = get(input.year, 'inventoryAdjustment');
-    if (
-      profit &&
-      previousProfit &&
-      cash &&
-      previousCash &&
-      previousProfit.fen > 0n &&
-      profit.fen > previousProfit.fen &&
-      cash.fen < previousCash.fen &&
-      receivables &&
-      inventory &&
-      receivables.fen < 0n &&
-      inventory.fen < 0n
-    ) {
+    if (crossSignalChecks[0]!.status === 'triggered') {
       crossSignals.push({
         id: 'profit-cash-working-capital',
-        title: { zh: '利润在增长，经营现金在下降', en: 'Profit rose while operating cash fell' },
+        title: signalTitles['profit-cash-working-capital'],
         reading: {
           zh: '两期同口径金额显示方向背离；本期经营性应收和存货调整同时占用现金。这是需要解释的组合，不是违约或造假的证据。',
           en: 'Comparable annual amounts move in opposite directions while receivables and inventory adjustments both consume cash. This combination needs explanation; it does not establish default or fraud.',
@@ -476,10 +697,10 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
         },
       });
     }
-    if (profit && cash && profit.fen > 0n && cash.fen < 0n) {
+    if (crossSignalChecks[1]!.status === 'triggered') {
       crossSignals.push({
         id: 'profit-with-cash-outflow',
-        title: { zh: '账面盈利，经营现金净流出', en: 'Profit with negative operating cash flow' },
+        title: signalTitles['profit-with-cash-outflow'],
         reading: {
           zh: '同一年度的合并利润为正，经营现金净额为负。年报支持金额关系，不能单独说明原因或认定利润失真。',
           en: 'Consolidated profit is positive and operating cash flow is negative in the same year. The report supports these amounts, not a cause or a claim of misstated profit.',
@@ -542,6 +763,7 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
     checks,
     findings,
     crossSignals,
+    crossSignalChecks,
     questions,
     coverage: {
       present: metricKeys.filter((key) => get(input.year, key)).length,

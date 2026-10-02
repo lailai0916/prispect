@@ -4,7 +4,7 @@ import { analyze } from '../server/engine.js';
 import { seeds } from '../server/store.js';
 import { fenToYuan, moneyToFen, validateMaterial } from '../server/validation.js';
 import { explainWithModel as applyModel, type ModelConfig } from '../server/model.js';
-import type { Material } from '../shared/contracts.js';
+import type { CrossSignalCheck, Material } from '../shared/contracts.js';
 const fixture = await seeds(process.cwd());
 const explainWithModel = (
   report: ReturnType<typeof analyze>,
@@ -53,6 +53,16 @@ test('paired real-year movement and working-capital adjustments produce a source
   assert.match(signal.reading.zh, /不是违约或造假的证据/);
   assert.ok(signal.nextEvidence.external.zh.includes('收款主体'));
   assert.ok(signal.nextEvidence.handover.zh.includes('期后回款'));
+  assert.deepEqual(
+    complete.crossSignalChecks?.map((check) => check.status),
+    ['triggered', 'not-triggered']
+  );
+  assert.ok(complete.crossSignalChecks?.every((check) => check.blockers.length === 0));
+  assert.ok(
+    complete.crossSignalChecks?.every((check) =>
+      check.requirements.every((row) => row.state === 'available' && row.sourceRefs.length > 0)
+    )
+  );
   assert.equal(run(fixture.materials[1]!).crossSignals?.length, 0);
 
   for (const key of [
@@ -67,6 +77,15 @@ test('paired real-year movement and working-capital adjustments produce a source
       false,
       `${key} withdrawal must remove the dependent combination`
     );
+    const check: CrossSignalCheck | undefined = withdrawn.crossSignalChecks?.find(
+      (item) => item.id === signal.id
+    );
+    assert.equal(check?.status, 'blocked');
+    const requirement = check!.requirements.find((row) => row.year === 2025 && row.metric === key)!;
+    assert.equal(requirement.state, 'excluded');
+    assert.equal(requirement.amount, null);
+    assert.deepEqual(requirement.sourceRefs, []);
+    assert.ok(check!.blockers.some((blocker) => blocker.code === `excluded:2025:${key}`));
   }
   assert.ok(run(material).crossSignals?.some((item) => item.id === signal.id));
   const conflict = structuredClone(material);
@@ -93,7 +112,110 @@ test('profitable company with negative operating cash yields a question, not a f
   assert.ok(signal);
   assert.equal(signal.facts.length, 2);
   assert.match(signal.reading.zh, /不能单独说明原因/);
+  assert.equal(
+    report.crossSignalChecks?.find((check) => check.id === signal.id)?.status,
+    'triggered'
+  );
   assert.equal(run(material, ['operatingCashFlow']).crossSignals?.length, 0);
+});
+test('combination checks distinguish missing, conflicting and invalid inputs without inventing amounts', () => {
+  const missing = structuredClone(fixture.materials[0]!);
+  missing.observations = missing.observations.filter(
+    (row) => !(row.year === 2024 && row.key === 'netProfit')
+  );
+  const incomplete = run(missing);
+  assert.ok(incomplete.bridge);
+  const missingCheck = incomplete.crossSignalChecks![0]!;
+  assert.equal(missingCheck.status, 'blocked');
+  assert.deepEqual(
+    missingCheck.requirements.find((row) => row.year === 2024 && row.metric === 'netProfit'),
+    { year: 2024, metric: 'netProfit', state: 'missing', amount: null, sourceRefs: [] }
+  );
+  assert.equal(
+    missingCheck.conditions.find((row) => row.id === 'profit-increased')?.status,
+    'unknown'
+  );
+  assert.equal(incomplete.crossSignalChecks![1]!.status, 'not-triggered');
+
+  const conflicting = structuredClone(fixture.materials[0]!);
+  const cash = conflicting.observations.find(
+    (row) => row.year === 2025 && row.key === 'operatingCashFlow'
+  )!;
+  conflicting.observations.push({ ...cash, id: 'combination-conflict', value: '0.00' });
+  const conflicted = run(conflicting);
+  assert.ok(conflicted.crossSignalChecks?.every((check) => check.status === 'blocked'));
+  const conflictRow = conflicted.crossSignalChecks![0]!.requirements.find(
+    (row) => row.year === 2025 && row.metric === 'operatingCashFlow'
+  )!;
+  assert.equal(conflictRow.state, 'conflict');
+  assert.equal(conflictRow.amount, null);
+  assert.equal(conflictRow.sourceRefs.length, 2);
+
+  const invalid = structuredClone(fixture.materials[0]!);
+  invalid.observations.find(
+    (row) => row.year === 2025 && row.key === 'inventoryAdjustment'
+  )!.scope = 'unknown';
+  const invalidReport = run(invalid);
+  assert.ok(invalidReport.crossSignalChecks?.every((check) => check.status === 'blocked'));
+  assert.equal(
+    invalidReport.crossSignalChecks![0]!.requirements.find(
+      (row) => row.metric === 'inventoryAdjustment'
+    )?.state,
+    'invalid'
+  );
+  assert.ok(
+    invalidReport.crossSignalChecks![0]!.blockers.some(
+      (row) => row.code === 'invalid:2025:inventoryAdjustment'
+    )
+  );
+});
+test('combination checks retain bridge and original-group blockers even when trigger amounts are available', () => {
+  const unbalanced = structuredClone(fixture.materials[0]!);
+  const cash = unbalanced.observations.find(
+    (row) => row.year === 2025 && row.key === 'operatingCashFlow'
+  )!;
+  cash.value = fenToYuan(moneyToFen(cash.value, cash.unit) + 1n);
+  const unbalancedReport = run(unbalanced);
+  assert.ok(unbalancedReport.crossSignalChecks?.every((check) => check.status === 'blocked'));
+  for (const check of unbalancedReport.crossSignalChecks!) {
+    assert.ok(check.requirements.every((row) => row.state === 'available'));
+    assert.ok(check.blockers.find((row) => row.code === 'bridge-balance')?.sourceRefs.length);
+    assert.equal(check.conditions.find((row) => row.id === 'bridge-reconciled')?.status, 'not-met');
+  }
+
+  const noRows = structuredClone(fixture.materials[0]!);
+  noRows.observations.find(
+    (row) => row.year === 2025 && row.key === 'otherAdjustments'
+  )!.components = undefined;
+  const noRowsReport = run(noRows);
+  assert.ok(noRowsReport.crossSignalChecks?.every((check) => check.status === 'blocked'));
+  const group = noRowsReport.crossSignalChecks![0]!.requirements.find(
+    (row) => row.metric === 'otherAdjustments'
+  )!;
+  assert.equal(group.state, 'invalid');
+  assert.equal(group.amount, null);
+  assert.ok(
+    noRowsReport.crossSignalChecks![0]!.blockers.some(
+      (row) => row.code === 'invalid:2025:otherAdjustments'
+    )
+  );
+});
+test('a conflicting optional comparison input is exposed as a combination blocker, not a hidden gate', () => {
+  const material = structuredClone(fixture.materials[0]!);
+  const prior = material.observations.find(
+    (row) => row.year === 2024 && row.key === 'payablesAdjustment'
+  )!;
+  assert.ok(prior);
+  prior.scope = 'parent';
+  const report = run(material);
+  assert.ok(report.crossSignalChecks?.every((check) => check.status === 'blocked'));
+  assert.ok(
+    report.crossSignalChecks?.every((check) =>
+      check.blockers.some(
+        (row) => row.code === '2024-payablesAdjustment' && row.sourceRefs.length > 0
+      )
+    )
+  );
 });
 test('a zero aggregate receivables adjustment does not claim a cash release', () => {
   const material = structuredClone(fixture.materials[0]!);
@@ -118,6 +240,13 @@ test('a zero aggregate receivables adjustment does not claim a cash release', ()
     report.questions.some((item) => item.id === 'collections'),
     false
   );
+  assert.equal(report.crossSignalChecks![0]!.status, 'not-triggered');
+  assert.equal(
+    report.crossSignalChecks![0]!.conditions.find((row) => row.id === 'receivables-outflow')
+      ?.status,
+    'not-met'
+  );
+  assert.deepEqual(report.crossSignalChecks![0]!.blockers, []);
 });
 test('artificially missing material never borrows hidden consolidated profit', () => {
   const report = run(fixture.materials[2]!);

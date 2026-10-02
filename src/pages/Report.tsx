@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Activity,
   ArrowDown,
@@ -10,6 +10,7 @@ import {
   ChevronRight,
   CircleAlert,
   Columns3,
+  Copy,
   Download,
   FileText,
   Layers,
@@ -24,6 +25,7 @@ import type {
   AnalysisTask,
   BridgeStep,
   CreateTaskInput,
+  CrossSignalCheck,
   MetricKey,
   Report,
   Workspace,
@@ -253,6 +255,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
   const [section, setSection] = useState<'evidence' | 'explanations' | 'requests' | 'scope'>(
     'evidence'
   );
+  const [testMetric, setTestMetric] = useState<MetricKey | null>(null);
   const getMetric = (key: string) => report.metrics.find((metric) => metric.key === key);
   const metrics = [
     getMetric('netProfit'),
@@ -561,6 +564,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
               'Combinations appear only when comparable amounts are present and the cash bridge reconciles. They suggest checks, not a company score.'
             )}
           </p>
+          <CrossSignalChecks report={report} />
           {report.crossSignals === undefined ? (
             <p className="cross-signal-empty">
               {t(
@@ -620,6 +624,10 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                             : t('付款前核查', 'Check before payment')}
                         </span>
                         <p>{t(next.zh, next.en)}</p>
+                        <SignalMaterialRequest
+                          key={`${signal.id}-${locale}-${task.purpose}`}
+                          text={`${task.company} · ${task.year}\n${t(next.zh, next.en)}`}
+                        />
                       </div>
                       <button
                         className="text-link"
@@ -631,6 +639,29 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
                         <ArrowRight size={14} />
                       </button>
                     </div>
+                    <div className="cross-signal-test">
+                      <button
+                        type="button"
+                        className="text-link"
+                        onClick={() =>
+                          setTestMetric(
+                            signal.id === 'profit-cash-working-capital'
+                              ? 'inventoryAdjustment'
+                              : 'operatingCashFlow'
+                          )
+                        }
+                      >
+                        <SlidersHorizontal size={14} />
+                        {t('检验关键依据', 'Test a key dependency')}
+                        <ArrowRight size={14} />
+                      </button>
+                      <span>
+                        {t(
+                          '调整本次采用的指标，保存新的核查。',
+                          'Change the adopted metrics and save a new review.'
+                        )}
+                      </span>
+                    </div>
                   </article>
                 );
               })}
@@ -638,8 +669,16 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           ) : (
             <p className="cross-signal-empty">
               {t(
-                '本次没有形成已实现规则所需的完整组合；这不表示企业没有风险。单项事实与待询证事项仍见下方。',
-                'No complete combination matched the implemented rules. This does not imply the company has no risk. Individual facts and evidence requests remain below.'
+                report.crossSignalChecks === undefined
+                  ? '本次没有显示组合线索。单项事实与待询证事项仍见下方，未显示组合不表示企业没有风险。'
+                  : report.crossSignalChecks.some((check) => check.status === 'blocked')
+                    ? '部分组合条件暂不能核对，所需材料与缺口见上方。未显示组合不表示企业没有风险。'
+                    : '已核对的组合条件未全部满足。未显示组合不表示企业没有风险，单项事实与待询证事项仍见下方。',
+                report.crossSignalChecks === undefined
+                  ? 'No combination is displayed. Individual facts and evidence requests remain below. This does not imply the company has no risk.'
+                  : report.crossSignalChecks.some((check) => check.status === 'blocked')
+                    ? 'Some combinations cannot be evaluated yet. Required evidence and gaps are listed above. No displayed combination does not imply no risk.'
+                    : 'The evaluated combination conditions are not all met. No displayed combination does not imply no risk; individual facts and evidence requests remain below.'
               )}
             </p>
           )}
@@ -854,6 +893,183 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
           'Historical evidence review. No investment or credit advice.'
         )}
       </div>
+      {testMetric && (
+        <StressDialog
+          task={task}
+          focusedMetric={testMetric}
+          initialExcluded={[...new Set([...task.excludedMetrics, testMetric])]}
+          onClose={() => setTestMetric(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function CrossSignalChecks({ report }: { report: Report }) {
+  const { t, locale, showEvidence } = useApp();
+  const checks = report.crossSignalChecks;
+  if (checks === undefined)
+    return report.crossSignals === undefined ? null : (
+      <p className="cross-signal-checks-unavailable">
+        {t(
+          '本报告未保存组合条件的逐项核对。使用原材料创建新核查，可查看当前条件与缺口。',
+          'This report has no saved condition-by-condition evaluation. Review its original evidence again to inspect current conditions and gaps.'
+        )}
+      </p>
+    );
+  const blocked = checks.filter((check) => check.status === 'blocked').length;
+  const statusName = (status: CrossSignalCheck['status']) =>
+    status === 'triggered'
+      ? t('组合成立', 'Combination holds')
+      : status === 'not-triggered'
+        ? t('条件未全部满足', 'Conditions not all met')
+        : t('暂不能核对', 'Cannot evaluate yet');
+  const requirementState = (state: CrossSignalCheck['requirements'][number]['state']) =>
+    ({
+      available: t('已取得', 'Available'),
+      excluded: t('本次未采用', 'Excluded in this review'),
+      missing: t('尚缺金额或原文', 'Amount or source missing'),
+      conflict: t('来源存在冲突', 'Source conflict'),
+      invalid: t('金额或口径未通过核对', 'Amount or scope check failed'),
+    })[state];
+  return (
+    <details className="cross-signal-checks">
+      <summary>
+        <span>{t('组合条件核对', 'Combination checks')}</span>
+        <span className="cross-signal-check-summary">
+          {t(
+            `已核对 ${checks.length - blocked}/${checks.length}`,
+            `Evaluated ${checks.length - blocked}/${checks.length}`
+          )}
+          {blocked > 0 && t(` · 暂不能核对 ${blocked}`, ` · ${blocked} blocked`)}
+        </span>
+        <ChevronDown size={14} aria-hidden="true" />
+      </summary>
+      <div className="cross-signal-check-list">
+        {checks.map((check) => (
+          <article key={check.id}>
+            <div className="cross-signal-check-heading">
+              <h3>{t(check.title.zh, check.title.en)}</h3>
+              <Tag>{statusName(check.status)}</Tag>
+            </div>
+            <ul className="cross-signal-conditions">
+              {check.conditions.map((condition) => (
+                <li key={condition.id}>
+                  <span>{t(condition.label.zh, condition.label.en)}</span>
+                  <span>
+                    {condition.status === 'met'
+                      ? t('满足', 'Met')
+                      : condition.status === 'not-met'
+                        ? t('未满足', 'Not met')
+                        : t('待核对', 'Unknown')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            {check.blockers.length > 0 && (
+              <ul className="cross-signal-blockers">
+                {check.blockers.map((blocker) => (
+                  <li key={blocker.code}>
+                    <span>{t(blocker.message.zh, blocker.message.en)}</span>
+                    {blocker.sourceRefs.length > 0 && (
+                      <button
+                        type="button"
+                        className="text-link"
+                        onClick={() => showEvidence(blocker.sourceRefs, report)}
+                      >
+                        <FileText size={13} />
+                        {t('核对来源', 'Inspect sources')}
+                      </button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <details className="cross-signal-requirements">
+              <summary>
+                {t('所需金额与来源', 'Required amounts and sources')} ·{' '}
+                {check.requirements.filter((item) => item.state === 'available').length}/
+                {check.requirements.length}
+              </summary>
+              <ul>
+                {check.requirements.map((requirement) => (
+                  <li key={`${requirement.year}-${requirement.metric}`}>
+                    <span>
+                      {requirement.year} · {metricName(requirement.metric, locale)}
+                    </span>
+                    <span className="cross-signal-requirement-value">
+                      {requirement.state === 'available' && requirement.amount !== null
+                        ? `${money(requirement.amount, locale)} CNY`
+                        : requirementState(requirement.state)}
+                      {requirement.sourceRefs.length > 0 && (
+                        <button
+                          type="button"
+                          className="icon-button"
+                          aria-label={`${requirement.year} ${metricName(requirement.metric, locale)} · ${t('查看来源', 'View source')}`}
+                          onClick={() => showEvidence(requirement.sourceRefs, report)}
+                        >
+                          <FileText size={13} />
+                        </button>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </article>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function SignalMaterialRequest({ text }: { text: string }) {
+  const { t } = useApp();
+  const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const fallback = useRef<HTMLTextAreaElement>(null);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setState('copied');
+    } catch {
+      setState('failed');
+      requestAnimationFrame(() => {
+        fallback.current?.focus();
+        fallback.current?.select();
+      });
+    }
+  };
+  return (
+    <div className="cross-signal-copy">
+      <button type="button" className="text-link" onClick={copy}>
+        {state === 'copied' ? <Check size={13} /> : <Copy size={13} />}
+        {state === 'copied'
+          ? t('已复制材料请求', 'Request copied')
+          : t('复制材料请求', 'Copy material request')}
+      </button>
+      {state !== 'idle' && (
+        <span className="field-note" role="status">
+          {state === 'copied'
+            ? t(
+                '可自行发送给材料提供方。',
+                'You can share it with the person providing the material.'
+              )
+            : t(
+                '无法自动复制，请复制下方已选中的文本。',
+                'Automatic copy failed. Copy the selected text below.'
+              )}
+        </span>
+      )}
+      {state === 'failed' && (
+        <textarea
+          ref={fallback}
+          readOnly
+          value={text}
+          rows={4}
+          aria-label={t('材料请求文本', 'Material request text')}
+          onFocus={(event) => event.currentTarget.select()}
+        />
+      )}
     </div>
   );
 }
@@ -1222,11 +1438,21 @@ export function TrendChart({ report }: { report: Report }) {
   );
 }
 
-export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: () => void }) {
+export function StressDialog({
+  task,
+  onClose,
+  initialExcluded,
+  focusedMetric,
+}: {
+  task: AnalysisTask;
+  onClose: () => void;
+  initialExcluded?: MetricKey[];
+  focusedMetric?: MetricKey;
+}) {
   const { t, locale, workspace, execute, navigate, busy } = useApp();
   const [useModel, setUseModel] = useState(false);
   const [excluded, setExcluded] = useState<MetricKey[]>(
-    task.excludedMetrics.length ? task.excludedMetrics : adjustments
+    initialExcluded ?? (task.excludedMetrics.length ? task.excludedMetrics : adjustments)
   );
   const run = async () => {
     const next = await execute(() =>
@@ -1251,7 +1477,22 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
     }
   };
   return (
-    <Dialog title={t('调整证据', 'Adjust evidence')} onClose={onClose}>
+    <Dialog
+      title={
+        focusedMetric
+          ? t('检验关键依据', 'Test a key dependency')
+          : t('调整证据', 'Adjust evidence')
+      }
+      onClose={onClose}
+    >
+      {focusedMetric && (
+        <p className="field-note">
+          {t(
+            `已预选本次不采用「${metricName(focusedMetric, locale)}」。你可以调整选择，再保存新的核查。`,
+            `“${metricName(focusedMetric, locale)}” is preselected for exclusion in this review. Adjust the selection, then save a new review.`
+          )}
+        </p>
+      )}
       <p>
         {t(
           '修改本次采用的指标，另存新的核查。原任务和原件保留。',

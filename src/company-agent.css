@@ -854,6 +854,57 @@
   line-height: 1.8;
   padding-left: 18px;
 }
+.company-audit-heading {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.company-audit-body {
+  max-width: 850px;
+  padding-top: 10px;
+}
+.company-audit-scope {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 32px;
+  margin: 18px 0;
+  font-size: 12px;
+}
+.company-audit-scope dt {
+  color: var(--muted);
+}
+.company-audit-scope dd {
+  margin: 6px 0 0;
+}
+.company-audit-excerpt {
+  border-top: 1px solid var(--line);
+  padding: 18px 0;
+}
+.company-audit-source {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+}
+.company-audit-source > span {
+  flex: 1;
+  min-width: 120px;
+}
+.company-audit-excerpt blockquote {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  line-height: 1.9;
+  margin: 14px 0 0;
+}
+.company-audit-notes {
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
 .company-import-link {
   display: flex;
   align-items: center;

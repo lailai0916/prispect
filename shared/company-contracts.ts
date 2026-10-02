@@ -16,6 +16,22 @@ export interface CompanyPublicEvidence {
   quote: string;
   kind: 'annual-note' | 'announcement';
 }
+export interface CompanyAuditOpinionEvidence extends CompanyPublicEvidence {
+  /** The explicit period in the audited-financial-statements paragraph, if unambiguous. */
+  auditedYear: number | null;
+}
+export interface CompanyAuditOpinionResult {
+  /** Absence of this optional result on an older run means it was not evaluated. */
+  status: 'pending' | 'located' | 'candidate' | 'unknown';
+  requestedYear: number | null;
+  scope: {
+    issuer: 'matched' | 'unconfirmed' | 'conflict';
+    reportYear: 'matched' | 'unconfirmed' | 'conflict';
+    auditPeriod: 'matched' | 'unconfirmed' | 'conflict';
+  };
+  evidence: CompanyAuditOpinionEvidence[];
+  warnings: string[];
+}
 export interface CompanyCompetingExplanation {
   id: string;
   label: string;
@@ -54,6 +70,8 @@ export interface CompanyGraphProgress {
   cancelRequested: boolean;
   cancelledAt?: string;
   evidence: CompanyPublicEvidence[];
+  /** Deterministic report-text location, separate from adopted amounts and model evidence. */
+  auditOpinion?: CompanyAuditOpinionResult;
   competingExplanations: CompanyCompetingExplanation[];
   coverage: {
     annualReports: number;

@@ -8,6 +8,7 @@ import type {
   CompanyGraphProgress,
   CompanyPublicEvidence,
   CompanyCompetingExplanation,
+  CompanyAuditOpinionResult,
 } from '../shared/company-contracts.js';
 import { z } from 'zod';
 import type {
@@ -34,6 +35,7 @@ import {
 import { analyze } from './engine.js';
 import { explainWithModel, modelFailureDiagnostic, type ModelConfig } from './model.js';
 import { ApiFault } from './validation.js';
+import { extractAuditOpinion, pendingAuditOpinion } from './company-audit.js';
 
 export { searchCompanies } from './company-sources.js';
 export interface CompanyResearchOptions {
@@ -595,6 +597,7 @@ const GraphState = Annotation.Root({
   annualRef: Annotation<SourceReference | undefined>(),
   finance: Annotation<Omit<CompanyResearchOutput, 'buffer'> | undefined>(),
   notes: Annotation<NarrativeResult | undefined>(),
+  auditOpinion: Annotation<CompanyAuditOpinionResult | undefined>(),
   notices: Annotation<NarrativeResult | undefined>(),
   stop: Annotation<string | undefined>(),
 });
@@ -655,6 +658,7 @@ export function initialCompanyGraphProgress(previous?: CompanyGraphProgress): Co
         recoverable: false,
         cancelRequested: false,
         evidence: [],
+        auditOpinion: pendingAuditOpinion(null),
         competingExplanations: [],
         coverage: {
           annualReports: 0,
@@ -693,6 +697,8 @@ export async function runCompanyResearch(
   if (checkpoint && !/^[a-f0-9-]{36}$/.test(checkpoint.threadId))
     throw new ApiFault(400, 'COMPANY_CHECKPOINT_INVALID', '查询断点标识无效');
   const progress = initialCompanyGraphProgress(options.previousProgress);
+  progress.auditOpinion ||= pendingAuditOpinion(input.year);
+  progress.auditOpinion.requestedYear = input.year;
   const sourceBudget = {
     used: progress.budget.sourceRequests,
     maximum: COMPANY_GRAPH_LIMITS.sourceRequests,
@@ -1332,6 +1338,36 @@ export async function runCompanyResearch(
         }
         await branch('notes', 'running');
         const { pdf } = await getPdf(state.annualRef);
+        const auditOpinion = await traceTool(
+          'notes',
+          'read_annual_audit_opinion',
+          '定位年报审计意见',
+          async () => {
+            const result = extractAuditOpinion(
+              state.identity!,
+              state.annualRef!.announcement,
+              pdf,
+              input.year
+            );
+            progress.auditOpinion = result;
+            await emit();
+            return {
+              value: result,
+              summary:
+                result.status === 'located'
+                  ? '已定位指定年度的财务报表审计意见原文；未推断审计类别或履约能力。'
+                  : result.status === 'candidate'
+                    ? '保留审计意见候选原文；主体或期间仍需核对。'
+                    : '未取得符合定位条件的审计意见正文；不能视为不存在。',
+              sources: result.evidence.map((item) => ({
+                title: item.title,
+                url: item.sourceUrl,
+                page: item.page,
+                sha256: item.sha256,
+              })),
+            };
+          }
+        );
         const available = noteEvidence(pdf, state.annualRef!.announcement, 'annual-note');
         const evidence = await traceTool(
           'notes',
@@ -1396,7 +1432,7 @@ export async function runCompanyResearch(
           'completed',
           `${evidence.length}段原文；${explanations.length}个待核查假设。`
         );
-        return { notes: { evidence, explanations, warnings } };
+        return { notes: { evidence, explanations, warnings }, auditOpinion };
       })
     )
     .addNode(
@@ -1491,6 +1527,21 @@ export async function runCompanyResearch(
       'reconcile',
       tracked(async (state) => {
         await branch('reconcile', 'running');
+        // Older checkpoints can finish without rerunning the notes node; evaluate their retained PDF locally.
+        progress.auditOpinion =
+          state.auditOpinion ||
+          (state.annualRef
+            ? extractAuditOpinion(
+                state.identity!,
+                state.annualRef.announcement,
+                (await getPdf(state.annualRef)).pdf,
+                input.year
+              )
+            : {
+                ...pendingAuditOpinion(input.year),
+                status: 'unknown',
+                warnings: ['本次查询未取得可用于定位的年报原件；不能视为没有审计意见。'],
+              });
         progress.evidence = [...(state.notes?.evidence || []), ...(state.notices?.evidence || [])];
         progress.competingExplanations = [
           ...(state.notes?.explanations || []),

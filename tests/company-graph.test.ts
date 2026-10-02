@@ -579,3 +579,50 @@ test('a failing parallel branch keeps the runner and checkpoint open until an ab
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('audit-opinion location stays separate from amounts, model evidence and request budgets', async () => {
+  const auditMarker = '独立审计段落仅用于原文定位';
+  const source = fixture({
+    annual: textPdf([
+      '测试股份有限公司\n股票代码：300750\n2025年年度报告\n本报告金额以人民币千元列示',
+      '合并财务报表项目注释\n现金流量表补充资料\n单位：千元\n补充资料 本期金额 上期金额\n1.将净利润调节为经营活动现金流量\n净利润 100 80\n加：折旧 10 10',
+      '存货的减少 -20 -10\n经营性应收项目的减少 -30 -20\n经营性应付项目的增加 10 10\n经营活动产生的现金流量净额 70 70',
+      '财务报表附注\n应收账款账龄\n信用期变化与期后回款仍需核查',
+      `一、审计意见\n我们审计了测试股份有限公司的财务报表，包括2025年12月31日的合并及母公司资产负债表及2025年度的现金流量表。\n我们认为，${auditMarker}。\n二、形成审计意见的基础`,
+    ]),
+  });
+  const bodies: string[] = [];
+  const tools: string[] = [];
+  const output = await runCompanyResearch(
+    { ...input, useModel: true },
+    {
+      root,
+      fetch: source.fetch,
+      onUpdate: (entry) => {
+        if (entry.status === 'completed') tools.push(entry.tool);
+      },
+      model: {
+        apiKey: 'synthetic-not-real',
+        fetch: async (_url, init) => {
+          bodies.push(String(init?.body));
+          throw new Error('fixture model unavailable');
+        },
+      },
+    }
+  );
+  assert.equal(output.agent?.auditOpinion?.status, 'located');
+  assert.equal(output.agent?.auditOpinion?.evidence[0]!.page, 5);
+  assert.match(output.agent!.auditOpinion!.evidence[0]!.quote, new RegExp(auditMarker));
+  assert.ok(tools.includes('read_annual_audit_opinion'));
+  assert.ok(bodies.length > 0);
+  assert.ok(bodies.every((body) => !body.includes(auditMarker)));
+  assert.ok(output.agent!.evidence.every((row) => !row.quote.includes(auditMarker)));
+  assert.equal(output.agent!.budget.sourceRequests, source.calls.length);
+  assert.equal(output.agent!.budget.modelRequests, bodies.length);
+  assert.equal(output.preview!.material.observations.length, 12);
+  assert.ok(!JSON.stringify(output.preview).includes(auditMarker));
+  const oldProgress = initialCompanyGraphProgress();
+  delete oldProgress.auditOpinion;
+  assert.equal(initialCompanyGraphProgress(oldProgress).auditOpinion, undefined);
+  assert.equal(initialCompanyGraphProgress().auditOpinion?.status, 'pending');
+});

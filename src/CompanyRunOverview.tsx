@@ -5,6 +5,7 @@ import { useApp } from './context';
 import { Tag } from './components';
 import { metricName, money, yuan } from './format';
 import { translateRule } from './ruleTranslations';
+import { CompanyAuditOpinion } from './CompanyAuditOpinion';
 
 const branchNames: Record<CompanyBranchId, [string, string]> = {
   identity: ['公司主体', 'Company identity'],
@@ -180,6 +181,7 @@ export function CompanyEvidenceResults({
   );
   return (
     <section className="company-evidence-results">
+      <CompanyAuditOpinion result={agent.auditOpinion} onEvidence={onEvidence} />
       {sourcedExplanations.length > 0 && (
         <div className="company-hypotheses">
           <div className="report-section-title">
