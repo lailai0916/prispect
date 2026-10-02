@@ -9,7 +9,7 @@ export type MetricKey =
   | 'payablesAdjustment'
   | 'otherAdjustments';
 export type StatementScope = 'consolidated' | 'parent' | 'unknown';
-export type MoneyUnit = 'yuan' | 'wan' | 'yi';
+export type MoneyUnit = 'yuan' | 'wan' | 'yi' | 'usd';
 export type TaskStatus = 'queued' | 'running' | 'completed' | 'failed';
 export type Verdict = 'supported' | 'attention' | 'insufficient' | 'conflict';
 export type ReviewPurpose = 'external' | 'handover';
@@ -117,7 +117,7 @@ export interface ComputedMetric {
   label: string;
   value: string | null;
   previousValue: string | null;
-  unit: 'CNY' | '%';
+  unit: 'CNY' | '%' | 'USD';
   kind: 'reported' | 'calculated';
   formula: string;
   sourceRefs: EvidenceRef[];
@@ -298,14 +298,14 @@ export interface CompanyIdentity {
   orgId: string;
   shortName: string;
   companyName: string | null;
-  exchange: 'szse' | 'sse' | 'bse' | 'unknown';
+  exchange: 'szse' | 'sse' | 'bse' | 'us' | 'unknown';
   sourceUrl: string;
 }
 export interface CompanySearchResponse {
   query: string;
   candidates: CompanyIdentity[];
   limitedToListed: true;
-  source: 'cninfo';
+  source: 'cninfo' | 'sec';
   truncated: boolean;
 }
 export interface CompanyAnnouncement {

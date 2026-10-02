@@ -44,6 +44,7 @@ import { ApiFault } from './validation.js';
 import { extractAuditOpinion, pendingAuditOpinion } from './company-audit.js';
 import { retrieveCompanyFinancialContext } from './company-market.js';
 import type { CompanyFinancialContext } from '../shared/company-market.js';
+import { isSecTicker, secCompanyResearch } from './company-sec.js';
 import pdfLimits from './pdf-limits.json' with { type: 'json' };
 
 export { searchCompanies } from './company-sources.js';
@@ -709,7 +710,7 @@ export async function runCompanyResearch(
   options: CompanyResearchOptions
 ): Promise<CompanyResearchOutput> {
   if (
-    !/^\d{6}$/.test(input.securityCode) ||
+    !/^(?:\d{6}|[A-Za-z]{1,6})$/.test(input.securityCode) ||
     !/^[A-Za-z0-9]{1,40}$/.test(input.orgId) ||
     !Number.isInteger(input.year) ||
     input.year < 2000 ||
@@ -717,6 +718,19 @@ export async function runCompanyResearch(
   )
     throw new ApiFault(400, 'COMPANY_INPUT_INVALID', '主体代码、机构ID或年度不在支持范围');
   const controller = new AbortController();
+  if (isSecTicker(input.securityCode)) {
+    const output = await secCompanyResearch(input, {
+      root: options.root,
+      signal: controller.signal,
+    });
+    return {
+      ...output,
+      model: {
+        requested: true,
+        status: options.model?.apiKey ? 'not-called' : 'not-configured',
+      },
+    };
+  }
   options = {
     ...options,
     signal: AbortSignal.any([controller.signal, ...(options.signal ? [options.signal] : [])]),

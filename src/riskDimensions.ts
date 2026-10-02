@@ -46,7 +46,7 @@ export const riskStatusText: Record<RiskStatus, LocaleText> = {
   good: { zh: '通过', en: 'Clear' },
   warn: { zh: '关注', en: 'Watch' },
   bad: { zh: '风险', en: 'Risk' },
-  unknown: { zh: '待接入', en: 'Pending' },
+  unknown: { zh: '未覆盖', en: 'Not covered' },
 };
 
 const statusRank: Record<RiskStatus, number> = { bad: 4, warn: 3, unknown: 2, good: 1 };
@@ -97,13 +97,13 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
     metrics: [
       {
         label: { zh: '合并净利润', en: 'Net profit' },
-        value: money(net?.value ?? null, locale),
+        value: metricValue(net, locale),
         tone: 'plain',
         refs: net?.sourceRefs ?? [],
       },
       {
         label: { zh: '经营现金净额', en: 'Operating cash flow' },
-        value: money(cash?.value ?? null, locale),
+        value: metricValue(cash, locale),
         tone:
           cash?.value != null && Number(cash.value) < 0
             ? 'bad'
@@ -192,20 +192,20 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
     ],
   };
 
-  // ---------- 口碑维度（暂未接入，如实显示） ----------
+  // ---------- 口碑维度（报道数据由前端实时检索公开新闻源显示） ----------
   const reputation: RiskDimension = {
     key: 'reputation',
     label: { zh: '口碑', en: 'Reputation' },
     plain: { zh: '大家怎么说', en: 'What does the market say?' },
     status: 'unknown',
     summary: {
-      zh: '媒体报道与舆论数据源尚未接入，本维度暂不判断',
-      en: 'News and sentiment sources are not connected yet; this dimension is not judged',
+      zh: '检索近期公开报道，展示报道数量与原文链接，不自动判断好坏',
+      en: 'Recent public coverage with original links; no auto sentiment',
     },
     metrics: [
       {
         label: { zh: '媒体报道', en: 'Media coverage' },
-        value: '待接入',
+        value: '公开新闻检索',
         tone: 'unknown',
         refs: [],
       },

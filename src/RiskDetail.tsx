@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, FileText } from 'lucide-react';
 
 import type { BridgeStep, EvidenceRef, Report } from '../shared/contracts';
@@ -17,6 +17,20 @@ const statusColor: Record<RiskStatus, string> = {
   unknown: '#8a8f98',
 };
 
+interface ReputationItem {
+  title: string;
+  url: string;
+  source?: string | null;
+  publishedAt: string | null;
+}
+interface ReputationData {
+  query: string;
+  count: number;
+  items: ReputationItem[];
+  fetchedAt: string;
+  truncated: boolean;
+}
+
 /**
  * 第二部分：四维详细状况。
  * 财务 / 信用 / 口碑 / 风险四张卡，全部数据来自报告真实结果，
@@ -26,6 +40,27 @@ export function RiskDetail({ report }: { report: Report }) {
   const { t, locale, showEvidence } = useApp();
   const perspective = useMemo(() => deriveRiskPerspective(report, locale), [report, locale]);
   const gridRef = useRef<HTMLDivElement>(null);
+  const [reputation, setReputation] = useState<ReputationData | null>(null);
+  const [repLoading, setRepLoading] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    setRepLoading(true);
+    void fetch(`/api/company-reputation?q=${encodeURIComponent(report.company)}`)
+      .then((response) => (response.ok ? (response.json() as Promise<ReputationData>) : null))
+      .then((data) => {
+        if (alive) setReputation(data);
+      })
+      .catch(() => {
+        if (alive) setReputation(null);
+      })
+      .finally(() => {
+        if (alive) setRepLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [report.company]);
 
   const openRefs = (refs: EvidenceRef[]) => {
     if (refs.length > 0) showEvidence(refs, report);
@@ -95,28 +130,86 @@ export function RiskDetail({ report }: { report: Report }) {
 
               {dimension.key === 'finance' && <FinanceBars report={report} />}
               {dimension.key === 'finance' && report.bridge && (
-                <MiniCashBridge steps={report.bridge} />
+                <MiniCashBridge
+                  steps={report.bridge}
+                  usd={report.metrics.find((metric) => metric.key === 'netProfit')?.unit === 'USD'}
+                />
               )}
 
-              <div className="risk-metrics">
-                {dimension.metrics.map((metric, index) => (
-                  <MetricRow key={index} metric={metric} onShowRefs={openRefs} />
-                ))}
-              </div>
+              {dimension.key !== 'reputation' && (
+                <div className="risk-metrics">
+                  {dimension.metrics.map((metric, index) => (
+                    <MetricRow key={index} metric={metric} onShowRefs={openRefs} />
+                  ))}
+                </div>
+              )}
 
               {dimension.key === 'reputation' && (
-                <p className="risk-pending-note">
-                  {t(
-                    '媒体报道与舆论数据源尚未接入。接入后可显示报道数量、情绪分布与来源链接。',
-                    'News and sentiment sources are not connected yet. Once connected, this card will show coverage count, tone split, and source links.'
-                  )}
-                </p>
+                <ReputationPanel loading={repLoading} data={reputation} company={report.company} />
               )}
             </article>
           );
         })}
       </div>
     </section>
+  );
+}
+
+function ReputationPanel({
+  loading,
+  data,
+  company,
+}: {
+  loading: boolean;
+  data: ReputationData | null;
+  company: string;
+}) {
+  const { t, locale } = useApp();
+  const shortDate = (value: string | null) => {
+    if (!value) return '';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return '';
+    return parsed.toLocaleDateString(locale, { month: '2-digit', day: '2-digit' });
+  };
+  if (loading)
+    return (
+      <p className="risk-pending-note">{t('正在检索公开报道…', 'Searching public coverage…')}</p>
+    );
+  if (!data || !data.count)
+    return (
+      <p className="risk-pending-note">
+        {t(
+          `暂未发现 ${company} 的近期公开报道；未编造舆论内容。`,
+          `No recent public coverage found for ${company}; nothing is invented.`
+        )}
+      </p>
+    );
+  return (
+    <div className="risk-reputation">
+      <div className="risk-reputation-head">
+        <span className="risk-reputation-count">
+          {t('近期公开报道', 'Recent public coverage')} {data.count}
+          {t('条', ' items')}
+        </span>
+        <span className="risk-reputation-note">
+          {t('不自动判断好坏，点击查看原文', 'No auto sentiment; open the original articles')}
+        </span>
+      </div>
+      <ul className="risk-reputation-list">
+        {data.items.slice(0, 6).map((item, index) => (
+          <li key={index}>
+            <a href={item.url} target="_blank" rel="noopener noreferrer">
+              <span className="risk-reputation-title">{item.title}</span>
+              <span className="risk-reputation-meta">
+                {item.source && <em className="risk-reputation-source">{item.source}</em>}
+                {shortDate(item.publishedAt)}
+                <ExternalLink size={12} />
+              </span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -183,6 +276,7 @@ function FinanceBars({ report }: { report: Report }) {
     );
   }
   const cashNumber = Number(cash?.value ?? 0);
+  const usd = net.unit === 'USD';
   const maximum = Math.max(Math.abs(netNumber), Math.abs(cashNumber), 1);
   const netHeight = Math.max((Math.abs(netNumber) / maximum) * 100, 4);
   const cashHeight = Math.max((Math.abs(cashNumber) / maximum) * 100, 4);
@@ -197,7 +291,8 @@ function FinanceBars({ report }: { report: Report }) {
           />
         </div>
         <span className="risk-finance-bar-label">
-          {t('赚到的钱', 'Profit')}（{net.value}）
+          {t('赚到的钱', 'Profit')}（{usd ? '$' : ''}
+          {net.value}）
         </span>
       </div>
       <div className="risk-finance-bar-col">
@@ -209,7 +304,8 @@ function FinanceBars({ report }: { report: Report }) {
           />
         </div>
         <span className="risk-finance-bar-label">
-          {t('收到的现金', 'Cash')}（{cash.value}）
+          {t('收到的现金', 'Cash')}（{usd ? '$' : ''}
+          {cash.value}）
         </span>
       </div>
     </div>
@@ -217,7 +313,7 @@ function FinanceBars({ report }: { report: Report }) {
 }
 
 /** 财务卡迷你现金桥：净利润 → 各项调整 → 经营现金，绿正红负 */
-function MiniCashBridge({ steps }: { steps: BridgeStep[] }) {
+function MiniCashBridge({ steps, usd }: { steps: BridgeStep[]; usd?: boolean }) {
   let running = 0;
   const bars = steps.map((step) => {
     const value = Number(step.value) || 0;
@@ -251,8 +347,9 @@ function MiniCashBridge({ steps }: { steps: BridgeStep[] }) {
               />
             </span>
             <span className="risk-bridge-value" style={{ color }}>
+              {usd ? '$' : ''}
               {bar.step.value}
-            </span>
+            </span>{' '}
           </div>
         );
       })}

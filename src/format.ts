@@ -27,7 +27,9 @@ export function money(value: string | null, locale: Locale, compact = true): str
 
 export function metricValue(metric: ComputedMetric | undefined, locale: Locale): string {
   if (!metric || metric.value === null) return '—';
-  return metric.unit === '%' ? `${Number(metric.value).toFixed(2)}%` : money(metric.value, locale);
+  if (metric.unit === '%') return `${Number(metric.value).toFixed(2)}%`;
+  if (metric.unit === 'USD') return `$${money(metric.value, locale)}`;
+  return money(metric.value, locale);
 }
 
 export function yuan(value: string, unit: MoneyUnit): string {

@@ -78,16 +78,28 @@ export function RiskOverview({ report }: { report: Report }) {
                   style={{
                     stroke: dimColor,
                     strokeDasharray: `${dash} ${ringLength}`,
+                    strokeDashoffset: entered ? 0 : dash,
                     transform: `rotate(${index * 90 - 90} 110 110)`,
                     opacity: entered ? (active ? 1 : 0.92) : 0,
-                    transition: reduceMotion ? 'none' : `opacity 300ms ${index * 120}ms ease`,
+                    transition: reduceMotion
+                      ? 'none'
+                      : `stroke-dashoffset 700ms ${300 + index * 140}ms ease, opacity 260ms ${index * 120}ms ease`,
                     filter: active ? 'brightness(1.25)' : 'brightness(0.85)',
                   }}
                 />
               );
             })}
           </svg>
-          <div className="risk-ring-center">
+          <div
+            className="risk-ring-center"
+            style={{
+              opacity: entered ? 1 : 0,
+              transform: entered ? 'none' : 'translateY(5px)',
+              transition: reduceMotion
+                ? 'none'
+                : 'opacity 500ms 900ms ease, transform 500ms 900ms ease',
+            }}
+          >
             <strong style={{ color }}>{t(overall.title.zh, overall.title.en)}</strong>
             <span>{t(overall.subtitle.zh, overall.subtitle.en)}</span>
           </div>

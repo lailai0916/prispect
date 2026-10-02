@@ -30,7 +30,7 @@ const observation = z.object({
   key: z.enum(metricKeys),
   year: z.number().int().min(1900).max(2200),
   value: amount,
-  unit: z.enum(['yuan', 'wan', 'yi']),
+  unit: z.enum(['yuan', 'wan', 'yi', 'usd']),
   currency: z.string().regex(/^[A-Z]{3}$/),
   scope: z.enum(['consolidated', 'parent', 'unknown']),
   period: z.enum(['annual', 'interim', 'quarterly', 'unknown']).optional(),
@@ -162,13 +162,13 @@ export class ApiFault extends Error {
     super(message);
   }
 }
-export function moneyToFen(value: string, unit: 'yuan' | 'wan' | 'yi'): bigint {
+export function moneyToFen(value: string, unit: 'yuan' | 'wan' | 'yi' | 'usd'): bigint {
   if (!/^-?\d{1,20}(?:\.\d{1,10})?$/.test(value)) throw new Error('金额格式无效');
   const negative = value.startsWith('-');
   const [whole, fraction = ''] = value.replace(/^-/, '').split('.');
-  const exponent = { yuan: 2, wan: 6, yi: 10 }[unit];
+  const exponent = { yuan: 2, wan: 6, yi: 10, usd: 2 }[unit];
   if (fraction.length > exponent && /[1-9]/.test(fraction.slice(exponent)))
-    throw new Error('金额精度小于人民币分，不能无声舍入');
+    throw new Error('金额精度小于最小分位，不能无声舍入');
   const result =
     BigInt(whole!) * 10n ** BigInt(exponent) +
     BigInt(fraction.slice(0, exponent).padEnd(exponent, '0') || '0');

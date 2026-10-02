@@ -403,7 +403,7 @@ test('stress removal preserves provided headers, removes explanations and bridge
     false
   );
 });
-test('parent/consolidated, subject, currency and conflicting values stop calculations', () => {
+test('parent/consolidated, mixed currency and conflicting values stop calculations', () => {
   const scope = run(fixture.materials[3]!);
   assert.equal(scope.verdict, 'conflict');
   assert.equal(metric(scope, 'cashConversion').value, null);
@@ -412,9 +412,19 @@ test('parent/consolidated, subject, currency and conflicting values stop calcula
   m.observations.push({ ...m.observations[0]!, id: 'conflicting', value: '999.00' });
   assert.equal(run(m).verdict, 'conflict');
   assert.equal(metric(run(m), 'netProfit').value, null);
+  // 同一指标混入不同币种（USD 与 CNY）→ 停止计算
   const currency = structuredClone(fixture.materials[0]!);
   currency.observations[0]!.currency = 'USD';
+  currency.observations.push({
+    ...currency.observations[0]!,
+    id: 'cny-alias',
+    currency: 'CNY',
+  });
   assert.equal(run(currency).verdict, 'conflict');
+  // 单一外币口径（如 SEC EDGAR 全部 USD）不再视为冲突，可保留计算
+  const usdOnly = structuredClone(fixture.materials[0]!);
+  for (const observation of usdOnly.observations) observation.currency = 'USD';
+  assert.notEqual(run(usdOnly).verdict, 'conflict');
   const subject = analyze(
     { title: '混主体', company: '其他公司', year: 2025, materialIds: [m.id] },
     [m]

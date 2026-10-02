@@ -5,6 +5,7 @@ import type {
   CompanySearchResponse,
 } from '../shared/contracts.js';
 import { ApiFault } from './validation.js';
+import { isSecTicker, secSearchCompanies } from './company-sec.js';
 import pdfLimits from './pdf-limits.json' with { type: 'json' };
 
 export interface CompanySourceDependencies {
@@ -193,6 +194,7 @@ export async function searchCompanies(
   query = query.trim();
   if (!query || query.length > 80 || /[\x00-\x1f]/.test(query))
     throw new ApiFault(400, 'COMPANY_QUERY_INVALID', '请输入1至80字的公司名称或六位A股代码');
+  if (isSecTicker(query)) return secSearchCompanies(query);
   const raw = await formJson(SEARCH, { keyWord: query, maxNum: '20' }, dependencies);
   if (!Array.isArray(raw))
     throw new ApiFault(502, 'COMPANY_SOURCE_FORMAT', '官方主体检索响应格式改变');

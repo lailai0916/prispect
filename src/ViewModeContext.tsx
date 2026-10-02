@@ -22,6 +22,8 @@ export function ViewModeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.view = viewMode;
+    document.body.classList.toggle('view-plain-shell', viewMode === 'simple');
+    return () => document.body.classList.remove('view-plain-shell');
   }, [viewMode]);
 
   const setViewMode = useCallback((mode: ViewMode) => {

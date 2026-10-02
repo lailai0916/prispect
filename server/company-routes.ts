@@ -11,6 +11,7 @@ import {
   runCompanyResearch,
   searchCompanies,
 } from './company-agent.js';
+import { companyReputation } from './company-reputation.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
 
@@ -30,7 +31,7 @@ export function installCompanyRoutes(
   const adopting = new Set<string>();
   const schema = z
     .object({
-      securityCode: z.string().regex(/^\d{6}$/),
+      securityCode: z.string().regex(/^(?:\d{6}|[A-Za-z]{1,6})$/),
       orgId: z.string().regex(/^[A-Za-z0-9]{1,40}$/),
       year: z
         .number()
@@ -354,6 +355,15 @@ export function installCompanyRoutes(
       }
       res.status(202).json(structuredClone(run));
       execute(run, store, false);
+    })
+  );
+  app.get(
+    '/api/company-reputation',
+    wrap(async (req, res) => {
+      const q = String(req.query.q || '').trim();
+      if (!q || q.length > 80) throw new ApiFault(400, 'REPUTATION_QUERY_INVALID', '需要公司名称');
+      const result = await companyReputation(q);
+      res.json(result);
     })
   );
   app.get(
