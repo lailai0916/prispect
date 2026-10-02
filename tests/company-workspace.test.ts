@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { CompanyResearchRun } from '../shared/contracts.js';
+import { companyReviewSummary } from '../shared/company-review.js';
 import {
   contextAmountFields,
   industryMetricKeys,
@@ -94,6 +95,113 @@ export function run(): CompanyResearchRun {
     context: context(),
   };
 }
+
+test('review uses only the selected annual consolidated period, never parent profit or the latest row', () => {
+  const value = run();
+  value.context!.financials = [
+    period(2024, { netProfit: '900.00', ocf: '999.00' }),
+    period(2025, { netProfit: '366373098.93', parentProfit: '5.00', ocf: '26197123.70' }),
+    { ...period(2025, { netProfit: '1.00', ocf: '2.00' }), period: '2025-09-30', annual: false },
+  ];
+  const summary = companyReviewSummary(value);
+  assert.equal(summary.profit, '366373098.93');
+  assert.equal(summary.cash, '26197123.70');
+  assert.equal(summary.ratio, 0.0715);
+  assert.equal(summary.difference, '340175975.23');
+  assert.equal(summary.relation, 'below');
+  value.input.year = 2023;
+  assert.equal(companyReviewSummary(value).relation, 'missing');
+  assert.equal(companyReviewSummary(value).profit, null);
+});
+
+test('review retains actual zero cash, but missing cash never becomes zero', () => {
+  const value = run();
+  value.context!.financials = [period(2025, { ocf: '0.00' })];
+  assert.equal(companyReviewSummary(value).ratio, 0);
+  assert.equal(companyReviewSummary(value).relation, 'below');
+  value.context!.financials[0]!.amounts.ocf = null;
+  assert.equal(companyReviewSummary(value).cash, null);
+  assert.equal(companyReviewSummary(value).ratio, null);
+  assert.deepEqual(companyReviewSummary(value).missing, ['ocf']);
+});
+
+test('review withholds nonpositive-denominator ratios while retaining negative cash amounts', () => {
+  const value = run();
+  for (const netProfit of ['0.00', '-100.00']) {
+    value.context!.financials = [period(2025, { netProfit, ocf: '-80.00' })];
+    assert.equal(companyReviewSummary(value).relation, 'nonpositive');
+    assert.equal(companyReviewSummary(value).ratio, null);
+    assert.equal(companyReviewSummary(value).cash, '-80.00');
+  }
+  value.context!.financials[0]!.amounts.netProfit = '100.00';
+  assert.equal(companyReviewSummary(value).ratio, -0.8);
+  assert.equal(companyReviewSummary(value).relation, 'below');
+});
+
+test('review source conflicts withhold only the affected same-period field and its dependent ratio', () => {
+  const value = run();
+  value.context!.comparisons = [
+    {
+      period: '2025-12-31',
+      field: 'ocf',
+      primary: '80.00',
+      secondary: '81.00',
+      difference: '-1.00',
+      matches: false,
+    },
+    {
+      period: '2024-12-31',
+      field: 'netProfit',
+      primary: '100.00',
+      secondary: '101.00',
+      difference: '-1.00',
+      matches: false,
+    },
+  ];
+  const summary = companyReviewSummary(value);
+  assert.equal(summary.relation, 'conflict');
+  assert.equal(summary.profit, '100.00');
+  assert.equal(summary.cash, null);
+  assert.equal(summary.ratio, null);
+  assert.equal(summary.difference, null);
+  assert.deepEqual(summary.conflicts, ['ocf']);
+});
+
+test('review duplicate annual values are order independent and disagreement blocks inference', () => {
+  const value = run();
+  for (const rows of [
+    [period(2025, { ocf: null }), period(2025)],
+    [period(2025), period(2025, { ocf: null })],
+  ]) {
+    value.context!.financials = rows;
+    assert.equal(companyReviewSummary(value).relation, 'missing');
+    assert.equal(companyReviewSummary(value).cash, null);
+    assert.deepEqual(companyReviewSummary(value).conflicts, []);
+  }
+  value.context!.financials = [period(2025), period(2025, { ocf: '81.00' })];
+  assert.equal(companyReviewSummary(value).relation, 'conflict');
+  assert.equal(companyReviewSummary(value).profit, '100.00');
+  value.context!.financials = [period(2025), period(2025)];
+  assert.equal(companyReviewSummary(value).relation, 'below');
+});
+
+test('review rejects a different company snapshot and never falls back to unconfirmed original candidates', () => {
+  const value = run();
+  value.context!.securityCode = '300893';
+  assert.equal(companyReviewSummary(value).relation, 'conflict');
+  assert.equal(companyReviewSummary(value).row, null);
+  assert.equal(companyReviewSummary(value).profit, null);
+  delete value.context;
+  value.preview = {
+    material: { observations: [{ key: 'netProfit', value: '100.00' }] },
+    reviewRequired: true,
+    warnings: [],
+    tablePages: [],
+    checks: [],
+  } as unknown as CompanyResearchRun['preview'];
+  assert.equal(companyReviewSummary(value).relation, 'missing');
+  assert.equal(companyReviewSummary(value).profit, null);
+});
 
 test('C retains cents, independent profit bases and unknown short debt without reassuring inference', () => {
   assert.equal(contextSum(['90071992547409.91', '0.01']), '90071992547409.92');

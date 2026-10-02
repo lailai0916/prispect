@@ -61,6 +61,12 @@ export function CompanyQueryPage() {
     <div className="company-query-page">
       <div className="company-query-inner">
         <h1>{t('开始一项核查', 'Start a review')}</h1>
+        <p className="company-query-description">
+          {t(
+            '输入公司名称或证券代码，查看核查报告。',
+            'Enter a company name or ticker to open its review report.'
+          )}
+        </p>
         <StartInput
           compact
           companyOnly

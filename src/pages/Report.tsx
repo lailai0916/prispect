@@ -51,6 +51,7 @@ import {
 } from '../components';
 import '../review-pages.css';
 import '../report-enhancements.css';
+import '../company-review.css';
 
 type ReviewExportFormat = 'html' | 'json' | 'checklist';
 
@@ -322,9 +323,9 @@ export function ReportView({
   const { t, locale, execute, showEvidence, navigate, busy } = useApp();
   const purpose = task.purpose || 'external';
   const contextControl = useRef<ReviewContextHandle>(null);
-  const [section, setSection] = useState<'evidence' | 'explanations' | 'requests' | 'scope'>(
-    purpose === 'handover' ? 'requests' : 'evidence'
-  );
+  const [section, setSection] = useState<
+    'summary' | 'evidence' | 'explanations' | 'requests' | 'scope'
+  >('summary');
   const [testMetric, setTestMetric] = useState<MetricKey | null>(null);
   const [exportFormat, setExportFormat] = useState<ReviewExportFormat | null>(null);
   const previewExport = onExport || setExportFormat;
@@ -333,7 +334,7 @@ export function ReportView({
   const changePurpose = async (next: ReviewPurpose) => {
     if (next === purpose) return;
     if (await contextControl.current?.changePurpose(next)) {
-      setSection(next === 'handover' ? 'requests' : 'evidence');
+      setSection('summary');
     }
   };
   const openRequests = () => {
@@ -366,98 +367,7 @@ export function ReportView({
         ? 'Some required observations are missing or cannot be confirmed. The review retains supported numbers and withholds unsupported ratios or explanations.'
         : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
   return (
-    <div className="report-content">
-      <section className="report-purpose-overview" aria-labelledby="report-purpose-heading">
-        <div className="report-purpose-topline">
-          <h2 id="report-purpose-heading">{t('本次核查重点', 'Focus for this review')}</h2>
-          <div
-            className="segmented-control purpose-switch"
-            aria-label={t('选择核查用途', 'Choose review purpose')}
-          >
-            {(['external', 'handover'] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={purpose === value ? 'active' : ''}
-                aria-pressed={purpose === value}
-                disabled={busy}
-                onClick={() => changePurpose(value)}
-              >
-                {purposeName(value, t)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="report-purpose-body">
-          <div>
-            <h3>
-              {purpose === 'handover'
-                ? t(
-                    '先核对接手时的可用资金与到期付款',
-                    'Confirm cash available at handover and payments due'
-                  )
-                : t(
-                    '先核对签约主体、收款安排与承诺条款',
-                    'Check the contracting entity, payment arrangements and written promises'
-                  )}
-            </h3>
-            <p>
-              {purpose === 'handover'
-                ? t(
-                    '历史利润和经营现金净额用于定位核查事项。当前余额、未来回款和到期义务，需要另取材料并逐笔确认。',
-                    'Historical profit and operating cash help locate questions. Current balances, future collections and obligations due require separate records and reconciliation.'
-                  )
-                : t(
-                    '财报能支持经营线索，不能证明这次付款的本金安全或交付承诺。先确认对方是谁、钱付给谁，以及交付与退出条件。',
-                    'Financial statements support operating clues, but do not establish the safety of this payment or a delivery promise. Confirm the entities, receiving account, delivery and exit terms.'
-                  )}
-            </p>
-            <button
-              type="button"
-              className="text-link"
-              onClick={() => navigate(`/decisions?new=${purpose}&task=${task.id}`)}
-            >
-              {purpose === 'handover'
-                ? t('建立接手核查事项', 'Start a handover review matter')
-                : t('建立付款核查事项', 'Start a payment review matter')}
-              <ArrowRight size={14} />
-            </button>
-          </div>
-          <div className="report-next-request">
-            <span>{t('下一项材料核查', 'Next evidence request')}</span>
-            <h3>
-              {nextQuestion
-                ? t(nextQuestion.question.text, translateRule(nextQuestion.question.text))
-                : questions.length
-                  ? t(
-                      '已记录全部询证跟进，继续核对场景材料',
-                      'All follow-ups recorded; check the context records next'
-                    )
-                  : t(
-                      '核对本次安排所需的直接材料',
-                      'Check the direct records needed for this arrangement'
-                    )}
-            </h3>
-            <p>
-              {nextQuestion
-                ? t(nextQuestion.orderReason.zh, nextQuestion.orderReason.en)
-                : questions.length
-                  ? t(
-                      '跟进完成不代表结论已经证实。核对本次付款或接手安排所需的直接材料。',
-                      'Recorded follow-up does not authenticate a conclusion. Review the direct records needed for this payment or handover.'
-                    )
-                  : t(
-                      '本报告没有已保存的询证项。请核对场景材料，不从空清单推断本次安排可靠。',
-                      'This report has no saved evidence requests. Check the context records; an empty checklist does not establish that this arrangement is reliable.'
-                    )}
-            </p>
-            <button type="button" className="text-link" onClick={openRequests}>
-              {t('查看材料清单', 'View evidence requests')}
-              <ArrowRight size={14} />
-            </button>
-          </div>
-        </div>
-      </section>
+    <div className="report-content report-content-summary">
       <section className={`verdict-section verdict-${report.verdict}`}>
         <div className="verdict-topline">
           <VerdictTag verdict={report.verdict} />
@@ -470,19 +380,33 @@ export function ReportView({
             {report.coverage.present}/{report.coverage.total} {t('核心指标', 'core metrics')}
           </span>
         </div>
-        <h2>
-          {report.verdict === 'conflict'
-            ? t(
-                '输入核对存在冲突，已停止现金桥解释',
-                'Input checks conflict; cash-bridge attribution has stopped'
-              )
-            : getMetric('cashConversion')?.value != null
-              ? t(
-                  `${report.year}年现金利润比 ${metricValue(getMetric('cashConversion'), locale)}`,
-                  `${report.year} cash-to-profit ratio: ${metricValue(getMetric('cashConversion'), locale)}`
-                )
-              : t('部分指标尚无足够依据', 'Some metrics lack sufficient evidence')}
-        </h2>
+        <h2>{t('核查摘要', 'Review summary')}</h2>
+        <p className="report-summary-text">
+          {report.verdict === 'conflict' || report.verdict === 'insufficient'
+            ? t(report.summary, englishSummary)
+            : t(
+                report.year +
+                  ' 年合并净利润' +
+                  money(getMetric('netProfit')?.value ?? null, locale) +
+                  '元，经营现金净额' +
+                  money(getMetric('operatingCashFlow')?.value ?? null, locale) +
+                  '元' +
+                  (getMetric('cashConversion')?.value != null
+                    ? '，现金利润比' + metricValue(getMetric('cashConversion'), locale) + '。'
+                    : '。利润非正，现金利润比不作常规解读。'),
+                'For ' +
+                  report.year +
+                  ', consolidated net profit is CNY ' +
+                  money(getMetric('netProfit')?.value ?? null, locale) +
+                  ' and operating cash is CNY ' +
+                  money(getMetric('operatingCashFlow')?.value ?? null, locale) +
+                  (getMetric('cashConversion')?.value != null
+                    ? '; the cash-to-profit ratio is ' +
+                      metricValue(getMetric('cashConversion'), locale) +
+                      '.'
+                    : '. The ratio is not interpreted with nonpositive profit.')
+              )}
+        </p>
         <p>
           {t(
             '经营现金净额 ÷ 合并净利润，不是销售回款率。',
@@ -490,7 +414,7 @@ export function ReportView({
           )}
         </p>
         <details className="verdict-details">
-          <summary>{t('查看核查摘要', 'Review summary')}</summary>
+          <summary>{t('计算与证据状态', 'Calculation and evidence status')}</summary>
           <p>{t(report.headline, englishHeadline)}</p>
           <p>{t(report.summary, englishSummary)}</p>
         </details>
@@ -565,9 +489,107 @@ export function ReportView({
           </div>
         ))}
       </section>
+      <details className="report-purpose-details">
+        <summary>
+          <ChevronDown size={14} />
+          {t('用途与后续核查', 'Purpose and follow-up')}
+        </summary>
+        <section className="report-purpose-overview" aria-labelledby="report-purpose-heading">
+          <div className="report-purpose-topline">
+            <h2 id="report-purpose-heading">{t('本次核查重点', 'Focus for this review')}</h2>
+            <div
+              className="segmented-control purpose-switch"
+              aria-label={t('选择核查用途', 'Choose review purpose')}
+            >
+              {(['external', 'handover'] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={purpose === value ? 'active' : ''}
+                  aria-pressed={purpose === value}
+                  disabled={busy}
+                  onClick={() => changePurpose(value)}
+                >
+                  {purposeName(value, t)}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="report-purpose-body">
+            <div>
+              <h3>
+                {purpose === 'handover'
+                  ? t(
+                      '先核对接手时的可用资金与到期付款',
+                      'Confirm cash available at handover and payments due'
+                    )
+                  : t(
+                      '先核对签约主体、收款安排与承诺条款',
+                      'Check the contracting entity, payment arrangements and written promises'
+                    )}
+              </h3>
+              <p>
+                {purpose === 'handover'
+                  ? t(
+                      '历史利润和经营现金净额用于定位核查事项。当前余额、未来回款和到期义务，需要另取材料并逐笔确认。',
+                      'Historical profit and operating cash help locate questions. Current balances, future collections and obligations due require separate records and reconciliation.'
+                    )
+                  : t(
+                      '财报能支持经营线索，不能证明这次付款的本金安全或交付承诺。先确认对方是谁、钱付给谁，以及交付与退出条件。',
+                      'Financial statements support operating clues, but do not establish the safety of this payment or a delivery promise. Confirm the entities, receiving account, delivery and exit terms.'
+                    )}
+              </p>
+              <button
+                type="button"
+                className="text-link"
+                onClick={() => navigate(`/decisions?new=${purpose}&task=${task.id}`)}
+              >
+                {purpose === 'handover'
+                  ? t('建立接手核查事项', 'Start a handover review matter')
+                  : t('建立付款核查事项', 'Start a payment review matter')}
+                <ArrowRight size={14} />
+              </button>
+            </div>
+            <div className="report-next-request">
+              <span>{t('下一项材料核查', 'Next evidence request')}</span>
+              <h3>
+                {nextQuestion
+                  ? t(nextQuestion.question.text, translateRule(nextQuestion.question.text))
+                  : questions.length
+                    ? t(
+                        '已记录全部询证跟进，继续核对场景材料',
+                        'All follow-ups recorded; check the context records next'
+                      )
+                    : t(
+                        '核对本次安排所需的直接材料',
+                        'Check the direct records needed for this arrangement'
+                      )}
+              </h3>
+              <p>
+                {nextQuestion
+                  ? t(nextQuestion.orderReason.zh, nextQuestion.orderReason.en)
+                  : questions.length
+                    ? t(
+                        '跟进完成不代表结论已经证实。核对本次付款或接手安排所需的直接材料。',
+                        'Recorded follow-up does not authenticate a conclusion. Review the direct records needed for this payment or handover.'
+                      )
+                    : t(
+                        '本报告没有已保存的询证项。请核对场景材料，不从空清单推断本次安排可靠。',
+                        'This report has no saved evidence requests. Check the context records; an empty checklist does not establish that this arrangement is reliable.'
+                      )}
+              </p>
+              <button type="button" className="text-link" onClick={openRequests}>
+                {t('查看材料清单', 'View evidence requests')}
+                <ArrowRight size={14} />
+              </button>
+            </div>
+          </div>
+        </section>
+      </details>
       <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
         {(
           [
+            ['summary', t('核查事项', 'Review matters')],
             ['evidence', t('图表与来源', 'Charts and sources')],
             [
               'explanations',
@@ -589,6 +611,69 @@ export function ReportView({
           </button>
         ))}
       </nav>
+      <div id="report-panel-summary" hidden={section !== 'summary'} className="company-review">
+        <section className="company-review-section">
+          <h2>{t('核查事项', 'Review matters')}</h2>
+          <ol className="company-review-findings">
+            {report.findings
+              .filter((item) => item.basis !== 'management')
+              .slice(0, 3)
+              .map((finding, index) => (
+                <li key={finding.id}>
+                  <span className="company-review-number" aria-hidden="true">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <div>
+                    <h3>{t(finding.label, translateRule(finding.label))}</h3>
+                    <p>{t(finding.explanation, translateRule(finding.explanation))}</p>
+                  </div>
+                  <button
+                    className="text-link"
+                    onClick={() => showEvidence(finding.sourceRefs, report)}
+                    disabled={!finding.sourceRefs.length}
+                  >
+                    {t('查看依据', 'View evidence')}
+                    <ArrowUpRight size={12} />
+                  </button>
+                </li>
+              ))}
+          </ol>
+          <button
+            className="text-link report-summary-detail-link"
+            onClick={() => setSection('explanations')}
+          >
+            {t('全部观察与解释', 'All observations and explanations')}
+            <ArrowRight size={13} />
+          </button>
+        </section>
+        <section className="company-review-section company-review-followup">
+          <h2>{t('后续材料', 'Follow-up evidence')}</h2>
+          <p>
+            {nextQuestion
+              ? t(nextQuestion.question.text, translateRule(nextQuestion.question.text))
+              : t(
+                  '继续核对本次付款或交接所需的直接材料；跟进状态不代表事项已证实。',
+                  'Continue checking the direct evidence for this payment or handover; follow-up status does not authenticate a matter.'
+                )}
+          </p>
+          <div className="company-review-actions">
+            <button className="button button-primary" onClick={openRequests}>
+              {t('查看核查清单', 'Review checklist')}
+              <ArrowRight size={14} />
+            </button>
+            <button className="text-link" onClick={() => setSection('evidence')}>
+              {t('原件与计算', 'Sources and calculations')}
+              <ArrowRight size={13} />
+            </button>
+          </div>
+        </section>
+        <p className="company-review-footnote">
+          {t(
+            '本报告核对所采用材料中的历史金额；当前付款和履约需要另取直接依据。',
+            'This report checks historical amounts in adopted evidence; current payments and fulfilment need separate direct records.'
+          )}
+        </p>
+      </div>
       <div id="report-panel-evidence" hidden={section !== 'evidence'}>
         <div className="report-two-column">
           <div className="report-primary">
