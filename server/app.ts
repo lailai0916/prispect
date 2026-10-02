@@ -10,7 +10,7 @@ import type { AnalysisTask, CreateTaskInput, Material, Stage } from '../shared/c
 import { analyze } from './engine.js';
 import { reportHtml } from './export.js';
 import { previewUpload } from './import.js';
-import { explainWithModel, modelConfigFromEnv, type ModelConfig } from './model.js';
+import { DEFAULT_MODEL, explainWithModel, modelConfigFromEnv, type ModelConfig } from './model.js';
 import { seeds, WorkspaceStore } from './store.js';
 import { AuthStore, authentication, type AuthContext } from './auth.js';
 import { installDecisionRoutes } from './decision-routes.js';
@@ -209,6 +209,20 @@ export async function createApp(options: AppOptions = {}) {
     );
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
+  });
+  app.get('/api/public/research-capabilities', (_req, res) => {
+    res.json({
+      modelConfigured: Boolean(model.apiKey),
+      modelName: model.model || DEFAULT_MODEL,
+      tools: [
+        'get_financial_history',
+        'fetch_industry',
+        'search_disclosures',
+        'search_news',
+        'read_disclosure',
+      ],
+      limits: { planningTurns: 3, toolCalls: 8, supplementaryRequests: 12, retainedNews: 48 },
+    });
   });
   app.get('/api/cases', (_req, res) => {
     res.json(initial.cases);

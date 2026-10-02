@@ -14,8 +14,8 @@ export const privacyDocument: ProductDocument = {
       title: ['适用范围与联系方式', 'Scope and contact'],
       paragraphs: [
         [
-          '析光 / Prispect 由析光团队运营，是企业资料核查与条件计算产品。本政策适用于 prispect.com 的网站、账号、个人工作区及相关服务。',
-          'Prispect is a company-evidence review and conditional-calculation product operated by the Prispect team. This policy covers prispect.com, its accounts, personal workspaces and related services.',
+          '析光 / Prispect 由析光团队运营，提供公开公司分析、企业资料核查与条件计算。本政策适用于 prispect.com 的网站、账号、个人工作区及相关服务。',
+          'Prispect is operated by the Prispect team and provides public-company analysis, evidence reviews and conditional calculations. This policy covers prispect.com, its accounts, personal workspaces and related services.',
         ],
         [
           '个人信息或数据处理问题，请联系 lailai0x394@gmail.com。你打开的外部披露网站、模型服务及其他外部页面还适用各自的规则；本政策不能替代这些服务的隐私说明。',
@@ -110,6 +110,17 @@ export const privacyDocument: ProductDocument = {
             ],
           ],
           [
+            ['公开公司研究', 'Public-company research'],
+            [
+              '所选公司与年度、你填写的研究目标、公开财务与同行资料、公告和新闻及来源、实际研究步骤、规则分数与分析评级、模型判断、缺口及生成时间。',
+              'Selected company and year, your research goal, public financial and peer data, disclosures and news with sources, actual research steps, rule scores and analysis grades, model judgments, gaps and generation times.',
+            ],
+            [
+              '自动分析公开资料，按研究目标补查，并保存有来源的判断、风险、后续核查与实际处理状态。',
+              'Analyze public information automatically, research further according to the goal, and retain sourced judgments, risks, next checks and actual processing states.',
+            ],
+          ],
+          [
             ['反馈与请求', 'Feedback and requests'],
             [
               '你发送的联系方式、说明、必要附件和处理记录。',
@@ -192,6 +203,17 @@ export const privacyDocument: ProductDocument = {
             ],
           ],
           [
+            ['自动公司研究与进一步研究', 'Automatic company research and follow-up research'],
+            [
+              '你填写的研究目标、确定主体与年度、公开财务历史及计算指标、同行统计、公告与新闻的来源和已取得的短摘录、研究过程中的公开检索结果。目标按你填写的内容发送，请勿包含私人信息。',
+              'Your research goal, confirmed company and year, public financial history and calculated metrics, peer statistics, disclosure and news sources with retrieved short excerpts, and public retrieval results from the research. Goals are sent as entered; do not include private information.',
+            ],
+            [
+              '账号标识与资料、安全凭据、私人核查事项和计划、付款安排、交易原话、原始上传文件及未确认预览、私人材料与备注，以及其他账号的数据。',
+              'Account identifiers and profile details, security credentials, private cases and plans, payment arrangements, transaction statements, original uploaded files and unconfirmed previews, private materials and notes, or data from other accounts.',
+            ],
+          ],
+          [
             ['企业问答与析光助手', 'Company questions and the Prispect assistant'],
             [
               '你提交的企业问题、当前企业与利润口径、已取得的公开快照、公开字段及来源引用。问题按原文发送，请勿包含私人信息。本地产品帮助不发送模型请求。',
@@ -217,12 +239,16 @@ export const privacyDocument: ProductDocument = {
       },
       bullets: [
         [
+          '公司研究中，模型可根据公开资料选择财务阅读、同行比较、新闻检索和公告阅读。相应来源网站接收确定的公司名称、证券代码、年度或公开检索主题；取得的公开结果再提供给模型形成判断。公开研究不读取私人工作区来补齐这些资料，也不会自动采用原件候选。',
+          'During company research, the model can select financial review, peer comparison, news searches and disclosure reading. Source websites receive the confirmed company name, security code, year or public search topic; retrieved public results are then provided to the model for analysis. Public research does not read private workspace data to fill these gaps or automatically adopt original-report candidates.',
+        ],
+        [
           'AI 请求当前由 TokenFlux.dev 外部接口处理。经该接口处理不代表已确定由某一模型厂商直接接收数据。',
           'AI requests currently pass through the external TokenFlux.dev API. Use of this API does not establish that a particular model developer directly receives the data.',
         ],
         [
-          '我们尚未完成对该服务的运营主体、下游接收方、保存区域、保存期限、训练用途与合同保障的核验，不承诺其不保存、不训练或仅在境内处理。请不要在外发摘录或企业问题中放入个人敏感信息、商业秘密或无权提供的资料。AI 处理是相应功能的一部分；不能接受上述处理范围时，请勿提交该类查询、核查或问题。',
-          'We have not completed verification of this service’s operating entity, downstream recipients, storage regions, retention, training use or contractual safeguards. We do not promise zero retention, no training or processing only within mainland China. Keep sensitive personal information, trade secrets and unauthorized material out of externally sent excerpts and company questions. AI processing is part of these features. Do not submit the relevant lookup, review or question if you cannot accept this processing scope.',
+          '我们尚未完成对该服务的运营主体、下游接收方、保存区域、保存期限、训练用途与合同保障的核验，不承诺其不保存、不训练或仅在境内处理。请不要在研究目标、外发摘录或企业问题中放入个人敏感信息、商业秘密或无权提供的资料。AI 处理是相应功能的一部分；不能接受上述处理范围时，请勿提交该类查询、研究、核查或问题。',
+          'We have not completed verification of this service’s operating entity, downstream recipients, storage regions, retention, training use or contractual safeguards. We do not promise zero retention, no training or processing only within mainland China. Keep sensitive personal information, trade secrets and unauthorized material out of research goals, externally sent excerpts and company questions. AI processing is part of these features. Do not submit the relevant lookup, research, review or question if you cannot accept this processing scope.',
         ],
         [
           '外发摘录没有自动脱敏功能。公开披露资料也可能含有人员姓名等个人信息；公开可访问不等于可以任意使用。我们不以私人核查事项或现金计划训练自有模型，也没有把这些私人输入接入公开查询模型。',
@@ -245,8 +271,8 @@ export const privacyDocument: ProductDocument = {
       title: ['外部服务与访问', 'External services and access'],
       paragraphs: [
         [
-          '企业概览还通过东方财富与新浪公开接口读取财务、行业、资料与新闻。企业记录、公开快照、来源比对和最多五十条问答按账号保存，删除查询时一并移除。企业问答自动调用模型，发送问题与已取得的公开快照，不发送账号标识、私有材料、付款安排或服务端密钥配置。',
-          'Company context also retrieves financial, industry, profile and news data through Eastmoney and Sina public interfaces. Company records, public snapshots, comparisons and up to fifty answers are stored per account and removed with the query. Company questions automatically call the model with the question and retrieved public snapshot, excluding account identifiers, private evidence, payment plans and server-key configuration.',
+          '公司分析通过东方财富、新浪与巨潮公开来源读取财务、同行、资料、新闻和公告。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按账号保存，删除查询时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
+          'Company analysis retrieves financials, peers, profiles, news and disclosures from Eastmoney, Sina and CNINFO public sources. Company records, public snapshots, research goals and steps, analyses, source comparisons and up to fifty answers are stored per account and removed with the query. Public research and company questions exclude account identifiers, private materials, payment plans and security credentials from model requests.',
         ],
         [
           '公司查询把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',

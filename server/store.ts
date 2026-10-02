@@ -119,6 +119,20 @@ export class WorkspaceStore {
       if (!Array.isArray(this.state.decisions)) throw new Error('决定记录格式无效');
       if (!Array.isArray(this.state.companyRuns)) throw new Error('企业查询记录格式无效');
       for (const run of this.state.companyRuns) {
+        if (run.assessmentStatus === 'loading') {
+          run.assessmentStatus = 'failed';
+          run.assessmentError = '服务重启中断了综合研究；已有资料和上次报告保留，可以重新研究。';
+          run.assessmentTrace = run.assessmentTrace?.map((step) =>
+            step.status === 'running'
+              ? {
+                  ...step,
+                  status: 'failed',
+                  finishedAt: new Date().toISOString(),
+                  summary: '服务重启中断了这一步，可以重新研究。',
+                }
+              : step
+          );
+        }
         if (run.contextStatus === 'loading') {
           run.contextStatus = 'failed';
           run.contextError = '服务重启中断了企业概览更新；已有快照保留，可以重新读取。';

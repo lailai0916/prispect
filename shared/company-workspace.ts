@@ -1,3 +1,5 @@
+import type { CompanyAssessment, AssessmentResearchStep } from './company-assessment.js';
+
 /** Public company context stays separate from adopted original-report evidence. */
 export const companySections = [
   ['overview', '公司概览', 'Company overview'],
@@ -173,6 +175,13 @@ export interface CompanyWorkspaceExtension {
   contextRevision?: number;
   industry?: Record<string, CompanyIndustrySnapshot>;
   questions?: CompanyQuestionAnswer[];
+  assessment?: CompanyAssessment;
+  assessmentStatus?: 'loading' | 'ready' | 'failed';
+  assessmentError?: string;
+  assessmentRevision?: number;
+  assessmentInputHash?: string;
+  assessmentFocus?: string;
+  assessmentTrace?: AssessmentResearchStep[];
 }
 
 export interface CompanyRecordSummary {

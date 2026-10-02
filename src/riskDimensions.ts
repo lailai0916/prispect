@@ -6,7 +6,7 @@ import { metricValue, money, type Locale } from './format';
  * 全部状态由报告真实计算结果推导，不引入任何推断值或虚构数据。
  *
  * - 财务：净利润 / 经营现金 / 现金利润比（来自引擎计算）
- * - 信用：披露可溯源性（官方来源、页码覆盖、SHA256 校验）
+ * - 证据来源：披露记录的可溯源性（来源、页码覆盖、文件哈希记录）
  * - 口碑：媒体报道与舆论（数据源未接入时如实显示"待接入"）
  * - 风险：现金桥结论、证据冲突、未决问题、检查项（来自引擎核对）
  */
@@ -73,17 +73,26 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
   const finance: RiskDimension = {
     key: 'finance',
     label: { zh: '财务', en: 'Finance' },
-    plain: { zh: '赚的钱真的收到了吗', en: 'Did the profit turn into cash?' },
+    plain: { zh: '经营现金与利润是否匹配', en: 'How does operating cash compare with profit?' },
     status: financeStatus,
     summary:
       netNumber != null && netNumber < 0
         ? { zh: '公司净利润为负，处于亏损状态', en: 'The company reported a net loss' }
         : financeStatus === 'good'
-          ? { zh: '收到的现金不低于赚到的钱', en: 'Cash received is at least the reported profit' }
+          ? {
+              zh: '经营现金净额不低于合并净利润',
+              en: 'Operating cash is at least consolidated net profit',
+            }
           : financeStatus === 'warn'
-            ? { zh: '现金回款低于利润，需要关注', en: 'Cash conversion is below profit' }
+            ? {
+                zh: '经营现金净额低于合并净利润，需要关注',
+                en: 'Operating cash is below consolidated net profit',
+              }
             : financeStatus === 'bad'
-              ? { zh: '现金回款明显不足', en: 'Cash conversion is significantly weak' }
+              ? {
+                  zh: '经营现金净额与合并净利润存在较大差距',
+                  en: 'Operating cash and consolidated net profit differ substantially',
+                }
               : { zh: '财务指标数据不足', en: 'Financial metrics are insufficient' },
     metrics: [
       {
@@ -112,7 +121,7 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
     ],
   };
 
-  // ---------- 信用维度（披露可溯源性） ----------
+  // ---------- 证据来源维度（披露记录可溯源性） ----------
   const snapshot = report.snapshot ?? [];
   const official = snapshot.filter((item) => item.origin === 'public-report');
   const withSourceUrl = snapshot.filter((item) => Boolean(item.sourceUrl));
@@ -137,26 +146,26 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
   const firstOfficial = official[0];
   const credit: RiskDimension = {
     key: 'credit',
-    label: { zh: '信用', en: 'Credibility' },
-    plain: { zh: '信息来源可靠吗', en: 'Is the source reliable?' },
+    label: { zh: '证据来源', en: 'Evidence sources' },
+    plain: { zh: '来源、页码与哈希是否有记录', en: 'Are sources, pages and hashes recorded?' },
     status: creditStatus,
     summary:
       creditStatus === 'good'
         ? {
-            zh: '全部材料来自官方披露，页码与校验完整',
-            en: 'All materials are official with pages and hashes',
+            zh: '全部材料记录为公开披露，来源链接、页码与文件哈希齐备',
+            en: 'All materials are recorded as public disclosures, with source links, pages and file hashes',
           }
         : creditStatus === 'warn'
           ? {
-              zh: '部分材料缺少官方来源或页码，需留意',
-              en: 'Some materials lack official sources or pages',
+              zh: '部分材料缺少公开披露记录、来源链接、页码或文件哈希',
+              en: 'Some materials lack disclosure records, source links, pages or file hashes',
             }
           : creditStatus === 'unknown'
             ? { zh: '尚未核对披露来源', en: 'No disclosure source checked yet' }
             : { zh: '来源无法核实', en: 'Sources cannot be verified' },
     metrics: [
       {
-        label: { zh: '官方来源材料', en: 'Official-source materials' },
+        label: { zh: '公开披露记录', en: 'Public-disclosure records' },
         value: `${official.length}/${snapshot.length}`,
         tone: creditStatus,
         refs: [],
@@ -175,7 +184,7 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
         refs: [],
       },
       {
-        label: { zh: 'SHA256 校验', en: 'SHA256 verified' },
+        label: { zh: '文件哈希记录', en: 'File hash records' },
         value: withSha.length === snapshot.length && snapshot.length > 0 ? '完整' : '部分',
         tone: withSha.length === snapshot.length && snapshot.length > 0 ? 'good' : 'warn',
         refs: [],

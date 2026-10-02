@@ -1,0 +1,461 @@
+.company-assessment {
+  --assessment-pressure: #8a6418;
+  --assessment-strong: #23705a;
+  margin-bottom: 34px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.assessment-section-heading,
+.assessment-dimension-heading,
+.assessment-dimension-footer,
+.assessment-audit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.assessment-section-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 550;
+}
+.assessment-refresh,
+.assessment-basis-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.assessment-summary {
+  display: grid;
+  grid-template-columns: 168px minmax(0, 1fr);
+  gap: 28px;
+  margin: 22px 0 20px;
+  align-items: start;
+}
+.assessment-grade {
+  padding-right: 24px;
+  border-right: 1px solid var(--line-soft);
+  color: var(--muted);
+  font-size: 11px;
+}
+.assessment-grade > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 8px 0;
+  color: var(--ink);
+}
+.assessment-grade strong {
+  font-size: 44px;
+  font-weight: 550;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+.assessment-grade > div > span {
+  font-size: 12px;
+}
+.assessment-grade small {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.assessment-grade-c strong {
+  color: var(--assessment-pressure);
+}
+.assessment-grade-d strong {
+  color: var(--red);
+}
+.assessment-main-judgment {
+  margin: 0 0 9px;
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.assessment-meta,
+.assessment-model-note,
+.assessment-footnote {
+  font-size: 11px;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.assessment-meta {
+  margin: 10px 0 0;
+}
+.assessment-model-note {
+  padding: 10px 12px;
+  border-left: 2px solid var(--line);
+  background: var(--surface);
+  margin: 0 0 16px;
+}
+.assessment-dimensions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--line-soft);
+}
+.assessment-dimension {
+  padding: 17px 20px 15px 0;
+  border-bottom: 1px solid var(--line-soft);
+  min-width: 0;
+}
+.assessment-dimension:nth-child(even) {
+  padding-left: 22px;
+  padding-right: 0;
+  border-left: 1px solid var(--line-soft);
+}
+.assessment-dimension h3,
+.assessment-judgments h3,
+.assessment-evidence-drawer h3 {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 550;
+  margin: 0;
+}
+.assessment-dimension p,
+.assessment-judgments p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.85;
+  margin: 10px 0;
+  overflow-wrap: anywhere;
+}
+.assessment-status {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.assessment-status-strong {
+  color: var(--assessment-strong);
+}
+.assessment-status-pressure {
+  color: var(--assessment-pressure);
+}
+.assessment-status-high-pressure,
+.assessment-status-conflict {
+  color: var(--red);
+}
+.assessment-dimension-footer {
+  justify-content: flex-end;
+  min-height: 20px;
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.assessment-dimension-footer > span {
+  margin-right: auto;
+}
+.assessment-priorities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+}
+.assessment-judgments {
+  margin-top: 24px;
+  min-width: 0;
+}
+.assessment-judgments ol {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  counter-reset: assessment-judgment;
+}
+.assessment-judgments li {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: start;
+  counter-increment: assessment-judgment;
+}
+.assessment-judgments li::before {
+  content: counter(assessment-judgment, decimal-leading-zero);
+  color: var(--subtle);
+  font-size: 10px;
+  line-height: 2.2;
+}
+.assessment-judgments li p {
+  margin: 0;
+}
+.assessment-judgments li .assessment-basis-link {
+  margin-top: 2px;
+}
+.assessment-details {
+  margin-top: 18px;
+  font-size: 12px;
+  line-height: 1.85;
+  color: var(--muted);
+}
+.assessment-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 12px;
+}
+.assessment-details > summary::-webkit-details-marker {
+  display: none;
+}
+.assessment-details > summary svg {
+  transition: transform 160ms ease;
+}
+.assessment-details[open] > summary svg {
+  transform: rotate(180deg);
+}
+.assessment-details ul {
+  padding-left: 18px;
+}
+.assessment-details > p {
+  margin: 12px 0;
+}
+.assessment-details .assessment-judgments {
+  margin-top: 16px;
+}
+.assessment-coverage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 18px;
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+}
+.assessment-coverage > span:first-child {
+  color: var(--ink);
+}
+.assessment-audit-actions {
+  margin-top: 12px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.8;
+}
+.assessment-audit-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+.assessment-footnote {
+  margin: 17px 0 0;
+}
+.assessment-pending > p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.9;
+  margin: 14px 0;
+}
+.assessment-evidence-drawer .assessment-drawer-judgment {
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.9;
+  margin: 0 0 22px;
+}
+.assessment-drawer-metrics article,
+.assessment-drawer-sources article {
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.assessment-drawer-metrics article > div,
+.assessment-drawer-sources article > div {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.assessment-evidence-drawer h4 {
+  font-size: 12px;
+  color: var(--ink);
+  font-weight: 550;
+  line-height: 1.8;
+  margin: 0;
+}
+.assessment-drawer-metrics strong {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.assessment-drawer-metrics p,
+.assessment-source-scope,
+.assessment-drawer-sources blockquote {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.85;
+  margin: 7px 0 0;
+  overflow-wrap: anywhere;
+}
+.assessment-drawer-sources {
+  margin-top: 24px;
+}
+.assessment-drawer-sources blockquote {
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+  color: var(--ink);
+}
+.assessment-source-url {
+  display: block;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+@media (max-width: 700px) {
+  .assessment-summary {
+    grid-template-columns: 125px minmax(0, 1fr);
+    gap: 18px;
+  }
+  .assessment-grade {
+    padding-right: 15px;
+  }
+  .assessment-grade > div {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .assessment-main-judgment {
+    font-size: 15px;
+  }
+  .assessment-dimensions,
+  .assessment-priorities {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .assessment-dimension,
+  .assessment-dimension:nth-child(even) {
+    padding: 16px 0;
+    border-left: 0;
+  }
+}
+@media (max-width: 420px) {
+  .assessment-summary {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+  }
+  .assessment-grade {
+    padding: 0;
+    border: 0;
+  }
+  .assessment-grade > div {
+    display: inline-flex;
+    margin: 0 10px;
+  }
+  .assessment-grade strong {
+    font-size: 32px;
+  }
+  .assessment-grade small {
+    display: block;
+    margin-top: 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .assessment-details > summary svg {
+    transition: none;
+  }
+}
+@media print {
+  .assessment-refresh,
+  .assessment-basis-link,
+  .assessment-audit-actions button {
+    display: none;
+  }
+  .assessment-grade,
+  .assessment-dimension,
+  .assessment-judgments li {
+    break-inside: avoid;
+  }
+}
+.assessment-research-process ol {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0;
+}
+.assessment-research-step {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 9px;
+  margin-top: 14px;
+  align-items: start;
+}
+.assessment-research-step > svg {
+  margin-top: 5px;
+  color: var(--muted);
+}
+.assessment-research-step-failed > svg {
+  color: var(--assessment-pressure);
+}
+.assessment-research-step strong {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.assessment-research-step span {
+  margin-left: 10px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.assessment-research-step p {
+  margin: 4px 0 0;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.assessment-research-counts,
+.assessment-research-goal {
+  font-size: 11px;
+}
+.assessment-research-request form {
+  margin-top: 14px;
+}
+.assessment-research-request label {
+  display: block;
+  color: var(--ink);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+.assessment-research-request textarea {
+  width: 100%;
+  min-height: 76px;
+  resize: vertical;
+  line-height: 1.8;
+  font-size: 12px;
+}
+.assessment-research-request form > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.assessment-research-request form > div p {
+  margin: 0;
+  font-size: 11px;
+}
+@media print {
+  .company-assessment .assessment-grade strong,
+  .company-assessment .assessment-status {
+    color: var(--ink);
+  }
+  .assessment-research-request {
+    display: none;
+  }
+}
+
+:root[data-theme='dark'] .company-assessment {
+  --assessment-pressure: #d6b66f;
+  --assessment-strong: #89c6af;
+}
+.assessment-grade-constraint {
+  font-size: 10px;
+  line-height: 1.8;
+  color: var(--muted);
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+}

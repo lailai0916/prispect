@@ -1,6 +1,6 @@
 import type express from 'express';
 import { z } from 'zod';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import type { AuthStore, AuthContext } from './auth.js';
 import type { WorkspaceStore } from './store.js';
@@ -10,12 +10,16 @@ import { searchCompanies } from './company-sources.js';
 import { retrieveCompanyContext, verificationLinks } from './company-context-sources.js';
 import { retrieveIndustrySnapshot } from './company-industry.js';
 import { answerCompanyQuestion } from './company-questions.js';
+import { analyzeCompanyWithModel } from './company-assessment.js';
+import { runCompanyResearchAgent } from './company-research-agent.js';
 
 export interface CompanyContextService {
   searchCompanies: typeof searchCompanies;
   context: typeof retrieveCompanyContext;
   industry: typeof retrieveIndustrySnapshot;
   question: typeof answerCompanyQuestion;
+  assessment?: typeof analyzeCompanyWithModel;
+  research?: typeof runCompanyResearchAgent;
 }
 export function installCompanyContextRoutes(
   app: express.Express,
@@ -29,6 +33,8 @@ export function installCompanyContextRoutes(
   };
   const jobs = new Map<string, Promise<void>>();
   const sourceJobs = new Set<string>();
+  const assessmentJobs = new Map<string, Promise<void>>();
+  const assessmentControllers = new Map<string, AbortController>();
   const limits = (res: express.Response, key: string, count: number) =>
     options.auth.rateLimit(`${key}:${(res.locals.auth as AuthContext).user.id}`, count, 3_600_000);
   const byId = (res: express.Response, id: string) => {
@@ -45,6 +51,231 @@ export function installCompanyContextRoutes(
   const refreshSchema = z.object({ refresh: z.boolean().default(false) }).strict();
   const current = (store: WorkspaceStore, run: CompanyResearchRun, revision: number) =>
     store.state.companyRuns?.includes(run) && run.contextRevision === revision;
+  const assessmentHash = (run: CompanyResearchRun) =>
+    createHash('sha256')
+      .update(
+        JSON.stringify({
+          code: run.input.securityCode,
+          orgId: run.input.orgId,
+          year: run.input.year,
+          context: run.context?.fetchedAt,
+          revision: run.contextRevision,
+          industry: run.industry?.[`${run.input.year}-12-31`]?.fetchedAt,
+          focus: run.assessmentFocus || '',
+        })
+      )
+      .digest('hex');
+  const publicRun = (run: CompanyResearchRun): CompanyResearchRun => ({
+    id: run.id,
+    input: {
+      securityCode: run.input.securityCode,
+      orgId: run.input.orgId,
+      year: run.input.year,
+      purpose: run.input.purpose,
+      useModel: true,
+    },
+    identity: run.identity ? structuredClone(run.identity) : undefined,
+    status: run.status,
+    createdAt: run.createdAt,
+    updatedAt: run.updatedAt,
+    trace: [],
+    announcements: [],
+    model: { requested: true, status: 'not-called' },
+    context: run.context ? structuredClone(run.context) : undefined,
+    industry: run.industry ? structuredClone(run.industry) : undefined,
+    informationGap: run.informationGap ? structuredClone(run.informationGap) : undefined,
+    assessmentFocus: run.assessmentFocus,
+  });
+  const scheduleAssessment = async (store: WorkspaceStore, run: CompanyResearchRun) => {
+    if (!run.context || run.informationGap || assessmentJobs.has(run.id)) return;
+    if ([...sourceJobs].some((key) => key.startsWith(`${run.id}:industry:`)))
+      throw new ApiFault(409, 'ASSESSMENT_SOURCE_BUSY', '同行资料正在更新，请完成后开始研究');
+    const key = `${run.id}:assessment`;
+    if (sourceJobs.size >= 3)
+      throw new ApiFault(429, 'CONTEXT_BUSY', '已有研究任务在执行，请稍后重试');
+    const expected = run.context;
+    const revision = (run.assessmentRevision || 0) + 1;
+    const controller = new AbortController();
+    const previous = {
+      status: run.assessmentStatus,
+      error: run.assessmentError,
+      revision: run.assessmentRevision,
+      trace: run.assessmentTrace,
+    };
+    const stillCurrent = () =>
+      store.state.companyRuns?.includes(run) &&
+      run.assessmentRevision === revision &&
+      run.context === expected &&
+      !controller.signal.aborted;
+    run.assessmentStatus = 'loading';
+    run.assessmentError = undefined;
+    run.assessmentRevision = revision;
+    run.assessmentTrace = [];
+    sourceJobs.add(key);
+    assessmentControllers.set(run.id, controller);
+    // Reserve before persistence so simultaneous requests cannot double-run.
+    let start!: () => void;
+    const gate = new Promise<void>((resolve) => (start = resolve));
+    const job = gate.then(async () => {
+      try {
+        if (!stillCurrent()) return;
+        const researched = await (service.research || runCompanyResearchAgent)(
+          publicRun(run),
+          options.model,
+          {
+            industry: service.industry,
+            signal: controller.signal,
+            onStep: async (step) => {
+              if (!stillCurrent()) return;
+              const steps = run.assessmentTrace || [];
+              const index = steps.findIndex((item) => item.id === step.id);
+              if (index < 0) steps.push(step);
+              else steps[index] = step;
+              run.assessmentTrace = steps.slice(-16);
+              await store.persist();
+            },
+          }
+        );
+        if (!stillCurrent()) return;
+        const synthesis = {
+          id: `assessment-synthesis-${revision}`,
+          tool: 'synthesize',
+          label: '综合判断与报告',
+          status: 'running' as const,
+          startedAt: new Date().toISOString(),
+          summary: '正在核对指标与引用，整理六个维度的判断。',
+        };
+        run.assessmentTrace = [...researched.steps, synthesis];
+        await store.persist();
+        const result = await (service.assessment || analyzeCompanyWithModel)(
+          researched.run,
+          options.model,
+          controller.signal
+        );
+        if (!stillCurrent()) return;
+        if (
+          result.year !== run.input.year ||
+          result.basis !== 'consolidated' ||
+          result.snapshotFetchedAt !== expected.fetchedAt
+        )
+          throw new ApiFault(422, 'ASSESSMENT_SCOPE', '研究结果与本次主体、年度或快照不一致');
+        const completedSynthesis = {
+          ...synthesis,
+          status: 'completed' as const,
+          finishedAt: new Date().toISOString(),
+          summary:
+            result.model.status === 'completed'
+              ? '已生成六维判断，评级和指标由规则计算，引用已通过检查。'
+              : result.model.status === 'not-configured'
+                ? 'AI 尚未配置，已生成公开数据的规则评级与判断。'
+                : 'AI 未返回有效分析，已保留规则评级与判断。',
+        };
+        const completedSteps = [...researched.steps, completedSynthesis];
+        result.research = {
+          goal: run.assessmentFocus || '综合分析经营、现金、偿付与公开重大事项',
+          steps: completedSteps,
+          modelCalls: researched.modelCalls + (result.model.calls || 0),
+          toolCalls: researched.toolCalls,
+        };
+        const period = `${run.input.year}-12-31`;
+        const peer = researched.run.industry?.[period];
+        const priorPublication = {
+          assessment: run.assessment,
+          inputHash: run.assessmentInputHash,
+          industry: run.industry ? { ...run.industry } : undefined,
+          news: expected.news,
+          announcements: expected.announcements,
+          sources: expected.sources,
+        };
+        if (peer && peer.securityCode === run.input.securityCode && peer.period === period)
+          (run.industry ||= {})[period] = peer;
+        // Public research supplements never become adopted original evidence.
+        if (researched.run.context) {
+          expected.news = researched.run.context.news;
+          expected.announcements = researched.run.context.announcements;
+          expected.sources = researched.run.context.sources;
+        }
+        run.assessment = result;
+        run.assessmentTrace = completedSteps;
+        run.assessmentStatus = 'ready';
+        run.assessmentError = undefined;
+        run.assessmentInputHash = assessmentHash(run);
+        try {
+          await store.persist();
+        } catch (error) {
+          run.assessment = priorPublication.assessment;
+          run.assessmentInputHash = priorPublication.inputHash;
+          run.industry = priorPublication.industry;
+          expected.news = priorPublication.news;
+          expected.announcements = priorPublication.announcements;
+          expected.sources = priorPublication.sources;
+          throw error;
+        }
+      } catch (error) {
+        if (!store.state.companyRuns?.includes(run) || run.assessmentRevision !== revision) return;
+        run.assessmentStatus = 'failed';
+        run.assessmentTrace = run.assessmentTrace?.map((step) =>
+          step.status === 'running'
+            ? {
+                ...step,
+                status: 'failed',
+                finishedAt: new Date().toISOString(),
+                summary: '本次研究未完成，未发布新结论。',
+              }
+            : step
+        );
+        run.assessmentError =
+          run.context !== expected || controller.signal.aborted
+            ? '研究期间公开快照已变化，旧结论未发布；请按新资料重新研究。'
+            : error instanceof ApiFault
+              ? error.message
+              : '研究本次未完成；已有数据与上次报告保留，可以重试。';
+        await store.persist().catch(() => undefined);
+      } finally {
+        if (
+          store.state.companyRuns?.includes(run) &&
+          run.assessmentRevision === revision &&
+          run.assessmentStatus === 'loading' &&
+          !stillCurrent()
+        ) {
+          run.assessmentStatus = 'failed';
+          run.assessmentError = '研究期间公开快照已变化，旧结论未发布；请按新资料重新研究。';
+          run.assessmentTrace = run.assessmentTrace?.map((step) =>
+            step.status === 'running'
+              ? {
+                  ...step,
+                  status: 'failed',
+                  finishedAt: new Date().toISOString(),
+                  summary: '公开快照已变化，这一步未发布新结论。',
+                }
+              : step
+          );
+          await store.persist().catch(() => undefined);
+        }
+        sourceJobs.delete(key);
+        assessmentJobs.delete(run.id);
+        if (assessmentControllers.get(run.id) === controller) assessmentControllers.delete(run.id);
+      }
+    });
+    assessmentJobs.set(run.id, job);
+    try {
+      await store.persist();
+      start();
+    } catch (error) {
+      Object.assign(run, {
+        assessmentStatus: previous.status,
+        assessmentError: previous.error,
+        assessmentRevision: previous.revision,
+        assessmentTrace: previous.trace,
+      });
+      controller.abort();
+      sourceJobs.delete(key);
+      assessmentJobs.delete(run.id);
+      assessmentControllers.delete(run.id);
+      start();
+      throw error;
+    }
+  };
   app.get('/api/company-records', (_req, res) => {
     const store = res.locals.store as WorkspaceStore;
     res.json(
@@ -167,6 +398,7 @@ export function installCompanyContextRoutes(
         error: run.contextError,
         revision: run.contextRevision,
       };
+      assessmentControllers.get(run.id)?.abort();
       sourceJobs.add(run.id);
       run.contextStatus = 'loading';
       run.contextError = undefined;
@@ -221,6 +453,12 @@ export function installCompanyContextRoutes(
           run.contextError = undefined;
           run.identity ||= identity;
           await store.persist();
+          sourceJobs.delete(run.id);
+          await scheduleAssessment(store, run).catch(async () => {
+            run.assessmentStatus = 'failed';
+            run.assessmentError = '综合研究尚未开始，可以在报告中重试；公开数据已保留。';
+            await store.persist().catch(() => undefined);
+          });
         } catch (error) {
           if (!current(store, run, revision)) return;
           run.contextStatus = 'failed';
@@ -235,6 +473,50 @@ export function installCompanyContextRoutes(
         }
       })();
       jobs.set(run.id, job);
+      res.status(202).json(structuredClone(run));
+    })
+  );
+  app.post(
+    '/api/company-runs/:id/assessment',
+    wrap(async (req, res) => {
+      const body = z
+        .object({
+          refresh: z.boolean().default(false),
+          focus: z.string().trim().max(1000).optional(),
+        })
+        .strict()
+        .safeParse(req.body);
+      if (!body.success)
+        throw new ApiFault(400, 'ASSESSMENT_INPUT', '研究目标最多一千字，更新参数必须有效');
+      const { store, run } = byId(res, String(req.params.id));
+      if (!run.context || run.contextStatus === 'loading')
+        throw new ApiFault(409, 'CONTEXT_NOT_READY', '公开资料仍在读取，请稍后开始研究');
+      if (run.informationGap)
+        throw new ApiFault(422, 'ASSESSMENT_SCOPE', '尚未定位支持的上市主体，请补充主体资料');
+      if (assessmentJobs.has(run.id)) {
+        if (body.data.focus !== undefined && body.data.focus !== (run.assessmentFocus || ''))
+          throw new ApiFault(409, 'ASSESSMENT_BUSY', '当前研究正在执行，请完成后更换研究目标');
+        res.status(202).json(structuredClone(run));
+        return;
+      }
+      const previousFocus = run.assessmentFocus;
+      if (body.data.focus !== undefined) run.assessmentFocus = body.data.focus || undefined;
+      if (
+        !body.data.refresh &&
+        run.assessmentStatus === 'ready' &&
+        run.assessment &&
+        run.assessmentInputHash === assessmentHash(run)
+      ) {
+        res.json(run);
+        return;
+      }
+      try {
+        limits(res, 'company-assessment', 12);
+        await scheduleAssessment(store, run);
+      } catch (error) {
+        run.assessmentFocus = previousFocus;
+        throw error;
+      }
       res.status(202).json(structuredClone(run));
     })
   );
@@ -259,6 +541,8 @@ export function installCompanyContextRoutes(
         res.json({ snapshot: old, stale: false, cached: true });
         return;
       }
+      if (assessmentJobs.has(run.id))
+        throw new ApiFault(409, 'ASSESSMENT_BUSY', '公司研究正在执行，完成后可更新同行资料');
       if (sourceJobs.has(key) || sourceJobs.size >= 3)
         throw new ApiFault(429, 'CONTEXT_BUSY', '行业来源正在读取，请稍后重试');
       limits(res, 'company-industry', 20);
@@ -333,10 +617,12 @@ export function installCompanyContextRoutes(
       store.state.companyRuns?.some(
         (run) =>
           run.contextStatus === 'loading' ||
+          run.assessmentStatus === 'loading' ||
           [...sourceJobs].some((key) => key === run.id || key.startsWith(`${run.id}:`))
       ) || false,
     waitForIdle: async () => {
       await Promise.allSettled(jobs.values());
+      await Promise.allSettled(assessmentJobs.values());
       while (sourceJobs.size) await new Promise((resolve) => setTimeout(resolve, 10));
     },
   };

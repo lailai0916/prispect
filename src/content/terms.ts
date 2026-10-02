@@ -28,14 +28,14 @@ export const termsDocument: ProductDocument = {
       title: ['2. 析光提供的服务', '2. What Prispect provides'],
       paragraphs: [
         [
-          '析光帮助整理材料、核对财务口径、计算条件情景，并记录待补材料与后续行动。可用功能及范围以对应页面说明为准。',
-          'Prispect organizes materials, checks financial reporting scope, calculates conditional scenarios, and records missing evidence and next actions. Each page identifies the available features and their scope.',
+          '析光分析公开公司资料、整理材料、核对财务口径、计算条件情景，并记录待补材料与后续行动。可用功能及范围以对应页面说明为准。',
+          'Prispect analyzes public-company information, organizes materials, checks financial reporting scope, calculates conditional scenarios, and records missing evidence and next actions. Each page identifies the available features and their scope.',
         ],
       ],
       bullets: [
         [
-          '公开企业研究：查询所支持披露来源中的公司与年报、附注、公告，保留出处与候选金额，供你核对后采用。',
-          'Public-company research retrieves supported disclosures, annual reports, notes and announcements, retaining sources and candidate amounts for your review and adoption.',
+          '公开企业研究：自动读取财务历史、同行、公告与新闻，按你可选的研究目标继续补查，给出六维判断、分析评级、风险与后续核查。公开研究与待确认的年报候选分别保留，不自动采用候选。',
+          'Public-company research automatically reviews financial history, peers, disclosures and news, with further research guided by an optional goal. It provides six-dimensional judgments, an analysis grade, risks and next checks. Public research remains separate from unconfirmed annual-report candidates and does not automatically adopt them.',
         ],
         [
           '财报核查：按同期间、同主体与合并范围核对利润和经营现金；必要材料缺失或冲突时，暂停相关计算。',
@@ -94,8 +94,8 @@ export const termsDocument: ProductDocument = {
       title: ['5. 数据处理与 AI', '5. Data processing and AI'],
       paragraphs: [
         [
-          'AI 自动参与公司查询、财报核查和企业问答，无需单独启用，也不提供关闭选项。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
-          'AI is an automatic part of company lookup, financial reviews and company questions, with no separate enable or disable option. The privacy policy describes the processing scope, external services and record retention.',
+          'AI 自动参与公司查询、公开研究、财报核查和企业问答，无需单独启用，也不提供关闭选项。自定义研究目标会与公开资料一起发送给模型，请勿填写私人信息。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
+          'AI is an automatic part of company lookup, public research, financial reviews and company questions, with no separate enable or disable option. Custom research goals are sent to the model with public information; do not include private information. The privacy policy describes processing scope, external services and record retention.',
         ],
         [
           '阅读或接受本协议不替代依法需要的数据使用告知与同意。你可以停止使用相应功能；已发生的数据处理及后续保留，依照隐私政策与适用法律处理。',
@@ -136,8 +136,12 @@ export const termsDocument: ProductDocument = {
           'Keep plans, assumptions, counterparty statements and actual records separate. Unreceived refunds do not reduce actual exposure; annual operating cash is not current cash. Scenario balances are calculations under supplied conditions, not forecasts. Resolve missing or conflicting evidence first.',
         ],
         [
-          '析光不托管资金、不执行付款，也不提供企业信用评级、存款保障、投资建议或专业审计意见。AI 解读可能遗漏或误读，引用存在不证明解释正确。重要资金或合同决定应结合原件、当前记录及必要的专业意见，不能只依赖本服务。',
-          'Prispect does not hold funds, execute payments, or provide business credit ratings, deposit protection, investment advice or professional audit opinions. AI may omit or misread information; citations do not prove an explanation correct. Important financial or contractual decisions require originals, current records and professional advice where needed, rather than sole reliance on this service.',
+          '析光分析评级是所选年度合并财务的公开筛选方法，不属于评级机构的信用等级。盈利成长、经营现金、偿付杠杆与营运占用各占综合分的 25%；一个核心维度低于 40 分，最终等级最高 C，两个及以上最高 D，均分不变。关键数据缺失或冲突时暂不评级，同行与事件不机械扣分。方法与阈值在报告中公开，不代表已验证未来风险。',
+          'Prispect analysis grades are a public screening method for selected-year consolidated financials, not credit-agency ratings. Profitability, operating cash, solvency and working-capital pressure each contribute 25% of the score. One core dimension below 40 caps the grade at C; two or more cap it at D, retaining the arithmetic score. Missing or conflicting key data withholds the grade; peers and events do not automatically deduct points. Reports disclose the method and thresholds, which do not establish future risk.',
+        ],
+        [
+          '析光不托管资金、不执行付款，不提供存款保障、投资建议或专业审计意见。AI 判断可能遗漏或误读，引用存在不证明解释正确；模型未完成时保留规则结果和实际状态。重要资金或合同决定应结合原件、当前记录及必要的专业意见，不能只依赖本服务。',
+          'Prispect does not hold funds, execute payments, or provide deposit protection, investment advice or professional audit opinions. AI judgments may omit or misread information; citations do not prove an explanation correct. Incomplete model analysis retains rule results and actual status. Important financial or contractual decisions require originals, current records and professional advice where needed, rather than sole reliance on this service.',
         ],
       ],
     },
