@@ -11,6 +11,7 @@
   color: var(--ink);
   background: var(--paper);
   --paper: #ffffff;
+  --site-header-height: 60px;
   --sidebar-surface: #f7f7f8;
   --ink: #25262b;
   --muted: #63656f;
@@ -312,8 +313,8 @@ pre {
   flex-direction: column;
 }
 .site-header {
-  height: 60px;
-  min-height: 60px;
+  height: var(--site-header-height);
+  min-height: var(--site-header-height);
   padding: 0 max(24px, calc((100vw - 1200px) / 2));
   display: flex;
   align-items: center;
@@ -1329,14 +1330,15 @@ thead th {
 @media (max-width: 980px) {
   :root {
     --sidebar: 0px;
+    --site-header-height: 56px;
   }
   .business-shell {
     display: block;
   }
   .site-header,
   .business-shell > .site-header {
-    height: 56px;
-    min-height: 56px;
+    height: var(--site-header-height);
+    min-height: var(--site-header-height);
     padding: 0 18px;
     gap: 12px;
   }
