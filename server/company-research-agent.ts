@@ -191,6 +191,11 @@ export async function runCompanyResearchAgent(
     onStep?: (step: AssessmentResearchStep) => Promise<void>;
     signal?: AbortSignal;
     fetch?: typeof fetch;
+    /** Fixed server-owned research actions; never sourced from client notes or trial state. */
+    initialCalls?: readonly {
+      name: 'get_financial_history' | 'search_disclosures' | 'search_news' | 'read_disclosure';
+      arguments: Record<string, unknown>;
+    }[];
   }
 ): Promise<{
   run: CompanyResearchRun;
@@ -582,6 +587,21 @@ export async function runCompanyResearchAgent(
     }
   };
 
+  const initialToolResults: unknown[] = [];
+  for (const [index, call] of (options.initialCalls || []).entries()) {
+    options.signal?.throwIfAborted();
+    if (signal.aborted || toolCalls >= limits.toolCalls) break;
+    const result = await execute({
+      id: `initial-${index + 1}`,
+      type: 'function',
+      function: { name: call.name, arguments: JSON.stringify(call.arguments) },
+    });
+    initialToolResults.push(
+      call.name === 'get_financial_history' && result.ok
+        ? { name: call.name, ok: true, scope: '已读取的年度财务与精确指标见同一消息的公开资料。' }
+        : { name: call.name, ...result }
+    );
+  }
   if (!model.apiKey) {
     const step = await start('planning', '研究规划');
     await finish(step, 'failed', '研究模型尚未配置，未调用 AI 规划；已有数据和规则分析保留。');
@@ -595,7 +615,7 @@ export async function runCompanyResearchAgent(
   }
   const messages: PlanningMessage[] = [
     { role: 'system', content: instructions },
-    { role: 'user', content: JSON.stringify(publicInput()) },
+    { role: 'user', content: JSON.stringify({ ...publicInput(), initialToolResults }) },
   ];
   for (let turn = 0; turn < limits.modelTurns; turn++) {
     options.signal?.throwIfAborted();

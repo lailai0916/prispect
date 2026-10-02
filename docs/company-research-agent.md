@@ -23,6 +23,8 @@ An optional research focus is an explicit instruction sent to the model, limited
 
 The research phase allows **three model-planning turns, eight tool attempts, six new PDF reads and 120 seconds**. Its supplementary news/PDF reader permits **12 public requests**. Each PDF is limited to 8 MB, has a 45-second read deadline, and contributes only a selected excerpt from its first three pages, up to 1,500 characters. Previously read excerpts can be reused.
 
+Server-owned `initialCalls` can execute supported, validated tools before model planning. These calls share the same eight-tool / 12-supplementary-request limits rather than receiving another budget. Explanation challenges use this path for deterministic financial, disclosure and news checks, plus up to two matching official-PDF reads. It also runs without a model key; the planning step then explicitly records that AI is unconfigured. See [the evidence lab and challenge method](evidence-lab.md).
+
 Industry retrieval has its own bounded pagination and source-reader budget, subject to the research phase's cancellation signal; it is not included in the 12 supplementary requests. Initial context retrieval separately has a 90-second / 50-request budget. Final synthesis has a separate deadline of at most 60 seconds and permits one repair attempt for eligible format/citation failures. Consequently, 120 seconds is a research-phase limit, not an end-to-end latency promise.
 
 ## Data quality and isolation
@@ -54,7 +56,7 @@ Industry position and events/governance complete the six analysis dimensions. Th
 
 ## Fallback, caching and accounting
 
-Unconfigured, failed or invalid model results preserve available public data and the deterministic screen. Unconfigured research can still attempt a bounded industry read; it does not claim AI planning occurred. Failed tools retain unknown states and truthful trace entries. Older saved results are not silently rewritten.
+Unconfigured, failed or invalid model results preserve available public data and the deterministic screen. Unconfigured research still runs provided `initialCalls` and can attempt a bounded industry read; it does not claim AI planning occurred. Failed tools retain unknown states and truthful trace entries. Older saved results are not silently rewritten.
 
 `model.calls` counts final-analysis request attempts, including failed/repair calls; `research.modelCalls` includes planning and synthesis attempts. `toolCalls` records attempted executions, including failed tools. A successful report alone is not evidence that all sources or calls succeeded.
 

@@ -1,4 +1,5 @@
 import type { CompanyAssessment, AssessmentResearchStep } from './company-assessment.js';
+import type { CompanyChallengeState } from './company-challenge.js';
 
 /** Public company context stays separate from adopted original-report evidence. */
 export const companySections = [
@@ -182,6 +183,7 @@ export interface CompanyWorkspaceExtension {
   assessmentInputHash?: string;
   assessmentFocus?: string;
   assessmentTrace?: AssessmentResearchStep[];
+  challenge?: CompanyChallengeState;
 }
 
 export interface CompanyRecordSummary {

@@ -32,6 +32,7 @@ import { CompanyQueryPage } from './CompanyQuery';
 import { CompanyReview } from '../CompanyReview';
 import { resolveCompanySection } from '../routing';
 import { CompanyAssessment } from '../CompanyAssessment';
+import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { PageLoading } from '../Experience';
 const OriginalReview = lazy(() =>
   import('./CompanyAgent').then((module) => ({ default: module.CompanyAgentPage }))
@@ -318,7 +319,10 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <button
             className="icon-button"
             disabled={
-              active || run.contextStatus === 'loading' || run.assessmentStatus === 'loading'
+              active ||
+              run.contextStatus === 'loading' ||
+              run.assessmentStatus === 'loading' ||
+              run.challenge?.status === 'loading'
             }
             aria-label={t('删除企业记录', 'Delete company record')}
             onClick={remove}
@@ -375,13 +379,24 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               </button>
             </p>
           )}
-          <CompanyAssessment
-            key={'assessment-' + run.id}
+          <CompanyEvidenceLab
+            key={'lab-' + run.id}
             run={run}
-            onRefresh={(focus) => void refreshAssessment(focus)}
-            refreshing={assessmentUpdating}
+            updating={updating || assessmentUpdating}
           />
-          <CompanyReview key={run.id} run={run} />
+          <details className="company-review-details company-lab-report">
+            <summary>
+              <ChevronDown size={14} />
+              {t('核查报告与综合评级', 'Review report and financial grade')}
+            </summary>
+            <CompanyAssessment
+              key={'assessment-' + run.id}
+              run={run}
+              onRefresh={(focus) => void refreshAssessment(focus)}
+              refreshing={assessmentUpdating}
+            />
+            <CompanyReview key={run.id} run={run} />
+          </details>
           <details className="company-review-details">
             <summary>
               <ChevronDown size={14} />

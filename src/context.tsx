@@ -11,6 +11,7 @@ import type {
 } from '../shared/contracts';
 
 import { type Locale } from './format';
+import type { EvidenceLabGraph } from '../shared/evidence-lab';
 
 export type Translate = (zh: string, en: string) => string;
 export type ConfirmRequest = { title: string; text: string; action: () => Promise<void> };
@@ -18,6 +19,7 @@ export type PublicExample = DemoCase & {
   metrics: ComputedMetric[];
   source: { url: string; title: string; documentDate: string; sha256: string };
   disclaimer: string;
+  lab?: EvidenceLabGraph;
 };
 export type AppContextValue = {
   locale: Locale;

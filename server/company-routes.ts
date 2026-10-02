@@ -480,7 +480,8 @@ export function installCompanyRoutes(
         active.has(run.id) ||
         adopting.has(run.id) ||
         run.contextStatus === 'loading' ||
-        run.assessmentStatus === 'loading'
+        run.assessmentStatus === 'loading' ||
+        run.challenge?.status === 'loading'
       )
         throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '查询或保存中不能删除');
       if (run.preview?.material.uploadId)

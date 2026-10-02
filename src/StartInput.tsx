@@ -16,6 +16,7 @@ export function StartInput({
   companyOnly = false,
   toolbar,
   disabled = false,
+  initialText,
   onInformationGap,
 }: {
   compact?: boolean;
@@ -23,13 +24,14 @@ export function StartInput({
   companyOnly?: boolean;
   toolbar?: ReactNode;
   disabled?: boolean;
+  initialText?: string;
   onInformationGap?: (name: string) => void;
 }) {
   const { t, navigate, user, locale } = useApp();
   const owner = user?.id || null;
   const [draft] = useState(() => readComposerDraft(owner));
   const [mode, setMode] = useState<StartMode>(companyOnly ? 'company' : draft?.mode || 'auto');
-  const [text, setText] = useState(draft?.text || '');
+  const [text, setText] = useState(initialText?.trim().slice(0, 80) || draft?.text || '');
   const [error, setError] = useState('');
   const [candidates, setCandidates] = useState<CompanyIdentity[]>([]);
   const [finding, setFinding] = useState(false);

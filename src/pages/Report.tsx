@@ -55,6 +55,8 @@ import '../company-review.css';
 import '../risk-perspective.css';
 import { RiskOverview } from '../RiskOverview';
 import { RiskDetail } from '../RiskDetail';
+import { EvidenceLab } from '../EvidenceLab';
+import { buildReportEvidenceLab } from '../../shared/evidence-lab';
 
 type ReviewExportFormat = 'html' | 'json' | 'checklist';
 
@@ -328,7 +330,7 @@ export function ReportView({
   const purpose = task.purpose || 'external';
   const contextControl = useRef<ReviewContextHandle>(null);
   const [section, setSection] = useState<
-    'summary' | 'evidence' | 'explanations' | 'requests' | 'scope'
+    'summary' | 'evidence' | 'explanations' | 'requests' | 'scope' | 'lab'
   >('summary');
   const [viewMode, setViewMode] = useState<'simple' | 'pro'>('simple');
   const [testMetric, setTestMetric] = useState<MetricKey | null>(null);
@@ -622,6 +624,7 @@ export function ReportView({
         {(
           [
             ['summary', t('核查事项', 'Review matters')],
+            ['lab', t('证据实验室', 'Evidence lab')],
             ['evidence', t('图表与来源', 'Charts and sources')],
             [
               'explanations',
@@ -643,6 +646,14 @@ export function ReportView({
           </button>
         ))}
       </nav>
+      {section === 'lab' && (
+        <div id="report-panel-lab">
+          <EvidenceLab
+            graph={buildReportEvidenceLab(report)}
+            onStartResearch={() => navigate('/query?query=' + encodeURIComponent(report.company))}
+          />
+        </div>
+      )}
       <div id="report-panel-summary" hidden={section !== 'summary'} className="company-review">
         <section className="company-review-section">
           <h2>{t('核查事项', 'Review matters')}</h2>

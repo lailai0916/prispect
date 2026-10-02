@@ -45,6 +45,10 @@ Product information is available in the [user guide](https://prispect.com/docs),
 
 📐 **Transparent Analysis Grade** — Selected-year consolidated profitability, cash quality, solvency and working capital have equal weights. Weak dimensions cap the overall grade; missing or conflicting required inputs withhold it. Peer and event analysis provide separate context. Formulas, thresholds, source coverage and grade constraints are available in the report; a headline alone cannot establish an adverse event.
 
+🔬 **Evidence Lab** — Inspect the links between source facts, calculations, competing explanations and requested materials. Temporarily withdraw or restore a fact to pause only its dependent paths. Homepage examples use checked original-report adjustments and a cash bridge; company web snapshots use year-end balance changes instead. Trials run locally without model calls or changes to saved evidence, reports or grades. See [the method and walkthrough](docs/evidence-lab.md).
+
+🧭 **Challenge an Explanation** — For a saved company, examine expansion stocking, inventory sell-through pressure or collection pressure through actual targeted public searches and bounded official-PDF reads. The configured model organizes supporting and counter clues with source links and clearly unobtained distinguishing materials. Missing configuration still permits the fixed public research steps and rule clues; failures do not become invented results or confidence scores. Local withdrawal state and private working papers are excluded from challenge inputs.
+
 ## Getting Started
 
 Use Node.js 22.12 or newer and npm. Access to this private repository requires authorization.

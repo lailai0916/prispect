@@ -17,6 +17,8 @@ import {
 import type { DecisionSummary, DatedCashInput } from '../../shared/decision-contracts';
 import { compareDatedCash } from '../../shared/decision-cash';
 import { StartInput } from '../StartInput';
+import { EvidenceLab } from '../EvidenceLab';
+import { buildExampleEvidenceLab } from '../../shared/evidence-lab';
 import { api, requestErrorText } from '../api';
 import { useApp } from '../context';
 import { useViewMode } from '../ViewModeContext';
@@ -27,123 +29,41 @@ import '../home.css';
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 function FinancialPreview() {
-  const { t, locale, examples } = useApp();
+  const { t, examples, navigate } = useApp();
   const [selected, setSelected] = useState(0);
-  const [focusedMetric, setFocusedMetric] = useState('netProfit');
   const item = examples[selected];
   if (!item) return null;
-  const metrics = ['netProfit', 'operatingCashFlow'].map((key) =>
-    item.metrics.find((metric) => metric.key === key)
-  );
-  const reference = item.metrics.find((metric) => metric.key === focusedMetric)?.sourceRefs[0];
-  const maximum = Math.max(...metrics.map((metric) => Math.abs(Number(metric?.value || 0))), 1);
+  const graph = item.lab || buildExampleEvidenceLab(item);
   return (
-    <section className="landing-financial-section" data-home-reveal>
-      <div className="landing-section-intro">
-        <h2>
-          {t('利润与现金，\n分别从原表核对。', 'Profit and cash.\nChecked against the source.')}
-        </h2>
-        <p>
-          {t(
-            '先核对公开披露的财务关系，再沿具体分项查找相关解释。每个金额都能回到原文。',
-            'Check disclosed financial relationships, then investigate the explanations behind specific items. Each amount links back to the source.'
-          )}
-        </p>
-      </div>
-      <div className="financial-preview">
-        <div className="financial-preview-heading">
-          <div>
-            <FileText size={16} />
-            <span>
-              {item.year} {t('年度合并财务报表', 'consolidated annual statements')}
-            </span>
-          </div>
-          <div
-            className="financial-company-switch"
-            aria-label={t('公开年报', 'Public annual reports')}
-          >
-            {examples.map((example, index) => (
-              <button
-                key={example.id}
-                type="button"
-                aria-pressed={selected === index}
-                onClick={() => setSelected(index)}
-              >
-                {example.shortName}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="financial-preview-body">
-          <div className="financial-preview-metrics">
-            {metrics.map(
-              (metric, index) =>
-                metric && (
-                  <button
-                    key={metric.key}
-                    type="button"
-                    className={`financial-metric ${focusedMetric === metric.key ? 'selected' : ''}`}
-                    onPointerEnter={() => setFocusedMetric(metric.key)}
-                    onFocus={() => setFocusedMetric(metric.key)}
-                    onClick={() => setFocusedMetric(metric.key)}
-                    aria-pressed={focusedMetric === metric.key}
-                  >
-                    <span>
-                      {index === 0
-                        ? t('净利润', 'Net profit')
-                        : t('经营现金净额', 'Operating cash flow')}
-                    </span>
-                    <strong>{money(metric.value, locale)}</strong>
-                    <span className="financial-metric-bar">
-                      <i
-                        style={{
-                          width: `${(Math.abs(Number(metric.value || 0)) / maximum) * 100}%`,
-                        }}
-                      />
-                    </span>
-                    <small>{t('人民币 · 合并口径', 'CNY · consolidated scope')}</small>
-                  </button>
-                )
-            )}
-          </div>
-          <aside className="financial-preview-source">
-            <div className="financial-source-document">
-              <FileText size={14} aria-hidden="true" />
-              <span>{item.source.title}</span>
-            </div>
-            <span className="preview-section-label">
-              {t('原表核对记录', 'Source reference')} ·{' '}
-              {reference?.page
-                ? t(`第 ${reference.page} 页`, `Page ${reference.page}`)
-                : t('页码待核', 'Page unresolved')}
-            </span>
-            <blockquote>
-              {reference?.quote ||
-                t('当前引用尚未提供可定位的摘录。', 'No locatable excerpt is available.')}
-            </blockquote>
-            <a
-              href={`${item.source.url}#page=${reference?.page || 1}`}
-              target="_blank"
-              rel="noreferrer"
+    <section
+      className="landing-evidence-lab"
+      aria-label={t('公开年报试验', 'Public annual-report trial')}
+    >
+      <div className="landing-lab-toolbar">
+        <span>{t('公开年报实例', 'Public annual-report example')}</span>
+        <div
+          className="financial-company-switch"
+          aria-label={t('选择公开年报', 'Select a public annual report')}
+        >
+          {examples.map((example, index) => (
+            <button
+              key={example.id}
+              type="button"
+              aria-pressed={selected === index}
+              onClick={() => setSelected(index)}
             >
-              {t('打开年报原文', 'Open the annual report')}
-              <ArrowUpRight size={13} />
-            </a>
-            <small>
-              {t(
-                '历史年度披露；不能据此认定当前可用现金或本次履约能力。',
-                'Historical annual disclosure does not establish current available cash or fulfilment of a specific commitment.'
-              )}
-            </small>
-          </aside>
-        </div>
-        <div className="financial-preview-footer">
-          <span>
-            {t('选择一个金额，查看对应原文。', 'Select an amount to inspect its source.')}
-          </span>
-          <span>{t('公开年报 · 历史披露', 'Public annual report · historical disclosure')}</span>
+              {example.shortName}
+            </button>
+          ))}
         </div>
       </div>
+      <EvidenceLab
+        key={item.id}
+        graph={graph}
+        compact
+        example
+        onStartResearch={() => navigate('/query?query=' + encodeURIComponent(item.shortName))}
+      />
     </section>
   );
 }
@@ -525,6 +445,7 @@ export function Home() {
           </h1>
           <StartInput compact />
         </section>
+        <FinancialPreview />
         {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
         {recentOwner === user.id && (recent.length > 0 || recentError) && (
           <section className="home-recent">
@@ -566,14 +487,14 @@ export function Home() {
       <section className="landing-start">
         <div className="landing-start-inner">
           <span className="landing-product-name">Prispect · 析光</span>
-          <h1>{t('你想核查什么？', 'What would you like to review?')}</h1>
+          <h1>{t('查询一家企业', 'Research a company')}</h1>
           <p className="landing-start-description">
             {t(
-              '核对公开财报，厘清付款与交接的依据。',
-              'Review public financials and the evidence behind payments and handovers.'
+              '查看核查报告，沿原文检验每一种解释。',
+              'Read a review, then examine the evidence behind each explanation.'
             )}
           </p>
-          <StartInput />
+          <StartInput compact />
           <a
             className="landing-explore"
             href="#product"
@@ -586,7 +507,7 @@ export function Home() {
               });
             }}
           >
-            {t('了解工作方式', 'See how it works')}
+            {t('试着撤回一条依据', 'Try withdrawing a source fact')}
             <ArrowRight size={14} />
           </a>
         </div>

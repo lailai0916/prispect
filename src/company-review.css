@@ -1,5 +1,6 @@
 .company-workspace.company-workspace-report {
-  max-width: 1090px;
+  max-width: 1280px;
+  padding: 12px 0 48px;
 }
 .company-workspace-report .context-page-heading {
   margin-bottom: 28px;
@@ -329,6 +330,19 @@
   }
 }
 @media print {
+  .company-workspace-report .company-evidence-lab {
+    display: none !important;
+  }
+  .company-workspace-report .company-lab-report {
+    display: block !important;
+  }
+  .company-lab-report::details-content {
+    display: block !important;
+    content-visibility: visible !important;
+  }
+  .company-workspace-report .company-lab-report > summary {
+    display: none !important;
+  }
   .company-review-actions,
   .company-review-state svg,
   .company-review-details,

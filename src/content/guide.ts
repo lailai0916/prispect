@@ -1,4 +1,4 @@
-import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
+import { DOCUMENT_VERSION, type ProductDocument } from './document';
 
 export const guideDocument: ProductDocument = {
   title: ['使用文档', 'Documentation'],
@@ -7,7 +7,7 @@ export const guideDocument: ProductDocument = {
     'From company analysis to saved reviews: grading evidence, research goals, materials and cash conditions.',
   ],
   version: DOCUMENT_VERSION,
-  updatedAt: DOCUMENT_DATE,
+  updatedAt: '2026-10-03',
   sections: [
     {
       id: 'start',
@@ -63,8 +63,8 @@ export const guideDocument: ProductDocument = {
       title: ['查询公司与确认候选', 'Look up a company and confirm candidates'],
       bullets: [
         [
-          '登录后点击“新建查询”，输入公司名称或证券代码，选择披露主体后进入详情。公开资料返回后自动研究，概览先展示分析判断、评级和风险，年报原件继续在后台核查；执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。',
-          'After signing in, select New query, enter a company name or security code and choose its disclosure identity. Research starts automatically when public data is available. The overview leads with judgments, a grade and risks while annual originals continue in the background. Execution and data gaps have separate states. Loaded companies remain in the sidebar, with only that list scrolling.',
+          '登录后点击“新建查询”，输入公司名称或证券代码，选择披露主体后进入详情。公开资料返回后自动研究，概览先展示企业证据实验室；展开“核查报告与综合评级”查看完整分析。年报原件继续在后台核查，执行和缺口状态分别显示。侧边栏保存已载入企业，记录较多时只滚动企业列表。',
+          'After signing in, select New query, enter a company name or security code and choose its disclosure identity. Research starts automatically when public data is available. The overview opens with the evidence lab; expand Review report and financial grade for the full analysis. Original annual reports continue in the background, with separate execution and gap states. Loaded companies remain in the sidebar, with only that list scrolling.',
         ],
         [
           '侧边栏提供公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个页面。企业问答改为右下角的圆形助手，点击打开小对话框。财报工作台、材料中心、付款与交接、核查比较位于“核查工具”菜单。',
@@ -91,8 +91,8 @@ export const guideDocument: ProductDocument = {
           'During execution, inspect task tracks and actual activity. Completion, failure, cancellation and recoverability have distinct states. Cancellation retains obtained content; resume is offered only for recoverable runs. Returning to an existing run does not require creating it again.',
         ],
         [
-          '先看公司分析的判断、评级与主要风险，点击“依据”核对指标、公式和来源。公开研究不会自动采用年报候选；核对原件的金额、年度、单位和合并范围后，才点击“采用并核查”。析光保存材料、建立规则报告，并自动进行 AI 解读；缺失或冲突时暂停依赖相应字段的解释。',
-          'Start with the company judgment, grade and main risks, then select Evidence to check metrics, formulas and sources. Public research does not automatically adopt annual-report candidates. Check original amounts, year, units and consolidated scope before selecting Adopt and review. Prispect saves the material, creates a rules report and automatically runs AI interpretation; missing or conflicting fields pause dependent explanations.',
+          '在实验室选择事实查看来源，或展开核查报告阅读判断、评级与主要风险，再点击“依据”核对指标和公式。公开研究不会自动采用年报候选；核对原件的金额、年度、单位和合并范围后，才点击“采用并核查”。析光保存材料、建立规则报告，并自动进行 AI 解读；缺失或冲突时暂停依赖相应字段的解释。',
+          'Select a fact in the lab to inspect its source, or expand the review report for judgments, the grade and main risks, then select Evidence to check metrics and formulas. Public research does not automatically adopt annual-report candidates. Check original amounts, year, units and consolidated scope before selecting Adopt and review. Prispect saves the material, creates a rules report and automatically runs AI interpretation; missing or conflicting fields pause dependent explanations.',
         ],
         [
           '历史财务图表并行读取东方财富公开网页的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',
@@ -137,6 +137,28 @@ export const guideDocument: ProductDocument = {
         ],
       ],
       links: [{ label: ['开始公司研究', 'Start company research'], href: '/query' }],
+    },
+    {
+      id: 'evidence-lab',
+      title: ['企业证据实验室', 'Company evidence lab'],
+      bullets: [
+        [
+          '选择一条事实，查看对应来源、页码或网页字段，再沿连线检查计算与待检验解释。点击“在试验中撤回”只在本地暂停依赖它的路径；点击“在试验中恢复”重新计算，不修改已保存报告或评级，也不发送模型请求。',
+          'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or grades or sending a model request.',
+        ],
+        [
+          '公司概览先展示实验室，完整报告与评级可展开。已保存的原件报告另有“证据实验室”栏目，原有易懂版、专业版及证据栏目继续保留。首页公开年报实例只做历史资料的本地试验；查询并打开公司后，才能执行该公司的解释补查。',
+          'Company overview starts with the lab; expand the full report and grade when needed. Saved original reports have an Evidence lab tab alongside Plain, Pro and the existing evidence tabs. Homepage annual-report examples are local historical trials; look up and open a company to run its explanation research.',
+        ],
+        [
+          '恢复已撤回事实后，选择扩张备货、存货去化压力或回款压力，再点击“挑战这个解释”，补查公开新闻、公告及有限原文，分别查看支持、反向线索与资料缺口。模型未配置或失败时保留实际补查和规则线索；“所需材料”仍表示尚未取得，不代表已经拿到订单、库龄或期后流水。',
+          'Restore withdrawn facts, select expansion stocking, inventory sell-through pressure or collection pressure, then choose Challenge this explanation. Actual public news, disclosure and limited-original reads produce supporting/counter clues and gaps. An unconfigured or failed model retains actual research and rule clues. Required records remain unobtained; they do not mean orders, aging or subsequent statements were acquired.',
+        ],
+        [
+          '三种现金差异解释仅在所选年度合并净利润为正、经营现金低于利润时待检验；缺失、冲突或不适用会说明。原件现金桥使用已核对的现金流补充表调整，公司网页实验室只比较期末余额变化。余额变化和新闻标题都不能确认差异成因。',
+          'These cash-gap explanations apply only when selected-year consolidated profit is positive and operating cash is lower. Missing, conflicting or inapplicable inputs are stated. Original cash bridges use checked reconciliation adjustments; company web labs compare year-end balance changes. Neither balance changes nor headlines establish the cause.',
+        ],
+      ],
     },
     {
       id: 'import',

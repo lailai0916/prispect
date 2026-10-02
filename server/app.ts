@@ -8,6 +8,7 @@ import path from 'node:path';
 import { access, readFile } from 'node:fs/promises';
 import type { AnalysisTask, CreateTaskInput, Material, Stage } from '../shared/contracts.js';
 import { analyze } from './engine.js';
+import { buildReportEvidenceLab } from '../shared/evidence-lab.js';
 import { reportHtml } from './export.js';
 import { previewUpload } from './import.js';
 import { DEFAULT_MODEL, explainWithModel, modelConfigFromEnv, type ModelConfig } from './model.js';
@@ -15,6 +16,10 @@ import { seeds, WorkspaceStore } from './store.js';
 import { AuthStore, authentication, type AuthContext } from './auth.js';
 import { installDecisionRoutes } from './decision-routes.js';
 import { installCompanyRoutes, type CompanyService } from './company-routes.js';
+import {
+  installCompanyChallengeRoutes,
+  type CompanyChallengeRouteService,
+} from './company-challenge-routes.js';
 import {
   installCompanyContextRoutes,
   type CompanyContextService,
@@ -27,6 +32,7 @@ export interface AppOptions {
   model?: ModelConfig;
   companyService?: CompanyService;
   companyContextService?: CompanyContextService;
+  companyChallengeService?: CompanyChallengeRouteService;
   registrationEnabled?: boolean;
 }
 export async function createApp(options: AppOptions = {}) {
@@ -242,6 +248,7 @@ export async function createApp(options: AppOptions = {}) {
         );
         return {
           ...item,
+          lab: buildReportEvidenceLab(report),
           metrics: report.metrics.filter((metric) =>
             [
               'netProfit',
@@ -382,6 +389,11 @@ export async function createApp(options: AppOptions = {}) {
     auth,
     model,
     service: options.companyContextService,
+  });
+  const companyChallenge = installCompanyChallengeRoutes(app, {
+    auth,
+    model,
+    service: options.companyChallengeService,
   });
   let uploads = 0;
   const limitUpload = (
@@ -716,7 +728,7 @@ export async function createApp(options: AppOptions = {}) {
         throw new ApiFault(400, 'CONFIRM_REQUIRED', '重置需明确确认 RESET_DEMO');
       if (store.state.tasks.some((task) => running.has(task.id) || scheduled.has(task.id)))
         throw new ApiFault(409, 'TASK_RUNNING', '存在执行中的任务，暂时不能重置');
-      if (company.busy(store) || companyContext.busy(store))
+      if (company.busy(store) || companyContext.busy(store) || companyChallenge.busy(store))
         throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '公开证据查询或保存中，暂时不能重置');
       await store.reset();
       res.json(store.workspace(provider));
@@ -788,6 +800,7 @@ export async function createApp(options: AppOptions = {}) {
     waitForIdle: async () => {
       await company.waitForIdle();
       await companyContext.waitForIdle();
+      await companyChallenge.waitForIdle();
       while (running.size || scheduled.size)
         await new Promise((resolve) => setTimeout(resolve, 10));
     },

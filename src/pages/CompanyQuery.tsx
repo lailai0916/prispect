@@ -11,7 +11,7 @@ import { HomeRiskCards } from '../HomeRiskCards';
 import { api, requestErrorText } from '../api';
 import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
 
-export function CompanyQueryPage() {
+export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
   const { t, locale, navigate, workspace } = useApp();
   const { viewMode } = useViewMode();
   const latest = new Date().getFullYear() - 1;
@@ -87,6 +87,8 @@ export function CompanyQueryPage() {
           )}
         </p>
         <StartInput
+          key={query?.get('query') || 'new-company'}
+          initialText={query?.get('query') || undefined}
           compact
           companyOnly
           disabled={creating}

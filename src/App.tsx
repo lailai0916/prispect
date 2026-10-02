@@ -663,7 +663,7 @@ export function App() {
                   ) : page === '/decisions' ? (
                     <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/query' ? (
-                    <CompanyQueryPage />
+                    <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/company' ? (
                     <CompanyWorkspacePage
                       key={new URLSearchParams(route.split('?')[1]).get('run') || 'query'}
