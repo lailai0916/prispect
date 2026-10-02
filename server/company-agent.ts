@@ -33,7 +33,13 @@ import {
   type CompanyPdfText,
 } from './company-extraction.js';
 import { analyze } from './engine.js';
-import { explainWithModel, modelFailureDiagnostic, type ModelConfig } from './model.js';
+import {
+  DEFAULT_MODEL,
+  DEFAULT_MODEL_BASE_URL,
+  explainWithModel,
+  modelFailureDiagnostic,
+  type ModelConfig,
+} from './model.js';
 import { ApiFault } from './validation.js';
 import { extractAuditOpinion, pendingAuditOpinion } from './company-audit.js';
 
@@ -168,7 +174,7 @@ async function runFinancialBranch(
           return 'invalid-endpoint';
         }
       })()
-    : 'api.openai.com';
+    : new URL(DEFAULT_MODEL_BASE_URL).hostname;
   let model: CompanyResearchRun['model'] = {
     requested: input.useModel === true,
     status: input.useModel
@@ -176,7 +182,7 @@ async function runFinancialBranch(
         ? 'not-called'
         : 'not-configured'
       : 'not-requested',
-    ...(options.model?.apiKey ? { provider, name: options.model.model || 'gpt-6.1-sol' } : {}),
+    ...(options.model?.apiKey ? { provider, name: options.model.model || DEFAULT_MODEL } : {}),
   };
   let active: CompanyAgentTrace | null = null;
   const tool = async <T>(
@@ -304,7 +310,7 @@ async function runFinancialBranch(
             async () => {
               modelCalls++;
               const response = await (config.fetch || options.fetch || fetch)(
-                `${(config.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '')}/chat/completions`,
+                `${(config.baseUrl || DEFAULT_MODEL_BASE_URL).replace(/\/$/, '')}/chat/completions`,
                 {
                   method: 'POST',
                   redirect: 'error',
@@ -317,7 +323,7 @@ async function runFinancialBranch(
                     ...(options.signal ? [options.signal] : []),
                   ]),
                   body: JSON.stringify({
-                    model: config.model || 'gpt-6.1-sol',
+                    model: config.model || DEFAULT_MODEL,
                     temperature: 0,
                     ...(config.serviceTier ? { service_tier: config.serviceTier } : {}),
                     response_format: { type: 'json_object' },
@@ -875,8 +881,8 @@ export async function runCompanyResearch(
   const scope = JSON.stringify({
     version: 'langgraph-v1',
     input,
-    model: config?.model || 'gpt-6.1-sol',
-    provider: config?.baseUrl ? new URL(config.baseUrl).hostname : 'api.openai.com',
+    model: config?.model || DEFAULT_MODEL,
+    provider: new URL(config?.baseUrl || DEFAULT_MODEL_BASE_URL).hostname,
     tier: config?.serviceTier || null,
   });
   let saver: SqliteSaver | MemorySaver = new MemorySaver();
@@ -967,13 +973,13 @@ export async function runCompanyResearch(
     if (!input.useModel || !config?.apiKey || !candidates.length) return [];
     return traceTool(branchId, toolName, '选择下一步公开补查', async () => {
       const response = await budgetedModelFetch(
-        `${(config.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '')}/chat/completions`,
+        `${(config.baseUrl || DEFAULT_MODEL_BASE_URL).replace(/\/$/, '')}/chat/completions`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
           signal: AbortSignal.timeout(config.timeoutMs || 60000),
           body: JSON.stringify({
-            model: config.model || 'gpt-6.1-sol',
+            model: config.model || DEFAULT_MODEL,
             temperature: 0,
             ...(config.serviceTier ? { service_tier: config.serviceTier } : {}),
             response_format: { type: 'json_object' },
@@ -1076,13 +1082,13 @@ export async function runCompanyResearch(
     } as const;
     return await traceTool(id, 'model_evidence_selection', '分析公开附注的竞争解释', async () => {
       const response = await budgetedModelFetch(
-        `${(config.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '')}/chat/completions`,
+        `${(config.baseUrl || DEFAULT_MODEL_BASE_URL).replace(/\/$/, '')}/chat/completions`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
           signal: AbortSignal.timeout(config.timeoutMs || 60000),
           body: JSON.stringify({
-            model: config.model || 'gpt-6.1-sol',
+            model: config.model || DEFAULT_MODEL,
             temperature: 0,
             ...(config.serviceTier ? { service_tier: config.serviceTier } : {}),
             response_format: { type: 'json_object' },

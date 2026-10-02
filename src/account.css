@@ -226,11 +226,14 @@
   background: var(--line, #e5e8ed);
   border-radius: 3px;
 }
-.account-meter-bars i[data-active='true'] {
-  background: var(--accent, #2764d5);
+.account-meter-bars[data-level='1'] i[data-active='true'] {
+  background: #e5484d;
 }
-.account-meter-bars i[data-active='true'][data-score='1'] {
-  background: var(--red, #b94445);
+.account-meter-bars[data-level='2'] i[data-active='true'] {
+  background: #eab308;
+}
+.account-meter-bars[data-level='3'] i[data-active='true'] {
+  background: #30a46c;
 }
 .account-error {
   color: var(--red, #b94445);
@@ -267,6 +270,10 @@
   gap: 20px;
   align-items: flex-start;
   margin-bottom: 28px;
+}
+.account-page-header .account-secondary {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .account-page-header h1 {
   font-size: 30px;

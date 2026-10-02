@@ -7,7 +7,6 @@ import {
   ShieldCheck,
   KeyRound,
   LogOut,
-  Smartphone,
   Mail,
   Trash2,
   Check,
@@ -288,6 +287,7 @@ export function AccountPage() {
           setName(account.user.name);
           setBio(account.user.bio);
           setCompany(account.user.company);
+          setPhone(account.user.phoneNumber || '');
           setTimezone(account.user.timezone);
         }
       })
@@ -337,9 +337,10 @@ export function AccountPage() {
       async () => {
         const account = await api<AccountOverview>('/account/profile', {
           method: 'PATCH',
-          body: JSON.stringify({ name: name.trim(), bio, company, timezone }),
+          body: JSON.stringify({ name: name.trim(), bio, company, timezone, phoneNumber: phone }),
         });
         setOverview(account);
+        setPhone(account.user.phoneNumber || '');
         return account;
       },
       t('个人信息已保存', 'Profile saved')
@@ -455,11 +456,10 @@ export function AccountPage() {
     }
     let weak: boolean;
     try {
-      weak =
-        (await import('../../shared/password-strength')).passwordStrength(newPassword, [
-          user?.name || '',
-          user?.email || '',
-        ]) < 3;
+      weak = !(await import('../../shared/password-strength')).validNewPassword(newPassword, [
+        user?.name || '',
+        user?.email || '',
+      ]);
     } catch {
       setFailure(
         t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
@@ -743,6 +743,23 @@ export function AccountPage() {
                     />
                   </label>
                   <label>
+                    {t('手机号（展示用，选填）', 'Display phone number (optional)')}
+                    <input
+                      type="tel"
+                      autoComplete="tel"
+                      value={phone}
+                      maxLength={30}
+                      onChange={(event) => setPhone(event.target.value)}
+                      placeholder={t('手机号或带国家区号的号码', 'Phone number with country code')}
+                    />
+                    <span className="account-muted">
+                      {t(
+                        '用于个人资料展示，无需验证码。',
+                        'Shown in your profile. No verification code required.'
+                      )}
+                    </span>
+                  </label>
+                  <label>
                     {t('简介', 'Bio')}
                     <textarea
                       maxLength={500}
@@ -857,51 +874,6 @@ export function AccountPage() {
                   </form>
                 )}
               </Section>
-              <Section
-                title={t('手机号', 'Phone number')}
-                description={t(
-                  '验证短信中的验证码后绑定。',
-                  'Verify the code in your text message to bind your number.'
-                )}
-              >
-                <div className="account-binding-row">
-                  <div>
-                    <strong>{overview.user.phoneNumber || t('尚未绑定', 'Not bound')}</strong>
-                    {overview.user.phoneNumber && (
-                      <p>
-                        {overview.user.phoneNumberVerified
-                          ? t('已验证', 'Verified')
-                          : t('未验证', 'Unverified')}
-                      </p>
-                    )}
-                  </div>
-                  <span className="account-badge">
-                    {t('短信验证暂不可用', 'SMS verification unavailable')}
-                  </span>
-                </div>
-                <form className="account-form" onSubmit={(event) => event.preventDefault()}>
-                  <label>
-                    {t('含国家区号的手机号', 'Phone number with country code')}
-                    <input
-                      type="tel"
-                      autoComplete="tel"
-                      placeholder="+86"
-                      value={phone}
-                      maxLength={30}
-                      onChange={(event) => setPhone(event.target.value)}
-                    />
-                  </label>
-                  <button className="account-secondary" type="button" disabled>
-                    {t('发送绑定验证码', 'Send verification code')}
-                  </button>
-                </form>
-                <p className="account-muted">
-                  {t(
-                    '当前无法发送验证码、验证或更换绑定手机号。',
-                    'We cannot currently send codes, verify or change your linked phone number.'
-                  )}
-                </p>
-              </Section>
             </>
           )}
           {tab === 'security' && (
@@ -945,7 +917,7 @@ export function AccountPage() {
                       type="password"
                       autoComplete="new-password"
                       required
-                      minLength={12}
+                      minLength={8}
                       maxLength={128}
                       value={newPassword}
                       onChange={(event) => setNewPassword(event.target.value)}
@@ -958,7 +930,7 @@ export function AccountPage() {
                       type="password"
                       autoComplete="new-password"
                       required
-                      minLength={12}
+                      minLength={8}
                       maxLength={128}
                       value={confirmation}
                       onChange={(event) => setConfirmation(event.target.value)}

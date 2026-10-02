@@ -37,36 +37,24 @@ export function PasswordMeter({ value, context = [] }: { value: string; context?
       active = false;
     };
   }, [value, contextKey]);
-  const labels = [
-    t('容易猜测', 'Easy to guess'),
-    t('较弱', 'Weak'),
-    t('尚可', 'Fair'),
-    t('较强', 'Strong'),
-    t('很强', 'Very strong'),
-  ];
+  const level = score === null ? 0 : score <= 1 ? 1 : score === 2 ? 2 : 3;
+  const labels = [t('较弱', 'Weak'), t('中等', 'Medium'), t('较强', 'Strong')];
   return (
     <div className="account-password-meter" aria-live="polite">
-      <div className="account-meter-bars" aria-hidden="true">
-        {[0, 1, 2, 3].map((index) => (
-          <i
-            key={index}
-            data-active={score !== null && index < score}
-            data-score={score ?? undefined}
-          />
+      <div className="account-meter-bars" data-level={level} aria-hidden="true">
+        {[1, 2, 3].map((segment) => (
+          <i key={segment} data-active={segment <= level} />
         ))}
       </div>
-      <span>
-        {value
-          ? score === null
+      {value && (
+        <span>
+          {score === null
             ? unavailable
               ? t('强度检查未载入，请重试。', 'The strength check did not load. Retry.')
               : t('正在载入本地密码强度检查…', 'Loading the local strength check…')
-            : labels[score]
-          : t(
-              '至少12字符，避免常见词和个人信息。',
-              'Use 12+ characters; avoid common phrases and personal details.'
-            )}
-      </span>
+            : labels[level - 1]}
+        </span>
+      )}
     </div>
   );
 }
@@ -102,14 +90,13 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
       setValidation(t('两次输入的密码不一致。', 'The passwords do not match.'));
       return;
     }
-    let passwordIsWeak = register && password.length < 12;
-    if (register && !passwordIsWeak) {
+    let passwordIsWeak = false;
+    if (register) {
       try {
-        passwordIsWeak =
-          (await import('../../shared/password-strength')).passwordStrength(password, [
-            email,
-            name,
-          ]) < 3;
+        passwordIsWeak = !(await import('../../shared/password-strength')).validNewPassword(
+          password,
+          [email, name]
+        );
       } catch {
         setValidation(
           t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
@@ -120,8 +107,8 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     if (passwordIsWeak) {
       setValidation(
         t(
-          '请使用至少12字符且不易猜测的密码。',
-          'Choose a hard-to-guess password with at least 12 characters.'
+          '请使用至少8字符且不易猜测的密码。',
+          'Choose a hard-to-guess password with at least 8 characters.'
         )
       );
       return;
@@ -283,7 +270,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                     type={visible ? 'text' : 'password'}
                     name="password"
                     autoComplete={register ? 'new-password' : 'current-password'}
-                    minLength={register ? 12 : 1}
+                    minLength={register ? 8 : 1}
                     maxLength={128}
                     required
                     value={password}
@@ -309,7 +296,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                     name="confirmation"
                     autoComplete="new-password"
                     required
-                    minLength={12}
+                    minLength={8}
                     maxLength={128}
                     value={confirmation}
                     onChange={(event) => setConfirmation(event.target.value)}

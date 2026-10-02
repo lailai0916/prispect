@@ -40,8 +40,10 @@
     box-shadow 160ms;
 }
 .start-input:focus-within {
-  border-color: color-mix(in srgb, var(--ink) 42%, var(--paper));
-  box-shadow: 0 5px 28px color-mix(in srgb, var(--ink) 7%, transparent);
+  border-color: color-mix(in srgb, var(--ink) 48%, var(--paper));
+  box-shadow:
+    0 7px 30px color-mix(in srgb, var(--ink) 7%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--ink) 4%, transparent);
 }
 .start-input textarea {
   min-height: 72px;
@@ -155,6 +157,16 @@
   margin-top: 28px;
   font-size: 12px;
   color: var(--home-secondary);
+}
+.landing-explore svg,
+.landing-text-action svg {
+  transition: transform 160ms ease-out;
+}
+.landing-explore:hover svg {
+  transform: translateX(2px);
+}
+.landing-text-action:hover svg {
+  transform: translate(1px, -1px);
 }
 .landing-scroll-mark {
   position: absolute;
@@ -1046,6 +1058,10 @@
     transition: none;
   }
   .start-submit:hover {
+    transform: none;
+  }
+  .landing-explore:hover svg,
+  .landing-text-action:hover svg {
     transform: none;
   }
 }

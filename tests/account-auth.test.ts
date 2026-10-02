@@ -11,6 +11,7 @@ import { AuthStore } from '../server/auth.js';
 import { createApp } from '../server/app.js';
 import type { AuthSession } from '../shared/contracts.js';
 import type { AccountOverview } from '../shared/account-contracts.js';
+import { validNewPassword } from '../shared/password-strength.js';
 
 const password = 'Copper!fjord7-Unusual-velvet';
 function totp(secret: string, at = Date.now()) {
@@ -312,7 +313,108 @@ test('legacy numeric dates survive real HTTP login, native session/profile/passk
   }
 });
 
-test('blank workspace, actual profile/avatar ownership, unconfigured providers and restart are real', async () => {
+test('eight-character passwords work through registration and changes while weak passwords and short inputs are rejected', async () => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-password-policy-'));
+  const service = await open(directory);
+  const initialPassword = 'vR7!qL9@';
+  const nextPassword = 'k9$Tz4!Q';
+  try {
+    assert.equal(validNewPassword(initialPassword), true);
+    assert.equal(validNewPassword(initialPassword.slice(0, 7)), false);
+    assert.equal(validNewPassword('12345678'), false);
+    assert.equal(validNewPassword('x'.repeat(129)), false);
+    const account = client(service);
+    for (const route of ['/api/auth/register', '/api/identity/sign-up/email']) {
+      for (const rejected of [initialPassword.slice(0, 7), '12345678']) {
+        const response = await account.send(route, {
+          email: 'password-policy@example.test',
+          name: '密码验收',
+          password: rejected,
+        });
+        assert.equal(response.status, 400, await response.clone().text());
+        assert.equal((await response.json()).code, 'WEAK_PASSWORD');
+      }
+    }
+    const registered = await account.send('/api/auth/register', {
+      email: 'password-policy@example.test',
+      name: '密码验收',
+      password: initialPassword,
+    });
+    assert.equal(registered.status, 201, await registered.clone().text());
+    await account.sync();
+    const other = client(service);
+    assert.equal(
+      (
+        await other.send('/api/auth/login', {
+          email: 'password-policy@example.test',
+          password: initialPassword,
+        })
+      ).status,
+      200
+    );
+    await other.sync();
+    assert.equal(
+      (await account.send('/api/account/re-auth', { password: initialPassword })).status,
+      200
+    );
+    for (const route of ['/api/auth/password', '/api/identity/change-password']) {
+      const response = await account.send(route, {
+        currentPassword: initialPassword,
+        newPassword: '12345678',
+      });
+      assert.equal(response.status, 400, await response.clone().text());
+      assert.equal((await response.json()).code, 'WEAK_PASSWORD');
+    }
+    const changed = await account.send('/api/auth/password', {
+      currentPassword: initialPassword,
+      newPassword: nextPassword,
+    });
+    assert.equal(changed.status, 200, await changed.clone().text());
+    await account.sync();
+    assert.equal((await other.send('/api/account')).status, 401);
+    const fresh = client(service);
+    assert.equal(
+      (
+        await fresh.send('/api/auth/login', {
+          email: 'password-policy@example.test',
+          password: initialPassword,
+        })
+      ).status,
+      401
+    );
+    assert.equal(
+      (
+        await fresh.send('/api/auth/login', {
+          email: 'password-policy@example.test',
+          password: nextPassword,
+        })
+      ).status,
+      200
+    );
+    const native = client(service);
+    const nativeRegistered = await native.send('/api/identity/sign-up/email', {
+      email: 'password-native@example.test',
+      name: '原生密码验收',
+      password: initialPassword,
+    });
+    assert.equal(nativeRegistered.status, 200, await nativeRegistered.clone().text());
+    await native.sync();
+    assert.equal(
+      (await native.send('/api/account/re-auth', { password: initialPassword })).status,
+      200
+    );
+    const nativeChanged = await native.send('/api/identity/change-password', {
+      currentPassword: initialPassword,
+      newPassword: nextPassword,
+    });
+    assert.equal(nativeChanged.status, 200, await nativeChanged.clone().text());
+  } finally {
+    await service.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('blank workspace, actual profile/avatar ownership, display contacts, unconfigured providers and restart are real', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-account-'));
   let service = await open(directory);
   try {
@@ -355,11 +457,64 @@ test('blank workspace, actual profile/avatar ownership, unconfigured providers a
       assert.equal((await alice.send(url, body)).status, 503, url);
     const changed = await alice.send(
       '/api/account/profile',
-      { name: '原ID保留', bio: '测试简介', company: '测试组织', timezone: 'Asia/Shanghai' },
+      {
+        name: '原ID保留',
+        bio: '测试简介',
+        company: '测试组织',
+        timezone: 'Asia/Shanghai',
+        phoneNumber: '13800138000',
+      },
       'PATCH'
     );
     assert.equal(changed.status, 200);
-    assert.equal((await changed.json()).user.id, account.user!.id);
+    const changedProfile = (await changed.json()).user;
+    assert.equal(changedProfile.id, account.user!.id);
+    assert.equal(changedProfile.phoneNumber, '+8613800138000');
+    assert.equal(changedProfile.phoneNumberVerified, false);
+    assert.equal((await (await bob.send('/api/account')).json()).user.phoneNumber, null);
+    const sharedContact = await bob.send(
+      '/api/account/profile',
+      { name: '共享联系电话', phoneNumber: '+86 138 0013 8000' },
+      'PATCH'
+    );
+    assert.equal(sharedContact.status, 200);
+    assert.equal((await sharedContact.json()).user.phoneNumber, '+8613800138000');
+    const invalidContact = await alice.send(
+      '/api/account/profile',
+      { name: '不应保存', phoneNumber: 'call me: 13800138000' },
+      'PATCH'
+    );
+    assert.equal(invalidContact.status, 400);
+    assert.equal((await (await alice.send('/api/account')).json()).user.name, '原ID保留');
+    assert.equal(
+      (
+        await alice.send(
+          '/api/account/profile',
+          { name: '原ID保留', phoneNumberVerified: true },
+          'PATCH'
+        )
+      ).status,
+      400
+    );
+    const omittedContact = await alice.send('/api/account/profile', { name: '原ID保留' }, 'PATCH');
+    assert.equal((await omittedContact.json()).user.phoneNumber, '+8613800138000');
+    const clearedContact = await alice.send(
+      '/api/account/profile',
+      { name: '原ID保留', phoneNumber: '' },
+      'PATCH'
+    );
+    assert.equal((await clearedContact.json()).user.phoneNumber, null);
+    const restoredContact = await alice.send(
+      '/api/account/profile',
+      { name: '原ID保留', phoneNumber: '+8613800138000' },
+      'PATCH'
+    );
+    assert.equal((await restoredContact.json()).user.phoneNumber, '+8613800138000');
+    const legacyPhone = service.auth.db
+      .prepare('SELECT phoneNumber,phoneNumberVerified FROM "user" WHERE id=?')
+      .get(account.user!.id) as { phoneNumber: string | null; phoneNumberVerified: number | null };
+    assert.equal(legacyPhone.phoneNumber, null);
+    assert.ok(!legacyPhone.phoneNumberVerified);
     assert.equal(
       (await alice.send('/api/account/profile', { name: '试图伪造', emailVerified: true }, 'PATCH'))
         .status,
@@ -406,6 +561,8 @@ test('blank workspace, actual profile/avatar ownership, unconfigured providers a
     } as Parameters<typeof service.auth.session>[0];
     assert.equal((await service.auth.session(request))?.user.id, id);
     assert.equal(service.auth.profileFor(id).bio, '测试简介');
+    assert.equal(service.auth.profileFor(id).phoneNumber, '+8613800138000');
+    assert.equal(service.auth.profileFor(id).phoneNumberVerified, false);
     assert.throws(
       () => service.auth.rateLimit('restart-test-limit', 1, 3600000),
       (error) => (error as { code: string }).code === 'RATE_LIMITED'

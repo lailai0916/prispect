@@ -57,12 +57,12 @@ export const termsDocument: ProductDocument = {
           'Use account information you are entitled to use. Protect passwords, authenticators, passkeys and recovery codes, and do not share access credentials.',
         ],
         [
-          '注册或登录不表示身份、企业资质、材料真伪或代理权限已被认证。联系方式的验证状态以账号页显示为准。',
-          'Registration or login does not certify identity, business qualifications, document authenticity or authority to act. Contact-verification status is shown on the account page.',
+          '注册或登录不表示身份、企业资质、材料真伪或代理权限已被认证。展示手机号由用户自行填写，无需短信验证；邮箱的验证状态以账号页显示为准。',
+          'Registration or login does not certify identity, business qualifications, document authenticity or authority to act. Display phone numbers are entered by users without SMS verification; email-verification status is shown on the account page.',
         ],
         [
-          '发现异常访问时，请在账号页检查并撤销相应会话，或联系析光。找回与验证功能不可用时，请保留已登录设备，不假定邮箱或短信可以恢复访问。',
-          'If you notice unexpected access, inspect and revoke relevant sessions on the account page or contact Prispect. When recovery or verification is unavailable, keep a signed-in device and do not assume email or SMS can restore access.',
+          '发现异常访问时，请在账号页检查并撤销相应会话，或联系析光。找回与验证功能不可用时，请保留已登录设备，不假定邮箱可以恢复访问。展示手机号不用于账号恢复。',
+          'If you notice unexpected access, inspect and revoke relevant sessions on the account page or contact Prispect. When recovery or verification is unavailable, keep a signed-in device and do not assume email can restore access. Display phone numbers are not used for account recovery.',
         ],
         [
           '请自行保存所需导出与原件。账号访问凭据丢失、材料被清空或服务不可用，可能影响你再次取得工作数据。',

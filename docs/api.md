@@ -18,29 +18,33 @@ The canonical types live in `shared/contracts.ts`, `shared/account-contracts.ts`
 
 Project compatibility, account and workspace writes send `X-CSRF-Token` returned by the session endpoint. Native identity endpoints have separate library protections, described below. Authentication uses a server-side session with an HttpOnly cookie; no password or session bearer is placed in browser localStorage. The user ID comes from the session, never from a client-provided tenant selector. Workspace, materials, tasks, questions, exports, local PDF sources and reset require login and are scoped to that user where applicable. Public health, cases and examples do not expose private workspace records.
 
+New passwords are 8–128 characters and must score at least 2 in the shared password estimator. The three-segment meter shows weak (scores 0–1) with one red segment, medium (2) with two yellow segments, and strong (3–4) with three green segments. All active segments use the color of the overall strength level.
+
 Email verification and native password-reset interfaces exist, but require an actual SMTP provider. While unconfigured, requests explicitly return `EMAIL_UNAVAILABLE`; email remains an unverified login identifier. The compatibility `/api/auth/password-reset` route remains unavailable even if SMTP is later enabled; configured delivery uses the native identity flow. SMS currently has no sending adapter, and its send/verify/remove interfaces return `SMS_UNAVAILABLE`; adding environment values alone does not implement a supplier. No codes or delivery results are fabricated.
 
 ## Account profile and security
 
 Project account writes require owner session, Origin and CSRF. Operations requiring recent authentication additionally return `FRESH_AUTH_REQUIRED` until re-authenticated. Common failures are 401 `AUTH_REQUIRED`, 403 `CSRF_INVALID` or `INVALID_ORIGIN`, and endpoint-specific non-2xx errors.
 
-| Method and path                               | Input                             | Response / boundary                                                                                               |
-| --------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| GET /api/account                              | —                                 | `AccountOverview`: profile, provider capabilities, fresh-auth expiry and auth schema 2                            |
-| PATCH /api/account/profile                    | `{name,bio?,company?,timezone?}`  | Validated profile; name 1–80, bio ≤500, company ≤120, valid IANA timezone                                         |
-| POST /api/account/re-auth                     | `{password,code?}`                | Five-minute fresh-auth expiry; six-digit TOTP when required; rate limited                                         |
-| POST /api/account/avatar                      | Multipart `file`                  | Single-frame PNG/JPEG/WebP, ≤2 MiB and 16 megapixels; actual decoding/re-encoding to ≤512px WebP; 10 uploads/hour |
-| GET /api/account/avatar                       | —                                 | Current owner only, private/no-store WebP; 404 when absent                                                        |
-| DELETE /api/account/avatar                    | —                                 | Updated account overview                                                                                          |
-| GET /api/account/sessions                     | —                                 | Current owner's session summaries                                                                                 |
-| POST /api/account/sessions/:id/revoke         | —                                 | `{revoked:true,current}`; foreign/unknown session 404                                                             |
-| GET /api/account/passkeys                     | —                                 | Current owner's passkey summaries                                                                                 |
-| POST /api/account/email/verify                | `{}`; recent authentication       | Sends only when configured; `accepted:true` is not verified or delivered status                                   |
-| POST /api/account/email/change                | `{email}`; recent authentication  | Validates address, configured verification flow; unavailable SMTP returns 503                                     |
-| POST /api/account/phone/send                  | `{phoneNumber}` with country code | Invalid number 400 `INVALID_PHONE`; otherwise 503 `SMS_UNAVAILABLE`                                               |
-| POST /api/account/phone/verify, /phone/remove | —                                 | Explicitly unavailable, 503; no successful binding/removal claimed                                                |
+| Method and path                               | Input                                         | Response / boundary                                                                                               |
+| --------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| GET /api/account                              | —                                             | `AccountOverview`: profile, provider capabilities, fresh-auth expiry and auth schema 2                            |
+| PATCH /api/account/profile                    | `{name,bio?,company?,timezone?,phoneNumber?}` | Validated profile; name 1–80, bio ≤500, company ≤120, valid IANA timezone; optional display phone, ≤30 characters |
+| POST /api/account/re-auth                     | `{password,code?}`                            | Five-minute fresh-auth expiry; six-digit TOTP when required; rate limited                                         |
+| POST /api/account/avatar                      | Multipart `file`                              | Single-frame PNG/JPEG/WebP, ≤2 MiB and 16 megapixels; actual decoding/re-encoding to ≤512px WebP; 10 uploads/hour |
+| GET /api/account/avatar                       | —                                             | Current owner only, private/no-store WebP; 404 when absent                                                        |
+| DELETE /api/account/avatar                    | —                                             | Updated account overview                                                                                          |
+| GET /api/account/sessions                     | —                                             | Current owner's session summaries                                                                                 |
+| POST /api/account/sessions/:id/revoke         | —                                             | `{revoked:true,current}`; foreign/unknown session 404                                                             |
+| GET /api/account/passkeys                     | —                                             | Current owner's passkey summaries                                                                                 |
+| POST /api/account/email/verify                | `{}`; recent authentication                   | Sends only when configured; `accepted:true` is not verified or delivered status                                   |
+| POST /api/account/email/change                | `{email}`; recent authentication              | Validates address, configured verification flow; unavailable SMTP returns 503                                     |
+| POST /api/account/phone/send                  | `{phoneNumber}` with country code             | Invalid number 400 `INVALID_PHONE`; otherwise 503 `SMS_UNAVAILABLE`                                               |
+| POST /api/account/phone/verify, /phone/remove | —                                             | Explicitly unavailable, 503; no successful binding/removal claimed                                                |
 
 Avatar invalid files return `INVALID_AVATAR`; oversized multipart input returns 413 `LIMIT_FILE_SIZE`. Source filenames and image bytes are not accepted as proof of profile identity.
+
+Display phone numbers are saved by the profile endpoint without an OTP or recent-authentication requirement. Mainland numbers can omit the country code; international numbers include it. Numbers are validated and normalized to E.164; empty string or null clears the field, and omission preserves it. Contacts are stored in `cashlens_profile_contacts`, independently of legacy authentication phone columns; different accounts may use the same contact. Existing legacy phone values are copied once without a verified claim. The response retains `phoneNumberVerified: false` for compatibility. Profile display does not add an anonymous profile directory or use the number for authentication. The legacy SMS routes above remain unavailable and are not used by the profile form.
 
 The pinned Better Auth identity service is mounted at `/api/identity/*`, using the project's two-factor/passkey client in `src/auth-client.ts` and server policy in `server/auth.ts`. Its endpoints use global Origin/Sec-Fetch-Site checks plus the library's cookie/origin protections and a 64 KiB request limit, rather than the compatibility CSRF header. Password login for a two-factor account returns `{user:null,csrfToken:null,twoFactorRequired:true,methods:['totp','backup-code']}` until the native TOTP or single-use backup-code challenge succeeds. Trusted-device bypass is disabled.
 

@@ -57,8 +57,8 @@ export const privacyDocument: ProductDocument = {
           [
             ['可选个人资料', 'Optional profile'],
             [
-              '头像、简介、组织或公司、时区；手机号及其验证状态仅在相应服务可用并使用时处理。',
-              'Avatar, biography, organization or company, and time zone; a phone number and its verification status when the corresponding service is available and used.',
+              '头像、简介、组织或公司、时区，以及自愿填写的展示手机号。手机号无需短信验证。',
+              'Avatar, biography, organization or company, time zone, and an optional display phone number. No SMS verification is required.',
             ],
             [
               '展示你的称呼、管理资料与联系或登录方式；头像不用于人脸识别。',
@@ -140,8 +140,8 @@ export const privacyDocument: ProductDocument = {
           'Your device or credential manager holds a passkey’s private key. Prispect stores the public key, credential identifier, device type, backup status, verification counter and related verification information, and requires device verification. It does not receive fingerprint data, facial templates or the passkey private key from that verification.',
         ],
         [
-          '当前邮箱验证、换绑邮箱、邮件密码找回和短信验证暂不可用，不能发送相关验证邮件或验证码。邮箱作为登录名不代表已验证身份。以后提供这些功能时，会先说明相应数据用途和接收方。',
-          'Email verification, email changes, password recovery by email and SMS verification are currently unavailable. Verification emails or codes cannot be sent. Using an email as a sign-in name does not mean its ownership has been verified. If these features become available, their data purposes and recipients will be explained first.',
+          '手机号作为个人资料中的联系方式保存，可修改或清空，无需验证码，不用于登录或找回密码。当前邮箱验证、换绑邮箱和邮件密码找回暂不可用，不能发送相关验证邮件。邮箱作为登录名不代表已验证身份。以后提供这些功能时，会先说明相应数据用途和接收方。',
+          'Your phone number is saved as profile contact information and can be changed or cleared without a verification code. It is not used for sign-in or password recovery. Email verification, email changes and password recovery by email are currently unavailable. Verification emails cannot be sent. Using an email as a sign-in name does not mean its ownership has been verified. If these features become available, their data purposes and recipients will be explained first.',
         ],
       ],
     },

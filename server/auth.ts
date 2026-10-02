@@ -4,6 +4,7 @@ import { mkdir, chmod, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { APIError, createAuthMiddleware, getSessionFromCtx } from 'better-auth/api';
 import { fromNodeHeaders } from 'better-auth/node';
@@ -11,7 +12,11 @@ import { twoFactor, phoneNumber } from 'better-auth/plugins';
 import { passkey } from '@better-auth/passkey';
 import type { AccountUser, AuthSession } from '../shared/contracts.js';
 import type { AccountProfile, LoginResult } from '../shared/account-contracts.js';
-import { validNewPassword } from '../shared/password-strength.js';
+import {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+  validNewPassword,
+} from '../shared/password-strength.js';
 import { ApiFault } from './validation.js';
 import { migrateAccounts, hashPassword, verifyAccountPassword } from './auth-migration.js';
 import { emailProviderFromEnv, smsProvider } from './auth-providers.js';
@@ -23,12 +28,32 @@ const email = z
   .max(254)
   .transform((value) => value.toLowerCase());
 export const registerSchema = z
-  .object({ email, password: z.string().min(12).max(128), name: z.string().trim().min(1).max(80) })
+  .object({
+    email,
+    password: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
+    name: z.string().trim().min(1).max(80),
+  })
   .strict();
 export const loginSchema = z.object({ email, password: z.string().min(1).max(128) });
 export const profileSchema = z
   .object({
     name: z.string().trim().min(1).max(80),
+    phoneNumber: z
+      .string()
+      .trim()
+      .max(30)
+      .refine(
+        (value) =>
+          !value ||
+          parsePhoneNumberFromString(value, { defaultCountry: 'CN', extract: false })?.isValid()
+      )
+      .transform((value) =>
+        value
+          ? parsePhoneNumberFromString(value, { defaultCountry: 'CN', extract: false })!.number
+          : null
+      )
+      .nullable()
+      .optional(),
     bio: z.string().trim().max(500).optional(),
     company: z.string().trim().max(120).optional(),
     timezone: z
@@ -46,7 +71,10 @@ export const profileSchema = z
   })
   .strict();
 export const passwordSchema = z
-  .object({ currentPassword: z.string().min(1).max(128), newPassword: z.string().min(12).max(128) })
+  .object({
+    currentPassword: z.string().min(1).max(128),
+    newPassword: z.string().min(PASSWORD_MIN_LENGTH).max(PASSWORD_MAX_LENGTH),
+  })
   .strict();
 export interface AuthContext {
   user: AccountUser;
@@ -129,8 +157,8 @@ export class AuthStore {
       telemetry: { enabled: false },
       emailAndPassword: {
         enabled: true,
-        minPasswordLength: 12,
-        maxPasswordLength: 128,
+        minPasswordLength: PASSWORD_MIN_LENGTH,
+        maxPasswordLength: PASSWORD_MAX_LENGTH,
         password: { hash: hashPassword, verify: verifyAccountPassword },
         sendResetPassword: async ({ user, url }) => {
           await this.mail.send(
@@ -230,7 +258,7 @@ export class AuthStore {
             )
               throw new APIError('BAD_REQUEST', {
                 code: 'WEAK_PASSWORD',
-                message: '使用至少12字符且不易猜测的密码',
+                message: '使用至少8字符且不易猜测的密码',
               });
             // Registration may never carry arbitrary avatar URLs or verified claims.
             return { context: { body: parsed.data } };
@@ -243,7 +271,7 @@ export class AuthStore {
             if (!validNewPassword(ctx.body?.newPassword || ctx.body?.password))
               throw new APIError('BAD_REQUEST', {
                 code: 'WEAK_PASSWORD',
-                message: '使用至少12字符且不易猜测的密码',
+                message: '使用至少8字符且不易猜测的密码',
               });
             if (ctx.path === '/change-password') ctx.body.revokeOtherSessions = true;
           }
@@ -352,6 +380,16 @@ export class AuthStore {
     );
     try {
       await migrateAccounts(store.db, store.options());
+      // Display contacts can be shared by accounts and carry no authentication claim.
+      // Keep the legacy phone authentication columns intact for schema2 compatibility.
+      store.db.transaction(() => {
+        store.db.exec(
+          'CREATE TABLE IF NOT EXISTS cashlens_profile_contacts (userId TEXT PRIMARY KEY REFERENCES "user"(id) ON DELETE CASCADE, phoneNumber TEXT);'
+        );
+        store.db.exec(
+          'INSERT OR IGNORE INTO cashlens_profile_contacts (userId,phoneNumber) SELECT id,phoneNumber FROM "user" WHERE phoneNumber IS NOT NULL;'
+        );
+      })();
       store.identity = betterAuth(store.options());
       const context = await store.identity.$context;
       await context.checkSchema?.();
@@ -430,15 +468,18 @@ export class AuthStore {
       : { user: null, csrfToken: null };
   }
   profileFor(id: string): AccountProfile {
-    const user = this.db.prepare('SELECT * FROM "user" WHERE id = ?').get(id) as {
+    const user = this.db
+      .prepare(
+        'SELECT u.*,c.phoneNumber AS displayPhoneNumber FROM "user" u LEFT JOIN cashlens_profile_contacts c ON c.userId=u.id WHERE u.id = ?'
+      )
+      .get(id) as {
       id: string;
       email: string;
       name: string;
       createdAt: number;
       image: string | null;
       emailVerified: number;
-      phoneNumber: string | null;
-      phoneNumberVerified: number;
+      displayPhoneNumber: string | null;
       twoFactorEnabled: number;
       bio: string;
       company: string;
@@ -452,8 +493,8 @@ export class AuthStore {
       createdAt: new Date(user.createdAt).toISOString(),
       image: user.image || null,
       emailVerified: !!user.emailVerified,
-      phoneNumber: user.phoneNumber || null,
-      phoneNumberVerified: !!user.phoneNumberVerified,
+      phoneNumber: user.displayPhoneNumber || null,
+      phoneNumberVerified: false,
       twoFactorEnabled: !!user.twoFactorEnabled,
       bio: user.bio || '',
       company: user.company || '',
@@ -553,7 +594,7 @@ export class AuthStore {
       !parsed.success ||
       !validNewPassword(parsed.data.password, [parsed.data.email, parsed.data.name])
     )
-      throw new ApiFault(400, 'WEAK_PASSWORD', '使用12–128字符且不易猜测的密码');
+      throw new ApiFault(400, 'WEAK_PASSWORD', '使用8–128字符且不易猜测的密码');
     const result = await this.identity.api.signUpEmail({
       body: parsed.data,
       headers: fromNodeHeaders(req.headers),
@@ -588,16 +629,23 @@ export class AuthStore {
     if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '资料字段无效');
     const old = this.profileFor(context.user.id),
       next = { ...old, ...parsed.data };
-    this.db
-      .prepare('UPDATE "user" SET name=?,bio=?,company=?,timezone=?,updatedAt=? WHERE id=?')
-      .run(
-        next.name,
-        next.bio,
-        next.company,
-        next.timezone,
-        new Date().toISOString(),
-        context.user.id
-      );
+    this.db.transaction(() => {
+      this.db
+        .prepare('UPDATE "user" SET name=?,bio=?,company=?,timezone=?,updatedAt=? WHERE id=?')
+        .run(
+          next.name,
+          next.bio,
+          next.company,
+          next.timezone,
+          new Date().toISOString(),
+          context.user.id
+        );
+      this.db
+        .prepare(
+          'INSERT INTO cashlens_profile_contacts (userId,phoneNumber) VALUES (?,?) ON CONFLICT(userId) DO UPDATE SET phoneNumber=excluded.phoneNumber'
+        )
+        .run(context.user.id, next.phoneNumber);
+    })();
     return this.response({ ...context, user: { ...context.user, name: next.name } });
   }
   async changePassword(input: unknown, context: AuthContext, req: Request, res: Response) {
@@ -607,7 +655,7 @@ export class AuthStore {
       !parsed.success ||
       !validNewPassword(parsed.data.newPassword, [context.user.name, context.user.email])
     )
-      throw new ApiFault(400, 'WEAK_PASSWORD', '使用12–128字符且不易猜测的密码');
+      throw new ApiFault(400, 'WEAK_PASSWORD', '使用8–128字符且不易猜测的密码');
     await this.accept(
       await this.identity.api.changePassword({
         headers: fromNodeHeaders(req.headers),

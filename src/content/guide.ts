@@ -319,8 +319,8 @@ export const guideDocument: ProductDocument = {
           'Device sessions list sign-ins and let you sign out individual devices. Security actions such as a password change require recent identity confirmation; follow the page instructions.',
         ],
         [
-          '当前邮箱验证、换绑、邮件找回及短信验证暂不可用，不会发送验证码。邮箱作为登录名称，不代表已验证邮箱所有权；请保存独立密码与恢复方式。',
-          'Email verification, email changes, recovery by email and SMS verification are currently unavailable; verification codes cannot be sent. An email used as a sign-in name does not establish verified ownership. Keep your independent password and recovery methods.',
+          '手机号可在个人信息中填写、修改或清空，用于资料展示，无需验证码。当前邮箱验证、换绑及邮件找回暂不可用，不会发送验证邮件。邮箱作为登录名称，不代表已验证邮箱所有权；请保存独立密码与恢复方式。',
+          'Add, change or clear a display phone number in Profile without a verification code. Email verification, email changes and recovery by email are currently unavailable; verification emails cannot be sent. An email used as a sign-in name does not establish verified ownership. Keep your independent password and recovery methods.',
         ],
         [
           '重置工作区是清除当前账号核查资料的操作，不是退出登录或账号注销。请先导出需要保留的底稿，并仔细阅读确认范围。',

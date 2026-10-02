@@ -18,7 +18,7 @@ const errorMessages: Record<string, string> = {
   INVALID_CREDENTIALS: 'The email or password is incorrect. Please try again.',
   EMAIL_EXISTS: 'An account already uses this email. Please log in.',
   INVALID_ACCOUNT:
-    'Check your account details. Names need 1–80 characters and passwords need 10–128 characters.',
+    'Check your account details. Names need 1–80 characters and passwords need 8–128 characters.',
   CSRF_INVALID: 'The session security token has expired. Refresh the page and retry.',
   RATE_LIMITED: 'Too many attempts. Please wait and try again.',
   INVALID_ORIGIN:

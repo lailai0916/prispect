@@ -24,6 +24,7 @@ export interface AccountOverview {
 }
 export interface AccountProfileInput {
   name: string;
+  phoneNumber?: string | null;
   bio?: string;
   company?: string;
   timezone?: string;

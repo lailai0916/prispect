@@ -2,6 +2,9 @@ import type { MetricKey, Report } from '../shared/contracts.js';
 import { z } from 'zod';
 import type { CompanyModelFailure } from '../shared/company-contracts.js';
 
+export const DEFAULT_MODEL = 'grok-4.7-fast';
+export const DEFAULT_MODEL_BASE_URL = 'https://tokenflux.dev/v1';
+
 export interface ModelConfig {
   apiKey?: string;
   baseUrl?: string;
@@ -83,8 +86,8 @@ export function modelFailureDiagnostic(error: unknown): CompanyModelFailure {
 export function modelConfigFromEnv(): ModelConfig {
   return {
     apiKey: process.env.OPENAI_API_KEY,
-    baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
-    model: process.env.OPENAI_MODEL || 'gpt-6.1-sol',
+    baseUrl: process.env.OPENAI_BASE_URL || DEFAULT_MODEL_BASE_URL,
+    model: process.env.OPENAI_MODEL || DEFAULT_MODEL,
     ...(['auto', 'default', 'priority', 'flex'].includes(process.env.OPENAI_SERVICE_TIER || '')
       ? { serviceTier: process.env.OPENAI_SERVICE_TIER as ModelConfig['serviceTier'] }
       : {}),
@@ -111,11 +114,11 @@ export async function explainWithModel(
   }
   let provider = 'invalid-endpoint';
   try {
-    provider = new URL(config.baseUrl || 'https://api.openai.com/v1').hostname;
+    provider = new URL(config.baseUrl || DEFAULT_MODEL_BASE_URL).hostname;
   } catch {
     /* Invalid configuration will fail only when a call is requested. */
   }
-  const metadata = { provider, name: config.model || 'gpt-6.1-sol' };
+  const metadata = { provider, name: config.model || DEFAULT_MODEL };
   if (!requested) {
     report.model = { enabled: false, status: 'not-requested', ...metadata };
     return report;
@@ -173,13 +176,13 @@ export async function explainWithModel(
   );
   try {
     const response = await (config.fetch || fetch)(
-      `${(config.baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '')}/chat/completions`,
+      `${(config.baseUrl || DEFAULT_MODEL_BASE_URL).replace(/\/$/, '')}/chat/completions`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${config.apiKey}` },
         signal: controller.signal,
         body: JSON.stringify({
-          model: config.model || 'gpt-6.1-sol',
+          model: config.model || DEFAULT_MODEL,
           temperature: 0,
           ...(config.serviceTier ? { service_tier: config.serviceTier } : {}),
           response_format: { type: 'json_object' },

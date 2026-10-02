@@ -3,7 +3,11 @@ import assert from 'node:assert/strict';
 import { analyze } from '../server/engine.js';
 import { seeds } from '../server/store.js';
 import { fenToYuan, moneyToFen, validateMaterial } from '../server/validation.js';
-import { explainWithModel as applyModel, type ModelConfig } from '../server/model.js';
+import {
+  explainWithModel as applyModel,
+  modelConfigFromEnv,
+  type ModelConfig,
+} from '../server/model.js';
 import type { CrossSignalCheck, Material } from '../shared/contracts.js';
 const fixture = await seeds(process.cwd());
 const explainWithModel = (
@@ -611,6 +615,65 @@ test('questions bind actual trigger facts; conflicted and unused observations ne
     false
   );
   assert.equal(moneyToFen('9007199254740993.01', 'yuan'), 900719925474099301n);
+});
+
+test('default model requests use TokenFlux Grok while explicit environment settings remain effective', async () => {
+  const names = ['OPENAI_BASE_URL', 'OPENAI_MODEL', 'OPENAI_SERVICE_TIER'] as const;
+  const previous = names.map((name) => [name, process.env[name]] as const);
+  try {
+    for (const name of names) delete process.env[name];
+    const defaults = modelConfigFromEnv();
+    assert.equal(defaults.baseUrl, 'https://tokenflux.dev/v1');
+    assert.equal(defaults.model, 'grok-4.7-fast');
+    assert.equal(defaults.serviceTier, undefined);
+    let calls = 0;
+    const report = await explainWithModel(run(fixture.materials[0]!), {
+      apiKey: 'test-only',
+      fetch: async (url, options) => {
+        calls++;
+        assert.equal(String(url), 'https://tokenflux.dev/v1/chat/completions');
+        const body = JSON.parse(String(options?.body));
+        assert.equal(body.model, 'grok-4.7-fast');
+        assert.equal(body.service_tier, undefined);
+        assert.deepEqual(body.response_format, { type: 'json_object' });
+        const evidence = JSON.parse(body.messages[1].content).evidence;
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    explanations: [
+                      {
+                        text: '利润与经营现金存在差异，需结合附注进一步核对。',
+                        citations: [evidence[0].id],
+                      },
+                    ],
+                  }),
+                },
+              },
+            ],
+          })
+        );
+      },
+    });
+    assert.equal(calls, 1);
+    assert.equal(report.model.status, 'completed');
+    assert.equal(report.model.provider, 'tokenflux.dev');
+    assert.equal(report.model.name, 'grok-4.7-fast');
+    process.env.OPENAI_BASE_URL = 'https://provider.example/v1';
+    process.env.OPENAI_MODEL = 'explicit-model';
+    process.env.OPENAI_SERVICE_TIER = 'default';
+    const override = modelConfigFromEnv();
+    assert.equal(override.baseUrl, 'https://provider.example/v1');
+    assert.equal(override.model, 'explicit-model');
+    assert.equal(override.serviceTier, 'default');
+  } finally {
+    for (const [name, value] of previous) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
 });
 
 test('configured provider requires an explicit per-task choice and discloses actual endpoint/model', async () => {

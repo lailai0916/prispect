@@ -260,15 +260,17 @@ test('public model selection accepts only existing references and type-matched h
       fetch: source.fetch,
       model: {
         apiKey: 'synthetic-not-real',
-        model: 'gpt-6.1-sol',
+        model: 'grok-4.7-fast',
         baseUrl: 'https://model.test/v1',
         fetch: async (_url, init) => {
           const body = String(init?.body);
           bodies.push(body);
           const payload = JSON.parse(body) as {
+            model: string;
             messages: { content: string }[];
             service_tier?: string;
           };
+          assert.equal(payload.model, 'grok-4.7-fast');
           assert.equal(payload.service_tier, undefined);
           const supplied = JSON.parse(payload.messages[1]!.content) as {
             evidence?: { id: string }[];
