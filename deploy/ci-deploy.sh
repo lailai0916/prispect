@@ -18,11 +18,12 @@ source_data="$base/source-data"
 inbox=/var/lib/cashlens-deploy
 backup=/usr/local/sbin/cashlens-backup
 healthcheck=/usr/local/sbin/cashlens-healthcheck
+prune=/usr/local/sbin/cashlens-prune-deployments
 [[ -d "$inbox" && ! -L "$inbox" && "$(stat -c %u "$inbox")" -eq 0 ]] || fail 'Root-owned inbox is required.'
 [[ "$(stat -c %a "$inbox")" == 755 ]] || fail 'Inbox must have mode 0755.'
 [[ -d "$releases" && ! -L "$releases" && "$(stat -c %u "$releases")" -eq 0 ]] || fail 'Root-owned releases directory is required.'
 [[ -d "$source_data" && ! -L "$source_data" && "$(stat -c %u "$source_data")" -eq 0 ]] || fail 'Preinstalled root-owned source-data directory is required.'
-for helper in "$backup" "$healthcheck"; do
+for helper in "$backup" "$healthcheck" "$prune"; do
   [[ -f "$helper" && ! -L "$helper" && -x "$helper" && "$(stat -c %u "$helper")" -eq 0 ]] || fail 'Preinstalled root-owned executable helper is required.'
   [[ "$(stat -c %a "$helper")" == 755 ]] || fail 'Helper mode must be 0755.'
 done
@@ -48,6 +49,7 @@ source_manifest="$job/source-manifest.json"
 release="$releases/$sha"
 switched=false
 install_unit=""
+release_created=false
 
 # Auth migrations can accept new security state. Never return that database to an older binary.
 database_auth_schema() {
@@ -113,11 +115,58 @@ PY
   done <"$job/assets.txt"
 }
 
+stop_install() {
+  [[ -n "$install_unit" ]] || return 0
+  local stopped=false active_state load_state control_group remaining_processes
+  if systemctl stop "$install_unit" >>"$job/install-stop.log" 2>&1; then
+    stopped=true
+  fi
+  active_state="$(systemctl show --property=ActiveState --value "$install_unit" 2>/dev/null || true)"
+  load_state="$(systemctl show --property=LoadState --value "$install_unit" 2>/dev/null || true)"
+  control_group="$(systemctl show --property=ControlGroup --value "$install_unit" 2>/dev/null || true)"
+  if [[ "$stopped" != true && "$load_state" != not-found ]]; then
+    return 1
+  fi
+  [[ "$active_state" == inactive || "$active_state" == failed ]] || return 1
+  if [[ -n "$control_group" ]]; then
+    [[ "$control_group" =~ ^/[A-Za-z0-9_.@:/-]+$ && "$control_group" != *..* ]] || return 1
+    if [[ -e "/sys/fs/cgroup$control_group/cgroup.procs" ]]; then
+      remaining_processes="$(find "/sys/fs/cgroup$control_group" -type f -name cgroup.procs -exec cat -- {} +)" || return 1
+      [[ -z "$remaining_processes" ]] || return 1
+    fi
+  fi
+  install_unit=""
+}
+
+prune_deployments() {
+  local previous_sha="${old_release##*/}"
+  local arguments=(--lock-fd 9 --active-job "${job##*/}" --protect-release "$sha")
+  if [[ "$previous_sha" =~ ^[0-9a-f]{40}$ ]]; then
+    arguments+=(--protect-release "$previous_sha")
+  fi
+  "$prune" "${arguments[@]}" "$@" >>"$job/cleanup.log" 2>&1
+}
+
+cleanup_job() {
+  [[ -z "$install_unit" ]] || return 1
+  # No lifecycle process can still write a tree that is about to be removed.
+  chown -hR root:root "$job"
+  chmod 700 "$job"
+  prune_deployments --clean-active
+}
+
+mark_release_success() {
+  date -u +%s >"$release/.deployed-at"
+  rm -f -- "$release/.deployment-failed"
+}
+
 finish() {
   status="$?"
   trap - EXIT INT TERM
   if [[ -n "$install_unit" ]]; then
-    systemctl stop "$install_unit" >"$job/install-stop.log" 2>&1 || true
+    if ! stop_install; then
+      printf '%s\n' 'Installation unit could not be confirmed stopped; its temporary files are retained.' >&2
+    fi
   fi
   if [[ "$status" -ne 0 && "$switched" == true ]]; then
     if can_restore_release "$old_release"; then
@@ -132,9 +181,18 @@ finish() {
       systemctl stop cashlens >"$job/rollback.log" 2>&1 || true
     fi
   fi
+  if [[ "$status" -ne 0 && "$release_created" == true && -d "$release" && ! -L "$release" ]]; then
+    printf '%s\n' "$status" >"$release/.deployment-failed"
+  fi
   if [[ -d "$job" ]]; then
     chown -hR root:root "$job" || true
     chmod 700 "$job" || true
+    printf '%s\n' "$status" >"$job/exit-status"
+    if [[ -z "$install_unit" ]]; then
+      cleanup_job || printf '%s\n' 'Deployment file cleanup needs attention; inspect cleanup.log.' >&2
+    else
+      prune_deployments || printf '%s\n' 'Deployment file cleanup needs attention; inspect cleanup.log.' >&2
+    fi
   fi
   printf 'Deployment diagnostics: %s\n' "$job"
   exit "$status"
@@ -142,6 +200,9 @@ finish() {
 trap finish EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
+
+# Free obsolete installation trees before receiving another full package.
+prune_deployments || printf '%s\n' 'Pre-deployment cleanup needs attention; inspect cleanup.log.' >&2
 
 # Read the SSH stream with a byte/time limit before opening the archive.
 python3 -c '
@@ -234,6 +295,7 @@ if [[ -e "$release" || -L "$release" ]]; then
   [[ -d "$release" && ! -L "$release" && "$(stat -c %u "$release")" -eq 0 ]] || fail 'Existing release is not sealed.'
   [[ -f "$release/.artifact-sha256" && "$(cat "$release/.artifact-sha256")" == "$artifact_hash" ]] || fail 'Existing commit has a different package hash.'
   if [[ "$old_release" == "$release" ]] && probe; then
+    mark_release_success
     printf 'Release %s is already current and healthy.\n' "$sha"
     exit 0
   fi
@@ -254,8 +316,7 @@ else
     --setenv="HOME=$npm_home" --setenv=PATH=/usr/local/bin:/usr/bin:/bin \
     /usr/local/bin/npm ci --omit=dev --no-audit --no-fund >"$job/npm-install.log" 2>&1
   # --wait completes after the unit stops; KillMode removes remaining install children.
-  systemctl stop "$install_unit" >"$job/install-stop.log" 2>&1 || true
-  install_unit=""
+  stop_install || fail 'Installation unit is still active; cannot seal or remove its files.'
   chmod 700 "$job"
   chown -hR root:root "$install_tree"
   chmod 700 "$install_tree"
@@ -358,7 +419,11 @@ PY
   find "$sealed" -type f ! -perm /111 -exec chmod 640 {} +
   # Maintenance services use fixed preinstalled helpers, not archive scripts.
   mv "$sealed" "$release"
+  release_created=true
 fi
+
+# Remove the duplicate dependency tree and npm cache before backup and health checks.
+cleanup_job || fail 'Temporary deployment files could not be safely cleaned.'
 
 # Validate against the live database before switching even on manual redeployment.
 target_auth_schema="$(release_auth_schema "$release")" || fail 'Release authentication manifest is invalid.'
@@ -374,6 +439,7 @@ switched=true
 systemctl restart cashlens >"$job/restart.log" 2>&1
 for attempt in $(seq 1 12); do
   if probe; then
+    mark_release_success
     switched=false
     printf 'Release %s deployed and verified against its built HTML/assets.\n' "$sha"
     exit 0

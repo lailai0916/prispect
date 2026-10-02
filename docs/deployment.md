@@ -22,6 +22,10 @@
 
 `cashlens-health.timer` 每五分钟运行本机健康接口与磁盘检查。启动阶段的短暂连接失败允许重试；数据盘使用率达到 85% 或接口持续失败时，该次服务失败并在 journal 留下记录。当前没有外部通知或自动清理旧备份。
 
+部署产生的可重建文件单独治理：预装的 `/usr/local/sbin/cashlens-prune-deployments` 与固定 publisher 使用同一部署锁，在接收前、安装封存后及成功或失败退出时清理。安装 unit 停止、子进程退出且收回所有权后，移除 install、npm-home、归档、sealed 残留和 served-asset；保留最近十份 job 诊断，每份日志仅留末尾 256 KiB。发布目录保留 current 与最近两个兼容当前认证数据库的旧版本，本轮目标、原 current 及仍在安装的版本受保护。旧版本没有成功时间标记时按有效清单与 mtime 保守处理，不等于已验证其启动成功；未知路径、链接、不可信权限或属主、挂载点与忙碌安装均跳过。
+
+清理范围仅为 `/var/lib/cashlens-deploy` 中认可的部署 job 与 `/opt/cashlens/releases` 中认可的旧 release。现有用户数据、`/opt/cashlens/source-data`、`/etc/cashlens.env` 和 `/var/backups/cashlens` 全部保留；85% 磁盘阈值不变。该更新要求通过既有管理身份独立核对管理源码的 commit 与哈希，在固定部署锁下以 root:root、0755 的临时文件先原子替换清理 helper，再替换 publisher，避免与部署并发或截断正在执行的文件。运行时需要 Python 3.11 或以上的目录描述符安全删除实现，以及 cgroup v2 下可信可读的 `/sys/fs/cgroup/cgroup.controllers` 和 systemd 的 `system.slice`；不支持时拒绝清理，先确认系统运行时。仓库归档本身不作为 root 维护程序执行；受限 SSH 协议和 sudo 权限不变。管理安装、释放安装锁后手动清理存量及核对步骤见[自动部署说明](actions-deployment.md#部署文件留存与管理更新)。
+
 不把客户端转发头自动当可信身份。应用端口保持本机绑定；反向代理的 IP 信任规则只能针对已确认代理配置。公网入口与 HTTPS 的实际验证由部署验收记录说明。
 
 ## 容器路径
