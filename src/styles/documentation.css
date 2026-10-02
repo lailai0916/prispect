@@ -1,0 +1,231 @@
+.document-page {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+.document-heading {
+  padding: 32px 0 36px;
+  border-bottom: 1px solid var(--line);
+}
+.document-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 24px;
+}
+.document-breadcrumb a {
+  color: inherit;
+}
+.document-heading h1 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+.document-description {
+  color: var(--muted);
+  max-width: 680px;
+  margin: 18px 0 22px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.document-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--subtle);
+  font-size: 12px;
+}
+.document-meta .text-link {
+  font-size: 12px;
+}
+.document-layout {
+  display: grid;
+  grid-template-columns: 212px minmax(0, 1fr);
+  gap: 64px;
+  margin-top: 36px;
+}
+.document-contents {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-self: start;
+  position: sticky;
+  top: 86px;
+  max-height: calc(100dvh - 110px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.document-contents > span {
+  color: var(--subtle);
+  font-size: 11px;
+  padding: 0 10px 10px;
+}
+.document-contents a {
+  display: block;
+  padding: 7px 10px;
+  color: var(--muted);
+  border-radius: var(--radius);
+  font-size: 12px;
+  text-decoration: none;
+}
+.document-contents a:hover {
+  color: var(--ink);
+  background: var(--hover);
+}
+.document-section {
+  padding-bottom: 34px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--line-soft);
+  scroll-margin-top: 92px;
+}
+.document-section h2 {
+  margin: 0 0 16px;
+  font-size: 19px;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+.document-section p,
+.document-section li {
+  line-height: 1.95;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.document-section p {
+  margin: 12px 0;
+}
+.document-section ul {
+  margin: 16px 0 0;
+  padding-inline-start: 20px;
+}
+.document-section li {
+  padding-inline-start: 4px;
+  margin: 8px 0;
+}
+.document-important {
+  border-inline-start: 2px solid var(--control-border);
+  padding-inline-start: 20px;
+}
+.document-important h2 {
+  font-weight: 650;
+}
+.document-table-scroll {
+  overflow-x: auto;
+  margin: 18px 0;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.document-table-scroll table {
+  width: 100%;
+  min-width: 500px;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.document-table-scroll th,
+.document-table-scroll td {
+  padding: 12px 14px;
+  text-align: start;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line-soft);
+}
+.document-table-scroll th {
+  background: var(--surface-subtle);
+  font-weight: 500;
+}
+.document-table-scroll tr:last-child td {
+  border-bottom: 0;
+}
+.document-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+}
+.document-contact-note {
+  color: var(--muted);
+  font-size: 12px !important;
+}
+.document-related {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 30px;
+}
+.document-related a {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 13px;
+}
+.document-related a:hover {
+  color: var(--ink);
+}
+@media (max-width: 800px) {
+  .document-heading {
+    padding-top: 18px;
+  }
+  .document-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    margin-top: 24px;
+  }
+  .document-contents {
+    position: static;
+    max-height: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0;
+  }
+  .document-contents > span {
+    width: 100%;
+    padding-left: 0;
+  }
+  .document-contents a {
+    padding: 10px 10px;
+    min-height: 44px;
+  }
+  .document-section {
+    scroll-margin-top: 76px;
+  }
+}
+@media print {
+  .document-contents,
+  .document-meta button,
+  .document-related,
+  .document-breadcrumb {
+    display: none;
+  }
+  .document-layout {
+    display: block;
+  }
+  .document-heading {
+    padding-top: 0;
+  }
+  .document-section {
+    break-inside: auto;
+  }
+  .document-section h2 {
+    break-after: avoid;
+  }
+  .document-table-scroll {
+    overflow: visible;
+  }
+  .document-table-scroll table {
+    min-width: 0;
+  }
+  .document-section a[href^='https://']::after
+  {
+    content: ' (' attr(href) ')';
+    font-size: 10px;
+  }
+}

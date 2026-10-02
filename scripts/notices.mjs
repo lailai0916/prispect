@@ -19,7 +19,7 @@ const packages = [
   '@zxcvbn-ts/language-en',
 ];
 const blocks = [
-  'CashLens browser dependencies: license notices',
+  'Prispect browser dependencies: license notices',
   'The following notices apply to client libraries and their installed dependency trees.',
 ];
 const seen = new Set();
@@ -89,3 +89,5 @@ await writeFile(
   'public/third-party-notices.txt',
   (blocks.join('\n\n---\n\n') + '\n').replace(/\r\n/g, '\n').replace(/[\t ]+$/gm, '')
 );
+await writeFile('public/software-license.txt', await readFile('LICENSE', 'utf8'));
+await writeFile('public/content-license.txt', await readFile('LICENSE-docs', 'utf8'));

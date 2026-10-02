@@ -25,7 +25,7 @@ jobs:
         with:
           python-version: '3.13'
       - name: Validate repository standards
-        run: python3 standards/scripts/check_repository.py --root project --slug lailai0916/xuejun-hackathon --display-name 'CashLens'
+        run: python3 standards/scripts/check_repository.py --root project --slug lailai0916/prispect --display-name 'Prispect'
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

@@ -272,7 +272,11 @@ export function MethodPage() {
           </section>
           <section id="method-privacy">
             <h2>{t('数据与隐私', 'Data and privacy')}</h2>
-            <p>{t('照见 CashLens 由析光运营。', 'CashLens is operated by 析光.')}</p>
+            <a className="text-link" href="#/privacy">
+              {t('阅读完整隐私政策', 'Read the full privacy policy')}
+              <ArrowRight size={14} />
+            </a>
+            <p>{t('本产品由析光团队运营。', 'This product is operated by the Prispect team.')}</p>
             <p>
               {t(
                 '账号、上传文件与核查保存在网站服务器；账号内文件下载需登录相应账号。',

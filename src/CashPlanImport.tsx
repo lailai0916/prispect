@@ -1,5 +1,5 @@
-import { useId, useState } from 'react';
-import { Download, FileUp } from 'lucide-react';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Download, FileText, FileUp, LoaderCircle } from 'lucide-react';
 import type { DatedCashInput } from '../shared/decision-contracts';
 import {
   CASH_PLAN_CSV_TEMPLATE,
@@ -10,7 +10,11 @@ import {
 } from '../shared/cash-plan-import';
 import { Dialog } from './components';
 import { useApp } from './context';
+import { useFileDrop, validateFileSelection, type FileSelectionError } from './useFileDrop';
 import './cash-plan-import.css';
+import './styles/cash-plan-upload.css';
+
+const extensions = ['csv', 'json'];
 
 export function CashPlanImport({
   current,
@@ -29,18 +33,45 @@ export function CashPlanImport({
     [floor, setFloor] = useState('');
   const [preview, setPreview] = useState<CashPlanImportPreview | null>(null),
     [error, setError] = useState(''),
-    [reading, setReading] = useState(false);
+    [reading, setReading] = useState(false),
+    [readFailed, setReadFailed] = useState(false),
+    [previewStale, setPreviewStale] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const selectedFile = useRef<File | null>(null);
+  const generation = useRef(0);
+  const readingLock = useRef(false);
+  const isOpen = useRef(false);
+  const defaults = useRef({ asOf, floor });
+  const latest = useRef({ current, t });
+  latest.current = { current, t };
+  useEffect(
+    () => () => {
+      isOpen.current = false;
+      generation.current += 1;
+      readingLock.current = false;
+    },
+    []
+  );
   const clearPreview = () => {
     setPreview(null);
     setError('');
   };
-  const parse = () => {
+  const close = () => {
+    isOpen.current = false;
+    generation.current += 1;
+    readingLock.current = false;
+    setReading(false);
+    setOpen(false);
+  };
+  const parseSource = (text: string, fileFormat: 'csv' | 'json') => {
     clearPreview();
+    setPreviewStale(false);
+    const { t, current } = latest.current;
     try {
       setPreview(
-        parseCashPlanImport(source, format, {
-          asOf,
-          cashFloor: floor,
+        parseCashPlanImport(text, fileFormat, {
+          asOf: defaults.current.asOf,
+          cashFloor: defaults.current.floor,
           proposedAmount: current?.proposedAmount ?? null,
           proposedDay: current?.proposedDay ?? null,
           alternativeDay: current?.alternativeDay ?? null,
@@ -111,6 +142,66 @@ export function CashPlanImport({
       else setError(t('无法读取计划，请检查文件。', 'Cannot read this plan. Check the file.'));
     }
   };
+  const selectionError = (code: FileSelectionError) => {
+    if (readingLock.current || !isOpen.current) return;
+    clearPreview();
+    setPreviewStale(false);
+    const messages: Record<FileSelectionError, string> = {
+      multiple: t('一次选择一个计划文件。', 'Choose one plan file at a time.'),
+      type: t('仅支持CSV或JSON文件，请重新选择。', 'Choose a CSV or JSON file.'),
+      size: t('文件超过1MB，请选择较小的文件。', 'The file exceeds 1MB. Choose a smaller file.'),
+      empty: t(
+        '文件为空，请选择含计划内容的文件。',
+        'The file is empty. Choose a file with a plan.'
+      ),
+      directory: t(
+        '不能导入文件夹，请选择一个文件。',
+        'Folders cannot be imported. Choose a file.'
+      ),
+    };
+    setError(`${messages[code]} ${t('未替换当前计划。', 'The current plan was not replaced.')}`);
+  };
+  const readPlanFile = async (file: File) => {
+    if (readingLock.current || !isOpen.current) return;
+    readingLock.current = true;
+    const revision = ++generation.current;
+    selectedFile.current = file;
+    clearPreview();
+    setSource('');
+    setFilename(file.name);
+    setReadFailed(false);
+    setPreviewStale(false);
+    setReading(true);
+    try {
+      const text = await file.text();
+      if (!isOpen.current || generation.current !== revision) return;
+      const fileFormat = file.name.toLowerCase().endsWith('.json') ? 'json' : 'csv';
+      setSource(text);
+      setFormat(fileFormat);
+      parseSource(text, fileFormat);
+    } catch {
+      if (!isOpen.current || generation.current !== revision) return;
+      setReadFailed(true);
+      setError(
+        latest.current.t(
+          '文件读取失败，请重试或重新选择。',
+          'Reading failed. Retry or choose another file.'
+        )
+      );
+    } finally {
+      if (generation.current === revision) {
+        readingLock.current = false;
+        setReading(false);
+      }
+    }
+  };
+  const { isDragging, dropProps } = useFileDrop({
+    disabled: reading || !open,
+    extensions,
+    maxBytes: CASH_PLAN_IMPORT_MAX_BYTES,
+    onFile: (file) => void readPlanFile(file),
+    onError: selectionError,
+  });
   const download = () => {
     const url = URL.createObjectURL(
       new Blob(['\uFEFF' + CASH_PLAN_CSV_TEMPLATE], { type: 'text/csv;charset=utf-8' })
@@ -127,11 +218,20 @@ export function CashPlanImport({
         type="button"
         className="button button-secondary"
         onClick={() => {
+          generation.current += 1;
+          isOpen.current = true;
+          readingLock.current = false;
+          selectedFile.current = null;
+          setReading(false);
+          setReadFailed(false);
+          setPreviewStale(false);
           setOpen(true);
           setSource('');
           setFilename('');
-          setAsOf(current?.asOf || '');
-          setFloor(current?.cashFloor || '');
+          const next = { asOf: current?.asOf || '', floor: current?.cashFloor || '' };
+          defaults.current = next;
+          setAsOf(next.asOf);
+          setFloor(next.floor);
           clearPreview();
         }}
       >
@@ -141,7 +241,7 @@ export function CashPlanImport({
       {open && (
         <Dialog
           title={t('导入私人现金计划', 'Import a private cash plan')}
-          onClose={() => setOpen(false)}
+          onClose={close}
           wide
           className="cash-import-dialog"
         >
@@ -157,41 +257,81 @@ export function CashPlanImport({
               {t('下载空白CSV', 'Download blank CSV')}
             </button>
           </div>
-          <div className="cash-import-grid">
-            <label htmlFor={id} className="form-field">
-              <span>{t('选择CSV / JSON文件', 'Choose a CSV / JSON file')}</span>
-              <input
-                id={id}
-                type="file"
-                accept=".csv,.json,text/csv,application/json"
-                disabled={reading}
-                onChange={async (event) => {
-                  const file = event.target.files?.[0];
-                  if (!file) return;
-                  clearPreview();
-                  setSource('');
-                  setFilename(file.name);
-                  if (file.size > CASH_PLAN_IMPORT_MAX_BYTES) {
-                    setError(t('文件超过1MB。', 'The file exceeds 1MB.'));
-                    return;
-                  }
-                  const suffix = file.name.toLowerCase().split('.').pop();
-                  if (suffix !== 'csv' && suffix !== 'json') {
-                    setError(t('仅支持.csv或.json。', 'Only .csv and .json are supported.'));
-                    return;
-                  }
-                  setReading(true);
-                  try {
-                    setSource(await file.text());
-                    setFormat(suffix);
-                  } catch {
-                    setError(t('文件读取失败。', 'The file could not be read.'));
-                  } finally {
-                    setReading(false);
-                  }
-                }}
-              />
-            </label>
+          <div
+            {...dropProps}
+            className="cash-plan-upload"
+            data-dragging={isDragging}
+            data-reading={reading}
+            data-error={!!error && !source}
+            aria-busy={reading}
+          >
+            <input
+              ref={fileInput}
+              id={id}
+              className="cash-plan-upload-input"
+              type="file"
+              tabIndex={-1}
+              aria-label={t('选择CSV或JSON计划文件', 'Choose a CSV or JSON plan file')}
+              accept=".csv,.json,text/csv,application/json"
+              disabled={reading}
+              onChange={(event) => {
+                const files = Array.from(event.target.files || []);
+                event.target.value = '';
+                if (!files.length) return;
+                const result = validateFileSelection(files, {
+                  extensions,
+                  maxBytes: CASH_PLAN_IMPORT_MAX_BYTES,
+                });
+                if (typeof result === 'string') selectionError(result);
+                else void readPlanFile(result);
+              }}
+            />
+            <button
+              type="button"
+              className="cash-plan-upload-target"
+              disabled={reading}
+              aria-controls={id}
+              aria-describedby={`${id}-upload-help`}
+              onClick={() => fileInput.current?.click()}
+            >
+              {reading ? (
+                <LoaderCircle size={22} className="spinner" aria-hidden="true" />
+              ) : filename ? (
+                <FileText size={22} aria-hidden="true" />
+              ) : (
+                <FileUp size={22} aria-hidden="true" />
+              )}
+              <strong>
+                {reading
+                  ? t('正在读取文件…', 'Reading the file…')
+                  : isDragging
+                    ? t('松开以导入计划', 'Drop to import the plan')
+                    : filename
+                      ? t('选择另一个文件', 'Choose another file')
+                      : t('拖入计划文件，或选择文件', 'Drop a plan file or choose a file')}
+              </strong>
+              <span id={`${id}-upload-help`}>
+                {t('CSV / JSON · 单文件 · 最多1MB', 'CSV / JSON · One file · Up to 1MB')}
+              </span>
+            </button>
+            {filename && <p className="cash-plan-upload-filename">{filename}</p>}
+            <p className="cash-plan-upload-status" role="status" aria-live="polite">
+              {reading
+                ? t('文件仅在此浏览器读取。', 'The file is read only in this browser.')
+                : preview
+                  ? t('预览已生成，核对后再采用。', 'Preview ready. Review it before adopting.')
+                  : previewStale
+                    ? t(
+                        '日期或底线已更改，请重新预览。',
+                        'The date or floor changed. Preview again.'
+                      )
+                    : t(
+                        '读取后自动预览，不会自动采用。',
+                        'Reading creates a preview, never automatic adoption.'
+                      )}
+            </p>
+          </div>
+          <div className="cash-import-grid cash-plan-upload-defaults">
             <label className="form-field">
               <span>{t('起点日期（文件未提供时）', 'As-of date (if absent in file)')}</span>
               <input
@@ -199,7 +339,9 @@ export function CashPlanImport({
                 value={asOf}
                 onChange={(event) => {
                   setAsOf(event.target.value);
+                  defaults.current.asOf = event.target.value;
                   clearPreview();
+                  setPreviewStale(!!source);
                 }}
               />
             </label>
@@ -215,7 +357,9 @@ export function CashPlanImport({
                 value={floor}
                 onChange={(event) => {
                   setFloor(event.target.value);
+                  defaults.current.floor = event.target.value;
                   clearPreview();
+                  setPreviewStale(!!source);
                 }}
               />
             </label>
@@ -243,21 +387,39 @@ export function CashPlanImport({
             </p>
           )}
           <div className="cash-import-actions">
-            <button
-              type="button"
-              className="button button-secondary"
-              disabled={reading || !source}
-              onClick={parse}
-            >
-              {reading ? t('正在读取…', 'Reading…') : t('解析预览', 'Preview import')}
-            </button>
-            <span className="muted">{filename}</span>
+            {readFailed && (
+              <button
+                type="button"
+                className="button button-secondary"
+                disabled={reading}
+                onClick={() => {
+                  if (selectedFile.current) void readPlanFile(selectedFile.current);
+                }}
+              >
+                {t('重试读取', 'Retry reading')}
+              </button>
+            )}
+            {source && !preview && (
+              <button
+                type="button"
+                className="button button-secondary"
+                disabled={reading || !source}
+                onClick={() => parseSource(source, format)}
+              >
+                {t('重新预览', 'Preview again')}
+              </button>
+            )}
           </div>
           {preview && (
             <section aria-label={t('计划候选预览', 'Plan candidate preview')}>
               <p>
-                <strong>{t(`${preview.rowCount}个事件`, `${preview.rowCount} events`)}</strong> ·{' '}
-                {preview.input.asOf} · {t('起点现金', 'Opening cash')}:{' '}
+                <strong>
+                  {t(
+                    `${preview.rowCount}个事件`,
+                    `${preview.rowCount} ${preview.rowCount === 1 ? 'event' : 'events'}`
+                  )}
+                </strong>{' '}
+                · {preview.input.asOf} · {t('起点现金', 'Opening cash')}:{' '}
                 {preview.input.openingCash ?? t('未知', 'Unknown')} · {t('自设底线', 'Your floor')}:{' '}
                 {preview.input.cashFloor} CNY
               </p>
@@ -323,8 +485,9 @@ export function CashPlanImport({
                   type="button"
                   className="button button-primary"
                   onClick={() => {
+                    if (!isOpen.current || readingLock.current) return;
                     onChange(structuredClone(preview.input));
-                    setOpen(false);
+                    close();
                   }}
                 >
                   {t('使用这些计划条件', 'Use these plan conditions')}

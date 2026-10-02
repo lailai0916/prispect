@@ -1,5 +1,5 @@
 [Unit]
-Description=CashLens health and state disk check
+Description=Prispect health and state disk check
 After=cashlens.service
 
 [Service]

@@ -1,0 +1,193 @@
+.material-drop-page {
+  position: relative;
+  min-width: 0;
+  min-height: 260px;
+}
+
+.material-page-drop-feedback {
+  position: fixed;
+  inset: 80px 24px 24px;
+  z-index: 90;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 12px;
+  padding: 24px;
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.material-page-drop-feedback svg {
+  color: var(--accent);
+}
+
+.material-page-drop-feedback span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.material-import-dialog[data-closed],
+.material-import-backdrop[data-closed] {
+  display: none;
+}
+
+.material-importer {
+  min-width: 0;
+}
+
+.material-importer .upload-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 184px;
+  margin: 16px 0;
+  padding: 24px;
+  border: 1px dashed var(--control-border);
+  border-radius: 8px;
+  background: var(--surface-subtle);
+  color: var(--ink);
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
+}
+
+.material-importer .upload-zone:hover:not(:disabled),
+.material-importer .upload-zone.is-file-dragging {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.material-importer .upload-zone:active:not(:disabled) {
+  background: var(--accent-pressed);
+}
+
+.material-importer .upload-zone strong {
+  font-size: 15px;
+  font-weight: 550;
+}
+
+.material-importer .upload-zone span {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+.material-importer .upload-zone:disabled {
+  cursor: progress;
+}
+
+.material-importer .upload-metadata > summary,
+.material-importer .input-format > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+.material-importer .input-format {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--muted);
+}
+
+.material-importer .input-format code {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.material-upload-progress,
+.material-preview-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 0 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.material-upload-progress > span,
+.material-preview-status > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.material-upload-progress > button {
+  margin-left: auto;
+}
+
+.material-preview-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.material-draft-drop-note,
+.material-discard-confirm {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--control-border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.material-discard-confirm .inline-actions {
+  margin-top: 10px;
+}
+
+.material-importer .import-bottom {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.material-importer .inline-error {
+  flex-wrap: wrap;
+  margin-top: 16px;
+}
+
+.material-importer .inline-error > span {
+  flex: 1 1 180px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .material-page-drop-feedback {
+    inset: 72px 12px 12px;
+  }
+  .material-importer .upload-zone {
+    min-height: 160px;
+    padding: 20px 12px;
+  }
+  .material-importer .import-bottom > button {
+    flex: 1 1 140px;
+    min-width: 0;
+    min-height: 44px;
+  }
+  .material-importer .material-upload-progress button,
+  .material-importer .inline-error button {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .material-importer .upload-zone {
+    transition: none;
+  }
+}

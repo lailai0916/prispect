@@ -727,7 +727,7 @@ export function ReportView({ task, report }: { task: AnalysisTask; report: Repor
         </section>
       </div>
       <div className="print-footer">
-        CashLens / {task.id} · {report.year} ·{' '}
+        Prispect / {task.id} · {report.year} ·{' '}
         {t(
           '历史材料核查，不构成投资或授信意见。',
           'Historical evidence review. No investment or credit advice.'
@@ -1174,7 +1174,14 @@ export function StressDialog({ task, onClose }: { task: AnalysisTask; onClose: (
               '分析本次采用的财务数据与原文摘录。',
               'Interpret the adopted financial data and source excerpts.'
             )}{' '}
-            <a href="#/method?section=privacy">{t('数据使用', 'Data use')}</a>
+            <a
+              href="#/privacy?section=ai"
+              target="_blank"
+              rel="noreferrer"
+              aria-label={t('数据使用（新标签页）', 'Data use (new tab)')}
+            >
+              {t('数据使用', 'Data use')}
+            </a>
           </small>
         </span>
       </label>

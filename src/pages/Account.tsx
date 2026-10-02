@@ -21,12 +21,140 @@ import type {
   AccountPasskeySummary,
   AccountSessionSummary,
 } from '../../shared/account-contracts';
-import { api, post } from '../api';
+import { api, post, RequestError, requestErrorText } from '../api';
 import { identityClient, identityResult } from '../auth-client';
 import { useApp } from '../context';
 import { date } from '../format';
 import { PasswordMeter } from './Auth';
+import { useFileDrop, validateFileSelection, type FileSelectionError } from '../useFileDrop';
 import '../account.css';
+import '../styles/avatar-upload.css';
+
+const avatarPolicy = { extensions: ['png', 'jpg', 'jpeg', 'webp'], maxBytes: 2 * 1024 * 1024 };
+const avatarPixelLimit = 16000000;
+type AvatarImageError = 'decode' | 'pixels' | 'animated';
+type AvatarMessage = readonly [string, string];
+
+// Read dimensions before asking the browser to decode a potentially large compressed image.
+function avatarImageInfo(bytes: Uint8Array): {
+  width: number;
+  height: number;
+  mime: string;
+  animated: boolean;
+} | null {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const text = (offset: number, length: number) =>
+    String.fromCharCode(...bytes.subarray(offset, offset + length));
+  if (
+    bytes.length >= 33 &&
+    [137, 80, 78, 71, 13, 10, 26, 10].every((value, index) => bytes[index] === value) &&
+    text(12, 4) === 'IHDR'
+  ) {
+    let animated = false;
+    for (let offset = 8; offset + 12 <= bytes.length; ) {
+      const size = view.getUint32(offset),
+        kind = text(offset + 4, 4);
+      if (size > bytes.length - offset - 12) break;
+      if (kind === 'acTL' && size >= 8) animated = view.getUint32(offset + 8) > 1;
+      if (kind === 'IDAT' || kind === 'IEND') break;
+      offset += size + 12;
+    }
+    return { width: view.getUint32(16), height: view.getUint32(20), mime: 'image/png', animated };
+  }
+  if (bytes[0] === 0xff && bytes[1] === 0xd8) {
+    for (let offset = 2; offset + 4 <= bytes.length; ) {
+      if (bytes[offset++] !== 0xff) return null;
+      while (bytes[offset] === 0xff) offset++;
+      const marker = bytes[offset++];
+      if (marker === 0xda || marker === 0xd9) break;
+      if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd7)) continue;
+      if (offset + 2 > bytes.length) return null;
+      const size = view.getUint16(offset);
+      if (size < 2 || size > bytes.length - offset) return null;
+      if (
+        [0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf].includes(
+          marker
+        )
+      ) {
+        if (size < 7) return null;
+        return {
+          width: view.getUint16(offset + 5),
+          height: view.getUint16(offset + 3),
+          mime: 'image/jpeg',
+          animated: false,
+        };
+      }
+      offset += size;
+    }
+  }
+  if (bytes.length >= 20 && text(0, 4) === 'RIFF' && text(8, 4) === 'WEBP') {
+    let dimensions: { width: number; height: number } | null = null,
+      frames = 0;
+    for (let offset = 12; offset + 8 <= bytes.length; ) {
+      const kind = text(offset, 4),
+        size = view.getUint32(offset + 4, true),
+        start = offset + 8;
+      if (size > bytes.length - start) return null;
+      if (kind === 'ANMF') frames++;
+      if (kind === 'VP8X' && size >= 10) {
+        dimensions = {
+          width: 1 + bytes[start + 4] + (bytes[start + 5] << 8) + (bytes[start + 6] << 16),
+          height: 1 + bytes[start + 7] + (bytes[start + 8] << 8) + (bytes[start + 9] << 16),
+        };
+      } else if (!dimensions && kind === 'VP8L' && size >= 5 && bytes[start] === 0x2f) {
+        const packed = view.getUint32(start + 1, true);
+        dimensions = { width: 1 + (packed & 0x3fff), height: 1 + ((packed >>> 14) & 0x3fff) };
+      } else if (
+        !dimensions &&
+        kind === 'VP8 ' &&
+        size >= 10 &&
+        text(start + 3, 3) === '\u009d\u0001\u002a'
+      ) {
+        dimensions = {
+          width: view.getUint16(start + 6, true) & 0x3fff,
+          height: view.getUint16(start + 8, true) & 0x3fff,
+        };
+      }
+      offset = start + size + (size & 1);
+    }
+    if (dimensions) return { ...dimensions, mime: 'image/webp', animated: frames > 1 };
+  }
+  return null;
+}
+
+async function validateAvatarImage(file: File): Promise<AvatarImageError | null> {
+  try {
+    const bytes = new Uint8Array(await file.arrayBuffer()),
+      info = avatarImageInfo(bytes);
+    if (!info || !info.width || !info.height) return 'decode';
+    if (info.animated) return 'animated';
+    if (info.width * info.height > avatarPixelLimit) return 'pixels';
+    const image = new Blob([bytes], { type: info.mime });
+    if (typeof createImageBitmap === 'function') {
+      const decoded = await createImageBitmap(image);
+      try {
+        if (!decoded.width || !decoded.height) return 'decode';
+        if (decoded.width * decoded.height > avatarPixelLimit) return 'pixels';
+      } finally {
+        decoded.close();
+      }
+    } else {
+      const url = URL.createObjectURL(image);
+      try {
+        const decoded = new Image();
+        decoded.src = url;
+        await decoded.decode();
+        if (!decoded.naturalWidth || !decoded.naturalHeight) return 'decode';
+        if (decoded.naturalWidth * decoded.naturalHeight > avatarPixelLimit) return 'pixels';
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    }
+    return null;
+  } catch {
+    return 'decode';
+  }
+}
 
 function Section({
   title,
@@ -102,6 +230,39 @@ export function AccountPage() {
   const fileRef = useRef<HTMLInputElement>(null),
     dialogRef = useRef<HTMLDivElement>(null),
     returnFocus = useRef<HTMLElement | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState<'checking' | 'uploading' | 'deleting' | null>(null),
+    [avatarFeedback, setAvatarFeedback] = useState<{ error: boolean; text: AvatarMessage } | null>(
+      null
+    ),
+    [avatarRetry, setAvatarRetry] = useState<File | null>(null);
+  const avatarLock = useRef(false),
+    avatarAlive = useRef(false),
+    avatarOwner = useRef(user?.id),
+    avatarRequest = useRef<AbortController | null>(null);
+  avatarOwner.current = user?.id;
+  useEffect(() => {
+    avatarAlive.current = true;
+    setAvatarBusy(null);
+    setAvatarFeedback(null);
+    setAvatarRetry(null);
+    const leaveAccount = () => {
+      if ((location.hash.slice(1) || '/').split('?')[0] === '/account') return;
+      // A lazy next page may briefly keep this component mounted after navigation.
+      avatarRequest.current?.abort();
+      avatarRequest.current = null;
+      avatarLock.current = false;
+      setAvatarBusy(null);
+      setAvatarRetry(null);
+    };
+    window.addEventListener('hashchange', leaveAccount);
+    return () => {
+      window.removeEventListener('hashchange', leaveAccount);
+      avatarAlive.current = false;
+      avatarRequest.current?.abort();
+      avatarRequest.current = null;
+      avatarLock.current = false;
+    };
+  }, [user?.id]);
   const load = useCallback(async () => {
     const [account, keyList, sessionList] = await Promise.all([
       api<AccountOverview>('/account'),
@@ -179,18 +340,107 @@ export function AccountPage() {
       t('个人信息已保存', 'Profile saved')
     );
   };
-  const avatar = async (file: File) => {
-    await execute(
-      async () => {
-        const body = new FormData();
-        body.append('file', file);
-        setOverview(await api<AccountOverview>('/account/avatar', { method: 'POST', body }));
-        return true;
-      },
-      t('头像已更新', 'Avatar updated')
-    );
-    if (fileRef.current) fileRef.current.value = '';
+  const avatarSelectionError = (code: FileSelectionError | AvatarImageError) => {
+    if (avatarLock.current || !avatarAlive.current) return;
+    const messages: Record<FileSelectionError | AvatarImageError, AvatarMessage> = {
+      multiple: ['请一次选择一张头像图片。', 'Choose one avatar image at a time.'],
+      type: ['请选择 PNG、JPEG 或 WebP 图片。', 'Choose a PNG, JPEG or WebP image.'],
+      size: [
+        '图片超过 2 MiB，请选择较小的文件。',
+        'This image exceeds 2 MiB. Choose a smaller file.',
+      ],
+      empty: ['这张图片是空文件，请重新选择。', 'This image file is empty. Choose another file.'],
+      directory: ['请拖入一张图片，而不是文件夹。', 'Drop one image, not a folder.'],
+      decode: [
+        '这张图片无法读取，请选择有效的 PNG、JPEG 或 WebP。',
+        'This image could not be read. Choose a valid PNG, JPEG or WebP.',
+      ],
+      pixels: [
+        '图片超过 1600 万像素，请缩小后重试。',
+        'This image exceeds 16 million pixels. Resize it and retry.',
+      ],
+      animated: [
+        '头像只支持单张静态图片，请选择其他文件。',
+        'Avatars support a single still image. Choose another file.',
+      ],
+    };
+    setAvatarRetry(null);
+    setAvatarFeedback({ error: true, text: messages[code] });
   };
+  const updateAvatar = async (file?: File) => {
+    const owner = user?.id;
+    if (!owner || busy || avatarLock.current || !avatarAlive.current) return;
+    // The ref is set before validation or the first await, including picker/drop/delete races.
+    avatarLock.current = true;
+    const controller = new AbortController();
+    avatarRequest.current = controller;
+    const current = () =>
+      avatarAlive.current &&
+      avatarOwner.current === owner &&
+      avatarRequest.current === controller &&
+      !controller.signal.aborted;
+    setAvatarFeedback(null);
+    setAvatarRetry(null);
+    setAvatarBusy(file ? 'checking' : 'deleting');
+    try {
+      if (file) {
+        const selected = validateFileSelection([file], avatarPolicy);
+        const invalid = typeof selected === 'string' ? selected : await validateAvatarImage(file);
+        if (!current()) return;
+        if (invalid) {
+          avatarLock.current = false;
+          avatarSelectionError(invalid);
+          return;
+        }
+        setAvatarRetry(file);
+        setAvatarBusy('uploading');
+      }
+      const body = file ? new FormData() : undefined;
+      if (file) body!.append('file', file);
+      const account = await api<AccountOverview>('/account/avatar', {
+        method: file ? 'POST' : 'DELETE',
+        body,
+        signal: controller.signal,
+      });
+      if (!current() || account.user.id !== owner) return;
+      setOverview(account);
+      setAvatarRetry(null);
+      setAvatarFeedback({
+        error: false,
+        text: file ? ['头像已更新', 'Avatar updated'] : ['头像已移除', 'Avatar removed'],
+      });
+      void refresh().catch(() => {});
+    } catch (error) {
+      if (!current()) return;
+      const text: AvatarMessage =
+        error instanceof RequestError && error.code === 'INVALID_AVATAR'
+          ? [
+              '图片未被接受。请选择有效的单张 PNG、JPEG 或 WebP，最多 2 MiB、1600 万像素。',
+              'This image was not accepted. Choose a valid single PNG, JPEG or WebP, up to 2 MiB and 16 million pixels.',
+            ]
+          : error instanceof RequestError && error.code === 'LIMIT_FILE_SIZE'
+            ? [
+                '图片超过 2 MiB，请选择较小的文件。',
+                'This image exceeds 2 MiB. Choose a smaller file.',
+              ]
+            : [requestErrorText(error, 'zh-Hans'), requestErrorText(error, 'en')];
+      setAvatarFeedback({ error: true, text });
+      if (error instanceof RequestError && ['AUTH_REQUIRED', 'UNAUTHORIZED'].includes(error.code))
+        void refresh().catch(() => {});
+    } finally {
+      if (avatarRequest.current === controller) {
+        avatarRequest.current = null;
+        avatarLock.current = false;
+        if (avatarAlive.current && avatarOwner.current === owner) setAvatarBusy(null);
+      }
+    }
+  };
+  const { isDragging: avatarDragging, dropProps: avatarDropProps } = useFileDrop({
+    ...avatarPolicy,
+    disabled: busy || Boolean(avatarBusy),
+    onFile: (file) => void updateAvatar(file),
+    onError: avatarSelectionError,
+  });
   const changePassword = async (event: FormEvent) => {
     event.preventDefault();
     setFailure('');
@@ -244,7 +494,7 @@ export function AccountPage() {
       const data = identityResult(
         await identityClient.twoFactor.enable({
           password: currentPassword,
-          issuer: '照见 CashLens',
+          issuer: '析光 Prispect',
         })
       );
       if ('totpURI' in data && data.totpURI)
@@ -359,7 +609,14 @@ export function AccountPage() {
                   'Your avatar and name appear in your account interface. Private materials stay private.'
                 )}
               >
-                <div className="account-avatar-row">
+                <div
+                  {...avatarDropProps}
+                  className={`account-avatar-row avatar-upload${avatarDragging ? ' is-dragging' : ''}`}
+                  role="group"
+                  aria-label={t('头像上传', 'Avatar upload')}
+                  aria-describedby="avatar-upload-hint avatar-upload-status"
+                  aria-busy={Boolean(avatarBusy)}
+                >
                   {overview.user.image ? (
                     <img
                       className="account-avatar"
@@ -374,41 +631,98 @@ export function AccountPage() {
                   <div className="account-avatar-controls">
                     <div className="account-actions">
                       <button
+                        type="button"
                         className="account-secondary"
                         onClick={() => fileRef.current?.click()}
-                        disabled={busy}
+                        disabled={busy || Boolean(avatarBusy)}
+                        aria-describedby="avatar-upload-hint"
                       >
-                        <Camera size={15} />
-                        {t('更换头像', 'Change avatar')}
+                        {avatarBusy && avatarBusy !== 'deleting' ? (
+                          <LoaderCircle size={15} className="spinner" aria-hidden="true" />
+                        ) : (
+                          <Camera size={15} aria-hidden="true" />
+                        )}
+                        {avatarBusy === 'checking'
+                          ? t('检查图片…', 'Checking image…')
+                          : avatarBusy === 'uploading'
+                            ? t('上传中…', 'Uploading…')
+                            : t('更换头像', 'Change avatar')}
                       </button>
                       {overview.user.image && (
                         <button
+                          type="button"
                           className="account-link-button"
-                          disabled={busy}
-                          onClick={() =>
-                            execute(async () => {
-                              setOverview(
-                                await api<AccountOverview>('/account/avatar', { method: 'DELETE' })
-                              );
-                              return true;
-                            })
-                          }
+                          disabled={busy || Boolean(avatarBusy)}
+                          onClick={() => void updateAvatar()}
                         >
-                          {t('移除', 'Remove')}
+                          {avatarBusy === 'deleting'
+                            ? t('移除中…', 'Removing…')
+                            : t('移除', 'Remove')}
+                        </button>
+                      )}
+                      {avatarRetry && avatarFeedback?.error && (
+                        <button
+                          type="button"
+                          className="account-link-button"
+                          disabled={busy || Boolean(avatarBusy)}
+                          onClick={() => void updateAvatar(avatarRetry)}
+                        >
+                          {t('重试上传', 'Retry upload')}
                         </button>
                       )}
                     </div>
-                    <p>{t('PNG、JPEG、WebP，最多2MB。', 'PNG, JPEG or WebP, up to 2 MB.')}</p>
+                    <p id="avatar-upload-hint">
+                      {avatarDragging
+                        ? t('松开以更换头像', 'Drop to change your avatar')
+                        : t(
+                            '拖入图片或点击更换。单张 PNG、JPEG、WebP，最多 2 MiB、1600 万像素。',
+                            'Drop an image or choose a file. Single PNG, JPEG or WebP, up to 2 MiB and 16 million pixels.'
+                          )}
+                    </p>
+                    <div
+                      id="avatar-upload-status"
+                      className="avatar-upload-status"
+                      aria-live="polite"
+                      aria-atomic="true"
+                    >
+                      {avatarBusy ? (
+                        <p role="status">
+                          {avatarBusy === 'checking'
+                            ? t(
+                                '正在检查图片格式与尺寸。',
+                                'Checking the image format and dimensions.'
+                              )
+                            : avatarBusy === 'uploading'
+                              ? t('正在上传头像，请稍候。', 'Uploading your avatar. Please wait.')
+                              : t('正在移除头像，请稍候。', 'Removing your avatar. Please wait.')}
+                        </p>
+                      ) : avatarFeedback ? (
+                        <p
+                          className={
+                            avatarFeedback.error ? 'avatar-upload-error' : 'avatar-upload-success'
+                          }
+                          role={avatarFeedback.error ? 'alert' : 'status'}
+                        >
+                          {t(...avatarFeedback.text)}
+                        </p>
+                      ) : null}
+                    </div>
                   </div>
                   <input
                     className="account-file-input"
                     ref={fileRef}
                     type="file"
                     accept="image/png,image/jpeg,image/webp"
+                    disabled={busy || Boolean(avatarBusy)}
                     aria-label={t('选择头像文件', 'Choose avatar file')}
                     onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void avatar(file);
+                      const files = event.target.files;
+                      const selected = files?.length
+                        ? validateFileSelection(files, avatarPolicy)
+                        : null;
+                      event.target.value = '';
+                      if (typeof selected === 'string') avatarSelectionError(selected);
+                      else if (selected) void updateAvatar(selected);
                     }}
                   />
                 </div>
@@ -961,7 +1275,7 @@ export function AccountPage() {
                 </div>
                 <p className="account-muted">
                   {t('注册于', 'Joined')} {date(overview.user.createdAt, locale)} ·{' '}
-                  <a href="#/method?section=privacy">
+                  <a href="#/privacy">
                     {t('查看数据与来源边界', 'Read data and source boundaries')}
                   </a>
                 </p>

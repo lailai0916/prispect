@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   X,
   UserRound,
+  BookOpen,
 } from 'lucide-react';
 import type {
   DemoCase,
@@ -30,6 +31,9 @@ import { api, setCsrfToken, RequestError, requestErrorText } from './api';
 import { type Locale } from './format';
 import { changeComposerOwner } from './start-draft';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
+import { ThemeControl } from './ThemeControl';
+import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
+import type { DocumentPath } from './pages/Documentation';
 
 import {
   AppContext,
@@ -78,11 +82,14 @@ const ComparePage = lazy(() =>
 const MethodPage = lazy(() =>
   import('./pages/Method').then((module) => ({ default: module.MethodPage }))
 );
+const DocumentationPage = lazy(() =>
+  import('./pages/Documentation').then((module) => ({ default: module.DocumentationPage }))
+);
+const documentPaths = ['/about', '/docs', '/privacy', '/terms', '/copyright'] as const;
+const publicPages = ['/', '/method', '/login', '/register', ...documentPaths];
 
 export function App() {
-  const [locale, setLocale] = useState<Locale>(() =>
-    localStorage.getItem('cashlens-locale') === 'en' ? 'en' : 'zh-Hans'
-  );
+  const [locale, setLocale] = useState<Locale>(storedLocale);
   const [route, setRoute] = useState(() => location.hash.slice(1) || '/');
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
@@ -200,19 +207,28 @@ export function App() {
     return () => clearInterval(timer);
   }, [workspace, refresh, loadError]);
   useEffect(() => {
-    localStorage.setItem('cashlens-locale', locale);
+    storePreference(LOCALE_STORAGE_KEY, locale);
     document.documentElement.lang = locale;
   }, [locale]);
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === LOCALE_STORAGE_KEY || event.key === null) setLocale(storedLocale());
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(null), 7000);
     return () => clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
-    document.title = t('照见 CashLens', 'CashLens');
+    if (documentPaths.includes(route.split('?')[0] as DocumentPath)) return;
+    document.title = t('析光 Prispect', 'Prispect');
   }, [t, route]);
   const page = route.split('?')[0];
-  const protectedPage = !['/', '/method', '/login', '/register'].includes(page);
+  const documentPage = documentPaths.includes(page as DocumentPath);
+  const protectedPage = !publicPages.includes(page);
   useEffect(() => {
     if (loaded && !user && protectedPage) navigate(`/login?next=${encodeURIComponent(route)}`);
   }, [loaded, user, protectedPage, navigate, route]);
@@ -241,7 +257,9 @@ export function App() {
   ] as const;
   const navigation = [...primaryNavigation, ...secondaryNavigation];
   const sessionAvailable = loaded && !loadError;
-  const business = Boolean(sessionAvailable && user && !['/login', '/register'].includes(page));
+  const business = Boolean(
+    sessionAvailable && user && !['/login', '/register', ...documentPaths].includes(page)
+  );
   const currentSection = page.startsWith('/tasks/')
     ? t('财报核查', 'Financial review')
     : page === '/new'
@@ -330,6 +348,10 @@ export function App() {
         </div>
       </nav>
       <div className="sidebar-bottom">
+        <a href="#/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
+          <BookOpen size={16} />
+          {t('使用文档', 'Documentation')}
+        </a>
         <a
           href="#/method"
           className={`sidebar-method ${page === '/method' ? 'active' : ''}`}
@@ -370,12 +392,19 @@ export function App() {
           {t('跳至主要内容', 'Skip to content')}
         </a>
         <header className="site-header">
-          <a className="brand-link" href="#/" aria-label={t('照见首页', 'CashLens home')}>
+          <a className="brand-link" href="#/" aria-label={t('析光首页', 'Prispect home')}>
             <Logo />
           </a>
           {business && <span className="header-context">{currentSection}</span>}
           {!business && (
             <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
+              <a
+                href="#/docs"
+                className={page === '/docs' ? 'active' : ''}
+                aria-current={page === '/docs' ? 'page' : undefined}
+              >
+                {t('文档', 'Docs')}
+              </a>
               <a
                 href="#/method"
                 className={page === '/method' ? 'active' : ''}
@@ -386,15 +415,24 @@ export function App() {
             </nav>
           )}
           <div className="header-actions">
-            <Hint label={t('切换语言', 'Change language')}>
+            <Hint
+              label={t(
+                '当前语言：中文，切换至 English',
+                'Current language: English. Switch to 中文'
+              )}
+            >
               <button
                 className="language-button"
                 onClick={() => setLocale(locale === 'en' ? 'zh-Hans' : 'en')}
-                aria-label={t('Switch to English', '切换至中文')}
+                aria-label={t(
+                  '当前语言：中文，切换至 English',
+                  'Current language: English. Switch to 中文'
+                )}
               >
-                {locale === 'en' ? '中文' : 'EN'}
+                {locale === 'en' ? 'EN' : '中'}
               </button>
             </Hint>
+            <ThemeControl />
             {sessionAvailable && user ? (
               <ActionMenu
                 label={t('账号菜单', 'Account menu')}
@@ -424,7 +462,7 @@ export function App() {
         </header>
         {business && (
           <aside className="workspace-sidebar">
-            <a className="sidebar-brand" href="#/" aria-label={t('照见首页', 'CashLens home')}>
+            <a className="sidebar-brand" href="#/" aria-label={t('析光首页', 'Prispect home')}>
               <Logo />
             </a>
             <button
@@ -438,7 +476,7 @@ export function App() {
           </aside>
         )}
         {business && menuOpen && (
-          <NavigationPanel title={t('照见', 'CashLens')} onClose={() => setMenuOpen(false)}>
+          <NavigationPanel title={t('析光', 'Prispect')} onClose={() => setMenuOpen(false)}>
             <button
               className="button button-secondary sidebar-create"
               onClick={() => navigate('/')}
@@ -466,7 +504,12 @@ export function App() {
                 </div>
               }
             >
-              {loadError ? (
+              {documentPage ? (
+                <DocumentationPage
+                  path={page as DocumentPath}
+                  section={new URLSearchParams(route.split('?')[1]).get('section')}
+                />
+              ) : loadError ? (
                 <div className="connection-error">
                   <CircleAlert />
                   <h1>{t('暂时无法连接工作区', 'Workspace is unavailable')}</h1>
@@ -528,18 +571,14 @@ export function App() {
         </main>
         {!business && (
           <footer className="site-footer">
-            <span>{t('析光 · 照见 CashLens', '析光 · CashLens')}</span>
+            <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
             <div>
+              <a href="#/about">{t('产品介绍', 'About')}</a>
+              <a href="#/docs">{t('使用文档', 'Documentation')}</a>
               <a href="#/method">{t('方法', 'Method')}</a>
-              <a href="#/method?section=privacy">{t('数据与隐私', 'Data and privacy')}</a>
-              <a
-                className="legal-link"
-                href="/third-party-notices.txt"
-                target="_blank"
-                rel="noreferrer"
-              >
-                {t('第三方许可', 'Third-party notices')}
-              </a>
+              <a href="#/privacy">{t('隐私政策', 'Privacy')}</a>
+              <a href="#/terms">{t('用户协议', 'Terms')}</a>
+              <a href="#/copyright">{t('版权声明', 'Copyright')}</a>
             </div>
           </footer>
         )}

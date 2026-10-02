@@ -530,7 +530,14 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                     '相关公开材料将交由 AI 处理。',
                     'Relevant public documents are sent for AI processing.'
                   )}{' '}
-                  <a href="#/method?section=privacy">{t('数据使用', 'Data use')}</a>
+                  <a
+                    href="#/privacy?section=ai"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={t('数据使用（新标签页）', 'Data use (new tab)')}
+                  >
+                    {t('数据使用', 'Data use')}
+                  </a>
                 </small>
                 {!workspace?.provider.configured && (
                   <small>

@@ -311,7 +311,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `cashlens-decision-${detail.decision.id}-v${detail.version.revision}.json`;
+    link.download = `prispect-decision-${detail.decision.id}-v${detail.version.revision}.json`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };

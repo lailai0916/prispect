@@ -1,11 +1,11 @@
 <div align="center">
-  <h1>CashLens</h1>
+  <h1>Prispect</h1>
   <p><a href="README.md">English</a> · <strong>简体中文</strong></p>
   <p>
-    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/xuejun-hackathon/ci.yml?branch=main&style=flat-square" />
-    <img src="https://img.shields.io/github/last-commit/lailai0916/xuejun-hackathon?style=flat-square" />
-    <img src="https://img.shields.io/github/languages/top/lailai0916/xuejun-hackathon?style=flat-square" />
-    <img src="https://img.shields.io/github/repo-size/lailai0916/xuejun-hackathon?style=flat-square" />
+    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/prispect/ci.yml?branch=main&style=flat-square" />
+    <img src="https://img.shields.io/github/last-commit/lailai0916/prispect?style=flat-square" />
+    <img src="https://img.shields.io/github/languages/top/lailai0916/prispect?style=flat-square" />
+    <img src="https://img.shields.io/github/repo-size/lailai0916/prispect?style=flat-square" />
     <img src="https://img.shields.io/badge/code_style-prettier-ff69b4?style=flat-square" />
     <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" />
   </p>
@@ -13,9 +13,11 @@
 
 ## 网站简介
 
-照见 CashLens 是析光团队的产品，从一家公司或一件待核事项开始。公开证据 Agent 核对年度利润、经营现金、相关附注和近期披露，给出有依据的观察与尚未解决的问题。外部用户可继续核对预付款，内部接手者可检查具体日期的现金计划。私有记录支持各自的条件测算；历史财务信号不填入当前现金或未来回款。
+析光（Prispect）从一家公司或一件待核事项开始。公开证据 Agent 核对年度利润、经营现金、相关附注和近期披露，给出有依据的观察与尚未解决的问题。外部用户可继续核对预付款，内部接手者可检查具体日期的现金计划。私有记录支持各自的条件测算；历史财务信号不填入当前现金或未来回款。
 
 本项目参加学军中学「回响·48H 青年创造营」X-Ray 方向，聚焦一个明确问题。历史现金比例不代表企业评级、授信决策或投资建议。用户需求与付费意愿仍属于研究假设。
+
+产品信息见[使用文档](https://xuejun.cc/#/docs)、[产品介绍](https://xuejun.cc/#/about)、[隐私政策](https://xuejun.cc/#/privacy)、[用户协议](https://xuejun.cc/#/terms)与[版权说明](https://xuejun.cc/#/copyright)。政策描述已实现的服务，不等于法律合规认证。联系邮箱：`lailai0x394@gmail.com`。
 
 ## 网站特性
 
@@ -29,15 +31,15 @@
 
 🧪 **付款情景** — 外部比较本次拟付款后的未交付敞口与自设上限；内部按已列90天事件比较付款日期、事件余额、期末和条件下的付款/回款阈值。同日顺序、资料覆盖范围与改期可协商的假设明确保留；缺失输入保持未知。
 
-🌐 **双语完整流程** — 中英文首页、付款决定、工作台、导入、报告、比较、账号和方法页面，自动跟随系统深浅主题，以及可打印 HTML 和带版本的 JSON 导出；原文引用保留源语言。
+🌐 **双语完整流程** — 中英文产品流程、使用文档与政策。语言按钮显示当前语言；外观支持自动、浅色、深色，并在下次访问时保留。材料、现金计划与头像可拖放，提供校验与重试。支持可打印 HTML 和带版本的 JSON 导出；原文引用保留源语言。
 
 ## 快速开始
 
 使用 Node.js 22.12 或更新版本及 npm。访问本私有仓库需要授权。
 
 ```bash
-git clone https://github.com/lailai0916/xuejun-hackathon.git
-cd xuejun-hackathon
+git clone https://github.com/lailai0916/prispect.git
+cd prispect
 npm ci
 npm run build
 npm start
@@ -64,7 +66,7 @@ npm run data:samples
 ## 项目结构
 
 ```bash
-xuejun-hackathon/
+prispect/
 ├── data/                           # 核验样本输入与来源清单
 ├── deploy/                         # HTTPS 反向代理配置
 ├── docs/                           # 方法、证据、交付与部署资料

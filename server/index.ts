@@ -11,7 +11,7 @@ if (process.env.NODE_ENV === 'production') {
 } else if (host !== '127.0.0.1' && host !== 'localhost') throw new Error('开发模式仅允许本机地址');
 const { app, auth, waitForIdle } = await createApp();
 const server = app.listen(port, host, () => {
-  process.stdout.write(`CashLens local server: http://${host}:${port}\n`);
+  process.stdout.write(`Prispect local server: http://${host}:${port}\n`);
 });
 const close = () => {
   server.close(() => {

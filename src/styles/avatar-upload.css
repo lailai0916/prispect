@@ -1,0 +1,66 @@
+.avatar-upload {
+  padding: 18px;
+  border: 1px dashed var(--control-border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.avatar-upload.is-dragging {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  outline: 2px solid var(--accent-border);
+  outline-offset: 2px;
+}
+
+.avatar-upload:focus-within {
+  border-color: var(--accent);
+}
+
+.avatar-upload .account-avatar-controls {
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar-upload .account-avatar-controls p {
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.avatar-upload-status:empty {
+  display: none;
+}
+
+.avatar-upload .avatar-upload-error {
+  color: var(--red);
+}
+
+.avatar-upload .avatar-upload-success {
+  color: var(--ink);
+}
+
+.avatar-upload[aria-busy='true'] {
+  border-style: solid;
+}
+
+@media (max-width: 480px) {
+  .avatar-upload {
+    align-items: flex-start;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .avatar-upload .account-avatar {
+    width: 52px;
+    height: 52px;
+    font-size: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-upload {
+    transition: none;
+  }
+}

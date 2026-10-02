@@ -6,7 +6,7 @@ flock 8
 state_dir=/var/lib/cashlens
 backup_dir=/var/backups/cashlens
 if [[ ! -d "$state_dir" ]]; then
-  echo 'CashLens state directory does not exist.' >&2
+  echo 'Prispect state directory does not exist.' >&2
   exit 1
 fi
 mkdir -p "$backup_dir"
@@ -32,4 +32,4 @@ mkdir "$config_stage/configuration"
 install -m 600 /etc/cashlens.env "$config_stage/configuration/cashlens.env"
 tar -czf "$backup_file" -C "$state_dir" . -C "$config_stage" configuration
 sha256sum "$backup_file" > "$backup_file.sha256"
-echo "CashLens backup saved: $backup_file"
+echo "Prispect backup saved: $backup_file"

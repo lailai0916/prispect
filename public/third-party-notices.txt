@@ -1,4 +1,4 @@
-CashLens browser dependencies: license notices
+Prispect browser dependencies: license notices
 
 ---
 

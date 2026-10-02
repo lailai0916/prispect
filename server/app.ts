@@ -278,13 +278,13 @@ export async function createApp(options: AppOptions = {}) {
               .join(',')
           );
         res
-          .setHeader('Content-Disposition', 'attachment; filename="cashlens-input.csv"')
+          .setHeader('Content-Disposition', 'attachment; filename="prispect-input.csv"')
           .type('text/csv')
           .send('\uFEFF' + columns.join(',') + '\n' + rows.join('\n') + '\n');
       } else if (req.query.format === 'json') {
         const { id, createdAt, ...input } = material;
         res
-          .setHeader('Content-Disposition', 'attachment; filename="cashlens-input.json"')
+          .setHeader('Content-Disposition', 'attachment; filename="prispect-input.json"')
           .json(input);
       } else throw new ApiFault(400, 'INVALID_FORMAT', '样例格式仅支持 json 或 csv');
     } catch (error) {
@@ -482,7 +482,7 @@ export async function createApp(options: AppOptions = {}) {
       );
       res.setHeader(
         'Content-Disposition',
-        `${disposition}; filename="cashlens-original${extension}"; filename*=UTF-8''${encodedName}`
+        `${disposition}; filename="prispect-original${extension}"; filename*=UTF-8''${encodedName}`
       );
       res
         .type(
@@ -666,11 +666,11 @@ export async function createApp(options: AppOptions = {}) {
         throw new ApiFault(409, 'REPORT_NOT_READY', '报告尚未完成');
       if (req.query.format === 'json')
         res
-          .setHeader('Content-Disposition', `attachment; filename="cashlens-${task.id}.json"`)
+          .setHeader('Content-Disposition', `attachment; filename="prispect-${task.id}.json"`)
           .json(task);
       else if (req.query.format === 'html')
         res
-          .setHeader('Content-Disposition', `attachment; filename="cashlens-${task.id}.html"`)
+          .setHeader('Content-Disposition', `attachment; filename="prispect-${task.id}.html"`)
           .type('html')
           .send(reportHtml(task));
       else throw new ApiFault(400, 'INVALID_EXPORT_FORMAT', '导出格式仅支持 html 或 json');

@@ -2,11 +2,11 @@
 
 ## Project
 
-Company/team name: 析光. Product name: 照见 / CashLens. Keep the operator and product names distinct; do not invent a legal entity name or an English translation for the team.
+Company/team and product share one brand: 析光 in Simplified Chinese, Prispect in English. Preserve the existing geometric logo and xuejun.cc domain. Do not invent a registered legal entity.
 
-Public product copy speaks as 析光 operating 照见, and explains the customer's evidence and decisions. Keep competition rules, development process, SDK/provider implementation details and validation claims in repository documentation rather than business flows. Necessary data-use disclosures belong in privacy details linked from explicit AI choices. Preserve truthful uncertainty, hypothetical-plan labels, source coverage and unavailable-feature states.
+Public product copy uses 析光 / Prispect, and explains the customer's evidence and decisions. Keep competition rules, development process, SDK/provider implementation details and validation claims in repository documentation rather than business flows. Necessary data-use disclosures belong in privacy details linked from explicit AI choices. Preserve truthful uncertainty, hypothetical-plan labels, source coverage and unavailable-feature states.
 
-`xuejun-hackathon` is the private repository for CashLens (照见), a cash-conversion
+`prispect` is the private repository for Prispect (析光), a cash-conversion
 evidence and payment-decision product for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction.
 It uses strict TypeScript, React/Vite and Express, Better Auth accounts/sessions, a LangGraph
 workflow with per-user SQLite checkpoints, and isolated
@@ -61,6 +61,7 @@ acceptance separate from unit-test success. `npm start` serves the production bu
 - Production deployment uses main CI-gated `.github/workflows/deploy.yml` and fixed root-owned helpers. Never execute received archive maintenance scripts as root.
 - `data/source-manifest.json` and `data/cases/` retain reproducible facts and short excerpts.
 - Do not commit `.env`, `.cashlens`, raw financial reports, browser profiles or credentials.
+- Retain existing `cashlens` persistence keys, authentication identifiers and deployment paths for compatibility; the public brand and GitHub repository are Prispect.
 - Use actual stage events, preserve missing data and stop dependent inference on conflicts.
 - A consistent schema or balanced bridge does not authenticate a user-uploaded source.
 - Withheld evidence must not reach calculations or optional model explanations.

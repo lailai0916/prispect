@@ -28,7 +28,7 @@ export function Logo({ light = false }: { light?: boolean }) {
         <path d="M13 23h6l5-9v16l6-7" />
       </svg>
       <span className="brand-name">
-        照见<span>CashLens</span>
+        析光<span>Prispect</span>
       </span>
     </span>
   );

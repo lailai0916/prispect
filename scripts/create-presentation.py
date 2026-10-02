@@ -1,4 +1,4 @@
-"""Create the eight-page CashLens pitch from accepted captures and recorded checks.
+"""Create the eight-page Prispect pitch from accepted captures and recorded checks.
 
 The final build requires four actual UI captures, a completed public model trace,
 and explicit final CI/release metadata. Use --draft only for an ignored review PDF.
@@ -18,7 +18,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 WIDTH, HEIGHT = 960, 540
-FONT = 'CashLensChinese'
+FONT = 'PrispectChinese'
 INK = HexColor('#1b1e23')
 BLUE = HexColor('#2468d1')
 MUTED = HexColor('#656b75')
@@ -124,8 +124,8 @@ def build(args):
                 for limit in (30, 60, 90)] == [Decimal('160000'), Decimal('180000'), Decimal('200000')]
     output.parent.mkdir(parents=True, exist_ok=True)
     c = canvas.Canvas(str(output), pagesize=(WIDTH, HEIGHT), pageCompression=1)
-    c.setTitle('照见 CashLens | 从企业信号到具体付款核查')
-    c.setAuthor('CashLens project team')
+    c.setTitle('析光 Prispect | 从企业信号到具体付款核查')
+    c.setAuthor('Prispect project team')
     c.setSubject('回响·48H 青年创造营 | X-Ray | 八页路演')
     page = 0
 
@@ -169,7 +169,7 @@ def build(args):
         page += 1
         c.setFillColor(WHITE)
         c.rect(0, 0, WIDTH, HEIGHT, stroke=0, fill=1)
-        text('照见  CashLens', 40, 506, 13)
+        text('析光  Prispect', 40, 506, 13)
         text(label, 920, 506, 12, MUTED, 'right')
         text(title, 40, 450, 31)
         c.setStrokeColor(LINE)

@@ -352,7 +352,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
             <p className="account-auth-switch">
               {register
                 ? t('已有账号？', 'Already have an account?')
-                : t('第一次使用照见？', 'New to CashLens?')}{' '}
+                : t('第一次使用析光？', 'New to Prispect?')}{' '}
               <a
                 href={`#/${register ? 'login' : 'register'}?next=${encodeURIComponent(destination)}`}
               >
@@ -360,7 +360,26 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               </a>
             </p>
             <p className="account-auth-fineprint">
-              <a href="#/method?section=privacy">{t('数据与隐私', 'Data and privacy')}</a>
+              {register && (
+                <span>{t('创建账号前，请阅读', 'Before creating an account, read')} </span>
+              )}
+              <a
+                href="#/terms"
+                target="_blank"
+                rel="noreferrer"
+                aria-label={t('用户协议（新标签页）', 'Terms of service (new tab)')}
+              >
+                {t('用户协议', 'Terms of service')}
+              </a>
+              <span> · </span>
+              <a
+                href="#/privacy"
+                target="_blank"
+                rel="noreferrer"
+                aria-label={t('隐私政策（新标签页）', 'Privacy policy (new tab)')}
+              >
+                {t('隐私政策', 'Privacy policy')}
+              </a>
             </p>
           </>
         )}

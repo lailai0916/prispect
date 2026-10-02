@@ -1,11 +1,11 @@
 <div align="center">
-  <h1>CashLens</h1>
+  <h1>Prispect</h1>
   <p><strong>English</strong> · <a href="README.zh-Hans.md">简体中文</a></p>
   <p>
-    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/xuejun-hackathon/ci.yml?branch=main&style=flat-square" />
-    <img src="https://img.shields.io/github/last-commit/lailai0916/xuejun-hackathon?style=flat-square" />
-    <img src="https://img.shields.io/github/languages/top/lailai0916/xuejun-hackathon?style=flat-square" />
-    <img src="https://img.shields.io/github/repo-size/lailai0916/xuejun-hackathon?style=flat-square" />
+    <img src="https://img.shields.io/github/actions/workflow/status/lailai0916/prispect/ci.yml?branch=main&style=flat-square" />
+    <img src="https://img.shields.io/github/last-commit/lailai0916/prispect?style=flat-square" />
+    <img src="https://img.shields.io/github/languages/top/lailai0916/prispect?style=flat-square" />
+    <img src="https://img.shields.io/github/repo-size/lailai0916/prispect?style=flat-square" />
     <img src="https://img.shields.io/badge/code_style-prettier-ff69b4?style=flat-square" />
     <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" />
   </p>
@@ -13,9 +13,11 @@
 
 ## Website Introduction
 
-CashLens (照见), a product by the 析光 team, starts from a company or a matter to investigate. Its public-evidence Agent checks annual profit, operating cash, relevant notes and recent disclosures, then identifies supported observations and unresolved questions. An external user can continue into a prepayment review; an incoming operator can examine a dated cash plan. Private records support their own conditional calculations. Historical financial signals never fill current cash or future receipts.
+Prispect (析光), operated by the Prispect team, starts from a company or a matter to investigate. Its public-evidence Agent checks annual profit, operating cash, relevant notes and recent disclosures, then identifies supported observations and unresolved questions. An external user can continue into a prepayment review; an incoming operator can examine a dated cash plan. Private records support their own conditional calculations. Historical financial signals never fill current cash or future receipts.
 
 Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction. The core analytical question is deliberately narrow. Historical cash ratios are not company ratings, credit decisions, or investment advice. Customer demand and willingness to pay remain research assumptions.
+
+Product information is available in the [user guide](https://xuejun.cc/#/docs), [product introduction](https://xuejun.cc/#/about), [privacy policy](https://xuejun.cc/#/privacy), [terms](https://xuejun.cc/#/terms) and [copyright notice](https://xuejun.cc/#/copyright). Policies describe the implemented service rather than certifying legal compliance. Contact: `lailai0x394@gmail.com`.
 
 ## Website Features
 
@@ -29,15 +31,15 @@ Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray di
 
 🧪 **Payment Scenarios** — External scenarios compare undelivered exposure after proposed payments against a user-set limit. Internal scenarios compare specific payment dates, event balances, period ends and conditional payment/collection thresholds across listed 90-day events. Same-day order, coverage and negotiation assumptions remain visible. Missing inputs remain unknown.
 
-🌐 **Bilingual Workflow** — Chinese and English home, decisions, workspace, imports, reports, comparison, account and methodology flows; automatic system light/dark themes; printable HTML and versioned JSON exports. Original source quotations retain their language.
+🌐 **Bilingual Workflow** — Chinese and English product flows, documentation and policies. The language control shows the current language; appearance offers system, light and dark preferences, retained between visits. Materials, cash plans and avatars accept drag-and-drop with validation and retry. Printable HTML and versioned JSON exports remain available. Original source quotations retain their language.
 
 ## Getting Started
 
 Use Node.js 22.12 or newer and npm. Access to this private repository requires authorization.
 
 ```bash
-git clone https://github.com/lailai0916/xuejun-hackathon.git
-cd xuejun-hackathon
+git clone https://github.com/lailai0916/prispect.git
+cd prispect
 npm ci
 npm run build
 npm start
@@ -64,7 +66,7 @@ See [the plan](docs/plan.md), [method and source research](docs/research.md), [A
 ## Project Structure
 
 ```bash
-xuejun-hackathon/
+prispect/
 ├── data/                           # Verified sample inputs and source manifest
 ├── deploy/                         # HTTPS reverse-proxy configuration
 ├── docs/                           # Method, evidence, delivery and deployment notes

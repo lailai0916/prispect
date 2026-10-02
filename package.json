@@ -1,5 +1,5 @@
 {
-  "name": "xuejun-hackathon",
+  "name": "prispect",
   "private": true,
   "scripts": {
     "prebuild": "node scripts/notices.mjs",

@@ -546,7 +546,7 @@ export function Home() {
     <div className="home-landing" ref={root}>
       <section className="landing-start">
         <div className="landing-start-inner">
-          <span className="landing-product-name">CashLens · 照见</span>
+          <span className="landing-product-name">Prispect · 析光</span>
           <h1>{t('你想核查什么？', 'What would you like to review?')}</h1>
           <StartInput />
           <a

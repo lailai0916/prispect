@@ -18,7 +18,7 @@
 
 ### 本轮核心更新的实际发布
 
-提交 `8e662f5adad576047464cef21d0f7f4614f0c748` 的 [CI](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36957305332) 与 [自动部署](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36957414060) 均成功。生产 current、RELEASE.json、运行进程 cwd 与该 SHA 相同；持久数据目录、HTTPS origin 和持久认证密钥配置分别在内存中核对，仅输出布尔结果。Linux 实际加载的认证 `better-sqlite3` 13.0.3 与检查点依赖 12.11.1 均执行真实只读查询成功。
+提交 `8e662f5adad576047464cef21d0f7f4614f0c748` 的 [CI](https://github.com/lailai0916/prispect/actions/runs/36957305332) 与 [自动部署](https://github.com/lailai0916/prispect/actions/runs/36957414060) 均成功。生产 current、RELEASE.json、运行进程 cwd 与该 SHA 相同；持久数据目录、HTTPS origin 和持久认证密钥配置分别在内存中核对，仅输出布尔结果。Linux 实际加载的认证 `better-sqlite3` 13.0.3 与检查点依赖 12.11.1 均执行真实只读查询成功。
 
 升级前后，原 8 个 UUID 集合、凭据归属和 8 份工作区 JSON 的原字节哈希一致；schema2、完整性检查及外键检查通过，没有孤立 owner，旧会话归档为空。这里没有声称生产上逐个登录所有旧账号；旧 scrypt 密码与日期兼容的重复登录、原生接口及重启验证在隔离本机完成。
 
@@ -28,7 +28,7 @@
 
 ## 上一版具体付款决定验收（2026-10-02）
 
-新版功能提交 `0c3590176760b68f06f6e1163e907e34ee174b5a` 已通过 [CI](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36933840965) 与 [自动部署](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36933997877)。服务器 current、RELEASE.json 与该 SHA 一致；严格 HTTPS 健康及页面/主要资产与服务器 dist 的逐字节哈希核对通过。本机与 Linux CI 的入口包哈希不同，因此没有声称跨平台构建字节一致。
+新版功能提交 `0c3590176760b68f06f6e1163e907e34ee174b5a` 已通过 [CI](https://github.com/lailai0916/prispect/actions/runs/36933840965) 与 [自动部署](https://github.com/lailai0916/prispect/actions/runs/36933997877)。服务器 current、RELEASE.json 与该 SHA 一致；严格 HTTPS 健康及页面/主要资产与服务器 dist 的逐字节哈希核对通过。本机与 Linux CI 的入口包哈希不同，因此没有声称跨平台构建字节一致。
 
 | 层次             | 实际执行与观察                                                                                                                      | 状态                   |
 | ---------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ---------------------- |
@@ -80,7 +80,7 @@
 
 独立本机生产 smoke 通过 9 项：同源 dist/JS、匿名拒绝、HTTPS Origin/跨站拒绝、Secure/HttpOnly/Strict Cookie、CSRF、真实规则任务、上传原件字节与权限、真正 SIGTERM 重启、完整停服 tar 备份恢复。模拟模型延迟 1.8 秒时，进程等结果和状态保存后正常退出。这不是真实 90 秒、Linux systemd 或 Docker 实测。
 
-2026-10-02 02:33，基础设施提交 `53983713f8562dd5227ef3243f5ccfc990e4670b` 的 [CI](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36907501972) 成功后，真实 `workflow_run` 自动触发的 [Deploy](https://github.com/lailai0916/xuejun-hackathon/actions/runs/36907590434) 成功。随后只读核验服务器 current 与 RELEASE.json 均为同一 SHA，严格公网 HTTPS 健康响应 `{"ok":true}`。专用受限 SSH 身份、非 root 安装、备份、源码及资产一致性均在该链路实际运行；新版 UI 与 Agent 尚不能用这次基础设施发布证明。
+2026-10-02 02:33，基础设施提交 `53983713f8562dd5227ef3243f5ccfc990e4670b` 的 [CI](https://github.com/lailai0916/prispect/actions/runs/36907501972) 成功后，真实 `workflow_run` 自动触发的 [Deploy](https://github.com/lailai0916/prispect/actions/runs/36907590434) 成功。随后只读核验服务器 current 与 RELEASE.json 均为同一 SHA，严格公网 HTTPS 健康响应 `{"ok":true}`。专用受限 SSH 身份、非 root 安装、备份、源码及资产一致性均在该链路实际运行；新版 UI 与 Agent 尚不能用这次基础设施发布证明。
 
 ## 公网与展示交付
 

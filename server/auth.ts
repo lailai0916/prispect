@@ -119,7 +119,7 @@ export class AuthStore {
   private options() {
     const { trustedOrigins, secure, secret } = this;
     return {
-      appName: '照见 CashLens',
+      appName: '析光 Prispect',
       baseURL: this.origin,
       basePath: '/api/identity',
       secret,
@@ -135,7 +135,7 @@ export class AuthStore {
         sendResetPassword: async ({ user, url }) => {
           await this.mail.send(
             user.email,
-            '照见：重置密码',
+            '析光：重置密码',
             `请在有效期内打开链接重置密码：\n${url}`
           );
         },
@@ -145,7 +145,7 @@ export class AuthStore {
         sendVerificationEmail: async ({ user, url }) => {
           await this.mail.send(
             user.email,
-            '照见：验证邮箱',
+            '析光：验证邮箱',
             `请在有效期内打开链接验证邮箱：\n${url}`
           );
         },
@@ -188,7 +188,7 @@ export class AuthStore {
       },
       plugins: [
         twoFactor({
-          issuer: '照见 CashLens',
+          issuer: '析光 Prispect',
           twoFactorCookieMaxAge: 300,
           backupCodeOptions: { storeBackupCodes: 'encrypted' },
         }),
@@ -197,7 +197,7 @@ export class AuthStore {
         }),
         passkey({
           rpID: new URL(this.origin).hostname,
-          rpName: '照见 CashLens',
+          rpName: '析光 Prispect',
           origin: trustedOrigins,
           authenticatorSelection: { residentKey: 'required', userVerification: 'required' },
           registration: {
