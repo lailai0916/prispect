@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { Menu } from '@base-ui/react/menu';
-import { ArrowUp, Building2, Check, ChevronDown, HandCoins, Wallet, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  Building2,
+  Check,
+  ChevronDown,
+  HandCoins,
+  Wallet,
+  Sparkles,
+} from 'lucide-react';
 import { useApp } from './context';
 import { interpretStart, type StartKind } from '../shared/start-intent';
 import { clearComposerDraft, readComposerDraft, writeComposerDraft } from './start-draft';
@@ -28,10 +36,20 @@ export function StartInput({
   onInformationGap?: (name: string) => void;
 }) {
   const { t, navigate, user, locale } = useApp();
+  const composerId = useId();
+  const inputId = `start-query-${composerId}`;
+  const listId = `company-completion-list-${composerId}`;
+  const errorId = `start-error-${composerId}`;
   const owner = user?.id || null;
   const [draft] = useState(() => readComposerDraft(owner));
+  const compatibleDraft =
+    !companyOnly ||
+    draft?.mode === 'company' ||
+    (draft?.mode === 'auto' && interpretStart(draft.text).kind === 'company');
   const [mode, setMode] = useState<StartMode>(companyOnly ? 'company' : draft?.mode || 'auto');
-  const [text, setText] = useState(initialText?.trim().slice(0, 80) || draft?.text || '');
+  const [text, setText] = useState(
+    initialText?.trim().slice(0, 80) || (compatibleDraft ? draft?.text : '') || ''
+  );
   const [error, setError] = useState('');
   const [candidates, setCandidates] = useState<CompanyIdentity[]>([]);
   const [finding, setFinding] = useState(false);
@@ -98,7 +116,6 @@ export function StartInput({
     setActiveCandidate(-1);
     setError('');
     if (onCompanyChoice) {
-      clearComposerDraft();
       onCompanyChoice(identity, text.trim());
     } else
       navigate(
@@ -113,7 +130,11 @@ export function StartInput({
     document.addEventListener('pointerdown', outside);
     return () => document.removeEventListener('pointerdown', outside);
   }, []);
-  useEffect(() => writeComposerDraft({ owner, text, mode }), [owner, text, mode]);
+  useEffect(() => {
+    // Opening a company search must neither query nor erase an unrelated private draft.
+    if (companyOnly && !compatibleDraft && !text) return;
+    writeComposerDraft({ owner, text, mode });
+  }, [owner, text, mode, companyOnly, compatibleDraft]);
   const choices = [
     { id: 'auto' as const, label: t('自动识别', 'Automatic'), Icon: Sparkles },
     { id: 'company' as const, label: t('公司查询', 'Company research'), Icon: Building2 },
@@ -195,7 +216,7 @@ export function StartInput({
       className={`start-input ${compact ? 'start-input-compact' : ''}`}
       onSubmit={submit}
     >
-      <label className="sr-only" htmlFor="start-query">
+      <label className="sr-only" htmlFor={inputId}>
         {mode === 'auto'
           ? t('公司或要核查的事情', 'Company or matter to review')
           : mode === 'company'
@@ -205,8 +226,8 @@ export function StartInput({
               : t('付款事项', 'Payment matter')}
       </label>
       <textarea
-        id="start-query"
-        rows={2}
+        id={inputId}
+        rows={compact ? 1 : 2}
         maxLength={companyOnly ? 80 : 1000}
         value={text}
         disabled={disabled}
@@ -228,16 +249,14 @@ export function StartInput({
                     'Describe the company, amount, or terms to review'
                   )
         }
-        aria-describedby={error ? 'start-error' : undefined}
+        aria-describedby={error ? errorId : undefined}
         aria-invalid={Boolean(error)}
         role="combobox"
         aria-autocomplete="list"
         aria-expanded={completionOpen && (finding || searched)}
-        aria-controls="company-completion-list"
+        aria-controls={listId}
         aria-activedescendant={
-          completionOpen && activeCandidate >= 0
-            ? `company-completion-${activeCandidate}`
-            : undefined
+          completionOpen && activeCandidate >= 0 ? `${listId}-${activeCandidate}` : undefined
         }
         onFocus={() => setCompletionOpen(true)}
         onChange={(event) => {
@@ -330,12 +349,13 @@ export function StartInput({
           aria-label={t('开始核查', 'Start review')}
           disabled={disabled || !text.trim()}
         >
-          <ArrowUp size={19} />
+          <span>{companyOnly ? t('开始研究', 'Research') : t('继续', 'Continue')}</span>
+          <ArrowRight size={16} />
         </button>
       </div>
       {completionOpen && (finding || searched) && (
         <div
-          id="company-completion-list"
+          id={listId}
           className="company-completions"
           role="listbox"
           aria-label={t('匹配企业', 'Matching companies')}
@@ -348,7 +368,7 @@ export function StartInput({
           {!finding &&
             candidates.map((identity, index) => (
               <button
-                id={`company-completion-${index}`}
+                id={`${listId}-${index}`}
                 key={`${identity.orgId}:${identity.securityCode}`}
                 type="button"
                 role="option"
@@ -357,24 +377,43 @@ export function StartInput({
                 onClick={() => chooseCompany(identity)}
               >
                 <Building2 size={15} />
-                <span>{identity.shortName}</span>
-                <small>{identity.securityCode}</small>
+                <span className="company-completion-identity">
+                  <strong>{identity.shortName}</strong>
+                  {identity.companyName && identity.companyName !== identity.shortName && (
+                    <small>{identity.companyName}</small>
+                  )}
+                </span>
+                <small className="company-completion-code">{identity.securityCode}</small>
               </button>
             ))}
           {!finding && !candidates.length && (
             <p className="company-completions-state">
               {t(
-                '未匹配到支持的上市主体。未匹配不代表没有风险。',
-                'No supported listed entity matched. No match does not mean no risk.'
+                '未匹配到支持的上市主体。检查名称或证券代码，也可以继续保存资料缺口。',
+                'No supported listed entity matched. Check the name or ticker, or continue to save an information gap.'
               )}
             </p>
           )}
         </div>
       )}
       {error && (
-        <p id="start-error" className="start-input-error" role="alert">
-          {error}
-        </p>
+        <div className="start-input-error">
+          <p id={errorId} role="alert">
+            {error}
+          </p>
+          {searchFailed && (
+            <button
+              type="button"
+              onClick={() => {
+                setError('');
+                setCompletionOpen(true);
+                setSearchRetry((value) => value + 1);
+              }}
+            >
+              {t('重试匹配', 'Retry matching')}
+            </button>
+          )}
+        </div>
       )}
     </form>
   );

@@ -6,14 +6,23 @@ import { companyPath } from '../../shared/company-workspace';
 import { StartInput } from '../StartInput';
 import { Dialog } from '../components';
 import { useApp } from '../context';
-import { HomeRiskCards } from '../HomeRiskCards';
+import { CompanyResearchLauncher } from '../CompanyResearchLauncher';
+import { CompanyRecentResearch } from '../CompanyRecentResearch';
+import { PublicResearchExample } from '../PublicResearchExample';
 import { api, requestErrorText } from '../api';
 import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
+import { clearComposerDraft } from '../start-draft';
+import '../home.css';
 
 export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
-  const { t, locale, navigate, workspace } = useApp();
+  const { t, locale, navigate, user } = useApp();
   const latest = new Date().getFullYear() - 1;
-  const [year, setYear] = useState(latest);
+  const requestedYear = Number(query?.get('year'));
+  const [year, setYear] = useState(
+    Number.isInteger(requestedYear) && requestedYear >= 2010 && requestedYear <= latest
+      ? requestedYear
+      : latest
+  );
   const [purpose, setPurpose] = useState<ReviewPurpose>('external');
   const [options, setOptions] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -21,9 +30,19 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
   const controller = useRef<AbortController | null>(null);
   const locked = useRef(false);
   const pendingRequest = useRef<{ signature: string; key: string } | null>(null);
-  useEffect(() => () => controller.current?.abort(), []);
+  const currentOwner = useRef(user?.id);
+  currentOwner.current = user?.id;
+  useEffect(() => {
+    controller.current?.abort();
+    locked.current = false;
+    pendingRequest.current = null;
+    setCreating(false);
+    setError('');
+    return () => controller.current?.abort();
+  }, [user?.id]);
   const begin = async (identity?: CompanyIdentity, name?: string) => {
-    if (locked.current) return;
+    if (locked.current || !user) return;
+    const owner = user.id;
     locked.current = true;
     setCreating(true);
     setError('');
@@ -51,66 +70,73 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
         signal: request.signal,
         body,
       });
-      if (!request.signal.aborted) {
+      if (!request.signal.aborted && currentOwner.current === owner) {
         pendingRequest.current = null;
+        clearComposerDraft();
         window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
         navigate(companyPath(run.id));
       }
     } catch (cause) {
-      if (!request.signal.aborted) setError(requestErrorText(cause, locale));
+      if (!request.signal.aborted && currentOwner.current === owner)
+        setError(requestErrorText(cause, locale));
     } finally {
-      if (!request.signal.aborted) {
+      if (!request.signal.aborted && currentOwner.current === owner) {
         locked.current = false;
         setCreating(false);
       }
     }
   };
   return (
-    <div className="company-query-page">
-      <div className="company-query-inner">
-        <h1>{t('查询企业', 'Research a company')}</h1>
-        <p className="company-query-description">
-          {t(
-            '输入公司名称或证券代码，查看核查报告。',
-            'Enter a company name or ticker to open its review report.'
-          )}
-        </p>
+    <div className="company-query-page research-entry-page">
+      <CompanyResearchLauncher
+        metadata={
+          <button
+            className="research-entry-options"
+            type="button"
+            disabled={creating}
+            aria-label={t(`查询选项，${year} 年度`, `Research options, annual ${year}`)}
+            onClick={() => setOptions(true)}
+          >
+            {t(`${year} 年度`, `Annual ${year}`)}
+            <Settings2 size={12} />
+          </button>
+        }
+        feedback={
+          <>
+            {creating && (
+              <p className="context-data-note" role="status">
+                <LoaderCircle size={14} className="spinner" />
+                {t('正在建立研究记录…', 'Creating the research record…')}
+              </p>
+            )}
+            {error && (
+              <p role="alert" className="field-error">
+                {error}
+              </p>
+            )}
+          </>
+        }
+      >
         <StartInput
-          key={query?.get('query') || 'new-company'}
+          key={`${user?.id || 'anonymous'}:${query?.get('query') || 'new-company'}`}
           initialText={query?.get('query') || undefined}
           compact
           companyOnly
           disabled={creating}
           onCompanyChoice={(identity) => void begin(identity)}
           onInformationGap={(name) => void begin(undefined, name)}
-          toolbar={
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={t('查询选项', 'Query options')}
-              onClick={() => setOptions(true)}
-            >
-              <Settings2 size={15} />
-            </button>
-          }
         />
-        {creating && (
-          <p className="context-data-note" role="status">
-            <LoaderCircle size={14} className="spinner" /> {t('正在保存查询…', 'Saving query…')}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="field-error">
-            {error}
-          </p>
-        )}
-      </div>
-      {workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
+      </CompanyResearchLauncher>
+      <CompanyRecentResearch />
+      <details className="research-public-trial">
+        <summary>{t('查看公开年报实例', 'Explore a public annual-report example')}</summary>
+        <PublicResearchExample />
+      </details>
       {options && (
         <Dialog title={t('查询选项', 'Query options')} onClose={() => setOptions(false)}>
           <div className="query-options-form">
             <label className="field-label">
-              {t('原件核查年度', 'Original-report year')}
+              {t('分析年度', 'Analysis year')}
               <Select
                 value={year}
                 onValueChange={(selectedValue) => setYear(Number(selectedValue))}

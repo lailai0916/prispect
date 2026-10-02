@@ -15,7 +15,8 @@ import type { CompanyReadingBasis } from '../../shared/company-analysis';
 import { useApp } from '../context';
 import { api, requestErrorText } from '../api';
 import { date } from '../format';
-import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
+import { COMPANY_RECORDS_EVENT } from '../company-record-events';
+import { useCompanyRecords } from '../CompanyRecordsContext';
 import {
   CompanyContextOverview,
   CompanyProfileView,
@@ -29,11 +30,11 @@ import { CompanyAssistantContext } from '../company-assistant-context';
 import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
-import { CompanyReview } from '../CompanyReview';
 import { resolveCompanySection } from '../routing';
 import { CompanyAssessment } from '../CompanyAssessment';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
+import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
 import { CompanyPublicInformation } from '../CompanyPublicInformation';
 import { PageLoading } from '../Experience';
 import { lazyPage } from '../lazy-page';
@@ -44,6 +45,7 @@ const OriginalReview = lazyPage(
 
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const { t, locale, navigate, confirm, user } = useApp();
+  const { removeLocal, isCurrentOwner } = useCompanyRecords();
   const { publish } = useContext(CompanyAssistantContext);
   const id = query.get('run');
   const section = resolveCompanySection(query.get('section'));
@@ -51,7 +53,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const [error, setError] = useState('');
   const [version, setVersion] = useState(0);
   const [basis, setBasis] = useState<CompanyReadingBasis>('consolidated');
-  const [view, setView] = useState<'public' | 'manager'>('public');
   const [updating, setUpdating] = useState(false);
   const [assessmentUpdating, setAssessmentUpdating] = useState(false);
   const request = useRef<AbortController | null>(null);
@@ -137,6 +138,28 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   useEffect(() => {
     if (run?.id === id && user) publish({ owner: user.id, run, basis, changeBasis: setBasis });
   }, [run, id, basis, user?.id, publish]);
+  const reportFocus = query.get('focus');
+  useEffect(() => {
+    if (run?.id !== id || section !== 'overview') return;
+    const targets: Record<string, string> = {
+      report: 'company-full-report',
+      research: 'company-research-process',
+      goal: 'company-research-goal',
+      lab: 'company-evidence-lab',
+      checklist: 'company-review-requests',
+      data: 'company-public-data',
+      news: 'company-public-signals',
+    };
+    const reveal = () => {
+      const hashId = location.hash.slice(1);
+      const target =
+        targets[reportFocus || ''] || (Object.values(targets).includes(hashId) ? hashId : '');
+      if (target) openCompanyReportSection(target, target === 'company-research-goal');
+    };
+    reveal();
+    window.addEventListener('hashchange', reveal);
+    return () => window.removeEventListener('hashchange', reveal);
+  }, [run?.id, id, section, reportFocus]);
   const refresh = async () => {
     if (!run || updating) return;
     const signal = request.current?.signal;
@@ -195,7 +218,11 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         'Delete this query and its answers. Adopted evidence remains in Materials.'
       ),
       action: async () => {
-        await api(`/company-runs/${run.id}`, { method: 'DELETE' });
+        const signal = request.current?.signal;
+        if (signal?.aborted || !isCurrentOwner()) return;
+        await api(`/company-runs/${run.id}`, { method: 'DELETE', signal });
+        if (signal?.aborted || !isCurrentOwner()) return;
+        removeLocal(run.id);
         window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
         navigate('/query');
       },
@@ -226,7 +253,10 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         )}
       </div>
     );
-  const snapshot = run.context;
+  const snapshot =
+    run.context?.securityCode === run.input.securityCode && run.context.orgId === run.input.orgId
+      ? run.context
+      : undefined;
   const active = run.status === 'queued' || run.status === 'running';
   const title =
     section === 'evidence'
@@ -247,17 +277,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const readingControls = (
     <div className="context-reading-controls">
       <label>
-        {t('阅读视角', 'Reading view')}
-        <Select
-          value={view}
-          onValueChange={(selectedValue) => setView(selectedValue as 'public' | 'manager')}
-        >
-          <option value="public">{t('公众视图', 'Public view')}</option>
-          <option value="manager">{t('管理者尽调', 'Management diligence')}</option>
-        </Select>
-      </label>
-      <label>
-        {t('网页指标利润口径', 'Web profit basis')}
+        {t('利润口径', 'Profit basis')}
         <Select
           value={basis}
           onValueChange={(selectedValue) => setBasis(selectedValue as CompanyReadingBasis)}
@@ -291,10 +311,13 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               : title}
           </h1>
           <p className="context-data-note">
-            {run.input.securityCode || t('主体待定位', 'Entity unconfirmed')} · {run.input.year}{' '}
+            {section !== 'overview' && (
+              <>{run.input.securityCode || t('主体待定位', 'Entity unconfirmed')} · </>
+            )}
+            {run.input.year}{' '}
             {section === 'overview'
               ? t('年度分析 · 合并口径', 'annual analysis · consolidated scope')
-              : t('年报原件', 'annual original')}{' '}
+              : t('年度公开资料', 'annual public sources')}{' '}
             ·{' '}
             {run.input.purpose === 'handover'
               ? t('内部交接', 'Internal handover')
@@ -383,80 +406,34 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               </button>
             </p>
           )}
-          <CompanyBrief
+          <CompanyBrief run={run} />
+          <CompanyResearchReport
+            key={'report-' + run.id}
             run={run}
-            onOpenReport={() => {
-              const report = document.getElementById('company-full-report');
-              if (report instanceof HTMLDetailsElement) {
-                report.open = true;
-                report.scrollIntoView({
-                  behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                    ? 'instant'
-                    : 'smooth',
-                  block: 'start',
-                });
-              }
-            }}
+            onRefresh={(focus) => void refreshAssessment(focus)}
+            refreshing={assessmentUpdating}
           />
-          {run.assessmentStatus === 'loading' && (
-            <div className="company-research-status" role="status">
-              <LoaderCircle size={15} className="spinner" />
-              <div>
-                <strong>{t('正在研究公司', 'Researching the company')}</strong>
-                <span>
-                  {locale === 'en'
-                    ? 'Collecting sources and checking competing explanations'
-                    : [...(run.assessmentTrace || [])]
-                        .reverse()
-                        .find((step) => step.status === 'running')?.label || '准备公开资料'}{' '}
-                  · {run.assessmentTrace?.filter((step) => step.status === 'completed').length || 0}{' '}
-                  {t('项已完成', 'steps completed')}
-                </span>
-              </div>
-              <button
-                className="text-link"
-                onClick={() => {
-                  const report = document.getElementById('company-full-report');
-                  if (report instanceof HTMLDetailsElement) report.open = true;
-                  requestAnimationFrame(() =>
-                    document
-                      .querySelector('.assessment-research-process')
-                      ?.scrollIntoView({ behavior: 'instant', block: 'center' })
-                  );
-                }}
-              >
-                {t('查看研究过程', 'View research process')}
-              </button>
-            </div>
-          )}
-          {!snapshot?.publicSignals && (
-            <p className="context-data-note">
-              {t(
-                '这份记录尚未补查公开讨论。',
-                'Public discussions have not been collected for this record.'
-              )}
-              <button
-                className="text-link"
-                disabled={assessmentUpdating || run.assessmentStatus === 'loading'}
-                onClick={() =>
-                  void refreshAssessment(
-                    '补查公司新闻与公开讨论，比较支持和反向线索；公众帖子保留未核实观点标记。'
-                  )
-                }
-              >
-                {t('补查新闻与讨论', 'Research news and discussions')}
-              </button>
-            </p>
-          )}
-          <CompanyEvidenceLab
-            key={'lab-' + run.id}
-            run={run}
-            updating={updating || assessmentUpdating}
-          />
+          <details
+            id="company-evidence-lab"
+            className="company-review-details company-explanation-trial"
+          >
+            <summary>
+              <ChevronDown size={14} />
+              {t('检验解释', 'Test an explanation')}
+              <span className="company-detail-description">
+                {t('挑战解释，或撤回一条依据', 'Challenge an explanation or withdraw a fact')}
+              </span>
+            </summary>
+            <CompanyEvidenceLab
+              key={'lab-' + run.id}
+              run={run}
+              updating={updating || assessmentUpdating}
+            />
+          </details>
           <details id="company-full-report" className="company-review-details company-lab-report">
             <summary>
               <ChevronDown size={14} />
-              {t('核查报告与综合评级', 'Review report and financial grade')}
+              {t('六维分析与计算依据', 'Dimensions and calculation evidence')}
             </summary>
             <CompanyAssessment
               key={'assessment-' + run.id}
@@ -464,9 +441,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               onRefresh={(focus) => void refreshAssessment(focus)}
               refreshing={assessmentUpdating}
             />
-            <CompanyReview key={run.id} run={run} />
           </details>
-          <details className="company-review-details">
+          <details id="company-public-signals" className="company-review-details">
             <summary>
               <ChevronDown size={14} />
               {t('新闻与公开讨论', 'News and public discussions')}
@@ -476,26 +452,30 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             </summary>
             <CompanyPublicInformation run={run} />
           </details>
-          <details className="company-review-details">
-            <summary>
-              <ChevronDown size={14} />
-              {t('详细数据与分析', 'Detailed data and analysis')}
-            </summary>
-            <nav
-              className="company-review-detail-links"
-              aria-label={t('详细分析入口', 'Detailed analysis')}
-            >
+          <section className="research-deep-links" aria-labelledby="research-deep-heading">
+            <h2 className="research-deep-heading" id="research-deep-heading">
+              {t('深入查看', 'Explore the evidence')}
+            </h2>
+            <nav aria-label={t('详细分析入口', 'Detailed analysis')}>
               {companySections
                 .filter(([key]) => key !== 'overview')
                 .map(([key, zh, en]) => (
                   <a key={key} href={companyPath(run.id, key)}>
                     {t(zh, en)}
+                    <ArrowUpRight size={13} />
                   </a>
                 ))}
               <a href={companyPath(run.id, 'evidence')}>
-                {t('原件与核查过程', 'Originals and review process')}
+                {t('年报原件与核查过程', 'Originals and review process')}
+                <ArrowUpRight size={13} />
               </a>
             </nav>
+          </section>
+          <details id="company-public-data" className="company-review-details">
+            <summary>
+              <ChevronDown size={14} />
+              {t('完整财务数据与核查清单', 'Financial data and review checklist')}
+            </summary>
             {snapshot ? (
               <>
                 {readingControls}
@@ -516,7 +496,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                     ))}
                   </details>
                 )}
-                <CompanyContextOverview snapshot={snapshot} run={run} basis={basis} view={view} />
+                <CompanyContextOverview
+                  snapshot={snapshot}
+                  run={run}
+                  basis={basis}
+                  view="manager"
+                />
                 <CompanyFinancialFindings run={run} onPage={originalPage} />
               </>
             ) : (
@@ -531,7 +516,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         </>
       ) : (
         <>
-          {readingControls}
+          {section === 'trends' && readingControls}
           <p className="context-data-note">
             {snapshot
               ? `${t('公开数据获取于', 'Public data retrieved at')} ${date(snapshot.fetchedAt, locale)}`

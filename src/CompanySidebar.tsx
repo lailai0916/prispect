@@ -13,12 +13,14 @@ import {
 } from 'lucide-react';
 import type { CompanyRecordSummary } from '../shared/company-workspace';
 import { companySections, companyPath } from '../shared/company-workspace';
-import { api, requestErrorText } from './api';
+import { api } from './api';
+import { useCompanyRecords } from './CompanyRecordsContext';
+import { COMPANY_RECORDS_EVENT } from './company-record-events';
 import { useApp } from './context';
 import { resolveCompanySection } from './routing';
 import { Hint } from './components';
 
-export const COMPANY_RECORDS_EVENT = 'prispect:company-records-changed';
+export { COMPANY_RECORDS_EVENT } from './company-record-events';
 const icons = [
   Building2,
   ChartNoAxesCombined,
@@ -43,11 +45,8 @@ export function CompanySidebar({
   onClose: () => void;
   tools: ReactNode;
 }) {
-  const { user, locale, t, execute, navigate } = useApp();
-  const [records, setRecords] = useState<CompanyRecordSummary[]>([]);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [revision, setRevision] = useState(0);
+  const { user, t, execute, navigate } = useApp();
+  const { records, error, loading, reload, removeLocal, isCurrentOwner } = useCompanyRecords();
   const [deleting, setDeleting] = useState<string[]>([]);
   const pendingDeletes = useRef(new Set<string>());
   const focusAfterDelete = useRef<{
@@ -62,49 +61,9 @@ export function CompanySidebar({
   const currentId = query.get('run');
   const section = resolveCompanySection(query.get('section'));
   useEffect(() => {
-    setRecords([]);
-    setError('');
-    setLoading(true);
     setDeleting([]);
     focusAfterDelete.current = null;
   }, [user?.id]);
-  useEffect(() => {
-    if (!user) return;
-    const controller = new AbortController();
-    let generation = 0;
-    let timer: ReturnType<typeof setTimeout>;
-    const load = () => {
-      clearTimeout(timer);
-      const current = ++generation;
-      void api<CompanyRecordSummary[]>('/company-records', { signal: controller.signal })
-        .then((next) => {
-          if (!controller.signal.aborted && current === generation) {
-            setRecords(next);
-            setError('');
-            setLoading(false);
-            if (
-              next.some(
-                (run) => run.deletionBlocked || run.status === 'queued' || run.status === 'running'
-              )
-            )
-              timer = setTimeout(load, 2500);
-          }
-        })
-        .catch((cause) => {
-          if (!controller.signal.aborted && current === generation) {
-            setError(requestErrorText(cause, locale));
-            setLoading(false);
-          }
-        });
-    };
-    load();
-    window.addEventListener(COMPANY_RECORDS_EVENT, load);
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-      window.removeEventListener(COMPANY_RECORDS_EVENT, load);
-    };
-  }, [user?.id, locale, revision]);
   useEffect(() => {
     const focus = focusAfterDelete.current;
     if (!focus || focus.owner !== user?.id || records.some((run) => run.id === focus.id)) return;
@@ -127,7 +86,7 @@ export function CompanySidebar({
   const companies = sorted
     .filter((run, index) => sorted.findIndex((item) => sameCompany(item, run)) === index)
     .map((run) => (selected && sameCompany(selected, run) ? selected : run));
-  const current = selected || companies[0];
+  const current = route.split('?')[0] === '/company' ? selected : undefined;
   const remove = async (run: CompanyRecordSummary, button: HTMLButtonElement) => {
     if (!user) return;
     const owner = user.id;
@@ -139,7 +98,7 @@ export function CompanySidebar({
       await execute(
         async () => {
           await api(`/company-runs/${encodeURIComponent(run.id)}`, { method: 'DELETE' });
-          if (latest.current.owner !== owner) return;
+          if (!isCurrentOwner() || latest.current.owner !== owner) return;
           const restoreFocus = document.activeElement === button;
           const row = button.closest('.sidebar-company-row');
           const nextLink =
@@ -148,7 +107,7 @@ export function CompanySidebar({
           if (restoreFocus)
             focusAfterDelete.current = { owner, id: run.id, preferred: nextLink || null };
           const remaining = latest.current.records.filter((record) => record.id !== run.id);
-          setRecords((previous) => previous.filter((record) => record.id !== run.id));
+          removeLocal(run.id);
           window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
           const currentQuery = new URLSearchParams(latest.current.route.split('?')[1]);
           if (
@@ -171,34 +130,41 @@ export function CompanySidebar({
       );
     } finally {
       pendingDeletes.current.delete(key);
-      if (latest.current.owner === owner)
+      if (isCurrentOwner() && latest.current.owner === owner)
         setDeleting((previous) => previous.filter((id) => id !== run.id));
     }
   };
   return (
     <>
-      <nav
-        className="sidebar-navigation company-sidebar-navigation"
-        aria-label={t('企业功能', 'Company pages')}
-      >
-        {companySections.map(([id, zh, en], index) => {
-          const Icon = icons[index]!;
-          const href = current ? companyPath(current.id, id) : `/query?section=${id}`;
-          const active = route.startsWith('/company?') && section === id;
-          return (
-            <a
-              key={id}
-              href={href}
-              className={active ? 'active' : ''}
-              aria-current={active ? 'page' : undefined}
-              onClick={onClose}
-            >
-              <Icon size={16} />
-              <span>{t(zh, en)}</span>
-            </a>
-          );
-        })}
-      </nav>
+      {current && (
+        <section className="sidebar-company-context" aria-label={t('当前企业', 'Current company')}>
+          <span className="sidebar-group-label" title={current.name}>
+            {current.name}
+          </span>
+          <nav
+            className="sidebar-navigation company-sidebar-navigation"
+            aria-label={t('企业功能', 'Company pages')}
+          >
+            {companySections.map(([id, zh, en], index) => {
+              const Icon = icons[index]!;
+              const href = current ? companyPath(current.id, id) : `/query?section=${id}`;
+              const active = route.startsWith('/company?') && section === id;
+              return (
+                <a
+                  key={id}
+                  href={href}
+                  className={active ? 'active' : ''}
+                  aria-current={active ? 'page' : undefined}
+                  onClick={onClose}
+                >
+                  <Icon size={16} />
+                  <span>{t(zh, en)}</span>
+                </a>
+              );
+            })}
+          </nav>
+        </section>
+      )}
       {tools}
       <section className="sidebar-companies" aria-label={t('已载入企业', 'Loaded companies')}>
         <span className="sidebar-group-label">{t('已载入企业', 'Loaded companies')}</span>
@@ -216,7 +182,7 @@ export function CompanySidebar({
           {error && (
             <div className="sidebar-history-state" role="alert">
               <span>{error}</span>
-              <button className="text-link" onClick={() => setRevision((value) => value + 1)}>
+              <button className="text-link" onClick={() => void reload()}>
                 <RefreshCw size={12} />
                 {t('重试', 'Retry')}
               </button>
@@ -243,7 +209,7 @@ export function CompanySidebar({
                 aria-busy={removing || undefined}
               >
                 <a
-                  href={companyPath(run.id, section)}
+                  href={companyPath(run.id, current ? section : 'overview')}
                   className={`sidebar-company ${active ? 'active' : ''}`}
                   aria-current={active ? 'page' : undefined}
                   onClick={onClose}

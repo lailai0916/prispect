@@ -6,6 +6,7 @@ import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import type { AuthSession, CompanyResearchRun } from '../shared/contracts.js';
 import type { CompanyAssessment } from '../shared/company-assessment.js';
+import type { CompanyRecordSummary } from '../shared/company-workspace.js';
 import {
   contextAmountFields,
   industryMetricKeys,
@@ -278,6 +279,194 @@ async function harness(overrides: Partial<CompanyContextService> = {}) {
   };
   return { app, directory, service, base, owner, register, call, createRun, getRun, stop, dispose };
 }
+
+async function seedSummaryRecord(h: Awaited<ReturnType<typeof harness>>) {
+  const created = await h.createRun();
+  const store = await h.app.workspaceForUser(h.owner.userId);
+  const run = store.state.companyRuns!.find((item) => item.id === created.id)!;
+  run.context = snapshot('2026-10-02T00:00:00.000Z');
+  run.contextStatus = 'ready';
+  run.assessmentStatus = 'ready';
+  run.updatedAt = '2026-10-02T00:02:00.000Z';
+  run.assessment = {
+    ...assessment(run),
+    grade: 'C',
+    score: 81.25,
+    narrative: {
+      summary: {
+        text: {
+          zh: '经营现金需进一步核查，这是已保存的公开分析。',
+          en: 'Operating cash needs further checks; this is the saved public analysis.',
+        },
+        metricIds: [],
+        evidenceIds: [],
+      },
+      dimensions: [],
+      strengths: [],
+      risks: [],
+      actions: [],
+      changeConditions: [],
+    },
+  };
+  Object.assign(run, {
+    privateSecret: 'private-summary-sentinel',
+    adoptedMaterialId: 'private-adopted-original',
+    questions: [
+      {
+        question: 'private-question-sentinel',
+        text: 'private-answer-sentinel',
+        citations: [],
+        mode: 'rules',
+        createdAt: run.updatedAt,
+        snapshotFetchedAt: run.context.fetchedAt,
+      },
+    ],
+  });
+  await store.persist();
+  return { run, store };
+}
+
+test('company-record metadata exposes only account-local lightweight public results', async () => {
+  let contextCalls = 0;
+  let modelCalls = 0;
+  const h = await harness({
+    context: async () => {
+      contextCalls++;
+      throw Error('The records list must not retrieve public sources.');
+    },
+    assessment: async () => {
+      modelCalls++;
+      throw Error('The records list must not call an analysis model.');
+    },
+  });
+  try {
+    const { run } = await seedSummaryRecord(h);
+    const response = await h.call('/company-records');
+    assert.equal(response.status, 200);
+    const body = await response.text();
+    const records = JSON.parse(body) as CompanyRecordSummary[];
+    assert.equal(records.length, 1);
+    assert.equal(records[0].id, run.id);
+    assert.equal(records[0].updatedAt, run.updatedAt);
+    assert.equal(records[0].contextStatus, 'ready');
+    assert.equal(records[0].assessmentStatus, 'ready');
+    assert.deepEqual(records[0].result, {
+      grade: 'C',
+      score: 81.25,
+      statement: run.assessment!.narrative!.summary.text,
+      asOf: '2026-10-02T00:00:00.000Z',
+      stale: false,
+      modelStatus: 'completed',
+    });
+    assert.deepEqual(Object.keys(records[0]).sort(), [
+      'assessmentStatus',
+      'contextStatus',
+      'createdAt',
+      'deletionBlocked',
+      'id',
+      'informationGap',
+      'input',
+      'name',
+      'result',
+      'status',
+      'updatedAt',
+    ]);
+    for (const text of [
+      'private-summary-sentinel',
+      'private-adopted-original',
+      'private-question-sentinel',
+      'private-answer-sentinel',
+      'fixture-grok',
+      'methodologyVersion',
+      'financials',
+      'metricIds',
+      'evidenceIds',
+    ])
+      assert.equal(body.includes(text), false, `List response must not include ${text}.`);
+    const other = await h.register('records-metadata-other@example.test');
+    assert.deepEqual(await (await h.call('/company-records', undefined, other.headers)).json(), []);
+    assert.equal((await fetch(`${h.base}/api/company-records`)).status, 401);
+    assert.equal(contextCalls, 0);
+    assert.equal(modelCalls, 0);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('company-record metadata excludes results for mismatched issuer, identity and annual scope', async () => {
+  const h = await harness();
+  try {
+    const { run, store } = await seedSummaryRecord(h);
+    const original = structuredClone(run);
+    for (const mismatch of ['issuer-code', 'issuer-org', 'identity', 'year', 'information-gap']) {
+      Object.assign(run, structuredClone(original));
+      if (mismatch === 'issuer-code') run.context!.securityCode = '600000';
+      else if (mismatch === 'issuer-org') run.context!.orgId = 'unrelated-org';
+      else if (mismatch === 'identity') run.identity!.securityCode = '600000';
+      else if (mismatch === 'year') run.assessment!.year = 2024;
+      else run.informationGap = { name: identity.companyName, reason: '主体未确认' };
+      await store.persist();
+      const records = (await (await h.call('/company-records')).json()) as CompanyRecordSummary[];
+      assert.equal(records[0].result, undefined, `${mismatch} must withhold the result.`);
+    }
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('company-record metadata preserves the old report date and grade after a source refresh', async () => {
+  const h = await harness();
+  try {
+    const { run, store } = await seedSummaryRecord(h);
+    const savedSummary = structuredClone(run.assessment!.narrative!.summary.text);
+    const savedGrade = run.assessment!.grade;
+    const savedScore = run.assessment!.score;
+    run.context!.fetchedAt = '2026-10-02T06:00:00.000Z';
+    run.context!.companyName = '新资料中的展示名称';
+    await store.persist();
+    let records = (await (await h.call('/company-records')).json()) as CompanyRecordSummary[];
+    assert.deepEqual(records[0].result, {
+      grade: savedGrade,
+      score: savedScore,
+      statement: savedSummary,
+      asOf: '2026-10-02T00:00:00.000Z',
+      stale: true,
+      modelStatus: 'completed',
+    });
+    delete run.context;
+    await store.persist();
+    records = (await (await h.call('/company-records')).json()) as CompanyRecordSummary[];
+    assert.equal(records[0].result?.stale, true);
+    assert.equal(records[0].result?.asOf, '2026-10-02T00:00:00.000Z');
+    assert.equal(records[0].result?.grade, savedGrade);
+    assert.deepEqual(records[0].result?.statement, savedSummary);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('company-record rule fallback does not present retained model prose as a new analysis', async () => {
+  const h = await harness();
+  try {
+    const { run, store } = await seedSummaryRecord(h);
+    run.assessment!.grade = 'NR';
+    run.assessment!.score = null;
+    run.assessment!.model.status = 'failed';
+    run.assessment!.narrative!.summary.text.zh = '旧模型叙述不应作为规则判断显示';
+    run.assessment!.narrative!.summary.text.en =
+      'Old model prose must not be shown as a rule judgment.';
+    await store.persist();
+    const records = (await (await h.call('/company-records')).json()) as CompanyRecordSummary[];
+    assert.equal(records[0].result?.modelStatus, 'failed');
+    assert.equal(records[0].result?.grade, 'NR');
+    assert.equal(records[0].result?.score, null);
+    assert.match(records[0].result!.statement.zh, /暂不形成综合评级/);
+    assert.equal(records[0].result!.statement.zh.includes('旧模型叙述'), false);
+    assert.match(records[0].result!.statement.en, /withheld/);
+  } finally {
+    await h.dispose();
+  }
+});
 
 test('analysis starts after context and selected-year peers, deduplicates and stays owner-scoped', async () => {
   const gate = deferred();

@@ -35,10 +35,12 @@ import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance'
 import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
 import type { DocumentPath } from './pages/Documentation';
 import { CompanySidebar } from './CompanySidebar';
+import { CompanyRecordsProvider } from './CompanyRecordsContext';
 import { CommandMenu } from './CommandMenu';
 import { PageLoading, ReadingTop, ToastNotice, usePageEntrance } from './Experience';
 import './polish.css';
 import './company-workspace.css';
+import './research-shell.css';
 import { CompanyAssistantContext, type AssistantCompany } from './company-assistant-context';
 const CompanyAssistant = lazyPage(
   () => import('./CompanyAssistant'),
@@ -76,6 +78,10 @@ const CompanyWorkspacePage = lazyPage(
 const CompanyQueryPage = lazyPage(
   () => import('./pages/CompanyQuery'),
   (module) => module.CompanyQueryPage
+);
+const ResearchLibraryPage = lazyPage(
+  () => import('./pages/ResearchLibrary'),
+  (module) => module.ResearchLibraryPage
 );
 const AuthPage = lazyPage(
   () => import('./pages/Auth'),
@@ -326,7 +332,8 @@ export function App() {
     )
       return;
     const titles: Record<string, string> = {
-      '/query': t('新建查询', 'New query'),
+      '/query': t('新建研究', 'New research'),
+      '/research': t('研究库', 'Research library'),
       '/company': t('公司核查', 'Company review'),
       '/workspace': t('财报核查', 'Financial reviews'),
       '/materials': t('材料', 'Materials'),
@@ -372,9 +379,9 @@ export function App() {
     busy: pending > 0,
   };
   const primaryNavigation = [
-    ['/decisions', t('核查事项', 'Reviews'), ListChecks],
-    ['/company', t('公司查询', 'Company lookup'), Building2],
+    ['/research', t('研究库', 'Research library'), Building2],
     ['/materials', t('材料', 'Materials'), FolderOpen],
+    ['/decisions', t('付款与交接', 'Payments and handovers'), ListChecks],
   ] as const;
   const secondaryNavigation = [
     ['/workspace', t('财报核查', 'Financial reviews'), Activity],
@@ -393,9 +400,11 @@ export function App() {
         ? t('账号', 'Account')
         : page === '/method'
           ? t('方法', 'Method')
-          : page === '/' || page === '/query'
-            ? t('新建查询', 'New query')
-            : navigation.find(([path]) => path === page)?.[1];
+          : page === '/company'
+            ? t('企业研究', 'Company research')
+            : page === '/' || page === '/query'
+              ? t('新建研究', 'New research')
+              : navigation.find(([path]) => path === page)?.[1];
   const accountItems = [
     {
       label: t('账号设置', 'Account settings'),
@@ -431,6 +440,23 @@ export function App() {
   ];
   const renderNavigation = () => (
     <>
+      <nav
+        className="sidebar-navigation research-primary-navigation"
+        aria-label={t('工作区', 'Workspace')}
+      >
+        {primaryNavigation.map(([path, label, Icon]) => (
+          <a
+            key={path}
+            href={path}
+            className={page === path ? 'active' : ''}
+            aria-current={page === path ? 'page' : undefined}
+            onClick={() => setMenuOpen(false)}
+          >
+            <Icon size={16} />
+            <span>{label}</span>
+          </a>
+        ))}
+      </nav>
       <CompanySidebar
         route={route}
         onClose={() => setMenuOpen(false)}
@@ -444,16 +470,6 @@ export function App() {
                 label: t('财报工作台', 'Financial workbench'),
                 icon: <Activity size={16} />,
                 onSelect: () => navigate('/workspace'),
-              },
-              {
-                label: t('材料中心', 'Materials'),
-                icon: <FolderOpen size={16} />,
-                onSelect: () => navigate('/materials'),
-              },
-              {
-                label: t('付款与交接', 'Payments and handovers'),
-                icon: <ListChecks size={16} />,
-                onSelect: () => navigate('/decisions'),
               },
               {
                 label: t('核查比较', 'Compare reviews'),
@@ -493,322 +509,326 @@ export function App() {
   );
   return (
     <AppContext.Provider value={value}>
-      <CompanyAssistantContext.Provider
-        value={{
-          company: assistantCompany?.owner === user?.id ? assistantCompany : null,
-          publish: publishAssistantCompany,
-        }}
-      >
-        <div className={`app-shell ${business ? 'business-shell' : 'public-shell'}`}>
-          <a
-            className="skip-link"
-            href="#main"
-            onClick={(event) => {
-              event.preventDefault();
-              document.getElementById('main')?.focus();
-            }}
-          >
-            {t('跳至主要内容', 'Skip to content')}
-          </a>
-          <header className="site-header">
-            <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
-              <Logo />
+      <CompanyRecordsProvider key={user?.id || 'anonymous'}>
+        <CompanyAssistantContext.Provider
+          value={{
+            company: assistantCompany?.owner === user?.id ? assistantCompany : null,
+            publish: publishAssistantCompany,
+          }}
+        >
+          <div className={`app-shell ${business ? 'business-shell' : 'public-shell'}`}>
+            <a
+              className="skip-link"
+              href="#main"
+              onClick={(event) => {
+                event.preventDefault();
+                document.getElementById('main')?.focus();
+              }}
+            >
+              {t('跳至主要内容', 'Skip to content')}
             </a>
-            {business && <span className="header-context">{currentSection}</span>}
-            {!business && (
-              <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
-                <a
-                  href="/docs"
-                  className={page === '/docs' ? 'active' : ''}
-                  aria-current={page === '/docs' ? 'page' : undefined}
-                >
-                  {t('文档', 'Docs')}
-                </a>
-              </nav>
-            )}
-            <div className="header-actions">
-              {sessionAvailable && (
-                <Hint label={t('搜索与跳转 · ⌘ / Ctrl K', 'Search and jump to · ⌘ / Ctrl K')}>
-                  <button
-                    className="icon-button command-trigger"
-                    onClick={() => setCommandOpen(true)}
-                    aria-label={t('搜索与跳转', 'Search and jump to')}
-                    aria-keyshortcuts="Meta+K Control+K"
+            <header className="site-header">
+              <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
+                <Logo />
+              </a>
+              {business && <span className="header-context">{currentSection}</span>}
+              {!business && (
+                <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
+                  <a
+                    href="/docs"
+                    className={page === '/docs' ? 'active' : ''}
+                    aria-current={page === '/docs' ? 'page' : undefined}
                   >
-                    <Search size={17} />
-                    <kbd aria-hidden="true">
-                      {navigator.platform.includes('Mac') ? '⌘ K' : 'Ctrl K'}
-                    </kbd>
-                  </button>
-                </Hint>
+                    {t('文档', 'Docs')}
+                  </a>
+                </nav>
               )}
-              <Hint
-                label={t(
-                  '当前语言：中文，切换至 English',
-                  'Current language: English. Switch to 中文'
+              <div className="header-actions">
+                {sessionAvailable && (
+                  <Hint label={t('搜索与跳转 · ⌘ / Ctrl K', 'Search and jump to · ⌘ / Ctrl K')}>
+                    <button
+                      className="icon-button command-trigger"
+                      onClick={() => setCommandOpen(true)}
+                      aria-label={t('搜索与跳转', 'Search and jump to')}
+                      aria-keyshortcuts="Meta+K Control+K"
+                    >
+                      <Search size={17} />
+                      <kbd aria-hidden="true">
+                        {navigator.platform.includes('Mac') ? '⌘ K' : 'Ctrl K'}
+                      </kbd>
+                    </button>
+                  </Hint>
                 )}
-              >
-                <button
-                  className="language-button"
-                  data-locale={locale}
-                  onClick={() => setLocale(locale === 'en' ? 'zh-Hans' : 'en')}
-                  aria-label={t(
+                <Hint
+                  label={t(
                     '当前语言：中文，切换至 English',
                     'Current language: English. Switch to 中文'
                   )}
                 >
-                  {locale === 'en' ? 'EN' : '中'}
-                </button>
-              </Hint>
-              <ThemeControl />
-              {sessionAvailable && user ? (
-                <ActionMenu
-                  label={t('账号菜单', 'Account menu')}
-                  className="account-link"
-                  items={accountItems}
-                >
-                  <UserRound size={17} />
-                  <span>{user.name}</span>
-                  <ChevronDown size={13} />
-                </ActionMenu>
-              ) : sessionAvailable ? (
-                <a className="login-link" href="/login">
-                  {t('登录', 'Log in')}
-                </a>
-              ) : null}
-              {business && (
-                <button
-                  className="icon-button mobile-menu"
-                  aria-label={t('打开导航', 'Open navigation')}
-                  aria-expanded={menuOpen}
-                  onClick={() => setMenuOpen(true)}
-                >
-                  <Menu size={19} />
-                </button>
-              )}
-            </div>
-            {pending > 0 && (
-              <div
-                className="operation-progress"
-                role="status"
-                aria-label={t('正在处理…', 'Processing…')}
-              >
-                <span />
+                  <button
+                    className="language-button"
+                    data-locale={locale}
+                    onClick={() => setLocale(locale === 'en' ? 'zh-Hans' : 'en')}
+                    aria-label={t(
+                      '当前语言：中文，切换至 English',
+                      'Current language: English. Switch to 中文'
+                    )}
+                  >
+                    {locale === 'en' ? 'EN' : '中'}
+                  </button>
+                </Hint>
+                <ThemeControl />
+                {sessionAvailable && user ? (
+                  <ActionMenu
+                    label={t('账号菜单', 'Account menu')}
+                    className="account-link"
+                    items={accountItems}
+                  >
+                    <UserRound size={17} />
+                    <span>{user.name}</span>
+                    <ChevronDown size={13} />
+                  </ActionMenu>
+                ) : sessionAvailable ? (
+                  <a className="login-link" href="/login">
+                    {t('登录', 'Log in')}
+                  </a>
+                ) : null}
+                {business && (
+                  <button
+                    className="icon-button mobile-menu"
+                    aria-label={t('打开导航', 'Open navigation')}
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen(true)}
+                  >
+                    <Menu size={19} />
+                  </button>
+                )}
               </div>
+              {pending > 0 && (
+                <div
+                  className="operation-progress"
+                  role="status"
+                  aria-label={t('正在处理…', 'Processing…')}
+                >
+                  <span />
+                </div>
+              )}
+            </header>
+            {business && (
+              <aside className="workspace-sidebar">
+                <a className="sidebar-brand" href="/" aria-label={t('析光首页', 'Prispect home')}>
+                  <Logo />
+                </a>
+                <button
+                  className="button button-secondary sidebar-create"
+                  onClick={() => navigate('/query')}
+                >
+                  <Plus size={16} />
+                  {t('新建研究', 'New research')}
+                </button>
+                {renderNavigation()}
+              </aside>
             )}
-          </header>
-          {business && (
-            <aside className="workspace-sidebar">
-              <a className="sidebar-brand" href="/" aria-label={t('析光首页', 'Prispect home')}>
-                <Logo />
-              </a>
-              <button
-                className="button button-secondary sidebar-create"
-                onClick={() => navigate('/query')}
-              >
-                <Plus size={16} />
-                {t('新建查询', 'New query')}
-              </button>
-              {renderNavigation()}
-            </aside>
-          )}
-          {business && menuOpen && (
-            <NavigationPanel title={t('析光', 'Prispect')} onClose={() => setMenuOpen(false)}>
-              <button
-                className="button button-secondary sidebar-create"
-                onClick={() => navigate('/query')}
-              >
-                <Plus size={16} />
-                {t('新建查询', 'New query')}
-              </button>
-              {renderNavigation()}
-            </NavigationPanel>
-          )}
-          <main
-            key={user?.id || 'anonymous'}
-            id="main"
-            className={
-              documentationRoute
-                ? 'main-documents'
-                : page === '/'
-                  ? `main-home ${business ? 'main-app business-home' : ''}`
-                  : 'main-app'
-            }
-            tabIndex={-1}
-          >
-            <RouteErrorBoundary
-              resetKey={`${user?.id || 'anonymous'}:${route}`}
-              t={t}
-              onRetry={resetFailedLazyPages}
+            {business && menuOpen && (
+              <NavigationPanel title={t('析光', 'Prispect')} onClose={() => setMenuOpen(false)}>
+                <button
+                  className="button button-secondary sidebar-create"
+                  onClick={() => navigate('/query')}
+                >
+                  <Plus size={16} />
+                  {t('新建研究', 'New research')}
+                </button>
+                {renderNavigation()}
+              </NavigationPanel>
+            )}
+            <main
+              key={user?.id || 'anonymous'}
+              id="main"
+              className={
+                documentationRoute
+                  ? 'main-documents'
+                  : page === '/'
+                    ? `main-home ${business ? 'main-app business-home' : ''}`
+                    : 'main-app'
+              }
+              tabIndex={-1}
             >
-              <Suspense fallback={<PageLoading label={t('正在打开页面…', 'Opening page…')} />}>
-                {documentPage ? (
-                  <DocumentationPage
-                    path={page as DocumentPath}
-                    section={new URLSearchParams(route.split('?')[1]).get('section')}
-                  />
-                ) : page === '/method' ? (
-                  <MethodPage section={new URLSearchParams(route.split('?')[1]).get('section')} />
-                ) : loadError ? (
-                  <div className="connection-error">
-                    <CircleAlert />
-                    <h1>{t('暂时无法连接工作区', 'Workspace is unavailable')}</h1>
-                    <p>{loadError}</p>
-                    <button
-                      className="button button-primary"
-                      onClick={() => void refresh().catch(() => {})}
-                    >
-                      <RefreshCw size={16} />
-                      {t('重新连接', 'Reconnect')}
-                    </button>
-                  </div>
-                ) : !loaded ? (
-                  <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
-                ) : page === '/' ? (
-                  user ? (
-                    <CompanyQueryPage />
-                  ) : (
-                    <Home />
-                  )
-                ) : page === '/login' || page === '/register' || !user || !workspace ? (
-                  <AuthPage
-                    mode={page === '/register' && registrationEnabled ? 'register' : 'login'}
-                    next={new URLSearchParams(route.split('?')[1]).get('next') || '/'}
-                  />
-                ) : page === '/account' ? (
-                  <AccountPage />
-                ) : page === '/workspace' ? (
-                  <WorkspacePage />
-                ) : page === '/decisions' ? (
-                  <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
-                ) : page === '/query' ? (
-                  <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
-                ) : page === '/company' ? (
-                  <CompanyWorkspacePage
-                    key={new URLSearchParams(route.split('?')[1]).get('run') || 'query'}
-                    query={new URLSearchParams(route.split('?')[1])}
-                  />
-                ) : page === '/new' ? (
-                  <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
-                ) : page === '/materials' ? (
-                  <MaterialsPage
-                    selectedId={new URLSearchParams(route.split('?')[1]).get('material')}
-                  />
-                ) : page.startsWith('/tasks/') ? (
-                  <TaskPage key={page.slice(7)} id={page.slice(7)} />
-                ) : page === '/compare' ? (
-                  <ComparePage key={route} query={new URLSearchParams(route.split('?')[1])} />
-                ) : (
-                  <EmptyState
-                    title={t('页面不存在', 'Page not found')}
-                    text={t('返回工作台继续核查。', 'Return to your workspace to continue.')}
-                    action={
+              <RouteErrorBoundary
+                resetKey={`${user?.id || 'anonymous'}:${route}`}
+                t={t}
+                onRetry={resetFailedLazyPages}
+              >
+                <Suspense fallback={<PageLoading label={t('正在打开页面…', 'Opening page…')} />}>
+                  {documentPage ? (
+                    <DocumentationPage
+                      path={page as DocumentPath}
+                      section={new URLSearchParams(route.split('?')[1]).get('section')}
+                    />
+                  ) : page === '/method' ? (
+                    <MethodPage section={new URLSearchParams(route.split('?')[1]).get('section')} />
+                  ) : loadError ? (
+                    <div className="connection-error">
+                      <CircleAlert />
+                      <h1>{t('暂时无法连接工作区', 'Workspace is unavailable')}</h1>
+                      <p>{loadError}</p>
                       <button
                         className="button button-primary"
-                        onClick={() => navigate('/workspace')}
+                        onClick={() => void refresh().catch(() => {})}
                       >
-                        {t('返回工作台', 'Go to workspace')}
+                        <RefreshCw size={16} />
+                        {t('重新连接', 'Reconnect')}
                       </button>
-                    }
-                  />
-                )}
-              </Suspense>
-            </RouteErrorBoundary>
-          </main>
-          {!business && (
-            <footer className="site-footer">
-              <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
-              <div>
-                <a href="/about">{t('产品介绍', 'About')}</a>
-                <a href="/docs">{t('使用文档', 'Documentation')}</a>
-                <a href="/method">{t('方法', 'Method')}</a>
-                <a href="/privacy">{t('隐私政策', 'Privacy')}</a>
-                <a href="/terms">{t('用户协议', 'Terms')}</a>
-                <a href="/copyright">{t('版权声明', 'Copyright')}</a>
-              </div>
-            </footer>
-          )}
-          {sessionAvailable && (
-            <AssistantErrorBoundary
-              resetKey={user?.id || 'anonymous'}
-              t={t}
-              onRetry={resetFailedLazyPages}
-            >
-              <Suspense fallback={null}>
-                <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
-              </Suspense>
-            </AssistantErrorBoundary>
-          )}
-          {(documentationRoute || page === '/company' || page.startsWith('/tasks/')) && (
-            <ReadingTop route={route} />
-          )}
-          {toast && !loadError && confirmFailure?.request !== confirmRequest && (
-            <ToastNotice key={toast.id} notice={toast} onDismiss={() => setToast(null)} />
-          )}
-          {commandOpen && sessionAvailable && (
-            <CommandMenu
-              key={`command-${user?.id || 'anonymous'}`}
-              onClose={() => setCommandOpen(false)}
-            />
-          )}
-          {confirmRequest && sessionAvailable && (
-            <Dialog
-              title={confirmRequest.title}
-              onClose={() => setConfirmRequest(null)}
-              closeDisabled={pending > 0}
-            >
-              <p>{confirmRequest.text}</p>
-              {confirmFailure?.request === confirmRequest && (
-                <p role="alert" className="field-error">
-                  {confirmFailure.text}
-                </p>
-              )}
-              <div className="dialog-actions">
-                <button
-                  className="button button-secondary"
-                  disabled={pending > 0}
-                  onClick={() => setConfirmRequest(null)}
-                >
-                  {t('取消', 'Cancel')}
-                </button>
-                <button
-                  className="button button-danger"
-                  disabled={pending > 0}
-                  onClick={async () => {
-                    const request = confirmRequest;
-                    const owner = committedOwner.current;
-                    setConfirmFailure(null);
-                    const result = await execute(async () => {
-                      try {
-                        await request.action();
-                        return true;
-                      } catch (error) {
-                        if (committedOwner.current === owner)
-                          setConfirmFailure({
-                            request,
-                            text: requestErrorText(error, localeRef.current),
-                          });
-                        throw error;
+                    </div>
+                  ) : !loaded ? (
+                    <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
+                  ) : page === '/' ? (
+                    user ? (
+                      <CompanyQueryPage />
+                    ) : (
+                      <Home />
+                    )
+                  ) : page === '/login' || page === '/register' || !user || !workspace ? (
+                    <AuthPage
+                      mode={page === '/register' && registrationEnabled ? 'register' : 'login'}
+                      next={new URLSearchParams(route.split('?')[1]).get('next') || '/'}
+                    />
+                  ) : page === '/account' ? (
+                    <AccountPage />
+                  ) : page === '/workspace' ? (
+                    <WorkspacePage />
+                  ) : page === '/decisions' ? (
+                    <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
+                  ) : page === '/query' ? (
+                    <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
+                  ) : page === '/research' ? (
+                    <ResearchLibraryPage />
+                  ) : page === '/company' ? (
+                    <CompanyWorkspacePage
+                      key={new URLSearchParams(route.split('?')[1]).get('run') || 'query'}
+                      query={new URLSearchParams(route.split('?')[1])}
+                    />
+                  ) : page === '/new' ? (
+                    <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
+                  ) : page === '/materials' ? (
+                    <MaterialsPage
+                      selectedId={new URLSearchParams(route.split('?')[1]).get('material')}
+                    />
+                  ) : page.startsWith('/tasks/') ? (
+                    <TaskPage key={page.slice(7)} id={page.slice(7)} />
+                  ) : page === '/compare' ? (
+                    <ComparePage key={route} query={new URLSearchParams(route.split('?')[1])} />
+                  ) : (
+                    <EmptyState
+                      title={t('页面不存在', 'Page not found')}
+                      text={t('返回工作台继续核查。', 'Return to your workspace to continue.')}
+                      action={
+                        <button
+                          className="button button-primary"
+                          onClick={() => navigate('/workspace')}
+                        >
+                          {t('返回工作台', 'Go to workspace')}
+                        </button>
                       }
-                    });
-                    if (result)
-                      setConfirmRequest((current) => (current === request ? null : current));
-                  }}
-                >
-                  {t('确认操作', 'Confirm')}
-                </button>
-              </div>
-            </Dialog>
-          )}
-          {evidence && sessionAvailable && (
-            <EvidenceDrawer
-              refs={evidence.refs}
-              report={evidence.report}
-              onClose={() => setEvidence(null)}
-            />
-          )}
-        </div>
-      </CompanyAssistantContext.Provider>
+                    />
+                  )}
+                </Suspense>
+              </RouteErrorBoundary>
+            </main>
+            {!business && (
+              <footer className="site-footer">
+                <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
+                <div>
+                  <a href="/about">{t('产品介绍', 'About')}</a>
+                  <a href="/docs">{t('使用文档', 'Documentation')}</a>
+                  <a href="/method">{t('方法', 'Method')}</a>
+                  <a href="/privacy">{t('隐私政策', 'Privacy')}</a>
+                  <a href="/terms">{t('用户协议', 'Terms')}</a>
+                  <a href="/copyright">{t('版权声明', 'Copyright')}</a>
+                </div>
+              </footer>
+            )}
+            {sessionAvailable && (
+              <AssistantErrorBoundary
+                resetKey={user?.id || 'anonymous'}
+                t={t}
+                onRetry={resetFailedLazyPages}
+              >
+                <Suspense fallback={null}>
+                  <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
+                </Suspense>
+              </AssistantErrorBoundary>
+            )}
+            {(documentationRoute || page === '/company' || page.startsWith('/tasks/')) && (
+              <ReadingTop route={route} />
+            )}
+            {toast && !loadError && confirmFailure?.request !== confirmRequest && (
+              <ToastNotice key={toast.id} notice={toast} onDismiss={() => setToast(null)} />
+            )}
+            {commandOpen && sessionAvailable && (
+              <CommandMenu
+                key={`command-${user?.id || 'anonymous'}`}
+                onClose={() => setCommandOpen(false)}
+              />
+            )}
+            {confirmRequest && sessionAvailable && (
+              <Dialog
+                title={confirmRequest.title}
+                onClose={() => setConfirmRequest(null)}
+                closeDisabled={pending > 0}
+              >
+                <p>{confirmRequest.text}</p>
+                {confirmFailure?.request === confirmRequest && (
+                  <p role="alert" className="field-error">
+                    {confirmFailure.text}
+                  </p>
+                )}
+                <div className="dialog-actions">
+                  <button
+                    className="button button-secondary"
+                    disabled={pending > 0}
+                    onClick={() => setConfirmRequest(null)}
+                  >
+                    {t('取消', 'Cancel')}
+                  </button>
+                  <button
+                    className="button button-danger"
+                    disabled={pending > 0}
+                    onClick={async () => {
+                      const request = confirmRequest;
+                      const owner = committedOwner.current;
+                      setConfirmFailure(null);
+                      const result = await execute(async () => {
+                        try {
+                          await request.action();
+                          return true;
+                        } catch (error) {
+                          if (committedOwner.current === owner)
+                            setConfirmFailure({
+                              request,
+                              text: requestErrorText(error, localeRef.current),
+                            });
+                          throw error;
+                        }
+                      });
+                      if (result)
+                        setConfirmRequest((current) => (current === request ? null : current));
+                    }}
+                  >
+                    {t('确认操作', 'Confirm')}
+                  </button>
+                </div>
+              </Dialog>
+            )}
+            {evidence && sessionAvailable && (
+              <EvidenceDrawer
+                refs={evidence.refs}
+                report={evidence.report}
+                onClose={() => setEvidence(null)}
+              />
+            )}
+          </div>
+        </CompanyAssistantContext.Provider>
+      </CompanyRecordsProvider>
     </AppContext.Provider>
   );
 }

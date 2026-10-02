@@ -265,7 +265,7 @@ export function CompanyContextOverview({
         <div className="context-section-title">
           <h2>
             {view === 'manager'
-              ? t('接手前，按这个顺序核查', 'Checks before a handover')
+              ? t('财务线索与核查清单', 'Financial signals and checks')
               : t('下一步值得核对的事', 'What to check next')}
           </h2>
           <span>{t('公开材料形成的问题清单', 'Questions from public evidence')}</span>

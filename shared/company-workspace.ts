@@ -253,4 +253,16 @@ export interface CompanyRecordSummary {
   status: string;
   createdAt: string;
   deletionBlocked?: boolean;
+  updatedAt?: string;
+  contextStatus?: string;
+  assessmentStatus?: string;
+  informationGap?: boolean;
+  result?: {
+    grade: CompanyAssessment['grade'];
+    score: number | null;
+    statement: { zh: string; en: string };
+    asOf: string;
+    stale: boolean;
+    modelStatus: CompanyAssessment['model']['status'];
+  };
 }

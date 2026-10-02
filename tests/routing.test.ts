@@ -52,11 +52,13 @@ test('login return paths cannot redirect outside the app or into server endpoint
   }
   assert.equal(loginDestination('/decisions?new=handover', origin), '/decisions?new=handover');
   assert.equal(loginDestination('/tasks/report-id', origin), '/tasks/report-id');
+  assert.equal(loginDestination('/research', origin), '/research');
 });
 
 test('SPA links leave originals, downloads, external sites and page anchors to the browser', () => {
   assert.equal(appLinkPath('/docs?section=privacy', origin), '/docs?section=privacy');
   assert.equal(appLinkPath(origin + '/account', origin), '/account');
+  assert.equal(appLinkPath('/research', origin), '/research');
   for (const native of [
     '/api/materials/id/file',
     '/appearance-init.js',

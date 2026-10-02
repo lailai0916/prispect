@@ -6,15 +6,15 @@ import { deriveRiskPerspective, riskStatusText, type RiskStatus } from './riskDi
 import './risk-perspective.css';
 
 const statusColor: Record<RiskStatus, string> = {
-  good: '#34d399',
-  warn: '#f59e0b',
-  bad: '#ef4444',
-  unknown: '#8a8f98',
+  good: 'var(--status-good)',
+  warn: 'var(--status-warn)',
+  bad: 'var(--status-bad)',
+  unknown: 'var(--status-unknown)',
 };
 
 const dimensionShort: Record<string, { zh: string; en: string }> = {
   finance: { zh: '财务', en: 'Fin' },
-  credit: { zh: '信用', en: 'Credit' },
+  credit: { zh: '来源', en: 'Sources' },
   reputation: { zh: '口碑', en: 'Rep' },
   risk: { zh: '风险', en: 'Risk' },
 };
@@ -45,7 +45,7 @@ export function HomeRiskCards({ tasks }: { tasks: AnalysisTask[] }) {
         </span>
       </div>
       <div className="home-risk-grid">
-        {rows.map(({ task, perspective }, index) => {
+        {rows.map(({ task, perspective }) => {
           const overall = perspective.overall;
           const color = statusColor[overall.status];
           return (
@@ -53,7 +53,6 @@ export function HomeRiskCards({ tasks }: { tasks: AnalysisTask[] }) {
               key={task.id}
               type="button"
               className="home-risk-card"
-              style={{ animationDelay: `${index * 80}ms` }}
               onClick={() => navigate(`/tasks/${task.id}`)}
               aria-label={`${task.company} · ${task.year} · ${t(overall.title.zh, overall.title.en)}`}
             >
