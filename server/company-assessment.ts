@@ -748,6 +748,65 @@ function supportedEventFact(
   return true;
 }
 
+/** Check explicit current cash/profit comparisons, not sentiment or inferred causes. */
+function assertCashProfitRelation(
+  text: string,
+  assessment: CompanyAssessment,
+  language: 'zh' | 'en'
+): void {
+  const cash = assessment.metrics.find((item) => item.id === `${assessment.year}-ocf`);
+  const profit = assessment.metrics.find((item) => item.id === `${assessment.year}-netProfit`);
+  const amount = (metric: typeof cash) =>
+    metric?.status === 'available' && metric.unit === 'CNY' ? contextFen(metric.value) : null;
+  const cashAmount = amount(cash);
+  const profitAmount = amount(profit);
+  const comparison =
+    language === 'zh'
+      ? /经营(?:活动(?:产生的)?)?现金(?:流(?:量)?(?:净额)?)?\s*(?:(?:明显|显著|仍然|仍|已经|已|完全|足以|能够|可以|略微)\s*)*(低于|不及|少于|小于|超过|高于|大于|等于|不足以覆盖|未能覆盖|无法覆盖|不能覆盖|未覆盖|覆盖)\s*(?:年度|全年|合并|净)*利润(?!的|率)/g
+      : /(?:net\s+)?operating cash(?:\s+flow)?\s+(?:(?:materially|clearly|still|fully)\s+)*(falls below|is below|is less than|is lower than|trails|exceeds|is above|is greater than|is higher than|equals|matches|does not cover|doesn't cover|cannot cover|covers)\s+(?:(?:annual|consolidated|net)\s+)*profit\b/gi;
+  for (const sentence of text.split(/[。！？；.!?;\n]/u)) {
+    comparison.lastIndex = 0;
+    for (const match of sentence.matchAll(comparison)) {
+      const prefix = sentence
+        .slice(0, match.index)
+        .split(/但(?:是)?|然而|不过|\b(?:but|however|yet)\b/i)
+        .at(-1)!;
+      const localPrefix = prefix.split(/[，,]/u).at(-1)!;
+      // Conditions, forecasts, quoted denials and other periods are not current-year facts.
+      const qualified =
+        language === 'zh'
+          ? /若|如果|假设|一旦/.test(prefix) ||
+            /预计|预测|未来|下期|明年|上年|去年|上期|此前|历史|并非|不是|否认/.test(localPrefix)
+          : /\b(?:if|assuming|when|once)\b/i.test(prefix) ||
+            /\b(?:forecast|projected|future|next|prior|previous|last|historically|deny|denies|not that)\b/i.test(
+              localPrefix
+            );
+      if (qualified) continue;
+      const relation = match[1]!.toLowerCase();
+      const below =
+        /^(?:低于|不及|少于|小于|不足以覆盖|未能覆盖|无法覆盖|不能覆盖|未覆盖|falls below|is below|is less than|is lower than|trails|does not cover|doesn't cover|cannot cover)$/.test(
+          relation
+        );
+      const above = /^(?:超过|高于|大于|exceeds|is above|is greater than|is higher than)$/.test(
+        relation
+      );
+      const equal = /^(?:等于|equals|matches)$/.test(relation);
+      const covering = /^(?:覆盖|covers)$/.test(relation);
+      const noncovering = below && /覆盖|cover/.test(relation);
+      if (
+        cashAmount === null ||
+        profitAmount === null ||
+        (below && cashAmount >= profitAmount) ||
+        (above && cashAmount <= profitAmount) ||
+        (equal && cashAmount !== profitAmount) ||
+        (noncovering && profitAmount <= 0n) ||
+        (covering && (profitAmount <= 0n || cashAmount < profitAmount))
+      )
+        throw new Error('MODEL_UNSUPPORTED_CLAIM');
+    }
+  }
+}
+
 function renderText(
   text: string,
   assessment: CompanyAssessment,
@@ -774,6 +833,7 @@ function renderText(
   ];
   if (gradeClaims.some((claim) => claim[1]!.toUpperCase() !== assessment.grade))
     throw new Error('MODEL_UNSUPPORTED_CLAIM');
+  assertCashProfitRelation(text, assessment, language);
   return text.replace(
     placeholder,
     (_match, id: string) => metrics.get(id)!.display[language === 'zh' ? 0 : 1]

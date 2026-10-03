@@ -94,6 +94,8 @@ Main-branch CI gates deployment through a restricted SSH entry, with artifact/so
 
 See [the plan](docs/plan.md), [method and source research](docs/research.md), [API contract](docs/api.md), [data lineage](docs/data-lineage.md), [reference proposal review](docs/reference-data-review.md), [AI-use disclosure](docs/ai-usage.md) and [competition submission requirements](docs/submission-checklist.md). Private-repository badges may be unavailable.
 
+A repeatable local walkthrough is available after `npm run build`: run `node --import tsx scripts/serve-research-demo.ts`, open the printed loopback URL, create a local demo account and search `601234`. It uses clearly labeled synthetic company data, a fresh temporary workspace and rule analysis; it does not query public sources or call a model. Existing nonempty workspaces and production mode are rejected. See [the two walkthroughs and validation boundaries](docs/research-flow-acceptance-2026-10-03.md).
+
 ## Project Structure
 
 ```bash

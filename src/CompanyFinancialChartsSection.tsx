@@ -23,8 +23,13 @@ export function CompanyFinancialChartsSection({
   const periods = [
     ...new Set(snapshot.financials.filter((row) => row.annual).map((row) => row.period)),
   ].sort();
-  const [requested, setPeriod] = useState(periods.at(-1) || `${run.input.year}-12-31`);
-  const period = periods.includes(requested) ? requested : periods.at(-1) || requested;
+  const researchPeriod = `${run.input.year}-12-31`;
+  const initialPeriod = periods.includes(researchPeriod)
+    ? researchPeriod
+    : periods.at(-1) || researchPeriod;
+  // No local choice yet: new acquired periods continue to follow the research year.
+  const [requested, setPeriod] = useState<string | null>(null);
+  const period = requested && periods.includes(requested) ? requested : initialPeriod;
   const [saved, setSaved] = useState<Record<string, CompanyIndustrySnapshot>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -131,6 +136,14 @@ export function CompanyFinancialChartsSection({
               </button>
             ))}
         </div>
+        {periods.length > 0 && !periods.includes(researchPeriod) && (
+          <p className="context-data-note">
+            {t(
+              `未取得 ${run.input.year} 年度财务资料，当前展示 ${period.slice(0, 4)} 年度。`,
+              `Financial data for ${run.input.year} is unavailable; showing ${period.slice(0, 4)}.`
+            )}
+          </p>
+        )}
         {error && (
           <p role="alert" className="inline-error">
             <span>{error}</span>
