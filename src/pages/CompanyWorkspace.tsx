@@ -43,6 +43,7 @@ import { CompanyBrief } from '../CompanyBrief';
 import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
 import { CompanyPublicInformation } from '../CompanyPublicInformation';
 import { PageLoading } from '../Experience';
+import { readPageScroll } from '../page-scroll';
 import { lazyPage } from '../lazy-page';
 const OriginalReview = lazyPage(
   () => import('./CompanyAgent'),
@@ -54,7 +55,7 @@ const researchSupported = (run: CompanyResearchRun) =>
 type ResearchRequestKind = 'status' | 'sources' | 'analysis' | 'cancel';
 
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
-  const { t, locale, navigate, confirm, user } = useApp();
+  const { t, locale, navigate, confirm, user, historyNavigation } = useApp();
   const { removeLocal, isCurrentOwner } = useCompanyRecords();
   const { publish } = useContext(CompanyAssistantContext);
   const id = query.get('run');
@@ -74,6 +75,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const request = useRef<AbortController | null>(null);
   const cancelOperation = useRef<symbol | null>(null);
   const assessmentRequested = useRef(new Set<string>());
+  const revealedLocation = useRef<string | null>(null);
   const clearResolvedFailure = (next: CompanyResearchRun) =>
     setFailure((previous) =>
       previous?.kind === 'status' ||
@@ -206,16 +208,28 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                 'company-source-comparison',
               ]
             : [];
-    const reveal = () => {
+    const reveal = (explicit = false, historyReturn = false) => {
       const hashId = location.hash.slice(1);
       const target =
         resolveCompanyFocus(section, reportFocus) || (targets.includes(hashId) ? hashId : '');
-      if (target) openCompanyReportSection(target, target === 'company-research-goal');
+      if (!target) {
+        revealedLocation.current = null;
+        return;
+      }
+      const key = `${id}:${section}:${target}`;
+      // A snapshot refresh is not a new navigation. Late-arriving sections still reveal once.
+      if (!explicit && revealedLocation.current === key) return;
+      if (!document.getElementById(target)) return;
+      revealedLocation.current = key;
+      openCompanyReportSection(target, target === 'company-research-goal', undefined, {
+        scroll: !historyReturn && (explicit || !historyNavigation),
+      });
     };
     reveal();
-    window.addEventListener('hashchange', reveal);
-    return () => window.removeEventListener('hashchange', reveal);
-  }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus]);
+    const revealHash = () => reveal(true, Boolean(readPageScroll(history.state)));
+    window.addEventListener('hashchange', revealHash);
+    return () => window.removeEventListener('hashchange', revealHash);
+  }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus, historyNavigation]);
   const refresh = async () => {
     if (!run || !researchSupported(run) || updating) return;
     const signal = request.current?.signal;

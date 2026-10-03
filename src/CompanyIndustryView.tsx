@@ -82,6 +82,8 @@ export function CompanyIndustryView({
   const requested = selectedPeriod ?? requestedPeriod;
   const period = years.length && !years.includes(requested) ? years[0]! : requested;
   const scope = `${user?.id || ''}:${run.id}:${run.input.securityCode}:${period}`;
+  const presentation = useRef({ t, locale });
+  presentation.current = { t, locale };
   const [result, setResult] = useState<{
       scope: string;
       snapshot: CompanyIndustrySnapshot | null;
@@ -155,7 +157,7 @@ export function CompanyIndustryView({
       request.current?.abort();
       request.current = null;
     };
-  }, [scope, locale]);
+  }, [scope]);
   function loadIndustry(refresh = false) {
     request.current?.abort();
     const controller = new AbortController(),
@@ -178,7 +180,7 @@ export function CompanyIndustryView({
               scope,
               snapshot,
               stale,
-              error: t(
+              error: presentation.current.t(
                 '行业数据与当前企业或年度不匹配，请重试。',
                 'The industry data does not match this company or year. Please retry.'
               ),
@@ -196,7 +198,12 @@ export function CompanyIndustryView({
       })
       .catch((cause) => {
         if (!controller.signal.aborted && current === generation.current)
-          setResult({ scope, snapshot, stale, error: requestErrorText(cause, locale) });
+          setResult({
+            scope,
+            snapshot,
+            stale,
+            error: requestErrorText(cause, presentation.current.locale),
+          });
       })
       .finally(() => {
         if (!controller.signal.aborted && current === generation.current) {

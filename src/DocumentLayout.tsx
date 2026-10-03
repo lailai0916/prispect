@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useApp } from './context';
 import { ROUTE_CHANGE_EVENT } from './routing';
+import { readPageScroll } from './page-scroll';
 import {
   documentationTitle,
   documentNavigation,
@@ -28,7 +29,7 @@ export function DocumentLayout({
   section?: string | null;
   children: ReactNode;
 }) {
-  const { t } = useApp();
+  const { t, historyNavigation } = useApp();
   const [activeId, setActiveId] = useState(headings[0]?.id);
   const article = useRef<HTMLElement>(null);
   const mobileDocuments = useRef<HTMLDetailsElement>(null);
@@ -64,7 +65,7 @@ export function DocumentLayout({
   useEffect(() => {
     const entries: { id: string; key: string }[] = JSON.parse(targets);
     let frame = 0;
-    const showSection = () => {
+    const showSection = (event?: Event) => {
       if (location.pathname !== path) return;
       cancelAnimationFrame(frame);
       if (mobileDocuments.current) mobileDocuments.current.open = false;
@@ -81,6 +82,12 @@ export function DocumentLayout({
         const details = target?.querySelector('details');
         if (details) details.open = true;
       }
+      if (
+        event?.type === 'popstate' ||
+        (!event && historyNavigation) ||
+        (event?.type === 'hashchange' && readPageScroll(history.state))
+      )
+        return;
       // Wait for collapsed menus and browser history scroll restoration before aligning the section.
       frame = requestAnimationFrame(() => target?.scrollIntoView({ block: 'start' }));
     };
@@ -94,7 +101,7 @@ export function DocumentLayout({
       window.removeEventListener('hashchange', showSection);
       window.removeEventListener(ROUTE_CHANGE_EVENT, showSection);
     };
-  }, [path, section, targets]);
+  }, [path, section, targets, historyNavigation]);
 
   useEffect(() => {
     const entries: { id: string }[] = JSON.parse(targets);

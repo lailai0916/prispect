@@ -52,7 +52,12 @@ const gradeLabels: Record<string, AssessmentText> = {
 };
 
 /** Expand the containing content before moving focus; direct links never land in hidden content. */
-export function openCompanyReportSection(id: string, focusInput = false, focusSelector?: string) {
+export function openCompanyReportSection(
+  id: string,
+  focusInput = false,
+  focusSelector?: string,
+  options?: { scroll?: boolean }
+) {
   const target = document.getElementById(id);
   if (!target) return;
   let containing: HTMLElement | null = target;
@@ -60,6 +65,7 @@ export function openCompanyReportSection(id: string, focusInput = false, focusSe
     if (containing instanceof HTMLDetailsElement) containing.open = true;
     containing = containing.parentElement;
   }
+  if (options?.scroll === false) return;
   requestAnimationFrame(() => {
     const focus = focusSelector
       ? target.querySelector<HTMLElement>(focusSelector)
