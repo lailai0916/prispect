@@ -69,6 +69,7 @@ export function useStoryTimeline(root: RefObject<HTMLDivElement | null>) {
           gsap.set('.report-sheet', { rotationY: -14, rotationX: 7, rotationZ: -3 });
           gsap.set('.source-connector', { scaleX: 0, transformOrigin: '0% 50%' });
           gsap.set('.final-paper', { autoAlpha: 0 });
+          gsap.set('.evidence-values', { '--amount-paper-opacity': 0, z: 45 });
           const timeline = gsap.timeline({
             defaults: { ease: 'power2.inOut' },
             onUpdate: synchronize,
@@ -98,6 +99,7 @@ export function useStoryTimeline(root: RefObject<HTMLDivElement | null>) {
           });
           timeline
             .to('.report-sheet', { y: -90, z: 80, rotationX: -28, autoAlpha: 0, duration: 14 }, 12)
+            .to('.evidence-values', { '--amount-paper-opacity': 1, z: 110, duration: 10 }, 12)
             .to('.document-sheet', { autoAlpha: 1, x: 0, y: 0, z: 0, duration: 14 }, 13)
             .to(
               '.evidence-model',
@@ -200,6 +202,7 @@ export function useStoryTimeline(root: RefObject<HTMLDivElement | null>) {
               84
             )
             .to('.evidence-values', { y: 0, duration: 12 }, 84)
+            .to('.evidence-values', { '--amount-paper-opacity': 0, z: 45, duration: 12 }, 84)
             .to('.evidence-model', { rotationY: 0, rotationX: 0, duration: 12 }, 84);
           synchronize();
           return () => {

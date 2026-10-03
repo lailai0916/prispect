@@ -2,14 +2,16 @@
 
 ## Story and composition
 
-The anonymous homepage uses the restored desktop composition: explanatory copy
+The anonymous homepage uses a desktop composition with explanatory copy
 on the left and an animated evidence presentation on the right. Narrow screens
 stack the copy and presentation. Five chapters follow one fixed historical
 finding through its original pages, signed cash reconciliation and unresolved
-explanations, then return to the existing research entry.
+explanations, then return to the login entry.
 
 The opening retains the canonical headline, “Make company judgments traceable.”,
-and a direct entry action. The example uses Songyuan's 2025 consolidated net
+with the concise description “Look up a company. Compare profit and cash with the
+original evidence.” Its primary “Try Prispect” link opens `/login`, as does the
+ending's primary link. The example uses Songyuan's 2025 consolidated net
 profit of CNY 366,373,098.93 and operating cash flow of CNY 26,197,123.70. These are
 historical annual-report amounts, not a current company assessment.
 
@@ -19,7 +21,7 @@ historical annual-report amounts, not a current company assessment.
 | Sources     | Original crops from pages 190 and 191 with highlighted reported rows | 0.14           |
 | Calculation | Signed cumulative cash bridge from the original adjustments          | 0.37           |
 | Inquiry     | Two untested explanations and materials needed to distinguish them   | 0.64           |
-| Begin       | The finding returns alongside the existing company-research entry    | 0.84           |
+| Begin       | The finding returns alongside the same login entry                   | 0.84           |
 
 The report and original-page layers use CSS perspective, transforms and opacity.
 The cash bridge is an accessible SVG with neutral amounts. `OpticalField.tsx`
@@ -36,7 +38,10 @@ and 6.4 on narrow screens, using a stage-height floor of 520px. Chapter buttons
 use native smooth scrolling to positions within the corresponding chapters.
 
 The timeline moves the report, original crops, amount labels, cash-bridge columns
-and explanation paths. It writes scroll progress to CSS custom properties for
+and explanation paths. The amount labels gain a light paper surface continuously
+as they leave the report, move in front of the outgoing sheet, and blend back into
+the report at the ending. Their background does not switch at chapter boundaries.
+The timeline writes scroll progress to CSS custom properties for
 `OpticalField`; animation does not require React state updates on each frame.
 Financial figures retain their source values rather than counting up.
 
@@ -50,7 +55,7 @@ containing block.
 
 Reduced motion, desktop heights at or below 560px, and narrow-screen heights at
 or below 750px use the complete static reading sequence. It includes the same
-finding, source access, cash bridge, unresolved explanations and research entry
+finding, source access, cash bridge, unresolved explanations and login entry
 without the long pinned scroll range.
 
 Original-page images are local crops that preserve the PDF layout. Source
@@ -82,24 +87,23 @@ Scrolling through the example does not start retrieval or model research.
 
 ## Product integration
 
-Anonymous `/` renders the story; authenticated `/` retains the research workbench.
-Entry actions open one existing `StartInput`, preserving company matching,
-editable drafts, authentication continuation and account isolation. The optional
-hypothetical payment-timing example remains separate in that entry dialog and
-returns to its collapsed state after the dialog closes.
+Anonymous `/` renders the story. Its primary “试一试 / Try Prispect” links navigate
+to `/login`. Authenticated `/` retains the existing research workbench and
+`StartInput`, with company matching, editable drafts and account isolation.
+The homepage source dialog continues to expose the original crops, precise
+amounts and all 13 grouped components.
 
 ## Verification
 
-This restoration requires fresh TypeScript, research-record, test, build and
-format checks. Browser acceptance must cover Chinese and English, desktop and
-narrow layouts, intermediate and stable frames, reverse scrolling, responsive
-resizing, reduced-motion/static reading, original amounts and all 13 components,
-modal focus restoration, draft persistence, route cleanup and anonymous
-research-to-login continuation.
+This refinement passed TypeScript, research-record, build and format checks,
+plus 24 existing routing, start-intent and page-scroll tests. Local browser checks
+covered Chinese and English at desktop and narrow widths, chapter-boundary and
+stable frames, reverse scrolling, responsive resizing, reduced-motion/static
+reading, homepage-to-login navigation and pin cleanup. Source checks preserved
+both original crops, precise amounts, all 13 components and focus restoration.
+No browser console errors were observed.
 
-The pull request records results for the current revision. Previous checks do
-not establish acceptance of the restored presentation. Browser checks using an
-isolated temporary database do not verify a production release, SMTP,
-model-provider output or a newly retrieved company report. Linux deployment
-retention fixtures remain a Linux CI gate; their mount and cgroup safety checks
-remain unchanged.
+Browser checks used an isolated temporary database. They establish the local
+homepage behavior; authenticated draft persistence and production deployment were
+not revalidated in this refinement. Linux deployment retention fixtures remain a
+Linux CI gate; their mount and cgroup safety checks remain unchanged.

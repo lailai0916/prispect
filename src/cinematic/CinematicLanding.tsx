@@ -1,4 +1,4 @@
-import { Suspense, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import {
   ArrowDown,
   ArrowRight,
@@ -12,18 +12,11 @@ import {
 import { productTagline } from '../../shared/product-terms';
 import { useApp } from '../context';
 import { Dialog } from '../components';
-import { StartInput } from '../StartInput';
-import { lazyPage } from '../lazy-page';
 import { landingExample, type LandingText, type LandingSourceCrop } from './landing-content';
 import { OpticalField } from './OpticalField';
 import { storyChapters } from './story';
 import { useStoryTimeline } from './useStoryTimeline';
 import './cinematic-landing.css';
-
-const CashScenarioPreview = lazyPage(
-  () => import('../CashScenarioPreview'),
-  (module) => module.CashScenarioPreview
-);
 
 function amount(value: string, signed = false) {
   const number = Number(value) / 100_000_000;
@@ -238,12 +231,10 @@ function SourceDetails() {
 }
 
 export function CinematicLanding() {
-  const { t, locale, user } = useApp();
+  const { t, locale } = useApp();
   const root = useRef<HTMLDivElement>(null);
   const { goToChapter } = useStoryTimeline(root);
-  const [entryOpen, setEntryOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
-  const [cashOpen, setCashOpen] = useState(false);
   const text = (value: LandingText) => t(...value);
   const firstCrop = landingExample.source.crops[0]!;
   const secondCrop = landingExample.source.crops[1]!;
@@ -257,17 +248,10 @@ export function CinematicLanding() {
             <span className="landing-signal" />
             PRISPECT / {t('企业研究', 'COMPANY RESEARCH')}
           </span>
-          <button className="landing-top-action" onClick={() => setEntryOpen(true)}>
-            {t('开始研究', 'Start research')}
-            <ArrowUpRight size={14} />
-          </button>
         </div>
 
         <div className="landing-copy-stack">
           <section className="landing-copy landing-hero" aria-labelledby="landing-headline">
-            <p className="landing-eyebrow">
-              {t('析光 · 从发现到依据', 'PRISPECT · FROM FINDINGS TO EVIDENCE')}
-            </p>
             <h1 id="landing-headline" aria-label={t(...productTagline)}>
               {locale === 'en' ? (
                 <>
@@ -284,24 +268,16 @@ export function CinematicLanding() {
             </h1>
             <p className="landing-description">
               {t(
-                '从一家公司的名称开始。看见关键发现，追到原文依据，继续查清尚未解决的问题。',
-                'Find what matters. Trace it to the original. Keep investigating.'
+                '查询一家公司，核对利润、现金与原文依据。',
+                'Look up a company. Compare profit and cash with the original evidence.'
               )}
             </p>
             <div className="landing-actions">
-              <button className="landing-primary" onClick={() => setEntryOpen(true)}>
-                {t('开始研究', 'Start research')}
+              <a className="landing-primary" href="/login">
+                {t('试一试', 'Try Prispect')}
                 <ArrowRight size={17} />
-              </button>
-              <button className="landing-secondary" onClick={() => goToChapter(1)}>
-                {t('展开一份判断', 'Explore a finding')}
-                <ArrowDown size={15} />
-              </button>
+              </a>
             </div>
-            <a className="landing-coverage" href="/docs/guide?section=company">
-              {t('目前支持 A 股上市公司', 'Currently supports A-share listed companies')}
-              <ArrowUpRight size={12} />
-            </a>
           </section>
 
           <section className="landing-copy" aria-labelledby="landing-source-heading">
@@ -377,20 +353,14 @@ export function CinematicLanding() {
           >
             <p className="landing-eyebrow">04 / {t('回到你的问题', 'BACK TO YOUR QUESTION')}</p>
             <h2 id="landing-research-heading">
-              {t('下一份判断，', 'Your next finding.')}
-              <em>{t('从这里开始。', 'Start here.')}</em>
+              {t('换成一家，', 'Now, a company')}
+              <em>{t('你关心的公司。', 'you care about.')}</em>
             </h2>
-            <p className="landing-description">
-              {t(
-                '带着出处、边界与下一步，研究一家你真正关心的公司。',
-                'Research a company that matters to you—with sources, boundaries and a clear next step.'
-              )}
-            </p>
             <div className="landing-actions">
-              <button className="landing-primary" onClick={() => setEntryOpen(true)}>
-                {t('开始研究', 'Start research')}
+              <a className="landing-primary" href="/login">
+                {t('试一试', 'Try Prispect')}
                 <ArrowRight size={17} />
-              </button>
+              </a>
               <a className="landing-secondary" href="/docs/guide">
                 {t('了解如何使用', 'Read the guide')}
                 <ArrowUpRight size={15} />
@@ -523,9 +493,6 @@ export function CinematicLanding() {
               </div>
             </div>
           </div>
-          <p className="evidence-scene-caption">
-            {t('历史年报示例 / 松原安全 · 2025', 'HISTORICAL EXAMPLE / SONGYUAN · 2025')}
-          </p>
         </div>
 
         <div className="landing-bottomline">
@@ -545,9 +512,6 @@ export function CinematicLanding() {
               </button>
             ))}
           </nav>
-          <span className="landing-edition">
-            {t('发现 · 依据 · 下一步', 'FINDING · SOURCE · NEXT STEP')}
-          </span>
         </div>
       </div>
 
@@ -557,18 +521,14 @@ export function CinematicLanding() {
           <h1>{t(...productTagline)}</h1>
           <p className="landing-description">
             {t(
-              '从一家公司的名称开始。看见关键发现，追到原文依据，继续查清尚未解决的问题。',
-              'Find what matters. Trace it to the original. Keep investigating.'
+              '查询一家公司，核对利润、现金与原文依据。',
+              'Look up a company. Compare profit and cash with the original evidence.'
             )}
           </p>
           <div className="landing-actions">
-            <button className="landing-primary" onClick={() => setEntryOpen(true)}>
-              {t('开始研究', 'Start research')}
+            <a className="landing-primary" href="/login">
+              {t('试一试', 'Try Prispect')}
               <ArrowRight size={17} />
-            </button>
-            <a className="landing-secondary" href="/docs/guide?section=company">
-              {t('支持范围', 'Coverage')}
-              <ArrowUpRight size={15} />
             </a>
           </div>
         </section>
@@ -627,18 +587,12 @@ export function CinematicLanding() {
         </section>
         <section>
           <p className="landing-eyebrow">04 / {t('回到你的问题', 'BACK TO YOUR QUESTION')}</p>
-          <h2>{t('下一份判断，从这里开始。', 'Your next finding. Start here.')}</h2>
-          <p className="landing-description">
-            {t(
-              '带着出处、边界与下一步，研究一家你真正关心的公司。',
-              'Research a company that matters to you—with sources, boundaries and a clear next step.'
-            )}
-          </p>
+          <h2>{t('换成一家，你关心的公司。', 'Now, a company you care about.')}</h2>
           <div className="landing-actions">
-            <button className="landing-primary" onClick={() => setEntryOpen(true)}>
-              {t('开始研究', 'Start research')}
+            <a className="landing-primary" href="/login">
+              {t('试一试', 'Try Prispect')}
               <ArrowRight size={17} />
-            </button>
+            </a>
             <a className="landing-secondary" href="/docs/guide">
               {t('了解如何使用', 'Read the guide')}
               <ArrowUpRight size={15} />
@@ -647,42 +601,6 @@ export function CinematicLanding() {
         </section>
       </div>
 
-      {entryOpen && (
-        <Dialog
-          title={t('开始研究一家公司', 'Start company research')}
-          onClose={() => {
-            setEntryOpen(false);
-            setCashOpen(false);
-          }}
-        >
-          <div className="landing-entry">
-            <StartInput key={user?.id || 'anonymous'} compact />
-            <p>
-              <a href="/docs/guide?section=company">
-                {t('支持范围与使用指南', 'Coverage and guide')}
-                <ArrowUpRight size={13} />
-              </a>
-            </p>
-            <details
-              className="landing-cash-example"
-              onToggle={(event) => setCashOpen(event.currentTarget.open)}
-            >
-              <summary>
-                <span>
-                  {t('体验付款日期情景', 'Explore payment timing')}
-                  <small>{t('假设计划', 'Hypothetical plan')}</small>
-                </span>
-                <ChevronDown size={16} />
-              </summary>
-              {cashOpen && (
-                <Suspense fallback={<p role="status">{t('正在打开情景…', 'Opening scenario…')}</p>}>
-                  <CashScenarioPreview />
-                </Suspense>
-              )}
-            </details>
-          </div>
-        </Dialog>
-      )}
       {sourceOpen && (
         <Dialog
           title={t('原文与计算依据', 'Originals and calculation basis')}
