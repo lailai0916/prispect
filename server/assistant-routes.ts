@@ -30,6 +30,7 @@ const requestSchema = z
     locale: z.enum(['zh', 'en']),
     currentRunId: z.string().min(1).max(120).optional(),
     previousRunId: z.string().min(1).max(120).optional(),
+    reportGeneratedAt: z.iso.datetime({ offset: true }).optional(),
     basis: z.enum(['consolidated', 'parent']).optional(),
     previousQuestions: z.array(z.string().max(500)).max(6).optional(),
     refresh: z.boolean().optional(),
@@ -153,6 +154,26 @@ export function installAssistantRoutes(
           return;
         }
         const run = resolution.run;
+        if (request.reportGeneratedAt && !request.currentRunId)
+          throw new ApiFault(
+            409,
+            'ASSISTANT_REPORT_STALE',
+            '无法确认这份报告的研究记录，请重新打开报告后提问'
+          );
+        // A question that explicitly names another issuer/year overrides page context.
+        // The page's report version must never become that other company's report.
+        const reportGeneratedAt =
+          run.id === request.currentRunId ? request.reportGeneratedAt : undefined;
+        const selectedReport = assistantPublicRun(run).assessment;
+        if (
+          reportGeneratedAt &&
+          (!selectedReport || selectedReport.generatedAt !== reportGeneratedAt)
+        )
+          throw new ApiFault(
+            409,
+            'ASSISTANT_REPORT_STALE',
+            '这份分析报告已被替换或不再可用，请重新打开报告后提问'
+          );
         assertCompanyResearchSupported(run.input.securityCode, run.identity?.exchange);
         if (!run.context)
           throw new ApiFault(409, 'CONTEXT_NOT_READY', '企业概览尚未取得，请先读取数据');
@@ -172,7 +193,7 @@ export function installAssistantRoutes(
           locale: request.locale,
           basis: request.basis,
           previousQuestions: request.previousQuestions,
-          publicBasis: publicRun,
+          publicBasis: { run: publicRun, reportGeneratedAt: reportGeneratedAt || null },
           model: options.model,
         });
         const cacheScope = run;
@@ -222,7 +243,12 @@ export function installAssistantRoutes(
             true,
             options.model,
             signal,
-            { concise: true, locale: request.locale, previousQuestions: request.previousQuestions }
+            {
+              concise: true,
+              locale: request.locale,
+              previousQuestions: request.previousQuestions,
+              reportGeneratedAt,
+            }
           ),
           signal
         );

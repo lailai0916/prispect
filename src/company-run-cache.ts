@@ -1,4 +1,5 @@
 import type { CompanyResearchRun, CompanyRunInput } from '../shared/contracts';
+import type { AssessmentResearchStep } from '../shared/company-assessment';
 
 export const COMPANY_CACHE_EVENT = 'prispect:company-cache-invalidated';
 export const COMPANY_CACHE_PREFIX = 'prispect.company-research-cache.v1:';
@@ -29,8 +30,27 @@ function checksum(text: string): string {
   return (value >>> 0).toString(16);
 }
 
+function publicResearchSteps(steps: AssessmentResearchStep[]): AssessmentResearchStep[] {
+  return steps.map(({ id, tool, label, status, startedAt, finishedAt }) => ({
+    id,
+    tool,
+    label,
+    status,
+    startedAt,
+    finishedAt,
+    summary: '',
+  }));
+}
+
 /** Persist public reading data only, never the run's private original or user-authored inputs. */
 export function publicCompanyCacheRun(run: CompanyResearchRun): CompanyResearchRun | null {
+  // API-first records can be read while their independent background analysis is running.
+  // Original-document jobs and an unsettled source refresh still retain the prior cache.
+  const backgroundFinancialAnalysis =
+    run.input.researchMode === 'financial' &&
+    run.status === 'ready' &&
+    run.contextStatus === 'ready' &&
+    run.assessmentStatus === 'loading';
   if (
     !run.id ||
     run.informationGap ||
@@ -48,7 +68,7 @@ export function publicCompanyCacheRun(run: CompanyResearchRun): CompanyResearchR
     !Array.isArray(run.context.sources) ||
     ['queued', 'running'].includes(run.status) ||
     run.contextStatus === 'loading' ||
-    run.assessmentStatus === 'loading' ||
+    (run.assessmentStatus === 'loading' && !backgroundFinancialAnalysis) ||
     run.challenge?.status === 'loading' ||
     (run.assessment &&
       (run.assessment.year !== run.input.year ||
@@ -62,6 +82,7 @@ export function publicCompanyCacheRun(run: CompanyResearchRun): CompanyResearchR
       orgId: run.input.orgId,
       year: run.input.year,
       purpose: run.input.purpose || 'external',
+      researchMode: run.input.researchMode,
     },
     identity: run.identity,
     status: run.status,
@@ -78,6 +99,9 @@ export function publicCompanyCacheRun(run: CompanyResearchRun): CompanyResearchR
     assessmentStatus: run.assessmentStatus,
     assessmentRevision: run.assessmentRevision,
     assessmentInputHash: run.assessmentInputHash,
+    ...(backgroundFinancialAnalysis && run.assessmentTrace
+      ? { assessmentTrace: publicResearchSteps(run.assessmentTrace.slice(-40)) }
+      : {}),
   };
   if (run.assessment) {
     const { research, ...assessment } = run.assessment;
@@ -87,15 +111,7 @@ export function publicCompanyCacheRun(run: CompanyResearchRun): CompanyResearchR
         ? {
             research: {
               goal: '',
-              steps: research.steps.map(({ id, tool, label, status, startedAt, finishedAt }) => ({
-                id,
-                tool,
-                label,
-                status,
-                startedAt,
-                finishedAt,
-                summary: '',
-              })),
+              steps: publicResearchSteps(research.steps),
               modelCalls: research.modelCalls,
               toolCalls: research.toolCalls,
             },

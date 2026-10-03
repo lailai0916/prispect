@@ -4,6 +4,7 @@ import type { CompanyResearchRun } from '../shared/contracts.js';
 import {
   buildAssessmentPublicPayload,
   assessmentNewsEvidenceId,
+  assessmentDiscussionEvidenceId,
   readNewsMediaExcerpt,
   readDiscussionPostExcerpt,
   type AssessmentResearchStep,
@@ -30,6 +31,7 @@ import {
   publicNewsCatalogId,
 } from './company-public-signals.js';
 import { retrieveCompanyMarketQuote } from './company-market-quote.js';
+import { publicResponseTtl } from './public-response-cache.js';
 import {
   buildCompanyResearchAgenda,
   companyResearchRequestKey,
@@ -198,6 +200,205 @@ function matchesRun(run: CompanyResearchRun): boolean {
     run.identity.securityCode === run.input.securityCode &&
     run.identity.orgId === run.input.orgId &&
     ['sse', 'szse'].includes(run.identity.exchange)
+  );
+}
+const responseHash = /^[a-f0-9]{64}$/;
+const nonnegativeInteger = (value: number) => Number.isSafeInteger(value) && value >= 0;
+function freshSource(source: CompanySourceReceipt, now: number): boolean {
+  const url = safeNewsUrl(source.url);
+  const age = now - Date.parse(source.fetchedAt);
+  return (
+    !!url &&
+    ['available', 'empty'].includes(source.status) &&
+    nonnegativeInteger(source.count) &&
+    (source.status === 'empty' ? source.count === 0 : source.count > 0) &&
+    Array.isArray(source.responseHashes) &&
+    source.responseHashes.length > 0 &&
+    source.responseHashes.every((hash) => responseHash.test(hash)) &&
+    age >= 0 &&
+    age < publicResponseTtl(new URL(url))
+  );
+}
+function availablePublicBody(
+  sources: CompanySourceReceipt[],
+  id: string | undefined,
+  body: ReturnType<typeof readNewsMediaExcerpt>,
+  now: number
+): boolean {
+  if (!body) return false;
+  const matches = sources.filter((source) => source.id === `body-${id}`);
+  const source = matches[0];
+  return (
+    matches.length === 1 &&
+    !!source &&
+    freshSource(source, now) &&
+    source.status === 'available' &&
+    source.count === 1 &&
+    source.url === body.url &&
+    source.fetchedAt === body.readAt &&
+    source.responseHashes.includes(body.sha256)
+  );
+}
+const publicCatalogId = /^public-(?:em-news-p[1-6]|sina-news-p1|guba-list-p[1-3])$/;
+/** A direct API news list is not a completed public-signals collection. */
+function availablePublicSignals(run: CompanyResearchRun, now: number): boolean {
+  try {
+    const context = run.context!,
+      coverage = context.publicSignals;
+    if (!coverage || !Array.isArray(context.discussions)) return false;
+    const age = now - Date.parse(coverage.fetchedAt);
+    if (!(age >= 0 && age < publicResponseTtl(new URL('https://guba.eastmoney.com/'))))
+      return false;
+    const names = [run.identity!.shortName, run.identity!.companyName, context.companyName]
+      .filter((name): name is string => !!name && name.trim().length >= 2)
+      .map((name) => name.trim());
+    const code = run.input.securityCode;
+    const date = (value: string) => {
+      const day = value.slice(0, 10);
+      const parsed = Date.parse(`${day}T00:00:00Z`);
+      return (
+        /^20\d{2}-\d{2}-\d{2}$/.test(day) &&
+        Number.isFinite(parsed) &&
+        new Date(parsed).toISOString().slice(0, 10) === day &&
+        day <= shanghaiDate(new Date(now))
+      );
+    };
+    if (
+      context.news.length > 180 ||
+      context.discussions.length > 240 ||
+      new Set(context.news.map((row) => row.id)).size !== context.news.length ||
+      new Set(context.discussions.map((row) => row.id)).size !== context.discussions.length ||
+      !context.news.every(
+        (row) =>
+          row.id === publicNewsCatalogId(row.url) &&
+          row.title.trim() &&
+          date(row.date) &&
+          (names.some((name) => `${row.title} ${row.digest}`.includes(name)) ||
+            new RegExp(`(?:^|[^0-9])${code}(?:[^0-9]|$)`).test(`${row.title} ${row.digest}`)) &&
+          (!row.excerpt ||
+            availablePublicBody(context.sources, row.id, readNewsMediaExcerpt(row), now))
+      ) ||
+      !context.discussions.every(
+        (row) =>
+          date(row.date) &&
+          assessmentDiscussionEvidenceId(row, code) &&
+          (!row.excerpt ||
+            availablePublicBody(context.sources, row.id, readDiscussionPostExcerpt(row, code), now))
+      )
+    )
+      return false;
+    const catalogs = context.sources.filter((source) => publicCatalogId.test(source.id));
+    if (
+      new Set(catalogs.map((source) => source.id)).size !== catalogs.length ||
+      !['public-em-news-p1', 'public-sina-news-p1', 'public-guba-list-p1'].every((id) =>
+        catalogs.some((source) => source.id === id)
+      )
+    )
+      return false;
+    for (const source of catalogs) {
+      if (!freshSource(source, now)) return false;
+      const url = new URL(source.url),
+        page = Number(source.id.at(-1));
+      if (source.id.startsWith('public-em-')) {
+        const query = JSON.parse(url.searchParams.get('param') || '{}');
+        if (
+          url.origin !== 'https://search-api-web.eastmoney.com' ||
+          url.pathname !== '/search/jsonp' ||
+          query.keyword !== run.identity!.shortName.trim().slice(0, 80) ||
+          query.type?.length !== 1 ||
+          query.type[0] !== 'cmsArticleWebOld' ||
+          query.param?.cmsArticleWebOld?.pageIndex !== page ||
+          query.param?.cmsArticleWebOld?.pageSize !== 30
+        )
+          return false;
+      } else if (source.id === 'public-sina-news-p1') {
+        if (
+          url.origin !== 'https://vip.stock.finance.sina.com.cn' ||
+          url.pathname !== '/corp/view/vCB_AllNewsStock.php' ||
+          url.searchParams.get('symbol') !==
+            `${run.identity!.exchange === 'sse' ? 'sh' : 'sz'}${code}` ||
+          url.searchParams.get('Page') !== '1'
+        )
+          return false;
+      } else if (
+        url.href !== `https://guba.eastmoney.com/list,${code}${page === 1 ? '' : `_${page}`}.html`
+      )
+        return false;
+      if (page > 1 && !catalogs.some((row) => row.id === source.id.slice(0, -1) + (page - 1)))
+        return false;
+    }
+    for (const [section, rows] of [
+      ['news', context.news],
+      ['discussions', context.discussions],
+    ] as const) {
+      const value = coverage[section];
+      const sources = catalogs.filter((source) =>
+        source.id.includes(section === 'news' ? '-news-' : '-list-')
+      );
+      const days = rows.map((row) => row.date.slice(0, 10)).sort();
+      if (
+        !value ||
+        !['complete', 'page-limit'].includes(value.stopReason) ||
+        ![value.raw, value.accepted, value.unique, value.pages, value.bodyRead].every(
+          nonnegativeInteger
+        ) ||
+        (value.hitsTotal !== null && !nonnegativeInteger(value.hitsTotal)) ||
+        value.raw < value.accepted ||
+        value.unique !== rows.length ||
+        value.bodyRead !== rows.filter((row) => row.excerpt).length ||
+        value.pages !== sources.length ||
+        value.accepted !== sources.reduce((sum, source) => sum + source.count, 0) ||
+        value.oldest !== (days.at(0) || null) ||
+        value.latest !== (days.at(-1) || null)
+      )
+        return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+function availableMarketQuote(run: CompanyResearchRun, now: number): boolean {
+  const quote = run.context!.market;
+  const sources = run.context!.sources.filter((source) => source.id === 'market-quote');
+  if (
+    !quote ||
+    quote.status !== 'available' ||
+    quote.securityCode !== run.input.securityCode ||
+    sources.length !== 1
+  )
+    return false;
+  const source = sources[0]!;
+  if (
+    !freshSource(source, now) ||
+    source.status !== 'available' ||
+    source.count !== 1 ||
+    source.url !== quote.sourceUrl ||
+    source.fetchedAt !== quote.fetchedAt ||
+    !quote.quotedAt ||
+    source.latestDate !== quote.quotedAt.slice(0, 10)
+  )
+    return false;
+  const url = new URL(quote.sourceUrl),
+    time = Date.parse(quote.quotedAt);
+  const market = run.identity!.exchange === 'sse' ? '1' : '0';
+  const amount = (value: string | null, positive = false) =>
+    typeof value === 'string' &&
+    /^-?\d+(?:\.\d+)?$/.test(value) &&
+    Number.isFinite(Number(value)) &&
+    (!positive || Number(value) > 0);
+  return (
+    url.origin === 'https://push2.eastmoney.com' &&
+    url.pathname === '/api/qt/stock/get' &&
+    url.searchParams.get('secid') === `${market}.${run.input.securityCode}` &&
+    amount(quote.price, true) &&
+    amount(quote.high, true) &&
+    amount(quote.low, true) &&
+    amount(quote.marketCap, true) &&
+    amount(quote.change) &&
+    Number.isFinite(quote.changePercent) &&
+    time >= 946684800000 &&
+    time <= Date.parse(quote.fetchedAt) + 300_000
   );
 }
 const rankDisclosure = (
@@ -484,14 +685,49 @@ export async function runCompanyResearchAgent(
       switch (call.function.name) {
         case 'collect_public_signals': {
           noArguments.parse(args);
-          const reused = publicSignalsAttempted;
-          if (!publicSignalsAttempted) {
-            publicSignalsAttempted = true;
+          const reused =
+            publicSignalsAttempted ||
+            (!options.bypassCache && availablePublicSignals(working, Date.now()));
+          publicSignalsAttempted = true;
+          if (!reused) {
+            // Expired or unverifiable bodies must become eligible for the collector's
+            // existing bounded reads, rather than defeating reuse on every subsequent visit.
+            const now = Date.now(),
+              context = working.context!;
+            context.news = context.news.map((row) => {
+              if (
+                !row.excerpt ||
+                availablePublicBody(context.sources, row.id, readNewsMediaExcerpt(row), now)
+              )
+                return row;
+              const { excerpt: _expired, ...catalog } = row;
+              return { ...catalog, contentScope: row.digest ? 'digest' : 'headline' };
+            });
+            context.discussions = context.discussions?.map((row) => {
+              if (
+                !row.excerpt ||
+                availablePublicBody(
+                  context.sources,
+                  row.id,
+                  readDiscussionPostExcerpt(row, working.input.securityCode),
+                  now
+                )
+              )
+                return row;
+              const { excerpt: _expired, ...catalog } = row;
+              return { ...catalog, textScope: 'title' };
+            });
             const signals = await collectCompanyPublicSignals(working, { reader, signal });
             working.context!.news = signals.news;
             working.context!.discussions = signals.discussions;
             working.context!.publicSignals = signals.coverage;
-            const sources = new Map(working.context!.sources.map((item) => [item.id, item]));
+            // Replace the prior collection's page receipts, including pages absent from this refresh.
+            // Retained bodies keep their original receipts and acquisition times.
+            const sources = new Map(
+              working
+                .context!.sources.filter((item) => !publicCatalogId.test(item.id))
+                .map((item) => [item.id, item])
+            );
             for (const item of signals.sources) sources.set(item.id, item);
             working.context!.sources = [...sources.values()];
           }
@@ -507,13 +743,15 @@ export async function runCompanyResearchAgent(
               : {}),
             scope: '新闻摘要和公众帖子按来源分层；只读取标记为节选的正文，其余仅标题或摘要。',
           };
-          summary = `保留 ${working.context!.news.length} 条去重新闻、${working.context!.discussions?.length || 0} 条公开帖子；已读正文分别 ${working.context!.publicSignals?.news.bodyRead || 0}、${working.context!.publicSignals?.discussions.bodyRead || 0} 条。`;
+          summary = `${reused ? '复用已核对覆盖与来源的公开快照，未追加网络请求。' : ''}保留 ${working.context!.news.length} 条去重新闻、${working.context!.discussions?.length || 0} 条公开帖子；已读正文分别 ${working.context!.publicSignals?.news.bodyRead || 0}、${working.context!.publicSignals?.discussions.bodyRead || 0} 条。`;
           break;
         }
         case 'get_market_quote': {
           noArguments.parse(args);
-          if (!marketAttempted) {
-            marketAttempted = true;
+          const reused =
+            marketAttempted || (!options.bypassCache && availableMarketQuote(working, Date.now()));
+          marketAttempted = true;
+          if (!reused) {
             const value = await retrieveCompanyMarketQuote(working, { reader, signal });
             working.context!.market = value.quote;
             working.context!.sources = working.context!.sources.filter(
@@ -521,9 +759,10 @@ export async function runCompanyResearchAgent(
             );
             working.context!.sources.push(value.source);
           }
-          result = working.context!.market;
-          summary =
-            working.context!.market?.status === 'available'
+          result = { ...working.context!.market, reused };
+          summary = reused
+            ? '复用已核对主体与来源的行情快照，未追加网络请求；报价时点保留原值。'
+            : working.context!.market?.status === 'available'
               ? '取得实际行情快照，保留报价时点；未用于历史财务评级。'
               : '行情本次未完整取得，缺失字段保留未知。';
           break;

@@ -350,6 +350,9 @@ export interface CompanyWorkspaceExtension {
   assessmentError?: string;
   assessmentRevision?: number;
   assessmentInputHash?: string;
+  /** Records one automatic analysis attempt for a settled public-data version.
+   * Peer-chart updates and read-only revisits do not schedule another attempt. */
+  assessmentAutoInputHash?: string;
   assessmentFocus?: string;
   assessmentTrace?: AssessmentResearchStep[];
   challenge?: CompanyChallengeState;

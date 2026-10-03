@@ -14,9 +14,147 @@ import {
 } from '../shared/company-workspace.js';
 import { analyzeCompanyWithModel, renderAssessmentText } from '../server/company-assessment.js';
 import type { ModelConfig } from '../server/model.js';
+import { companyReportCore } from '../shared/company-report-summary.js';
 
 const response = (content: unknown) =>
   new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] }));
+
+function coreNarrative(seed: CompanyAssessment): AssessmentNarrative {
+  const result = narrative(seed);
+  result.summary = {
+    text: {
+      zh: '公司营业收入为{{metric:2025-revenue}}，经营现金净额为{{metric:2025-ocf}}，经营规模和现金表现应结合原文对应期间比较。当前判断的重点在于现金转化与营运占用，公开资料不能单独说明其成因。下一步应结合主要客户期后回款、应收账龄和存货去化记录核对，区分短期占用与持续经营压力，再据新增资料调整判断。',
+      en: 'Revenue is {{metric:2025-revenue}} and operating cash is {{metric:2025-ocf}}. Cash conversion and working capital are the main areas for review. These public figures do not establish a cause. Check subsequent receipts from major customers, receivable ageing and inventory movements to distinguish temporary working-capital needs from lasting cash pressure before updating the judgment.',
+    },
+    metricIds: ['2025-revenue', '2025-ocf'],
+    evidenceIds: [],
+  };
+  result.summaryHighlights = {
+    zh: ['{{metric:2025-ocf}}', '现金转化与营运占用'],
+    en: ['{{metric:2025-ocf}}', 'Cash conversion and working capital'],
+  };
+  result.suggestedQuestions = [
+    {
+      text: {
+        zh: '经营现金与营运占用之间应如何核查？',
+        en: 'How should operating cash and working capital be checked together?',
+      },
+      metricIds: ['2025-ocf'],
+      evidenceIds: [],
+    },
+    {
+      text: {
+        zh: '哪些新增回款资料会改变这份判断？',
+        en: 'What new collection evidence would change this judgment?',
+      },
+      metricIds: ['2025-ocf'],
+      evidenceIds: [],
+    },
+    {
+      text: { zh: '如何核对报告中的营业收入？', en: 'How can the reported revenue be verified?' },
+      metricIds: ['2025-revenue'],
+      evidenceIds: [],
+    },
+  ];
+  return result;
+}
+
+test('model core report preserves a compact generated summary, authoritative highlights and attributed follow-ups', async () => {
+  const run = company();
+  const seed = deriveCompanyAssessment(run);
+  const raw = coreNarrative(seed);
+  const requests: string[] = [];
+  const result = await analyzeCompanyWithModel(run, {
+    apiKey: 'fixture',
+    baseUrl: 'https://model.invalid/v1',
+    fetch: async (_url, init) => {
+      requests.push(String(init?.body));
+      return response(raw);
+    },
+  });
+  assert.equal(result.model.status, 'completed');
+  const summary = result.narrative!.summary.text.zh;
+  assert.ok(Array.from(summary).length >= 100 && Array.from(summary).length <= 200);
+  assert.ok(
+    requests.some(
+      (request) => request.includes('100–200字') && request.includes('suggestedQuestions')
+    )
+  );
+  const cash = seed.metrics.find((metric) => metric.id === '2025-ocf')!.display[0];
+  assert.ok(summary.includes(cash));
+  assert.ok(result.narrative!.summaryHighlights!.zh.includes(cash));
+  assert.equal(result.narrative!.suggestedQuestions!.length, 3);
+  run.assessment = result;
+  run.assessmentStatus = 'ready';
+  const core = companyReportCore(run, 'zh-Hans');
+  assert.equal(core.segments.map((segment) => segment.text).join(''), summary);
+  assert.ok(core.segments.some((segment) => segment.highlight && segment.text.includes(cash)));
+  assert.ok(
+    core.segments.some((segment) => segment.highlight && segment.text === '现金转化与营运占用')
+  );
+  assert.equal(core.questions.length, 3);
+  assert.deepEqual(
+    core.questions.map((question) => question.text),
+    raw.suggestedQuestions!.map((question) => question.text.zh)
+  );
+});
+
+test('new report core cannot introduce unrelated highlights, invalid citations or oversized prose', async () => {
+  for (const mutate of [
+    (value: AssessmentNarrative) => {
+      value.summaryHighlights!.zh = ['并不存在的正文结论'];
+    },
+    (value: AssessmentNarrative) => {
+      value.suggestedQuestions![0]!.metricIds = ['unknown-metric'];
+    },
+    (value: AssessmentNarrative) => {
+      value.summary.text.zh += '请核对营运资料。'.repeat(40);
+    },
+    (value: AssessmentNarrative) => {
+      value.summary.text.zh = '公开资料仍需核对。';
+    },
+  ]) {
+    const run = company();
+    const raw = coreNarrative(deriveCompanyAssessment(run));
+    mutate(raw);
+    const result = await analyzeCompanyWithModel(run, {
+      apiKey: 'fixture',
+      baseUrl: 'https://model.invalid/v1',
+      fetch: async () => response(raw),
+    });
+    assert.equal(result.model.status, 'failed');
+    assert.equal(result.narrative, undefined);
+    assert.ok(result.metrics.some((metric) => metric.status === 'available'));
+  }
+});
+test('new financial AI reports require the compact summary and generated follow-ups', async () => {
+  const run = company();
+  const seed = deriveCompanyAssessment(run);
+  const legacy = narrative(seed);
+  const rejected = await analyzeCompanyWithModel(
+    run,
+    { apiKey: 'fixture', baseUrl: 'https://model.invalid/v1', fetch: async () => response(legacy) },
+    undefined,
+    { requireCoreReport: true }
+  );
+  assert.equal(rejected.model.status, 'failed');
+  assert.equal(rejected.narrative, undefined);
+  const compact = await analyzeCompanyWithModel(
+    run,
+    {
+      apiKey: 'fixture',
+      baseUrl: 'https://model.invalid/v1',
+      fetch: async () => response(coreNarrative(seed)),
+    },
+    undefined,
+    { requireCoreReport: true }
+  );
+  assert.equal(compact.model.status, 'completed');
+  assert.ok(compact.narrative!.suggestedQuestions!.length);
+  assert.ok(Array.from(compact.narrative!.summary.text.zh).length >= 100);
+  assert.ok(Array.from(compact.narrative!.summary.text.zh).length <= 200);
+});
+
 function annual(year: number): CompanyContextPeriod {
   return {
     period: `${year}-12-31`,

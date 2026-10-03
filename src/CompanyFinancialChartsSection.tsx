@@ -80,7 +80,9 @@ export function CompanyFinancialChartsSection({
   const currentRun = { ...run, industry: industries, industryHistoryErrors: failures };
   const historyPeriods = industryHistoryPeriods(currentRun);
   const busy =
-    !compatibleSnapshot || run.contextStatus === 'loading' || run.assessmentStatus === 'loading';
+    !compatibleSnapshot ||
+    run.contextStatus === 'loading' ||
+    (run.input.researchMode !== 'financial' && run.assessmentStatus === 'loading');
   const latest = useRef({ run: currentRun, onHistoryResult, t, locale, owner, selectionScope });
   latest.current = { run: currentRun, onHistoryResult, t, locale, owner, selectionScope };
   const candidate = industries[period];

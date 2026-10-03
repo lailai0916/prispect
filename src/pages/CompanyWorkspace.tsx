@@ -3,6 +3,7 @@ import { Select } from '../Select';
 import { useContext, useEffect, useRef, useState, Suspense } from 'react';
 import {
   ArrowUpRight,
+  ArrowLeft,
   ChevronDown,
   FileSearch,
   LoaderCircle,
@@ -11,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { CompanyResearchRun } from '../../shared/contracts';
+import type { AssessmentJudgment } from '../../shared/company-assessment';
 import {
   companyPath,
   companySections,
@@ -44,11 +46,14 @@ import { CompanyAssistantContext } from '../company-assistant-context';
 import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
-import { CompanyAssessment } from '../CompanyAssessment';
+import { CompanyAssessment, CompanyAssessmentEvidence } from '../CompanyAssessment';
 import { SourceTrust } from '../SourceTrust';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyFinancialOverview } from '../CompanyFinancialOverview';
+import { CompanyAIResearchStatus } from '../CompanyAIResearchStatus';
+import { CompanyAICoreReport } from '../CompanyAICoreReport';
+import { ResearchPlan } from '../ResearchPlan';
 import { CompanyPageIndex } from '../CompanyPageIndex';
 import { CompanyReadingSession } from '../CompanyReadingSession';
 import { openCompanyReportSection } from '../CompanyResearchReport';
@@ -74,6 +79,10 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     query.get('section'),
     query.get('focus')
   );
+  const aiReport =
+    section === 'overview' &&
+    (query.get('report') === 'ai' ||
+      ['report', 'research', 'goal', 'lab', 'plan'].includes(reportFocus || ''));
   const [loadedRun, setLoadedRun] = useState<{
     owner: string | null;
     run: CompanyResearchRun | null;
@@ -118,9 +127,19 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const [updating, setUpdating] = useState(false);
   const [assessmentUpdating, setAssessmentUpdating] = useState(false);
   const [cancellingResearch, setCancellingResearch] = useState(false);
+  const [coreEvidence, setCoreEvidence] = useState<{
+    owner: string;
+    runId: string;
+    generatedAt: string;
+    judgment: AssessmentJudgment;
+  } | null>(null);
   const request = useRef<AbortController | null>(null);
+  const assessmentOperation = useRef<symbol | null>(null);
   const cancelOperation = useRef<symbol | null>(null);
   const revealedLocation = useRef<string | null>(null);
+  const canWriteRun = Boolean(
+    user && run?.id === id && verifiedRunScope === `${user.id}:${id}` && isCurrentOwner()
+  );
   const clearResolvedFailure = (next: CompanyResearchRun) =>
     setFailure((previous) =>
       previous?.kind === 'status' ||
@@ -129,15 +148,19 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         : previous
     );
   useEffect(() => setFailure(null), [id, user?.id]);
+  useEffect(() => setCoreEvidence(null), [id, user?.id, run?.assessment?.generatedAt]);
   useEffect(() => {
     if (!id || !user) return;
     const owner = user.id;
     const scope = `${owner}:${id}`;
+    setVerifiedRunScope(null);
     const cached = readCachedCompanyRun(owner, id);
     if (cached || savedOnly) savedScope.current = scope;
     if ((!run || run.id !== id) && cached) setRun(cached);
     const controller = new AbortController();
     request.current = controller;
+    assessmentOperation.current = null;
+    setAssessmentUpdating(false);
     cancelOperation.current = null;
     setCancellingResearch(false);
     let timer: ReturnType<typeof setTimeout>;
@@ -224,11 +247,17 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     return () => window.removeEventListener('prispect:company-run-updated', update);
   }, [id]);
   useEffect(() => {
-    if (run?.id === id && user) publish({ owner: user.id, run, basis, changeBasis: setBasis });
-  }, [run, id, basis, user?.id, publish]);
+    if (run?.id === id && user)
+      publish({
+        owner: user.id,
+        run,
+        basis: aiReport ? 'consolidated' : basis,
+        changeBasis: setBasis,
+      });
+  }, [run, id, basis, aiReport, user?.id, publish]);
   useEffect(() => {
     if (run?.id !== id) return;
-    const targets = pageAnchorIds(section);
+    const targets = pageAnchorIds(section, aiReport);
     const reveal = (explicit = false, historyReturn = false) => {
       const hashId = location.hash.slice(1);
       const target =
@@ -250,9 +279,18 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     const revealHash = () => reveal(true, Boolean(readPageScroll(history.state)));
     window.addEventListener('hashchange', revealHash);
     return () => window.removeEventListener('hashchange', revealHash);
-  }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus, historyNavigation]);
+  }, [
+    run?.id,
+    run?.context?.fetchedAt,
+    run?.assessment?.generatedAt,
+    id,
+    section,
+    aiReport,
+    reportFocus,
+    historyNavigation,
+  ]);
   const refresh = async () => {
-    if (!run || !researchSupported(run) || updating) return;
+    if (!run || !researchSupported(run) || updating || !canWriteRun) return;
     if (user) manualScope.current = `${user.id}:${run.id}`;
     const signal = request.current?.signal;
     setUpdating(true);
@@ -276,16 +314,21 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       setUpdating(false);
     }
   };
-  const refreshAssessment = async (focus?: string) => {
+  const refreshAssessment = async (focus?: string, refresh = false) => {
     if (
       !run?.context ||
       !researchSupported(run) ||
       run.contextStatus === 'loading' ||
       assessmentUpdating ||
-      run.assessmentStatus === 'loading'
+      assessmentOperation.current ||
+      run.assessmentStatus === 'loading' ||
+      !canWriteRun
     )
       return;
     const signal = request.current?.signal;
+    if (!signal || signal.aborted) return;
+    const operation = Symbol('assessment-request');
+    assessmentOperation.current = operation;
     setAssessmentUpdating(true);
     setFailure(null);
     try {
@@ -293,24 +336,27 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         `/company-runs/${encodeURIComponent(run.id)}/assessment`,
         {
           method: 'POST',
-          body: JSON.stringify({ refresh: true, focus }),
+          body: JSON.stringify({ refresh, focus }),
           signal,
         }
       );
-      if (!signal?.aborted) {
+      if (!signal.aborted && isCurrentOwner() && assessmentOperation.current === operation) {
         setRun(next);
         setVersion((value) => value + 1);
       }
     } catch (cause) {
-      if (!signal?.aborted) {
+      if (!signal.aborted && isCurrentOwner() && assessmentOperation.current === operation) {
         setFailure({ kind: 'analysis', text: requestErrorText(cause, locale) });
       }
     } finally {
-      setAssessmentUpdating(false);
+      if (assessmentOperation.current === operation) {
+        assessmentOperation.current = null;
+        setAssessmentUpdating(false);
+      }
     }
   };
   const cancelResearch = async () => {
-    if (!run || cancellingResearch || !isCurrentOwner()) return;
+    if (!run || cancellingResearch || !canWriteRun) return;
     const available = companyResearchAvailability(run);
     if (!available.canCancel) return;
     const signal = request.current?.signal;
@@ -429,7 +475,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       </label>
     </div>
   );
-  const pageAnchors = pageAnchorItems(section);
+  const pageAnchors = pageAnchorItems(section, aiReport);
+  const reportHref = `${companyPath(run.id)}&report=ai${savedOnly ? '&cached=1' : ''}`;
+  const dataHref = `${companyPath(run.id)}${savedOnly ? '&cached=1' : ''}`;
   const scopeNote = snapshot
     ? `${t('数据更新于', 'Data updated at')} ${date(snapshot.fetchedAt, locale)}`
     : '';
@@ -449,7 +497,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <button
             type="button"
             className="text-link"
-            disabled={cancellingResearch}
+            disabled={cancellingResearch || !canWriteRun}
             onClick={() => void cancelResearch()}
           >
             {t('取消', 'Cancel')}
@@ -461,7 +509,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <button
             type="button"
             className="button button-secondary"
-            disabled={updating}
+            disabled={updating || !canWriteRun}
             onClick={() => void refresh()}
           >
             {t('重新获取', 'Try again')}
@@ -474,7 +522,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     <div
       className={'company-workspace' + (section === 'overview' ? ' company-workspace-report' : '')}
     >
-      {user && (
+      {user && !aiReport && (
         <CompanyReadingSession
           key={`${user.id}:${run.id}`}
           owner={user.id}
@@ -485,7 +533,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       )}
       <header className="context-page-heading">
         <div>
-          {(section === 'financial' || section === 'evidence') && (
+          {(section === 'financial' || section === 'evidence' || aiReport) && (
             <p className="context-eyebrow">
               {run.informationGap?.name ||
                 run.identity?.companyName ||
@@ -494,12 +542,14 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             </p>
           )}
           <h1>
-            {section === 'overview'
-              ? run.informationGap?.name ||
-                run.identity?.shortName ||
-                snapshot?.companyName ||
-                run.input.securityCode
-              : title}
+            {aiReport
+              ? t('AI 研究报告', 'AI research report')
+              : section === 'overview'
+                ? run.informationGap?.name ||
+                  run.identity?.shortName ||
+                  snapshot?.companyName ||
+                  run.input.securityCode
+                : title}
           </h1>
           <p className="context-data-note">
             {(section !== 'overview' || run.input.securityCode) && (
@@ -516,10 +566,10 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </p>
         </div>
         <div className="context-page-actions">
-          {companyResearchAvailability(run).canCancel && (
+          {section !== 'overview' && companyResearchAvailability(run).canCancel && (
             <button
               className="button button-secondary"
-              disabled={cancellingResearch}
+              disabled={cancellingResearch || !canWriteRun}
               onClick={() => void cancelResearch()}
             >
               {cancellingResearch ? t('正在取消…', 'Cancelling…') : t('取消', 'Cancel')}
@@ -528,13 +578,13 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           {section === 'overview' && (
             <button className="button button-secondary" onClick={() => window.print()}>
               <Printer size={14} />
-              {t('打印摘要', 'Print summary')}
+              {aiReport ? t('打印报告', 'Print report') : t('打印摘要', 'Print summary')}
             </button>
           )}
           {!run.informationGap && !pausedMarket && (
             <button
               className="button button-secondary"
-              disabled={updating || run.contextStatus === 'loading'}
+              disabled={updating || run.contextStatus === 'loading' || !canWriteRun}
               onClick={() => void refresh()}
             >
               <RefreshCw size={14} />
@@ -544,6 +594,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <button
             className="icon-button"
             disabled={
+              !canWriteRun ||
               active ||
               run.contextStatus === 'loading' ||
               run.assessmentStatus === 'loading' ||
@@ -556,8 +607,24 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </button>
         </div>
       </header>
+      {section === 'overview' && !pausedMarket && !run.informationGap && (
+        <CompanyAIResearchStatus
+          run={run}
+          reportHref={reportHref}
+          onStart={() => void refreshAssessment()}
+          onRetrySources={() => void refresh()}
+          onCancel={() => void cancelResearch()}
+          starting={assessmentUpdating}
+          cancelling={cancellingResearch}
+          disabled={!canWriteRun}
+          reportView={aiReport}
+        />
+      )}
       {pageAnchors.length > 1 && !pausedMarket && (snapshot || section === 'overview') && (
-        <CompanyPageIndex key={`${user?.id}:${run.id}:${section}`} anchors={pageAnchors} />
+        <CompanyPageIndex
+          key={`${user?.id}:${run.id}:${section}:${aiReport}`}
+          anchors={pageAnchors}
+        />
       )}
       {error && (
         <p role="alert" className="field-error">
@@ -565,7 +632,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           <button
             className="text-link"
             type="button"
-            disabled={updating || assessmentUpdating || cancellingResearch}
+            disabled={
+              updating ||
+              assessmentUpdating ||
+              cancellingResearch ||
+              (errorKind !== 'status' && !canWriteRun)
+            }
             onClick={() =>
               errorKind === 'sources'
                 ? void refresh()
@@ -599,6 +671,27 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </span>
         </div>
       )}
+      {snapshot &&
+        !pausedMarket &&
+        !run.informationGap &&
+        ((section === 'overview' && !aiReport) ||
+          section === 'trends' ||
+          section === 'financial') &&
+        readingControls}
+      {snapshot && !pausedMarket && !run.informationGap && section !== 'evidence' && (
+        <CompanyFinancialChartsSection
+          key={`${user?.id}:${run.id}:charts`}
+          run={run}
+          snapshot={snapshot}
+          basis={basis}
+          view={
+            section === 'industry' ? 'industry' : section === 'financial' ? 'combined' : 'history'
+          }
+          visible={section === 'trends' || section === 'industry' || section === 'financial'}
+          autoLoad={verifiedRunScope === `${user?.id}:${id}`}
+          onHistoryResult={rememberIndustryHistory}
+        />
+      )}
       {section === 'evidence' ? (
         <Suspense
           fallback={
@@ -631,6 +724,70 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         </section>
       ) : run.informationGap ? (
         emptySources
+      ) : aiReport ? (
+        <div className="company-ai-report-page">
+          <a className="text-link company-ai-report-return" href={dataHref}>
+            <ArrowLeft size={13} aria-hidden="true" />
+            {t('返回财务数据', 'Back to financial data')}
+          </a>
+          <CompanyAICoreReport
+            run={run}
+            disabled={!canWriteRun}
+            onInspect={(judgment) =>
+              user &&
+              run.assessment &&
+              setCoreEvidence({
+                owner: user.id,
+                runId: run.id,
+                generatedAt: run.assessment.generatedAt,
+                judgment,
+              })
+            }
+          />
+          <section id="company-full-report">
+            <CompanyAssessment
+              key={'assessment-' + run.id}
+              run={run}
+              onRefresh={(focus) => void refreshAssessment(focus, Boolean(run.assessment))}
+              refreshing={assessmentUpdating}
+              readOnly={!canWriteRun}
+            />
+          </section>
+          <details id="company-evidence-lab" className="company-review-details">
+            <summary>
+              <ChevronDown size={14} />
+              {t('检验解释', 'Test an explanation')}
+            </summary>
+            {canWriteRun ? (
+              <CompanyEvidenceLab
+                key={'lab-' + run.id}
+                run={run}
+                updating={updating || assessmentUpdating}
+              />
+            ) : (
+              <p className="context-data-note">
+                {t(
+                  '连接研究记录后可检验解释。',
+                  'Connect to the research record to test explanations.'
+                )}
+              </p>
+            )}
+          </details>
+          <ResearchPlan run={run} />
+          <SourceTrust run={run} />
+          {run.assessment &&
+            coreEvidence &&
+            coreEvidence.owner === user?.id &&
+            coreEvidence.runId === run.id &&
+            coreEvidence.generatedAt === run.assessment.generatedAt && (
+              <CompanyAssessmentEvidence
+                assessment={run.assessment}
+                judgment={coreEvidence.judgment}
+                title={t('核心判断的依据', 'Evidence for the core judgment')}
+                onClose={() => setCoreEvidence(null)}
+              />
+            )}
+        </div>
       ) : !snapshot ? (
         emptySources
       ) : (
@@ -641,27 +798,13 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               <button
                 type="button"
                 className="text-link"
-                disabled={updating || run.contextStatus === 'loading'}
+                disabled={updating || run.contextStatus === 'loading' || !canWriteRun}
                 onClick={() => void refresh()}
               >
                 {t('重试', 'Retry')}
               </button>
             </p>
           )}
-          {(section === 'overview' || section === 'trends' || section === 'financial') &&
-            readingControls}
-          <CompanyFinancialChartsSection
-            key={`${user?.id}:${run.id}:charts`}
-            run={run}
-            snapshot={snapshot}
-            basis={basis}
-            view={
-              section === 'industry' ? 'industry' : section === 'financial' ? 'combined' : 'history'
-            }
-            visible={section === 'trends' || section === 'industry' || section === 'financial'}
-            autoLoad={verifiedRunScope === `${user?.id}:${id}`}
-            onHistoryResult={rememberIndustryHistory}
-          />
           {section === 'overview' ? (
             <>
               <CompanyBrief run={run} showIdentity={false} />
@@ -678,29 +821,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                   view="manager"
                   selectedYear={run.input.year}
                 />
-              </details>
-              <details id="company-full-report" className="company-review-details">
-                <summary>
-                  <ChevronDown size={14} />
-                  {t('深入分析', 'Further analysis')}
-                </summary>
-                <CompanyAssessment
-                  key={'assessment-' + run.id}
-                  run={run}
-                  onRefresh={(focus) => void refreshAssessment(focus)}
-                  refreshing={assessmentUpdating}
-                />
-                <details id="company-evidence-lab" className="company-review-details">
-                  <summary>
-                    <ChevronDown size={14} />
-                    {t('检验解释', 'Test an explanation')}
-                  </summary>
-                  <CompanyEvidenceLab
-                    key={'lab-' + run.id}
-                    run={run}
-                    updating={updating || assessmentUpdating}
-                  />
-                </details>
               </details>
             </>
           ) : section === 'trends' || section === 'financial' ? (
@@ -770,15 +890,23 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
 }
 
 function pageAnchorItems(
-  section: ReturnType<typeof resolveCompanyLocation>['section']
+  section: ReturnType<typeof resolveCompanyLocation>['section'],
+  aiReport = false
 ): readonly (readonly [string, string, string])[] {
+  if (aiReport)
+    return [
+      ['company-ai-core-report', '核心判断', 'Core judgment'],
+      ['company-full-report', '详细分析', 'Detailed analysis'],
+      ['company-evidence-lab', '检验解释', 'Test an explanation'],
+      ['company-research-framework', '核查计划', 'Research plan'],
+      ['company-source-trust', '来源关系', 'Source relationships'],
+    ];
   switch (section) {
     case 'overview':
       return [
         ['company-financial-overview', '财务概览', 'Financial overview'],
         ['company-financial-attention', '值得注意的事', 'What deserves attention'],
         ['company-financial-data', '完整指标', 'Complete metrics'],
-        ['company-full-report', '深入分析', 'Further analysis'],
       ];
     case 'trends':
     case 'financial':
@@ -806,9 +934,12 @@ function pageAnchorItems(
       return [];
   }
 }
-function pageAnchorIds(section: ReturnType<typeof resolveCompanyLocation>['section']): string[] {
+function pageAnchorIds(
+  section: ReturnType<typeof resolveCompanyLocation>['section'],
+  aiReport = false
+): string[] {
   return [
-    ...pageAnchorItems(section).map(([id]) => id),
+    ...pageAnchorItems(section, aiReport).map(([id]) => id),
     'company-evidence-lab',
     'company-original-comparison',
   ];

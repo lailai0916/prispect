@@ -1301,3 +1301,325 @@ test('an older in-flight company answer cannot overwrite a later explicitly refr
     await h.dispose();
   }
 });
+
+function reportCompany(): CompanyResearchRun {
+  const run = company();
+  run.context!.fetchedAt = '2026-10-03T05:00:00.000Z';
+  const assessment = deriveCompanyAssessment(run);
+  assessment.generatedAt = '2026-10-03T05:10:00.000Z';
+  assessment.model = { status: 'completed', name: 'public-report-fixture' };
+  const cash = assessment.metrics.find((metric) => metric.id === '2025-ocf')!;
+  assert.equal(cash.status, 'available');
+  const summary = {
+    text: {
+      zh: `保存的AI判断：${run.input.year} 年经营现金 ${cash.display[0]}，需要进一步核对现金实现程度。`,
+      en: `Saved AI judgment: operating cash in ${run.input.year} is ${cash.display[1]}; cash realization needs review.`,
+    },
+    metricIds: [cash.id, 'scope-year'],
+    evidenceIds: cash.evidenceIds,
+  };
+  assessment.narrative = {
+    summary,
+    dimensions: [{ ...structuredClone(summary), dimensionId: 'cash' }],
+    strengths: [],
+    risks: [structuredClone(summary)],
+    actions: [structuredClone(summary)],
+    changeConditions: [],
+  };
+  run.assessment = assessment;
+  return run;
+}
+
+test('AI report-bound questions reject absent or replaced reports before service work while named issuers override page context', async () => {
+  let researchCalls = 0;
+  const h = await harness({
+    wantsResearch: () => true,
+    research: async (run) => {
+      researchCalls++;
+      return {
+        run,
+        research: { status: 'completed', toolCalls: 0, sources: [] },
+      };
+    },
+  });
+  try {
+    const owner = await h.register();
+    const run = reportCompany();
+    const other = company(gree);
+    const reportGeneratedAt = run.assessment!.generatedAt;
+    await h.save(owner.userId, [run, other]);
+    const requests: AssistantRequest[] = [
+      { question: '报告中的经营现金判断依据是什么？', locale: 'zh', reportGeneratedAt },
+      {
+        question: '报告中的经营现金判断依据是什么？',
+        locale: 'zh',
+        currentRunId: run.id,
+        reportGeneratedAt: '2026-10-03T05:09:00.000Z',
+      },
+    ];
+    for (const request of requests) {
+      const response = await h.message(request, owner.headers);
+      assert.equal(response.status, 409, request.question);
+      assert.equal((await response.json()).code, 'ASSISTANT_REPORT_STALE');
+    }
+    run.assessment = undefined;
+    const missing = await h.message(
+      {
+        question: '报告中的经营现金判断依据是什么？',
+        locale: 'zh',
+        currentRunId: run.id,
+        reportGeneratedAt,
+      },
+      owner.headers
+    );
+    assert.equal(missing.status, 409);
+    assert.equal((await missing.json()).code, 'ASSISTANT_REPORT_STALE');
+    assert.equal(researchCalls, 0);
+    assert.equal(h.inputs.length, 0);
+    assert.equal(run.questions, undefined);
+    const anotherIssuer = await h.message(
+      {
+        question: '格力电器经营现金如何？',
+        locale: 'zh',
+        currentRunId: run.id,
+        reportGeneratedAt,
+      },
+      owner.headers
+    );
+    assert.equal(anotherIssuer.status, 200);
+    assert.equal(((await anotherIssuer.json()) as AssistantAnswer).company?.runId, other.id);
+    assert.equal(researchCalls, 1);
+    assert.equal(h.inputs.length, 1);
+    assert.equal(h.inputs[0]!.run.id, other.id);
+    assert.equal(h.inputs[0]!.run.assessment, undefined);
+    assert.equal(run.questions, undefined);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('assistant public projection includes completed saved AI judgments but excludes private report extensions', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const run = reportCompany();
+    const secrets = ['private-report-goal', 'private-field-focus', 'private-report-extension'];
+    run.assessment!.research = { goal: secrets[0]!, steps: [], modelCalls: 1, toolCalls: 0 };
+    run.assessmentFocus = secrets[1]!;
+    Object.assign(run.assessment!, { privateMemo: secrets[2] });
+    Object.assign(run.assessment!.narrative!.summary, { privateMemo: secrets[2] });
+    Object.assign(run.assessment!.metrics[0]!, { privateMemo: secrets[2] });
+    Object.assign(run.assessment!.evidence[0]!, { privateMemo: secrets[2] });
+    await h.save(owner.userId, [run]);
+    const response = await h.message(
+      {
+        question: '保存报告的经营现金判断有什么依据？',
+        locale: 'zh',
+        currentRunId: run.id,
+        reportGeneratedAt: run.assessment!.generatedAt,
+      },
+      owner.headers
+    );
+    assert.equal(response.status, 200);
+    assert.equal(h.inputs.length, 1);
+    const received = h.inputs[0]!.run.assessment;
+    assert.ok(received);
+    assert.deepEqual(received.narrative!.summary, {
+      text: run.assessment!.narrative!.summary.text,
+      metricIds: run.assessment!.narrative!.summary.metricIds,
+      evidenceIds: run.assessment!.narrative!.summary.evidenceIds,
+    });
+    assert.equal(received.generatedAt, run.assessment!.generatedAt);
+    assert.equal(received.basis, 'consolidated');
+    const serialized = JSON.stringify(h.inputs[0]!.run);
+    for (const secret of secrets) assert.equal(serialized.includes(secret), false, secret);
+    assert.equal(h.inputs[0]!.run.assessmentFocus, undefined);
+    assert.equal(run.assessment!.research!.goal, secrets[0]);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('replacing a saved AI report invalidates answers without changing the public financial snapshot', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const run = reportCompany();
+    await h.save(owner.userId, [run]);
+    const originalSnapshot = structuredClone(run.context);
+    const originalVersion = run.assessment!.generatedAt;
+    const request: AssistantRequest = {
+      question: '这份分析报告的现金判断依据是什么？',
+      locale: 'zh',
+      currentRunId: run.id,
+      reportGeneratedAt: originalVersion,
+    };
+    assert.equal((await h.message(request, owner.headers)).status, 200);
+    const reused = await h.message(request, owner.headers);
+    assert.equal(((await reused.json()) as { cached?: boolean }).cached, true);
+    assert.equal(h.inputs.length, 1);
+    run.assessment!.generatedAt = '2026-10-03T05:20:00.000Z';
+    run.assessment!.narrative!.summary.text.zh = '更新的AI判断：请优先核对经营现金来源。';
+    const obsolete = await h.message(request, owner.headers);
+    assert.equal(obsolete.status, 409);
+    assert.equal((await obsolete.json()).code, 'ASSISTANT_REPORT_STALE');
+    assert.equal(h.inputs.length, 1);
+    const current = await h.message(
+      { ...request, reportGeneratedAt: run.assessment!.generatedAt },
+      owner.headers
+    );
+    assert.equal(current.status, 200);
+    assert.equal(((await current.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(h.inputs.length, 2);
+    assert.equal(h.inputs[1]!.run.assessment!.generatedAt, run.assessment!.generatedAt);
+    assert.match(h.inputs[1]!.run.assessment!.narrative!.summary.text.zh, /更新的AI判断/);
+    assert.deepEqual(run.context, originalSnapshot);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('model follow-ups receive the exact saved AI report and separately scoped current or previous snapshot amounts', async () => {
+  for (const previous of [false, true]) {
+    const payloads: string[] = [];
+    const run = reportCompany();
+    const savedCash = run.assessment!.metrics.find((metric) => metric.id === '2025-ocf')!;
+    const savedSummary = structuredClone(run.assessment!.narrative!.summary);
+    const savedSnapshotFetchedAt = run.assessment!.snapshotFetchedAt;
+    const privateValues = [
+      'private-report-model-warning',
+      'private-saved-report-research-goal',
+      'private-assistant-assessment-focus',
+      'private-nested-report-memo',
+    ];
+    run.assessment!.model.warning = privateValues[0]!;
+    run.assessment!.research = {
+      goal: privateValues[1]!,
+      steps: [],
+      modelCalls: 1,
+      toolCalls: 0,
+    };
+    run.assessmentFocus = privateValues[2]!;
+    Object.assign(run.assessment!.narrative!.summary.text, { memo: privateValues[3] });
+    Object.assign(run.assessment!.metrics[0]!, { memo: privateValues[3] });
+    if (previous) {
+      run.context!.fetchedAt = '2026-10-03T05:30:00.000Z';
+      run.context!.financials[0]!.amounts.ocf = '140.00';
+    }
+    const h = await harness(
+      { question: answerCompanyQuestion },
+      {
+        apiKey: 'report-follow-up-fixture-key',
+        fetch: async (_url, init) => {
+          const raw = String(init?.body);
+          payloads.push(raw);
+          const request = JSON.parse(raw);
+          const input = JSON.parse(
+            request.messages.find((message: { role: string }) => message.role === 'user').content
+          );
+          const report = input.publicContext.savedReport;
+          assert.ok(report, 'Saved report must reach the model instead of being recomputed away.');
+          assert.equal(report.generatedAt, run.assessment!.generatedAt);
+          assert.equal(report.snapshotFetchedAt, savedSnapshotFetchedAt);
+          assert.equal(report.currentSnapshotFetchedAt, run.context!.fetchedAt);
+          assert.equal(report.snapshotRelation, previous ? 'previous' : 'current');
+          assert.equal(report.year, 2025);
+          assert.equal(report.basis, 'consolidated');
+          assert.equal(report.selected, true);
+          assert.deepEqual(report.summary.text, savedSummary.text);
+          assert.deepEqual(
+            report.summary.metricIds,
+            savedSummary.metricIds.map((id) => `report:${id}`)
+          );
+          assert.deepEqual(
+            report.summary.evidenceIds,
+            savedSummary.evidenceIds.map((id) => `report:${id}`)
+          );
+          const reportMetric = report.metrics.find(
+            (metric: { id: string }) => metric.id === 'report:2025-ocf'
+          );
+          assert.equal(reportMetric.value, savedCash.value);
+          const currentMetric = input.publicContext.screen.metrics.find(
+            (metric: { id: string }) => metric.id === '2025-ocf'
+          );
+          assert.equal(currentMetric.value, previous ? '140.00' : savedCash.value);
+          const source = input.citations.find((item: { id: string }) =>
+            item.id.startsWith('report:')
+          );
+          assert.ok(source, 'Saved-report sources must remain usable model citations.');
+          for (const secret of privateValues) assert.equal(raw.includes(secret), false, secret);
+          return new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content: JSON.stringify({
+                      text: '保存报告的经营现金低于合并利润；引用的经营现金为 {{metric:report:2025-ocf}}，应结合报告当时的资料理解现金判断。',
+                      citations: [source.id],
+                      metricIds: ['report:2025-ocf'],
+                    }),
+                  },
+                },
+              ],
+            }),
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+        },
+      }
+    );
+    try {
+      const owner = await h.register();
+      await h.save(owner.userId, [run]);
+      const response = await h.message(
+        {
+          question: '这份报告的经营现金判断依据是什么？',
+          locale: 'zh',
+          currentRunId: run.id,
+          reportGeneratedAt: run.assessment!.generatedAt,
+          basis: 'consolidated',
+        },
+        owner.headers
+      );
+      assert.equal(response.status, 200);
+      const answer = (await response.json()) as AssistantAnswer;
+      assert.equal(answer.mode, 'model', previous ? 'previous snapshot' : 'current snapshot');
+      assert.equal(payloads.length, 1);
+      assert.ok(answer.text.includes(savedCash.display[0]));
+      if (previous)
+        assert.equal(
+          answer.text.includes(
+            deriveCompanyAssessment(run).metrics.find((m) => m.id === '2025-ocf')!.display[0]
+          ),
+          false
+        );
+      assert.ok(answer.citations.length);
+      assert.equal(answer.snapshotFetchedAt, savedSnapshotFetchedAt);
+    } finally {
+      await h.dispose();
+    }
+  }
+});
+
+test('ordinary company questions also receive completed AI report judgments while rule-only screens stay excluded', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const run = reportCompany();
+    await h.save(owner.userId, [run]);
+    const request: AssistantRequest = {
+      question: '经营现金的判断有什么依据？',
+      locale: 'zh',
+      currentRunId: run.id,
+    };
+    assert.equal((await h.message(request, owner.headers)).status, 200);
+    assert.ok(h.inputs.at(-1)!.run.assessment?.narrative);
+    run.assessment!.model.status = 'failed';
+    const failed = await h.message(request, owner.headers);
+    assert.equal(failed.status, 200);
+    assert.equal(((await failed.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(h.inputs.at(-1)!.run.assessment, undefined);
+    assert.equal(h.inputs.length, 2);
+  } finally {
+    await h.dispose();
+  }
+});

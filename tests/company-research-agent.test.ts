@@ -1311,3 +1311,418 @@ test('explicit research refresh replaces saved peer samples once and propagates 
     }
   );
 });
+
+function publicSnapshotFixture(empty = false) {
+  const calls: string[] = [];
+  const request: typeof fetch = async (input) => {
+    const url = new URL(String(input));
+    calls.push(url.href);
+    if (url.hostname === 'search-api-web.eastmoney.com')
+      return Response.json({
+        hitsTotal: empty ? 0 : 1,
+        result: {
+          cmsArticleWebOld: empty
+            ? []
+            : [
+                {
+                  title: '测试公司公开回款公告报道',
+                  date: '2026-09-30',
+                  mediaName: '来源媒体',
+                  content: '测试公司公开经营报道摘要',
+                  url: 'https://finance.eastmoney.com/a/202609301234567890.html',
+                },
+              ],
+        },
+      });
+    if (url.hostname === 'vip.stock.finance.sina.com.cn')
+      return new Response('<html><ul></ul></html>');
+    if (url.hostname === 'guba.eastmoney.com' && url.pathname.startsWith('/list,'))
+      return new Response(
+        `<script>var article_list=${JSON.stringify({
+          bar_code: '300893',
+          rc: 1,
+          count: empty ? 0 : 1,
+          re: empty
+            ? []
+            : [
+                {
+                  post_id: 1779000000,
+                  stockbar_code: '300893',
+                  post_title: '个人对公司经营的看法',
+                  post_publish_time: '2026-09-30 15:00:00',
+                },
+              ],
+        })};</script>`
+      );
+    if (url.hostname === 'guba.eastmoney.com')
+      return new Response(
+        `<script>var post_article=${JSON.stringify({
+          post_id: 1779000000,
+          post_guba: { stockbar_code: '300893' },
+          post_title: '个人对公司经营的看法',
+          post_publish_time: '2026-09-30 15:00:00',
+          post_content: '我认为回款可能改善，但这只是个人猜测。',
+        })};</script>`
+      );
+    if (url.hostname === 'finance.eastmoney.com')
+      return new Response(
+        '<title>测试公司公开经营报道</title><div id="ContentBody">测试公司公布经营和回款资料，需要结合官方公告核对。</div>'
+      );
+    if (url.hostname === 'push2.eastmoney.com')
+      return Response.json({
+        rc: 0,
+        data: {
+          f57: '300893',
+          f59: 2,
+          f43: 1100,
+          f44: 1200,
+          f45: 1000,
+          f169: 0,
+          f170: 0,
+          f116: 123456789,
+          f86: Math.floor(Date.now() / 1000),
+        },
+      });
+    throw Error(`Unexpected public fixture URL: ${url.href}`);
+  };
+  return { calls, fetch: request };
+}
+
+async function acquiredPublicSnapshot(empty = false) {
+  const run = company();
+  run.context!.announcements = [];
+  const fixture = publicSnapshotFixture(empty);
+  const result = await researchAgent(
+    run,
+    {},
+    {
+      fetch: fixture.fetch,
+      industry: async () => industry(),
+    }
+  );
+  assert.equal(result.run.context!.market?.status, 'available');
+  assert.equal(result.run.context!.publicSignals?.news.stopReason, 'complete');
+  assert.equal(result.run.context!.publicSignals?.discussions.stopReason, 'complete');
+  assert.equal(result.run.context!.publicSignals?.news.bodyRead, empty ? 0 : 1);
+  assert.equal(result.run.context!.publicSignals?.discussions.bodyRead, empty ? 0 : 1);
+  return { ...fixture, ...result };
+}
+
+test('validated recent public signals and quotes are reused with zero HTTP while actual planning still performs its independent review', async () => {
+  const acquired = await acquiredPublicSnapshot();
+  const before = structuredClone(acquired.run.context);
+  let httpStarts = 0,
+    planning = 0;
+  const reused = await researchAgent(
+    acquired.run,
+    config(async (_url, init) => {
+      planning++;
+      assert.ok(String(init?.body).includes('测试公司公开回款公告报道'));
+      return done();
+    }),
+    {
+      fetch: async () => {
+        httpStarts++;
+        throw Error('valid snapshots must avoid public HTTP');
+      },
+      industry: async () => {
+        throw Error('matching industry must also remain reusable');
+      },
+    }
+  );
+  assert.equal(httpStarts, 0);
+  assert.equal(planning, 2);
+  assert.equal(reused.modelCalls, 2);
+  assert.deepEqual(reused.run.context, before);
+  assert.ok(
+    reused.steps.some(
+      (step) => step.tool === 'collect_public_signals' && /复用已核对覆盖/.test(step.summary)
+    )
+  );
+  assert.ok(
+    reused.steps.some(
+      (step) => step.tool === 'get_market_quote' && /复用已核对主体/.test(step.summary)
+    )
+  );
+});
+
+test('validated complete zero-result catalogs are reusable rather than repeatedly queried as a cache miss', async () => {
+  const acquired = await acquiredPublicSnapshot(true);
+  let httpStarts = 0;
+  const reused = await researchAgent(
+    acquired.run,
+    {},
+    {
+      fetch: async () => {
+        httpStarts++;
+        throw Error('validated empty catalogs are acquired results');
+      },
+      industry: async () => {
+        throw Error('industry is retained');
+      },
+    }
+  );
+  assert.equal(httpStarts, 0);
+  assert.equal(reused.run.context!.news.length, 0);
+  assert.equal(reused.run.context!.discussions!.length, 0);
+  assert.equal(reused.run.context!.publicSignals!.news.unique, 0);
+  assert.ok(
+    reused.steps.some(
+      (step) => step.tool === 'collect_public_signals' && /复用已核对覆盖/.test(step.summary)
+    )
+  );
+});
+
+test('explicit cache bypass freshly retrieves catalogs, bodies and quote even when the supplied snapshot is valid', async () => {
+  const acquired = await acquiredPublicSnapshot();
+  const fixture = publicSnapshotFixture();
+  const result = await researchAgent(
+    acquired.run,
+    {},
+    {
+      bypassCache: true,
+      fetch: fixture.fetch,
+      industry: async () => industry(),
+    }
+  );
+  assert.equal(fixture.calls.length, 6);
+  assert.ok(fixture.calls.some((url) => url.includes('push2.eastmoney.com')));
+  assert.ok(fixture.calls.some((url) => url.includes('/news,300893,')));
+  assert.ok(fixture.calls.some((url) => url.includes('finance.eastmoney.com/a/')));
+  assert.ok(!result.steps.some((step) => /复用已核对/.test(step.summary)));
+});
+
+test('failed, expired, incomplete or invalid public receipts and issuer-bound rows refetch rather than trusting saved coverage', async (t) => {
+  const acquired = await acquiredPublicSnapshot();
+  const mutations: [string, (run: CompanyResearchRun) => void][] = [
+    [
+      'expired coverage',
+      (run) => {
+        run.context!.publicSignals!.fetchedAt = new Date(Date.now() - 300_001).toISOString();
+      },
+    ],
+    [
+      'expired catalog receipt',
+      (run) => {
+        run.context!.sources.find((source) => source.id === 'public-em-news-p1')!.fetchedAt =
+          new Date(Date.now() - 300_001).toISOString();
+      },
+    ],
+    [
+      'failed receipt',
+      (run) => {
+        run.context!.sources.find((source) => source.id === 'public-em-news-p1')!.status = 'error';
+      },
+    ],
+    [
+      'invalid response hash',
+      (run) => {
+        run.context!.sources.find((source) => source.id === 'public-em-news-p1')!.responseHashes = [
+          'invalid',
+        ];
+      },
+    ],
+    [
+      'wrong source issuer',
+      (run) => {
+        const source = run.context!.sources.find((source) => source.id === 'public-guba-list-p1')!;
+        source.url = source.url.replace('300893', '600519');
+      },
+    ],
+    [
+      'wrong news query',
+      (run) => {
+        const source = run.context!.sources.find((source) => source.id === 'public-em-news-p1')!;
+        const url = new URL(source.url),
+          query = JSON.parse(url.searchParams.get('param')!);
+        query.keyword = '另一家公司';
+        url.searchParams.set('param', JSON.stringify(query));
+        source.url = url.href;
+      },
+    ],
+    [
+      'wrong discussion issuer',
+      (run) => {
+        run.context!.discussions![0]!.securityCode = '600519';
+      },
+    ],
+    [
+      'body hash does not match its receipt',
+      (run) => {
+        run.context!.news[0]!.excerpt!.sha256 = 'b'.repeat(64);
+      },
+    ],
+    [
+      'missing body receipt',
+      (run) => {
+        run.context!.sources = run.context!.sources.filter(
+          (source) => source.id !== `body-${run.context!.news[0]!.id}`
+        );
+      },
+    ],
+    [
+      'incomplete catalog',
+      (run) => {
+        run.context!.publicSignals!.news.stopReason = 'source-failure';
+      },
+    ],
+    [
+      'inconsistent coverage',
+      (run) => {
+        run.context!.publicSignals!.discussions.unique++;
+      },
+    ],
+    [
+      'direct API news without bulk coverage',
+      (run) => {
+        delete run.context!.publicSignals;
+      },
+    ],
+  ];
+  for (const [name, mutate] of mutations)
+    await t.test(name, async () => {
+      const run = structuredClone(acquired.run);
+      mutate(run);
+      const fixture = publicSnapshotFixture();
+      const result = await researchAgent(
+        run,
+        {},
+        { fetch: fixture.fetch, industry: async () => industry() }
+      );
+      assert.ok(fixture.calls.some((url) => url.includes('search-api-web.eastmoney.com')));
+      assert.ok(fixture.calls.some((url) => url.includes('guba.eastmoney.com/list,300893')));
+      assert.ok(
+        !fixture.calls.some((url) => url.includes('push2.eastmoney.com')),
+        'unaffected fresh quote remains reusable'
+      );
+      assert.ok(
+        !result.steps.some(
+          (step) => step.tool === 'collect_public_signals' && /复用已核对覆盖/.test(step.summary)
+        )
+      );
+    });
+});
+
+test('expired or mismatched quote metadata refetches only the quote while retaining validated public catalogs', async (t) => {
+  const acquired = await acquiredPublicSnapshot();
+  const mutations: [string, (run: CompanyResearchRun) => void][] = [
+    [
+      'expired',
+      (run) => {
+        const time = new Date(Date.now() - 15_001).toISOString();
+        run.context!.market!.fetchedAt = time;
+        run.context!.sources.find((source) => source.id === 'market-quote')!.fetchedAt = time;
+      },
+    ],
+    [
+      'wrong issuer',
+      (run) => {
+        run.context!.market!.securityCode = '600519';
+      },
+    ],
+    [
+      'invalid hash',
+      (run) => {
+        run.context!.sources.find((source) => source.id === 'market-quote')!.responseHashes = [
+          'invalid',
+        ];
+      },
+    ],
+    [
+      'wrong source',
+      (run) => {
+        const source = run.context!.sources.find((source) => source.id === 'market-quote')!;
+        source.url = source.url.replace('0.300893', '1.600519');
+        run.context!.market!.sourceUrl = source.url;
+      },
+    ],
+    [
+      'partial quote',
+      (run) => {
+        run.context!.market!.status = 'partial';
+        run.context!.market!.price = null;
+      },
+    ],
+  ];
+  for (const [name, mutate] of mutations)
+    await t.test(name, async () => {
+      const run = structuredClone(acquired.run);
+      mutate(run);
+      const fixture = publicSnapshotFixture();
+      const result = await researchAgent(
+        run,
+        {},
+        { fetch: fixture.fetch, industry: async () => industry() }
+      );
+      assert.equal(fixture.calls.length, 1);
+      assert.ok(fixture.calls[0]!.includes('push2.eastmoney.com'));
+      assert.equal(result.run.context!.market!.securityCode, '300893');
+      assert.equal(result.run.context!.market!.status, 'available');
+    });
+});
+
+test('fresh collection replaces stale extra-page receipts so its next visit can reuse the new complete catalog', async () => {
+  const acquired = await acquiredPublicSnapshot(true);
+  const run = structuredClone(acquired.run);
+  const old = run.context!.sources.find((source) => source.id === 'public-guba-list-p1')!;
+  run.context!.sources.push({
+    ...old,
+    id: 'public-guba-list-p2',
+    url: 'https://guba.eastmoney.com/list,300893_2.html',
+  });
+  run.context!.publicSignals!.discussions.stopReason = 'source-failure';
+  const fixture = publicSnapshotFixture(true);
+  const refreshed = await researchAgent(
+    run,
+    {},
+    { fetch: fixture.fetch, industry: async () => industry() }
+  );
+  assert.ok(!refreshed.run.context!.sources.some((source) => source.id === 'public-guba-list-p2'));
+  let httpStarts = 0;
+  await researchAgent(
+    refreshed.run,
+    {},
+    {
+      fetch: async () => {
+        httpStarts++;
+        throw Error('obsolete receipts must not defeat reuse');
+      },
+      industry: async () => {
+        throw Error('industry remains available');
+      },
+    }
+  );
+  assert.equal(httpStarts, 0);
+});
+
+test('expired public bodies are read again within the existing collector budget and the refreshed snapshot then reuses without HTTP', async () => {
+  const acquired = await acquiredPublicSnapshot();
+  const run = structuredClone(acquired.run);
+  const row = run.context!.discussions![0]!;
+  const time = new Date(Date.now() - 300_001).toISOString();
+  row.excerpt!.readAt = time;
+  run.context!.sources.find((source) => source.id === `body-${row.id}`)!.fetchedAt = time;
+  const fixture = publicSnapshotFixture();
+  const refreshed = await researchAgent(
+    run,
+    {},
+    { fetch: fixture.fetch, industry: async () => industry() }
+  );
+  assert.ok(fixture.calls.some((url) => url.includes('/news,300893,1779000000.html')));
+  assert.notEqual(refreshed.run.context!.discussions![0]!.excerpt!.readAt, time);
+  let httpStarts = 0;
+  await researchAgent(
+    refreshed.run,
+    {},
+    {
+      fetch: async () => {
+        httpStarts++;
+        throw Error('newly read body must allow valid snapshot reuse');
+      },
+      industry: async () => {
+        throw Error('industry remains available');
+      },
+    }
+  );
+  assert.equal(httpStarts, 0);
+});

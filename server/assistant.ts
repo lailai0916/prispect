@@ -7,6 +7,7 @@ import { answerCompanyQuestion } from './company-questions.js';
 import { researchAssistantCompany, wantsAssistantResearch } from './assistant-research.js';
 import { searchProductKnowledge, type ProductKnowledgeRecord } from './product-knowledge.js';
 import { DEFAULT_MODEL, DEFAULT_MODEL_BASE_URL, type ModelConfig } from './model.js';
+import { assistantPublicAssessment } from './assistant-report.js';
 
 export interface AssistantService {
   documentation?: typeof answerDocumentationQuestion;
@@ -44,6 +45,7 @@ export function isProductQuestion(question: string, previousQuestions: readonly 
 }
 
 export function assistantPublicRun(run: CompanyResearchRun): CompanyResearchRun {
+  const assessment = assistantPublicAssessment(run);
   return {
     id: run.id,
     input: {
@@ -63,7 +65,7 @@ export function assistantPublicRun(run: CompanyResearchRun): CompanyResearchRun 
     context: run.context ? structuredClone(run.context) : undefined,
     industry: run.industry ? structuredClone(run.industry) : undefined,
     informationGap: run.informationGap ? structuredClone(run.informationGap) : undefined,
-    assessmentFocus: run.assessmentFocus,
+    ...(assessment ? { assessment } : {}),
   };
 }
 

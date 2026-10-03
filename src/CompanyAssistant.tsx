@@ -79,6 +79,7 @@ export function CompanyAssistant({ route }: { route: string }) {
     draft: '',
     messages: [],
   });
+  const [queuedQuestion, setQueuedQuestion] = useState<OpenCompanyAssistantDetail | null>(null);
   const messages = conversation.owner === owner ? conversation.messages : [];
   const draft = conversation.owner === owner ? conversation.draft : '';
   const pending = messages.find((message) => message.status === 'pending');
@@ -111,8 +112,10 @@ export function CompanyAssistant({ route }: { route: string }) {
     id: number;
     controller: AbortController;
   } | null>(null);
-  const latest = useRef({ owner, current, routeRun, locale, publish, conversation });
-  latest.current = { owner, current, routeRun, locale, publish, conversation };
+  const reportView =
+    query.get('report') === 'ai' && (!query.get('section') || query.get('section') === 'overview');
+  const latest = useRef({ owner, current, routeRun, locale, publish, conversation, reportView });
+  latest.current = { owner, current, routeRun, locale, publish, conversation, reportView };
 
   const close = () => {
     setOpen(false);
@@ -131,6 +134,7 @@ export function CompanyAssistant({ route }: { route: string }) {
     request.current?.controller.abort();
     request.current = null;
     setConversation({ owner, draft: '', messages: [] });
+    setQueuedQuestion(null);
     setOpen(false);
     following.current = true;
   }, [owner, conversation.owner]);
@@ -143,15 +147,22 @@ export function CompanyAssistant({ route }: { route: string }) {
       if (
         !owner ||
         detail?.owner !== owner ||
-        !records.some((record) => record.id === detail.runId)
+        (!records.some((record) => record.id === detail.runId) &&
+          !(current?.owner === owner && current.run.id === detail.runId))
       )
         return;
       setSelectedCompany({ owner, runId: detail.runId });
       setOpen(true);
+      if (
+        typeof detail.question === 'string' &&
+        detail.question.trim() &&
+        detail.question.trim().length <= 500
+      )
+        setQueuedQuestion({ ...detail, question: detail.question.trim() });
     };
     window.addEventListener(OPEN_COMPANY_ASSISTANT_EVENT, openCompanyAssistant);
     return () => window.removeEventListener(OPEN_COMPANY_ASSISTANT_EVENT, openCompanyAssistant);
-  }, [owner, records]);
+  }, [owner, records, current]);
   useEffect(() => {
     if (routeRun && query.get('section') === 'qa') {
       setOpen(true);
@@ -242,7 +253,7 @@ export function CompanyAssistant({ route }: { route: string }) {
       if (request.current === operation) request.current = null;
     }
   };
-  const ask = (value: string, clearDraft = false) => {
+  const ask = (value: string, clearDraft = false, source?: OpenCompanyAssistantDetail) => {
     const session = latest.current;
     const question = value.trim();
     if (!question || request.current || session.conversation.owner !== session.owner) return;
@@ -252,15 +263,37 @@ export function CompanyAssistant({ route }: { route: string }) {
     const payload: AssistantRequest = {
       question,
       locale: session.locale === 'en' ? 'en' : 'zh',
-      basis: session.current?.basis || 'consolidated',
-      ...(session.routeRun ? { currentRunId: session.routeRun } : {}),
-      ...(previous ? { previousRunId: previous.runId } : {}),
+      basis: source?.basis || session.current?.basis || 'consolidated',
+      ...(source?.runId || session.routeRun
+        ? { currentRunId: source?.runId || session.routeRun! }
+        : {}),
+      ...(source?.reportGeneratedAt ||
+      (session.reportView && session.current?.run.assessment?.generatedAt)
+        ? {
+            reportGeneratedAt:
+              source?.reportGeneratedAt || session.current!.run.assessment!.generatedAt,
+          }
+        : {}),
+      ...(previous && (!source || previous.runId === source.runId)
+        ? { previousRunId: previous.runId }
+        : {}),
       previousQuestions: session.conversation.messages
+        .filter((message) => !source || message.request.currentRunId === source.runId)
         .slice(-4)
         .map((message) => message.request.question),
     };
     void perform({ id: ++sequence.current, request: payload, status: 'pending' }, clearDraft);
   };
+  useEffect(() => {
+    if (!queuedQuestion) return;
+    if (queuedQuestion.owner !== owner || conversation.owner !== owner) {
+      setQueuedQuestion(null);
+      return;
+    }
+    if (request.current || pending) return;
+    setQueuedQuestion(null);
+    ask(queuedQuestion.question!, false, queuedQuestion);
+  }, [queuedQuestion, pending, owner, conversation.owner]);
   const cancel = () => {
     const operation = request.current;
     if (!operation || operation.owner !== latest.current.owner) return;
@@ -291,6 +324,7 @@ export function CompanyAssistant({ route }: { route: string }) {
       current: pageRun ? session.current : null,
     };
     setSelectedCompany(null);
+    setQueuedQuestion(null);
     setConversation(next);
     following.current = true;
     if (scrolling.current) scrolling.current.scrollTop = 0;
@@ -478,6 +512,12 @@ export function CompanyAssistant({ route }: { route: string }) {
               </article>
             );
           })}
+          {queuedQuestion?.owner === owner && pending && (
+            <p className="company-assistant-pending" role="status">
+              {t('待回答：', 'Next question: ')}
+              {queuedQuestion.question}
+            </p>
+          )}
         </div>
         <div className="company-assistant-footer">
           <form className="company-assistant-composer" onSubmit={submit}>

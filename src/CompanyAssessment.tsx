@@ -29,14 +29,17 @@ function AssessmentResearch({
   run,
   loading,
   onRequest,
+  readOnly = false,
 }: {
   run: CompanyResearchRun;
   loading: boolean;
   onRequest: (focus?: string) => void;
+  readOnly?: boolean;
 }) {
   const { t } = useApp();
   const [focus, setFocus] = useState(run.assessmentFocus || '');
   const unavailable =
+    readOnly ||
     loading ||
     !run.context ||
     run.contextStatus === 'loading' ||
@@ -54,7 +57,7 @@ function AssessmentResearch({
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            onRequest(focus.trim());
+            if (!unavailable) onRequest(focus.trim());
           }}
         >
           <label htmlFor={'assessment-focus-' + run.id}>{t('研究目标', 'Research goal')}</label>
@@ -93,10 +96,12 @@ export function CompanyAssessment({
   run,
   onRefresh,
   refreshing,
+  readOnly = false,
 }: {
   run: CompanyResearchRun;
   onRefresh: (focus?: string) => void;
   refreshing: boolean;
+  readOnly?: boolean;
 }) {
   const { t, locale } = useApp();
   const [selected, setSelected] = useState<{ title: string; judgment: AssessmentJudgment } | null>(
@@ -135,12 +140,16 @@ export function CompanyAssessment({
                 : t('尚未形成分析。', 'Analysis is not yet available.')}
         </p>
         {run.context && !loading && run.contextStatus !== 'loading' && (
-          <button className="button button-secondary" onClick={() => onRefresh()}>
+          <button
+            className="button button-secondary"
+            disabled={readOnly}
+            onClick={() => !readOnly && onRefresh()}
+          >
             <RefreshCw size={13} />
             {t('生成分析', 'Generate analysis')}
           </button>
         )}
-        <AssessmentResearch run={run} loading={loading} onRequest={onRefresh} />
+        <AssessmentResearch run={run} loading={loading} onRequest={onRefresh} readOnly={readOnly} />
       </section>
     );
 
@@ -193,8 +202,8 @@ export function CompanyAssessment({
         <h2 id="assessment-heading">{t('六维分析', 'Analysis by dimension')}</h2>
         <button
           className="text-link assessment-refresh"
-          disabled={loading || run.contextStatus === 'loading'}
-          onClick={() => onRefresh()}
+          disabled={readOnly || loading || run.contextStatus === 'loading'}
+          onClick={() => !readOnly && onRefresh()}
         >
           {loading ? <LoaderCircle size={13} className="spinner" /> : <RefreshCw size={13} />}
           {loading ? t('分析中', 'Analyzing') : t('重新分析', 'Reanalyze')}
@@ -273,7 +282,7 @@ export function CompanyAssessment({
             )}
           </details>
         )}
-      <AssessmentResearch run={run} loading={loading} onRequest={onRefresh} />
+      <AssessmentResearch run={run} loading={loading} onRequest={onRefresh} readOnly={readOnly} />
       <div className="assessment-coverage">
         <span>{t('分析覆盖', 'Analysis coverage')}</span>
         <span>

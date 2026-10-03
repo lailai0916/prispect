@@ -1,4 +1,5 @@
 import type { CompanyRecordSummary } from './company-workspace.js';
+import type { CompanyReadingBasis } from './company-analysis.js';
 import { productTerms } from './product-terms.js';
 
 /** These destinations stay visible throughout the signed-in workspace. */
@@ -18,6 +19,9 @@ export const OPEN_COMPANY_ASSISTANT_EVENT = 'prispect:open-company-assistant';
 export interface OpenCompanyAssistantDetail {
   owner: string;
   runId: string;
+  question?: string;
+  basis?: CompanyReadingBasis;
+  reportGeneratedAt?: string;
 }
 
 /** Query creation determines recency; viewing or updating a record does not. */

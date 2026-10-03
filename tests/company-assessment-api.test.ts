@@ -420,12 +420,17 @@ test('company-record metadata exposes only account-local lightweight public resu
   }
 });
 
-test('financial record metadata exposes its saved-source mode without inventing an assessment', async () => {
+test('financial record metadata exposes unavailable automatic AI without inventing a report or calling unconfigured research', async () => {
   let modelCalls = 0;
+  let researchCalls = 0;
   const h = await harness({
     assessment: async () => {
       modelCalls++;
-      throw Error('Saving financial data must not call an assessment model.');
+      throw Error('Unconfigured automatic analysis must not call an assessment model.');
+    },
+    research: async () => {
+      researchCalls++;
+      throw Error('Unconfigured automatic analysis must not fetch additional research sources.');
     },
   });
   try {
@@ -446,8 +451,16 @@ test('financial record metadata exposes its saved-source mode without inventing 
     assert.equal(records[0].input.researchMode, 'financial');
     assert.equal(records[0].contextStatus, 'ready');
     assert.equal(records[0].status, 'ready');
-    assert.equal(records[0].assessmentStatus, undefined);
+    assert.equal(records[0].assessmentStatus, 'failed');
     assert.equal(records[0].result, undefined);
+    const saved = await h.getRun(created.id);
+    assert.equal(saved.status, 'ready');
+    assert.equal(saved.contextStatus, 'ready');
+    assert.equal(saved.assessmentStatus, 'failed');
+    assert.match(saved.assessmentError!, /尚未配置/);
+    assert.equal(saved.assessment, undefined);
+    assert.ok(saved.assessmentAutoInputHash);
+    assert.deepEqual(saved.model, { requested: false, status: 'not-requested' });
     assert.deepEqual(Object.keys(records[0].input).sort(), [
       'orgId',
       'purpose',
@@ -462,6 +475,7 @@ test('financial record metadata exposes its saved-source mode without inventing 
     assert.deepEqual(await (await h.call('/company-records', undefined, other.headers)).json(), []);
     assert.equal((await fetch(`${h.base}/api/company-records`)).status, 401);
     assert.equal(modelCalls, 0);
+    assert.equal(researchCalls, 0);
   } finally {
     await h.dispose();
   }

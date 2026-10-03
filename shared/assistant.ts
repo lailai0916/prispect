@@ -6,6 +6,8 @@ export interface AssistantRequest {
   locale: 'zh' | 'en';
   currentRunId?: string;
   previousRunId?: string;
+  /** Bind a question to the saved AI report shown by the caller, never silently substitute a later report. */
+  reportGeneratedAt?: string;
   basis?: CompanyReadingBasis;
   previousQuestions?: string[];
   /** Ask again using fresh sources rather than a saved answer. */

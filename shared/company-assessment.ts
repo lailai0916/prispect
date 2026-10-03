@@ -59,6 +59,10 @@ export interface AssessmentJudgment {
 }
 export interface AssessmentNarrative {
   summary: AssessmentJudgment;
+  /** Exact summary fragments, validated after authoritative metric substitution. */
+  summaryHighlights?: { zh: string[]; en: string[] };
+  /** Follow-up questions are tied to the same acquired metrics and evidence. */
+  suggestedQuestions?: AssessmentJudgment[];
   dimensions: (AssessmentJudgment & { dimensionId: AssessmentDimensionId })[];
   strengths: AssessmentJudgment[];
   risks: AssessmentJudgment[];

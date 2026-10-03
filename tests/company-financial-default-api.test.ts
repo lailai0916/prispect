@@ -198,7 +198,7 @@ async function harness(overrides: Partial<CompanyContextService> = {}) {
   };
 }
 
-test('new standard queries ignore legacy model flags and acquire financial context without graph, PDFs or assessment', async () => {
+test('new standard queries acquire financial context without graph or PDFs and then run independent background analysis', async () => {
   const h = await harness();
   try {
     for (const useModel of [undefined, false, true]) {
@@ -211,8 +211,8 @@ test('new standard queries ignore legacy model flags and acquire financial conte
       assert.equal(run.contextStatus, 'ready');
       assert.equal(run.context?.financials[0]?.amounts.ocf, '80.00');
       assert.deepEqual(run.model, { requested: false, status: 'not-requested' });
-      assert.equal(run.assessment, undefined);
-      assert.equal(run.assessmentStatus, undefined);
+      assert.equal(run.assessment?.model.status, 'completed');
+      assert.equal(run.assessmentStatus, 'ready');
       assert.equal(run.preview, undefined);
       assert.equal(run.agent?.version, 'financial-v1');
       assert.deepEqual(
@@ -227,8 +227,8 @@ test('new standard queries ignore legacy model flags and acquire financial conte
     assert.deepEqual(h.counts(), {
       legacyCalls: 0,
       contextCalls: 3,
-      researchCalls: 0,
-      modelCalls: 0,
+      researchCalls: 3,
+      modelCalls: 3,
       officialCalls: 3,
     });
     assert.ok(h.choices.every((choice) => choice.disclosureExcerpts === false));
@@ -241,7 +241,7 @@ test('new standard queries ignore legacy model flags and acquire financial conte
   }
 });
 
-test('context refresh preserves snapshots after failure and model assessment and original research remain explicit', async () => {
+test('context refresh independently updates background analysis and preserves snapshots and reports after source failure', async () => {
   const h = await harness();
   try {
     const created = await h.create();
@@ -254,22 +254,23 @@ test('context refresh preserves snapshots after failure and model assessment and
     await h.app.waitForIdle();
     const refreshed = await h.get(created.id);
     assert.equal(refreshed.context?.fetchedAt, snapshot(2).fetchedAt);
-    assert.equal(refreshed.assessment, undefined);
-    assert.equal(h.counts().modelCalls, 0);
+    assert.equal(refreshed.assessment?.snapshotFetchedAt, snapshot(2).fetchedAt);
+    assert.equal(h.counts().modelCalls, 2);
     h.fail();
     await h.call(`/company-runs/${created.id}/context`, { refresh: true });
     await h.app.waitForIdle();
     const failed = await h.get(created.id);
     assert.equal(failed.contextStatus, 'failed');
     assert.deepEqual(failed.context, refreshed.context);
-    assert.equal(h.counts().modelCalls, 0);
+    assert.deepEqual(failed.assessment, refreshed.assessment);
+    assert.equal(h.counts().modelCalls, 2);
     assert.ok(h.choices.every((choice) => choice.disclosureExcerpts === false));
     assert.equal(h.choices[1]?.bypassCache, true);
     assert.equal((await h.call(`/company-runs/${created.id}/assessment`, {})).status, 202);
     await h.app.waitForIdle();
     assert.equal((await h.get(created.id)).assessment?.model.status, 'completed');
-    assert.equal(h.counts().researchCalls, 1);
-    assert.equal(h.counts().modelCalls, 1);
+    assert.equal(h.counts().researchCalls, 3);
+    assert.equal(h.counts().modelCalls, 3);
     const deep = await h.create({ ...input, researchMode: 'deep', useModel: false });
     await h.app.waitForIdle();
     assert.equal((await h.get(deep.id)).input.useModel, true);
@@ -381,7 +382,7 @@ test('default acquisition cancels by public context revision, preserves early da
     assert.equal((await h.get(created.id)).context?.fetchedAt, snapshot(2).fetchedAt);
     assert.equal((await h.get(created.id)).status, 'ready');
     assert.equal(h.counts().legacyCalls, 0);
-    assert.equal(h.counts().modelCalls, 0);
+    assert.equal(h.counts().modelCalls, 1);
   } finally {
     held.resolve();
     await h.dispose();
@@ -465,7 +466,7 @@ test('failed financial cancellation persistence restores the live owner job befo
   }
 });
 
-test('server restart preserves financial snapshots and resumes financial acquisition without graph checkpoints or model work', async () => {
+test('server restart preserves snapshots and resumes financial acquisition without graph checkpoints before background analysis', async () => {
   const h = await harness();
   let restarted: Awaited<ReturnType<typeof createApp>> | undefined;
   let restartedServer:
@@ -543,7 +544,7 @@ test('server restart preserves financial snapshots and resumes financial acquisi
       1,
       'Only the explicit historical deep request used the graph runner'
     );
-    assert.equal(h.counts().modelCalls, 0);
+    assert.equal(h.counts().modelCalls, 2);
     const reopenedStore = await restarted.workspaceForUser(h.owner.userId);
     await assert.rejects(access(path.join(reopenedStore.dataDir, 'company-agent', created.id)));
   } finally {
@@ -637,7 +638,7 @@ test('financial resume rejects an active context retry without duplicating sourc
     assert.equal((await h.get(created.id)).context?.fetchedAt, snapshot(3).fetchedAt);
     assert.equal((await h.get(created.id)).status, 'ready');
     assert.equal(h.counts().legacyCalls, 0);
-    assert.equal(h.counts().modelCalls, 0);
+    assert.equal(h.counts().modelCalls, 1);
   } finally {
     held.resolve();
     await h.dispose();

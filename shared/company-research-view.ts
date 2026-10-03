@@ -210,7 +210,7 @@ export function deriveCompanyResearchProgress(
   const assessment = usableAssessment(run);
   const mode = reportMode(assessment);
   const snapshot = scopeState(run);
-  const steps = activeSteps(run);
+  const steps = activeSteps(run).filter((step) => step.tool !== 'queue');
   const loading = run.assessmentStatus === 'loading';
   const stages = (['sources', 'investigate', 'synthesize', 'review'] as const).map((id) =>
     stageFromSteps(

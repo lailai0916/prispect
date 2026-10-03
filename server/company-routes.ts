@@ -33,6 +33,7 @@ export function installCompanyRoutes(
     model: ModelConfig;
     service?: CompanyService;
     context?: typeof retrieveCompanyContext;
+    onFinancialContextReady?: (store: WorkspaceStore, run: CompanyResearchRun) => Promise<void>;
   }
 ) {
   const service = options.service || { searchCompanies, runCompanyResearch };
@@ -225,6 +226,15 @@ export function installCompanyRoutes(
           );
           await assertCurrent();
           publishing.add(run.id);
+          // Queue research while the base run still polls as running. Its failure must
+          // never turn successfully acquired public data into a failed acquisition.
+          try {
+            await options.onFinancialContextReady?.(store, run);
+          } catch {
+            run.assessmentStatus = 'failed';
+            run.assessmentError = '后台研究未能开始；已取得财务资料保留，可以重新研究。';
+          }
+          await assertCurrent();
           run.status = 'ready';
           run.agent!.recoverable = false;
           run.updatedAt = new Date().toISOString();

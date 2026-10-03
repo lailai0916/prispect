@@ -497,3 +497,123 @@ test('a new confirmed sign-in can cache existing research again after logout cle
   cache.save('alice', original);
   assert.ok(cache.read('alice', original.id));
 });
+
+test('API-first public data restores immediately in a new cache instance while background analysis remains loading', () => {
+  const storage = new MemoryStorage();
+  const writer = new CompanyRunCache(() => storage);
+  writer.activate('alice');
+  const run = privateFixture();
+  run.input.researchMode = 'financial';
+  run.assessmentStatus = 'loading';
+  run.assessmentRevision = 2;
+  run.assessmentTrace![0]!.status = 'running';
+  Object.assign(run.assessmentTrace![0]!, {
+    diagnostics: sentinel,
+    sources: [{ privateSource: sentinel }],
+  });
+  delete run.assessment;
+  const before = structuredClone(run);
+  let requests = 0;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => {
+    requests++;
+    throw Error('restoring a public reading cache must not retrieve or start analysis');
+  };
+  try {
+    writer.save('alice', run);
+    const reopened = new CompanyRunCache(() => storage);
+    reopened.activate('alice');
+    const restored = reopened.read('alice', run.id)!;
+    assert.ok(restored);
+    assert.equal(restored.input.researchMode, 'financial');
+    assert.equal(restored.status, 'ready');
+    assert.equal(restored.contextStatus, 'ready');
+    assert.equal(restored.context!.financials[0]!.amounts.ocf, '600000');
+    assert.equal(restored.context!.fetchedAt, acquiredAt);
+    assert.equal(restored.assessmentStatus, 'loading');
+    assert.equal(restored.assessmentRevision, 2);
+    assert.equal(restored.assessment, undefined);
+    assert.deepEqual(restored.assessmentTrace, [
+      {
+        id: 'custom-focus',
+        tool: 'planning',
+        label: 'Plan',
+        status: 'running',
+        startedAt: acquiredAt,
+        finishedAt: analyzedAt,
+        summary: '',
+      },
+    ]);
+    assert.equal(requests, 0);
+    assert.ok(!storage.getItem(storageKey('alice'))!.includes(sentinel));
+    assert.deepEqual(run, before, 'cache projection must not modify the running server response');
+    writer.remove('alice', run.id);
+    writer.save('alice', run);
+    assert.equal(
+      writer.read('alice', run.id),
+      null,
+      'late background progress cannot revive a deleted record'
+    );
+    reopened.activate('bob');
+    assert.equal(reopened.read('alice', run.id), null);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('financial background analysis retains a matching old report without relabeling it as the completed new revision', () => {
+  const storage = new MemoryStorage();
+  const writer = new CompanyRunCache(() => storage);
+  writer.activate('alice');
+  const run = privateFixture();
+  run.input.researchMode = 'financial';
+  run.assessmentStatus = 'loading';
+  run.assessmentRevision = 2;
+  writer.save('alice', run);
+  const reader = new CompanyRunCache(() => storage);
+  reader.activate('alice');
+  const restored = reader.read('alice', run.id)!;
+  assert.equal(restored.assessmentStatus, 'loading');
+  assert.equal(restored.assessment!.generatedAt, analyzedAt);
+  assert.equal(restored.assessment!.snapshotFetchedAt, restored.context!.fetchedAt);
+  assert.equal(restored.assessmentTrace![0]!.summary, '');
+  assert.ok(!storage.getItem(storageKey('alice'))!.includes(sentinel));
+});
+
+test('pending API context, legacy analysis, challenge refresh and mismatched previous report do not overwrite the acquired cache', () => {
+  const cache = new CompanyRunCache(() => null);
+  cache.activate('alice');
+  const original = fixture();
+  cache.save('alice', original);
+  const pending = fixture();
+  pending.input.researchMode = 'financial';
+  pending.assessmentStatus = 'loading';
+  pending.context!.fetchedAt = '2026-10-03T01:00:00.000Z';
+  pending.assessment!.snapshotFetchedAt = pending.context!.fetchedAt;
+  for (const change of [
+    (run: CompanyResearchRun) => {
+      run.contextStatus = 'loading';
+    },
+    (run: CompanyResearchRun) => {
+      delete run.input.researchMode;
+    },
+    (run: CompanyResearchRun) => {
+      run.input.researchMode = 'deep';
+    },
+    (run: CompanyResearchRun) => {
+      run.status = 'running';
+    },
+    (run: CompanyResearchRun) => {
+      run.challenge = { status: 'loading' } as CompanyResearchRun['challenge'];
+    },
+    (run: CompanyResearchRun) => {
+      run.assessment!.snapshotFetchedAt = acquiredAt;
+    },
+  ]) {
+    const run = structuredClone(pending);
+    change(run);
+    cache.save('alice', run);
+    assert.equal(cache.read('alice', original.id)!.context!.fetchedAt, acquiredAt);
+    assert.equal(cache.read('alice', original.id)!.assessmentStatus, 'ready');
+  }
+});

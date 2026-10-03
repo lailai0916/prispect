@@ -415,6 +415,7 @@ export async function createApp(options: AppOptions = {}) {
     model,
     service: options.companyService,
     context: options.companyContextService?.context,
+    onFinancialContextReady: (store, run) => companyContext.queueAutomaticAssessment(store, run),
   });
   const companyContext = installCompanyContextRoutes(app, {
     auth,
