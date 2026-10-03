@@ -71,6 +71,10 @@
   gap: 9px;
   min-width: 0;
 }
+.company-assistant-header .company-assistant-header-actions {
+  flex: 0 0 auto;
+  gap: 4px;
+}
 .company-assistant-header > div > svg {
   flex: none;
   width: 18px;

@@ -9,6 +9,7 @@ import {
   CornerDownLeft,
   LoaderCircle,
   MessageCircle,
+  Plus,
   RefreshCw,
   Square,
   X,
@@ -283,6 +284,24 @@ export function CompanyAssistant({ route }: { route: string }) {
     );
     input.current?.focus();
   };
+  const newConversation = () => {
+    const session = latest.current;
+    const operation = request.current;
+    request.current = null;
+    operation?.controller.abort();
+    const next: AssistantConversation = { owner: session.owner, draft: '', messages: [] };
+    latest.current = {
+      ...session,
+      conversation: next,
+      routeRun: pageRun,
+      current: pageRun ? session.current : null,
+    };
+    setSelectedCompany(null);
+    setConversation(next);
+    following.current = true;
+    if (scrolling.current) scrolling.current.scrollTop = 0;
+    input.current?.focus();
+  };
   const submit = (event: FormEvent) => {
     event.preventDefault();
     ask(draft, true);
@@ -341,14 +360,25 @@ export function CompanyAssistant({ route }: { route: string }) {
             <MessageCircle size={18} aria-hidden="true" />
             <h2 id={`${panelId}-title`}>{t('析光助手', 'Prispect assistant')}</h2>
           </div>
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={t('收起助手', 'Close assistant')}
-            onClick={close}
-          >
-            <X size={17} />
-          </button>
+          <div className="company-assistant-header-actions">
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={t('新建对话', 'New conversation')}
+              title={t('新建对话', 'New conversation')}
+              onClick={newConversation}
+            >
+              <Plus size={17} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="icon-button"
+              aria-label={t('收起助手', 'Close assistant')}
+              onClick={close}
+            >
+              <X size={17} />
+            </button>
+          </div>
         </header>
         {backgroundCompany && (
           <p className="company-assistant-context">
