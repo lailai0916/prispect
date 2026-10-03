@@ -75,8 +75,12 @@ export function industryChartValues(
   balance: Record<string, unknown>,
   cash: Record<string, unknown>
 ): Record<IndustryChartMetricKey, number | null> {
-  const shortLoan = finiteValue(balance.SHORT_LOAN),
-    currentPortionDebt = finiteValue(balance.NONCURRENT_LIAB_1YEAR);
+  const nonnegative = (value: unknown): number | null => {
+    const amount = finiteValue(value);
+    return amount !== null && amount >= 0 ? amount : null;
+  };
+  const shortLoan = nonnegative(balance.SHORT_LOAN),
+    currentPortionDebt = nonnegative(balance.NONCURRENT_LIAB_1YEAR);
   return {
     revenue: finiteValue(income.TOTAL_OPERATE_INCOME),
     netProfit: finiteValue(income.NETPROFIT),
@@ -84,9 +88,11 @@ export function industryChartValues(
     ocf: finiteValue(cash.NETCASH_OPERATE),
     cash: finiteValue(balance.MONETARYFUNDS),
     shortDebt:
-      shortLoan !== null && currentPortionDebt !== null && shortLoan >= 0 && currentPortionDebt >= 0
+      shortLoan !== null && currentPortionDebt !== null
         ? finiteValue(shortLoan + currentPortionDebt)
         : null,
+    shortLoan,
+    currentPortionDebt,
     inventory: finiteValue(balance.INVENTORY),
     receivables: finiteValue(balance.ACCOUNTS_RECE),
     netMargin: ratio(income.NETPROFIT, income.TOTAL_OPERATE_INCOME),

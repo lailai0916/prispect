@@ -1,5 +1,5 @@
 import { Select } from './Select';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowUpRight, FileSearch, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import {
@@ -30,6 +30,14 @@ const labels: Record<IndustryMetricKey, readonly [string, string]> = {
   receivableToRevenue: ['应收账款 / 营收', 'Receivables / revenue'],
   revenueGrowth: ['营收同比增长', 'Revenue growth'],
 };
+const categories: Record<IndustryMetricKey, readonly [string, string]> = {
+  grossMargin: ['盈利', 'Profitability'],
+  roe: ['盈利', 'Profitability'],
+  ocfToRevenue: ['现金', 'Cash'],
+  assetLiabilityRatio: ['负债', 'Liabilities'],
+  receivableToRevenue: ['周转', 'Working capital'],
+  revenueGrowth: ['成长', 'Growth'],
+};
 const chartLabels: Record<IndustryChartMetricKey, readonly [string, string]> = {
   revenue: ['营业总收入', 'Revenue'],
   netProfit: ['合并净利润', 'Consolidated net profit'],
@@ -37,6 +45,8 @@ const chartLabels: Record<IndustryChartMetricKey, readonly [string, string]> = {
   ocf: ['经营现金净额', 'Operating cash flow'],
   cash: ['货币资金', 'Monetary funds'],
   shortDebt: ['两项短债合计', 'Two specified debt items'],
+  shortLoan: ['短期借款', 'Short-term borrowing'],
+  currentPortionDebt: ['一年内到期非流动负债', 'Current portion of noncurrent liabilities'],
   inventory: ['存货', 'Inventory'],
   receivables: ['应收账款', 'Accounts receivable'],
   netMargin: ['合并净利率', 'Consolidated net margin'],
@@ -83,6 +93,15 @@ export function CompanyIndustryView({
     [distributionMetric, setDistributionMetric] = useState<IndustryMetricKey>('grossMargin');
   const generation = useRef(0),
     request = useRef<AbortController | null>(null);
+  const distributionId = useId();
+  const distributionRef = useRef<HTMLElement>(null);
+  const openDistribution = (key: IndustryMetricKey) => {
+    setDistributionMetric(key);
+    requestAnimationFrame(() => {
+      distributionRef.current?.focus({ preventScroll: true });
+      distributionRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
+    });
+  };
   const currentResult = result?.scope === scope ? result : null;
   const loadedSnapshot =
     currentResult?.snapshot || industries?.[period] || run.industry?.[period] || null;
@@ -268,7 +287,10 @@ export function CompanyIndustryView({
               return (
                 <section className="financial-chart-card" key={key}>
                   <div className="financial-chart-header">
-                    <h3>{t(...labels[key])}</h3>
+                    <h3>
+                      <span className="financial-chart-category">{t(...categories[key])}</span>
+                      {t(...labels[key])}
+                    </h3>
                     <button
                       type="button"
                       className="context-evidence-button"
@@ -294,14 +316,34 @@ export function CompanyIndustryView({
                     peer={metric.mean}
                     label={t(...labels[key])}
                   />
-                  <p className="financial-chart-note">
-                    {t('同行中位数', 'Peer median')} {value(metric.median)}
-                  </p>
+                  <div className="financial-chart-card-footer">
+                    <p className="financial-chart-note">
+                      {t('同行中位数', 'Peer median')} {value(metric.median)}
+                    </p>
+                    <button
+                      type="button"
+                      className="context-evidence-button"
+                      aria-controls={distributionId}
+                      aria-label={t(
+                        `查看${labels[key][0]}的同行分布`,
+                        `View ${labels[key][1]} peer distribution`
+                      )}
+                      onClick={() => openDistribution(key)}
+                    >
+                      {t('查看分布', 'View distribution')}
+                    </button>
+                  </div>
                 </section>
               );
             })}
           </div>
-          <section className="financial-chart-card financial-chart-distribution">
+          <section
+            id={distributionId}
+            ref={distributionRef}
+            tabIndex={-1}
+            className="financial-chart-card financial-chart-distribution"
+            aria-label={t('同行分布', 'Peer distribution')}
+          >
             <div className="financial-chart-header">
               <h3>{t('同行分布', 'Peer distribution')}</h3>
               <div className="financial-chart-actions">

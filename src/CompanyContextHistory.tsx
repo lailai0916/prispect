@@ -18,7 +18,11 @@ import {
   type FinancialChartKey,
 } from '../shared/company-financial-charts';
 import { CompanyContextEvidence } from './CompanyContextViews';
-import { ChartMetricSummary, HistoryMetricChart } from './FinancialCharts';
+import {
+  ChartMetricSummary,
+  HistoryMetricChart,
+  financialChartAmountScale,
+} from './FinancialCharts';
 import { useApp } from './context';
 import { money } from './format';
 
@@ -49,6 +53,11 @@ export function CompanyContextHistory({
     onPeriodChange?.(next);
   };
   const group = financialChartGroups.find((item) => item.id === tab) || financialChartGroups[0]!;
+  const tabs: { id: string; label: readonly [string, string] }[] = [
+    ...financialChartGroups,
+    { id: 'all', label: ['全部图表', 'All charts'] },
+  ];
+  const supplementaryKeys: FinancialChartKey[] = ['inventory', 'receivables'];
   const detail = analysis.annuals.find((row) => row.period === period);
   const prior = analysis.annuals.find(
     (row) => row.period === `${Number(period.slice(0, 4)) - 1}-12-31`
@@ -88,7 +97,14 @@ export function CompanyContextHistory({
     maximum: Math.max(0, ...cashValues),
   };
   const exactFields = [
-    ...new Set(group.keys.flatMap((key) => financialChartSourceFields(key, basis))),
+    ...new Set(
+      (tab === 'all'
+        ? [...financialChartGroups.flatMap((item) => item.keys), ...supplementaryKeys]
+        : tab === 'debt'
+          ? [...group.keys, ...supplementaryKeys]
+          : group.keys
+      ).flatMap((key) => financialChartSourceFields(key, basis))
+    ),
   ];
   const sourcePeriods = (key: FinancialChartKey) => {
     if (!detail || key !== 'revenueGrowth') return undefined;
@@ -102,11 +118,69 @@ export function CompanyContextHistory({
       </p>
     );
 
+  const metricCard = (key: FinancialChartKey) => {
+    const metric = financialChartFields[key];
+    const point = series[key].find((item) => item.period === period);
+    const fields = financialChartSourceFields(key, basis);
+    const label = metricLabel(key);
+    const sharedRange = key === 'profit' || key === 'ocf' ? cashRange : undefined;
+    const amountScale =
+      metric.unit === 'amount'
+        ? financialChartAmountScale(series[key], locale, sharedRange)
+        : undefined;
+    return (
+      <article className="financial-chart-card" key={key} data-chart-metric={key}>
+        <div className="financial-chart-header">
+          <h4>{label}</h4>
+          {detail && fields.length > 0 && (
+            <CompanyContextEvidence
+              snapshot={snapshot}
+              row={detail}
+              fields={fields}
+              periods={sourcePeriods(key)}
+              formula={formulas[key]}
+            />
+          )}
+          {detail && fields.length === 0 && detail.sourceUrls[0] && (
+            <a
+              className="context-evidence-button"
+              href={detail.sourceUrls[0]}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t('网页来源', 'Web source')}
+            </a>
+          )}
+        </div>
+        <ChartMetricSummary
+          company={point?.company ?? null}
+          peer={point?.peer ?? null}
+          count={point?.count ?? null}
+          period={period}
+          unit={metric.unit}
+          amountScale={amountScale}
+        />
+        <HistoryMetricChart
+          points={series[key]}
+          style={metric.style}
+          unit={metric.unit}
+          label={label}
+          selectedPeriod={period}
+          onPeriodChange={changePeriod}
+          companyLabel={snapshot.companyName}
+          sharedRange={sharedRange}
+          amountScale={amountScale}
+        />
+        <p className="financial-chart-note">{t(...metric.note)}</p>
+      </article>
+    );
+  };
+
   return (
     <section className="context-history">
       <div className="financial-chart-actions">
         <div className="context-tabs" role="tablist" aria-label={t('财务图表', 'Financial charts')}>
-          {financialChartGroups.map(({ id, label }, index) => (
+          {tabs.map(({ id, label }, index) => (
             <button
               key={id}
               type="button"
@@ -118,17 +192,17 @@ export function CompanyContextHistory({
               onKeyDown={(event) => {
                 const next =
                   event.key === 'ArrowRight'
-                    ? (index + 1) % financialChartGroups.length
+                    ? (index + 1) % tabs.length
                     : event.key === 'ArrowLeft'
-                      ? (index + financialChartGroups.length - 1) % financialChartGroups.length
+                      ? (index + tabs.length - 1) % tabs.length
                       : event.key === 'Home'
                         ? 0
                         : event.key === 'End'
-                          ? financialChartGroups.length - 1
+                          ? tabs.length - 1
                           : null;
                 if (next !== null) {
                   event.preventDefault();
-                  const nextId = financialChartGroups[next]!.id;
+                  const nextId = tabs[next]!.id;
                   setTab(nextId);
                   document.getElementById(`${tabId}-${nextId}`)?.focus();
                 }
@@ -162,62 +236,32 @@ export function CompanyContextHistory({
       <div
         role="tabpanel"
         id={`${tabId}-panel`}
-        aria-labelledby={`${tabId}-${group.id}`}
+        aria-labelledby={`${tabId}-${tab}`}
         className="context-chart-panel"
+        data-chart-view={tab}
       >
-        <div className="financial-chart-grid">
-          {group.keys.map((key) => {
-            const metric = financialChartFields[key];
-            const point = series[key].find((item) => item.period === period);
-            const fields = financialChartSourceFields(key, basis);
-            const label = metricLabel(key);
-            return (
-              <article className="financial-chart-card" key={key}>
-                <div className="financial-chart-header">
-                  <h3>{label}</h3>
-                  {detail && fields.length > 0 && (
-                    <CompanyContextEvidence
-                      snapshot={snapshot}
-                      row={detail}
-                      fields={fields}
-                      periods={sourcePeriods(key)}
-                      formula={formulas[key]}
-                    />
-                  )}
-                  {detail && fields.length === 0 && detail.sourceUrls[0] && (
-                    <a
-                      className="context-evidence-button"
-                      href={detail.sourceUrls[0]}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {t('网页来源', 'Web source')}
-                    </a>
-                  )}
-                </div>
-                <ChartMetricSummary
-                  company={point?.company ?? null}
-                  peer={point?.peer ?? null}
-                  count={point?.count ?? null}
-                  period={period}
-                  unit={metric.unit}
-                />
-                <HistoryMetricChart
-                  points={series[key]}
-                  style={metric.style}
-                  unit={metric.unit}
-                  label={label}
-                  selectedPeriod={period}
-                  onPeriodChange={changePeriod}
-                  companyLabel={snapshot.companyName}
-                  sharedRange={
-                    tab === 'cash' && (key === 'profit' || key === 'ocf') ? cashRange : undefined
-                  }
-                />
-              </article>
-            );
-          })}
-        </div>
+        {financialChartGroups.map((item) => (
+          <section
+            className="financial-chart-group"
+            key={item.id}
+            data-chart-group={item.id}
+            hidden={tab !== 'all' && tab !== item.id}
+            aria-labelledby={`${tabId}-heading-${item.id}`}
+          >
+            <h3 className="financial-chart-group-heading" id={`${tabId}-heading-${item.id}`}>
+              {t(...item.label)}
+            </h3>
+            <div className="financial-chart-grid">{item.keys.map(metricCard)}</div>
+            {item.id === 'debt' && (
+              <details className="financial-chart-supplement">
+                <summary>
+                  {t('存货与应收资金占用', 'Funds tied up in inventory and receivables')}
+                </summary>
+                <div className="financial-chart-grid">{supplementaryKeys.map(metricCard)}</div>
+              </details>
+            )}
+          </section>
+        ))}
       </div>
       {detail && exactFields.length > 0 && (
         <details className="context-year-detail">

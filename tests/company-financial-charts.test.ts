@@ -91,6 +91,8 @@ function industry(): CompanyIndustrySnapshot {
       parentNetMargin: metric(11.25),
       ocf: metric(-1000000),
       shortDebt: metric(0),
+      shortLoan: metric(0),
+      currentPortionDebt: metric(0),
     },
     samples: [],
     sources: [],
@@ -98,16 +100,34 @@ function industry(): CompanyIndustrySnapshot {
   };
 }
 
-test('chart registry covers thirteen metrics without repeated ratio cards across the curated groups', () => {
-  assert.equal(Object.keys(financialChartFields).length, 13);
+test('chart registry restores four original thematic groups and debt-component dumbbells', () => {
+  assert.equal(Object.keys(financialChartFields).length, 15);
   assert.deepEqual(
     financialChartGroups.map((group) => group.id),
     ['cash', 'income', 'debt', 'ratios']
   );
-  const keys = financialChartGroups.flatMap((group) => group.keys);
-  assert.equal(keys.filter((key) => key === 'netMargin').length, 1);
-  assert.equal(keys.filter((key) => key === 'ocfToRevenue').length, 1);
-  assert.equal(new Set(keys).size, 13);
+  assert.deepEqual(
+    financialChartGroups.map((group) => group.keys),
+    [
+      ['ocf', 'profit', 'ocfToRevenue', 'netMargin'],
+      ['revenueGrowth', 'revenue', 'profit', 'netMargin'],
+      ['cash', 'shortDebt', 'shortLoan', 'currentPortionDebt'],
+      ['grossMargin', 'roe', 'ocfToRevenue', 'receivableToRevenue'],
+    ]
+  );
+  assert.equal(new Set(financialChartGroups.flatMap((group) => group.keys)).size, 13);
+  for (const key of ['shortLoan', 'currentPortionDebt'] as const) {
+    assert.equal(financialChartFields[key].unit, 'amount');
+    assert.equal(financialChartFields[key].style, 'dumbbell');
+    assert.deepEqual(financialChartSourceFields(key, 'parent'), [key]);
+  }
+  for (const field of Object.values(financialChartFields))
+    assert.ok(field.note.every((note) => note.length > 0));
+  assert.equal(financialChartFields.grossMargin.style, 'lines');
+  assert.equal(financialChartFields.roe.style, 'bars');
+  assert.equal(financialChartFields.receivableToRevenue.style, 'dumbbell');
+  assert.deepEqual(financialChartSourceFields('inventory', 'consolidated'), ['inventory']);
+  assert.deepEqual(financialChartSourceFields('receivables', 'consolidated'), ['receivables']);
   assert.deepEqual(financialChartSourceFields('netMargin', 'parent'), ['parentProfit', 'revenue']);
   assert.deepEqual(financialChartSourceFields('profit', 'consolidated'), ['netProfit']);
   assert.deepEqual(financialChartFields.profit.fields, ['netProfit']);
@@ -128,6 +148,8 @@ test('chart amounts stay in yuan and parent/consolidated series use their corres
   assert.equal(consolidated.netMargin[0]!.peer, 15);
   assert.equal(parent.netMargin[0]!.company, 8);
   assert.equal(parent.netMargin[0]!.peer, 11.25);
+  for (const key of ['shortLoan', 'currentPortionDebt', 'shortDebt'] as const)
+    assert.deepEqual(consolidated[key], parent[key]);
   // The peer endpoint's company value never replaces the context snapshot's value.
   assert.equal(consolidated.grossMargin[0]!.company, 40);
 });
@@ -150,15 +172,85 @@ test('zero and negative observed values remain visible; missing values never bec
 
 test('short debt is summed in exact fen and requires both nonnegative components', () => {
   const snapshot = context();
-  assert.equal(buildFinancialChartPoints(snapshot, 'parent').shortDebt[0]!.company, 5000000.03);
+  const values = buildFinancialChartPoints(snapshot, 'parent');
+  assert.equal(values.shortLoan[0]!.company, 2000000.01);
+  assert.equal(values.currentPortionDebt[0]!.company, 3000000.02);
+  assert.equal(values.shortDebt[0]!.company, 5000000.03);
   assert.equal(financialChartAmount(snapshot, '2025-12-31', 'shortLoan'), '2000000.01');
   for (const amount of [null, '-0.01', 'Infinity', '1.001']) {
     snapshot.financials[0]!.amounts.shortLoan = amount;
-    assert.equal(buildFinancialChartPoints(snapshot, 'parent').shortDebt[0]!.company, null);
+    const invalid = buildFinancialChartPoints(snapshot, 'parent');
+    assert.equal(invalid.shortDebt[0]!.company, null);
+    assert.equal(invalid.shortLoan[0]!.company, null);
+    assert.equal(invalid.currentPortionDebt[0]!.company, 3000000.02);
   }
   snapshot.financials[0]!.amounts.shortLoan = '0.00';
   snapshot.financials[0]!.amounts.currentPortionDebt = '0.00';
-  assert.equal(buildFinancialChartPoints(snapshot, 'parent').shortDebt[0]!.company, 0);
+  const zero = buildFinancialChartPoints(snapshot, 'parent');
+  assert.equal(zero.shortDebt[0]!.company, 0);
+  assert.equal(zero.shortLoan[0]!.company, 0);
+  assert.equal(zero.currentPortionDebt[0]!.company, 0);
+});
+
+test('debt component gaps and source conflicts affect their own card and sum independently', () => {
+  for (const field of ['shortLoan', 'currentPortionDebt'] as const) {
+    const other = field === 'shortLoan' ? 'currentPortionDebt' : 'shortLoan';
+    const snapshot = context();
+    const peers = { '2025-12-31': industry() };
+    snapshot.financials[0]!.amounts[field] = null;
+    const missing = buildFinancialChartPoints(snapshot, 'consolidated', peers);
+    assert.equal(missing[field][0]!.company, null);
+    assert.equal(missing[field][0]!.peer, 0);
+    assert.notEqual(missing[other][0]!.company, null);
+    assert.equal(missing.shortDebt[0]!.company, null);
+    snapshot.financials[0]!.amounts[field] = '100.00';
+    snapshot.comparisons.push({
+      period: '2025-12-31',
+      field,
+      primary: '100.00',
+      secondary: '101.00',
+      difference: '-1.00',
+      matches: false,
+    });
+    const conflicted = buildFinancialChartPoints(snapshot, 'consolidated', peers);
+    assert.equal(conflicted[field][0]!.company, null);
+    assert.equal(conflicted[field][0]!.peer, null);
+    assert.equal(conflicted.shortDebt[0]!.company, null);
+    assert.equal(conflicted.shortDebt[0]!.peer, null);
+    assert.notEqual(conflicted[other][0]!.company, null);
+    assert.equal(conflicted[other][0]!.peer, 0);
+    assert.equal(conflicted.cash[0]!.company, 0);
+  }
+});
+
+test('debt peer components use only their own matching field and sample count', () => {
+  const snapshot = context();
+  const peers = industry();
+  peers.chartMetrics!.shortLoan = metric(100, 4);
+  peers.chartMetrics!.currentPortionDebt = metric(200, 5);
+  let values = buildFinancialChartPoints(snapshot, 'consolidated', { '2025-12-31': peers });
+  assert.equal(values.shortLoan[0]!.count, 4);
+  assert.equal(values.shortLoan[0]!.peer, null);
+  assert.equal(values.currentPortionDebt[0]!.peer, 200);
+  assert.equal(values.shortDebt[0]!.peer, 0);
+  peers.chartMetrics!.shortLoan = metric(100, 6);
+  values = buildFinancialChartPoints(snapshot, 'consolidated', { '2025-12-31': peers });
+  assert.equal(values.shortLoan[0]!.peer, null);
+  assert.equal(values.currentPortionDebt[0]!.peer, 200);
+  delete peers.chartMetrics!.shortLoan;
+  delete peers.chartMetrics!.currentPortionDebt;
+  values = buildFinancialChartPoints(snapshot, 'consolidated', { '2025-12-31': peers });
+  for (const key of ['shortLoan', 'currentPortionDebt'] as const) {
+    assert.equal(values[key][0]!.count, null);
+    assert.equal(values[key][0]!.peer, null);
+    assert.notEqual(values[key][0]!.company, null);
+  }
+  assert.equal(values.shortDebt[0]!.peer, 0);
+  peers.securityCode = '000002';
+  assert.equal(
+    buildFinancialChartPoints(snapshot, 'parent', { '2025-12-31': peers }).shortDebt[0]!.peer,
+    null
+  );
 });
 
 test('calculated ratios withhold nonpositive or missing revenue without discarding valid raw amounts', () => {
@@ -219,7 +311,15 @@ test('legacy industry snapshots expose existing ratios but never invent addition
   assert.equal(values.grossMargin[0]!.peer, 20);
   assert.equal(values.roe[0]!.peer, 20);
   assert.equal(values.revenueGrowth[0]!.peer, 20);
-  for (const key of ['revenue', 'profit', 'ocf', 'shortDebt', 'netMargin'] as const) {
+  for (const key of [
+    'revenue',
+    'profit',
+    'ocf',
+    'shortDebt',
+    'shortLoan',
+    'currentPortionDebt',
+    'netMargin',
+  ] as const) {
     assert.equal(values[key][0]!.peer, null);
     assert.equal(values[key][0]!.count, null);
   }

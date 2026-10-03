@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { CompanyIndustrySnapshot, IndustryMetricKey } from '../shared/company-workspace';
 import type { FinancialChartPoint } from '../shared/company-financial-charts';
 import { chartRange, consecutivePeriods, distributionBins } from '../shared/company-chart-geometry';
@@ -6,27 +6,71 @@ import { useApp } from './context';
 import { chartScale, money, type Locale } from './format';
 
 type Unit = 'amount' | 'percent';
+export type FinancialChartAmountScale = ReturnType<typeof chartScale>;
 const present = (value: number | null): value is number => value !== null && Number.isFinite(value);
-function formatted(value: number | null, unit: Unit, locale: Locale) {
+export function financialChartAmountScale(
+  points: FinancialChartPoint[],
+  locale: Locale,
+  sharedRange?: { minimum: number; maximum: number }
+): FinancialChartAmountScale {
+  const range = chartRange(
+    sharedRange
+      ? [sharedRange.minimum, sharedRange.maximum]
+      : points.flatMap((point) => [point.company, point.peer])
+  );
+  return chartScale(
+    Math.max(Math.abs(range.minimum), Math.abs(range.maximum)),
+    range.maximum - range.minimum,
+    locale,
+    range.ticks.length - 1
+  );
+}
+function formatted(
+  value: number | null,
+  unit: Unit,
+  locale: Locale,
+  amountScale?: FinancialChartAmountScale
+) {
+  if (!present(value)) return '—';
+  if (unit === 'percent')
+    return `${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
+  if (!amountScale) return money(value.toFixed(2), locale);
+  const scaled = value / amountScale.divisor;
+  // Preserve small nonzero amounts even when the peer series determines a much larger unit.
+  const digits = Math.min(
+    12,
+    Math.max(2, scaled === 0 ? 2 : Math.ceil(-Math.log10(Math.abs(scaled))) + 1)
+  );
+  return `${scaled.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: digits })} ${amountScale.label}`;
+}
+function exactFormatted(value: number | null, unit: Unit, locale: Locale) {
   return !present(value)
     ? '—'
     : unit === 'percent'
-      ? `${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`
-      : money(value.toFixed(2), locale);
+      ? formatted(value, unit, locale)
+      : `${money(String(value), locale, false)} ${locale === 'en' ? 'CNY' : '元（CNY）'}`;
+}
+function EmptyChart({ label }: { label: string }) {
+  const { t } = useApp();
+  return (
+    <p className="financial-chart-empty">
+      {t(`暂无可用的${label}数据。`, `No available data for ${label}.`)}
+    </p>
+  );
 }
 function usePlotWidth(minimum: number) {
-  const ref = useRef<HTMLDivElement>(null);
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  const ref = useCallback((node: HTMLDivElement | null) => setElement(node), []);
   const [width, setWidth] = useState(minimum);
   useEffect(() => {
-    const element = ref.current;
     if (!element) return;
-    const resize = () => setWidth(Math.max(minimum, Math.floor(element.clientWidth)));
+    const resize = () => setWidth(Math.floor(element.clientWidth));
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(element);
     return () => observer.disconnect();
-  }, [minimum]);
-  return { ref, width };
+  }, [minimum, element]);
+  return { ref, element, viewportWidth: width, width: Math.max(minimum, width) };
 }
 function PeerPattern({ id }: { id: string }) {
   return (
@@ -66,6 +110,7 @@ export function ChartMetricSummary({
   count,
   period,
   peerLabel,
+  amountScale,
 }: {
   company: number | null;
   peer: number | null;
@@ -73,43 +118,56 @@ export function ChartMetricSummary({
   count?: number | null;
   period?: string;
   peerLabel?: string;
+  amountScale?: FinancialChartAmountScale;
 }) {
   const { t, locale } = useApp();
   const difference = present(company) && present(peer) ? company - peer : null;
   const hasPeer = count !== undefined && count !== null;
+  const scale =
+    unit === 'amount'
+      ? amountScale ||
+        financialChartAmountScale(
+          [{ period: period || '', company, peer, count: count ?? null }],
+          locale
+        )
+      : undefined;
   return (
     <div className="financial-chart-summary">
-      <dl className={`financial-chart-values ${hasPeer ? '' : 'company-only'}`}>
+      <dl className="financial-chart-values">
         <div>
           <dt>{t('企业值', 'Company')}</dt>
-          <dd>{formatted(company, unit, locale)}</dd>
+          <dd title={exactFormatted(company, unit, locale)}>
+            {formatted(company, unit, locale, scale)}
+          </dd>
         </div>
-        {hasPeer && (
-          <>
-            <div>
-              <dt>{peerLabel || t('同行均值', 'Peer mean')}</dt>
-              <dd>{formatted(peer, unit, locale)}</dd>
-            </div>
-            <div>
-              <dt>{t('与均值差异', 'Difference')}</dt>
-              <dd className="financial-chart-difference">
-                {difference === null
-                  ? '—'
-                  : unit === 'percent'
-                    ? `${difference > 0 ? '+' : ''}${difference.toFixed(2)} ${t('个百分点', 'pp')}`
-                    : `${difference > 0 ? '+' : ''}${formatted(difference, unit, locale)}`}
-              </dd>
-            </div>
-          </>
-        )}
+        <div>
+          <dt>{peerLabel || t('同行均值', 'Peer mean')}</dt>
+          <dd title={exactFormatted(peer, unit, locale)}>{formatted(peer, unit, locale, scale)}</dd>
+        </div>
       </dl>
-      {(period || hasPeer) && (
-        <p className="financial-chart-meta">
+      <div className="financial-chart-meta">
+        <span className="financial-chart-difference">
+          {difference === null ? (
+            t('暂不可比', 'Comparison unavailable')
+          ) : (
+            <>
+              {t('与均值差异', 'Difference')}{' '}
+              <strong title={exactFormatted(difference, unit, locale)}>
+                {unit === 'percent'
+                  ? `${difference > 0 ? '+' : ''}${difference.toFixed(2)} ${t('个百分点', 'pp')}`
+                  : `${difference > 0 ? '+' : ''}${formatted(difference, unit, locale, scale)}`}
+              </strong>
+            </>
+          )}
+        </span>
+        <span>
           {period?.slice(0, 4)}
-          {period && hasPeer ? ' · ' : ''}
-          {hasPeer ? t(`${count} 家有效同行`, `${count} valid peers`) : ''}
-        </p>
-      )}
+          {period ? ' · ' : ''}
+          {hasPeer
+            ? t(`${count} 家有效同行`, `${count} valid peers`)
+            : t('暂无同行参照', 'Peer reference unavailable')}
+        </span>
+      </div>
     </div>
   );
 }
@@ -124,6 +182,7 @@ export function HistoryMetricChart({
   companyLabel,
   peerLabel,
   sharedRange,
+  amountScale,
 }: {
   points: FinancialChartPoint[];
   style: 'bars' | 'lines' | 'dumbbell';
@@ -134,10 +193,13 @@ export function HistoryMetricChart({
   companyLabel?: string;
   peerLabel?: string;
   sharedRange?: { minimum: number; maximum: number };
+  amountScale?: FinancialChartAmountScale;
 }) {
   const { t, locale } = useApp();
   const pattern = `peer-${useId().replace(/:/g, '')}`;
-  const { ref, width } = usePlotWidth(Math.max(400, points.length * 62 + 68));
+  const { ref, element, viewportWidth, width } = usePlotWidth(
+    Math.max(260, points.length * 30 + 76)
+  );
   const groupRefs = useRef<(SVGGElement | null)[]>([]);
   const companyName = companyLabel || t('企业', 'Company');
   const peerName = peerLabel || t('同行均值', 'Peer mean');
@@ -151,12 +213,7 @@ export function HistoryMetricChart({
           digits: chartScale(0, range.maximum - range.minimum, locale, range.ticks.length - 1)
             .digits,
         }
-      : chartScale(
-          Math.max(Math.abs(range.minimum), Math.abs(range.maximum)),
-          range.maximum - range.minimum,
-          locale,
-          4
-        );
+      : amountScale || financialChartAmountScale(points, locale, sharedRange);
   const height = 210,
     left = 58,
     right = 18,
@@ -166,11 +223,23 @@ export function HistoryMetricChart({
     top + ((range.maximum - value) / (range.maximum - range.minimum)) * (height - top - bottom);
   const step = (width - left - right) / Math.max(1, points.length);
   const x = (index: number) => left + (index + 0.5) * step;
+  const barWidth = Math.min(18, step * 0.3);
+  const barGap = Math.min(3, step * 0.07);
+  const missingOffset = Math.min(10, step * 0.25);
   const selectedIndex = Math.max(
     0,
     points.findIndex((point) => point.period === selectedPeriod)
   );
   const peerVisible = points.some((point) => point.count !== null);
+  useEffect(() => {
+    if (!element || viewportWidth <= 0 || element.scrollWidth <= element.clientWidth) return;
+    const start = left + selectedIndex * step;
+    const end = start + step;
+    if (start < element.scrollLeft) element.scrollLeft = start;
+    else if (end > element.scrollLeft + element.clientWidth)
+      element.scrollLeft = end - element.clientWidth;
+  }, [element, viewportWidth, width, selectedIndex, step]);
+  if (!values.some(present)) return <EmptyChart label={label} />;
   return (
     <>
       <p className="financial-chart-unit">
@@ -207,7 +276,7 @@ export function HistoryMetricChart({
             </g>
           ))}
           {style === 'lines' &&
-            ['company', 'peer'].flatMap((series) =>
+            ['peer', 'company'].flatMap((series) =>
               points.slice(1).map((point, offset) => {
                 const prior = points[offset]!,
                   a = prior[series as 'company' | 'peer'],
@@ -236,7 +305,7 @@ export function HistoryMetricChart({
               role="button"
               tabIndex={selectedIndex === index ? 0 : -1}
               aria-pressed={point.period === selectedPeriod}
-              aria-label={`${point.period.slice(0, 4)} · ${label} · ${companyName} ${formatted(point.company, unit, locale)}${point.count !== null ? ` · ${peerName} ${formatted(point.peer, unit, locale)}` : ''}`}
+              aria-label={`${point.period.slice(0, 4)} · ${label} · ${companyName} ${exactFormatted(point.company, unit, locale)}${point.count !== null ? ` · ${peerName} ${exactFormatted(point.peer, unit, locale)}` : ''}`}
               onClick={() => onPeriodChange(point.period)}
               onKeyDown={(event) => {
                 const next =
@@ -276,27 +345,28 @@ export function HistoryMetricChart({
                   className="financial-chart-connector"
                 />
               )}
-              {(['company', 'peer'] as const).map((series, seriesIndex) => {
+              {(['peer', 'company'] as const).map((series) => {
+                const seriesIndex = series === 'peer' ? 1 : 0;
                 const value = point[series];
                 if (!present(value))
                   return series === 'company' || point.count !== null ? (
                     <text
                       key={series}
                       className="financial-chart-missing"
-                      x={x(index) + (seriesIndex ? 10 : -10)}
+                      x={x(index) + (seriesIndex ? missingOffset : -missingOffset)}
                       y={y(0) - 7}
                       textAnchor="middle"
                     >
                       {t('缺', '—')}
                     </text>
                   ) : null;
-                const title = `${point.period.slice(0, 4)} · ${seriesIndex ? peerName : companyName} ${formatted(value, unit, locale)}`;
+                const title = `${point.period.slice(0, 4)} · ${seriesIndex ? peerName : companyName} ${exactFormatted(value, unit, locale)}`;
                 return style === 'bars' ? (
                   <rect
                     key={series}
-                    x={x(index) + (seriesIndex ? 3 : -21)}
+                    x={x(index) + (seriesIndex ? barGap : -barWidth - barGap)}
                     y={y(Math.max(0, value))}
-                    width={18}
+                    width={barWidth}
                     height={Math.max(1, Math.abs(y(value) - y(0)))}
                     rx={2}
                     className={`financial-chart-${series}-bar`}
@@ -352,6 +422,7 @@ export function IndustryPairChart({
     height = 116;
   const x = (value: number) =>
     left + ((value - range.minimum) / (range.maximum - range.minimum)) * (width - left - right);
+  if (!present(company) && !present(peer)) return <EmptyChart label={label} />;
   return (
     <div ref={ref} className="financial-chart-scroll" tabIndex={0} aria-label={label}>
       <svg

@@ -18,19 +18,19 @@
   flex-wrap: wrap;
   gap: 8px 16px;
 }
-.financial-chart-header h3 {
+.financial-chart-header :is(h3, h4) {
   margin: 0;
   font-size: var(--text-body);
   font-weight: 600;
 }
 .financial-chart-values {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   margin: 18px 0 8px;
 }
-.financial-chart-values.company-only {
-  grid-template-columns: 1fr;
+.financial-chart-values > div {
+  min-width: 0;
 }
 .financial-chart-values dt,
 .financial-chart-meta,
@@ -50,9 +50,16 @@
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
-.financial-chart-values dd.financial-chart-difference {
-  font-size: var(--text-ui);
-  letter-spacing: 0;
+.financial-chart-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+.financial-chart-difference strong {
+  color: var(--ink);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 .financial-chart-meta,
 .financial-chart-unit {
@@ -60,6 +67,58 @@
 }
 .financial-chart-note {
   margin: 12px 0 0;
+}
+.financial-chart-empty {
+  min-height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: var(--text-secondary);
+  line-height: 1.6;
+  text-align: center;
+}
+.financial-chart-group-heading {
+  display: none;
+  margin: 0 0 14px;
+  font-size: var(--text-body);
+  font-weight: 600;
+}
+.context-chart-panel[data-chart-view='all'] .financial-chart-group-heading {
+  display: block;
+}
+.context-chart-panel[data-chart-view='all'] .financial-chart-group + .financial-chart-group {
+  margin-top: 24px;
+}
+.financial-chart-supplement {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+.financial-chart-supplement > summary {
+  color: var(--muted);
+  font-size: var(--text-ui);
+}
+.financial-chart-supplement > .financial-chart-grid {
+  margin-top: 14px;
+}
+.financial-chart-category {
+  margin-right: 8px;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 400;
+}
+.financial-chart-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-top: 12px;
+}
+.financial-chart-card-footer .financial-chart-note {
+  margin: 0;
 }
 .financial-chart-scroll {
   max-width: 100%;
@@ -97,6 +156,10 @@
 .financial-chart-peer-stroke {
   stroke: var(--chart-total);
   stroke-width: 1;
+}
+.financial-chart-peer-bar {
+  stroke: var(--chart-total);
+  stroke-width: 0.8;
 }
 .financial-chart-company-line,
 .financial-chart-peer-line {
@@ -200,15 +263,21 @@
     padding: 18px;
   }
 }
-@media (max-width: 600px) {
-  .financial-chart-values {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .financial-chart-values > div:nth-child(3) {
-    grid-column: 1 / -1;
-  }
-}
 @media print {
+  .context-history > .financial-chart-actions {
+    display: none;
+  }
+  .financial-chart-group[hidden],
+  .financial-chart-group-heading {
+    display: block !important;
+  }
+  .financial-chart-group + .financial-chart-group {
+    margin-top: 20px;
+  }
+  .financial-chart-supplement::details-content {
+    content-visibility: visible !important;
+    height: auto !important;
+  }
   .financial-chart-scroll {
     overflow: visible;
   }

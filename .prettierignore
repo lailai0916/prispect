@@ -2,3 +2,5 @@ node_modules/
 package-lock.json
 # Immutable runtime receipts, downloaded exports and capture harness evidence.
 docs/competitive-research/evidence/
+# Local screenshots, capture harnesses and generated verification builds.
+output/

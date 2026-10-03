@@ -271,6 +271,8 @@ export const industryChartMetricKeys = [
   'ocf',
   'cash',
   'shortDebt',
+  'shortLoan',
+  'currentPortionDebt',
   'inventory',
   'receivables',
   'netMargin',
@@ -299,7 +301,9 @@ export interface CompanyIndustrySnapshot {
   /** Additive chart references: amounts are yuan; margins are percentages
    * and margin differences are percentage points.
    * netProfit/netMargin use consolidated profit, parentProfit/parentNetMargin
-   * use attributable profit. Absent on legacy snapshots, never backfilled. */
+   * use attributable profit. shortDebt sums shortLoan and currentPortionDebt;
+   * component references require their own nonnegative observed amount.
+   * Absent fields on legacy snapshots stay unknown, never backfilled. */
   chartMetrics?: Partial<Record<IndustryChartMetricKey, IndustryMetricSummary>>;
   samples: {
     code: string;

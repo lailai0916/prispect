@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createElement } from 'react';
+import { createElement, type ReactElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { load } from 'cheerio';
 import type { CompanyResearchRun } from '../shared/contracts.js';
@@ -12,7 +12,12 @@ import {
 import { AppContext, type AppContextValue } from '../src/context.js';
 import { CompanyContextOverview, CompanyCoverageView } from '../src/CompanyContextViews.js';
 import { CompanyContextHistory } from '../src/CompanyContextHistory.js';
-import { IndustryPairChart } from '../src/FinancialCharts.js';
+import {
+  ChartMetricSummary,
+  HistoryMetricChart,
+  IndustryPairChart,
+  financialChartAmountScale,
+} from '../src/FinancialCharts.js';
 
 function fixture(profit: string | null): CompanyResearchRun {
   const row: CompanyContextPeriod = {
@@ -183,4 +188,222 @@ test('small percentage comparison ticks stay distinct instead of rounding every 
     assert.equal(new Set(ticks).size, ticks.length);
     assert.ok(ticks.some((tick) => tick.includes('0.01')));
   }
+});
+
+function chartMarkup(element: ReactElement, locale: 'zh-Hans' | 'en' = 'zh-Hans') {
+  return renderToStaticMarkup(
+    createElement(
+      AppContext.Provider,
+      {
+        value: {
+          locale,
+          t: (zh: string, en: string) => (locale === 'en' ? en : zh),
+        } as AppContextValue,
+      },
+      element
+    )
+  );
+}
+
+test('history retains the complete themed scan and supplementary working-capital amounts', () => {
+  const $ = load(
+    chartMarkup(
+      createElement(CompanyContextHistory, {
+        snapshot: fixture('12.00').context!,
+        basis: 'consolidated',
+      })
+    )
+  );
+  assert.equal($('.context-tabs [role="tab"]').length, 5);
+  assert.equal($('.context-tabs [role="tab"]').last().text(), '全部图表');
+  assert.equal($('.context-tabs [aria-selected="true"]').text(), '利润与经营现金');
+  const visible = $('.financial-chart-group:not([hidden])');
+  assert.equal(visible.length, 1);
+  assert.deepEqual(
+    visible
+      .find('[data-chart-metric]')
+      .map((_index, element) => $(element).attr('data-chart-metric'))
+      .get(),
+    ['ocf', 'profit', 'ocfToRevenue', 'netMargin']
+  );
+  assert.equal($('.financial-chart-group-heading').length, 4);
+  assert.deepEqual(
+    $('[data-chart-group="debt"] > .financial-chart-grid [data-chart-metric]')
+      .map((_index, element) => $(element).attr('data-chart-metric'))
+      .get(),
+    ['cash', 'shortDebt', 'shortLoan', 'currentPortionDebt']
+  );
+  assert.deepEqual(
+    $('.financial-chart-supplement [data-chart-metric]')
+      .map((_index, element) => $(element).attr('data-chart-metric'))
+      .get(),
+    ['inventory', 'receivables']
+  );
+});
+
+test('each amount card shares one unit across primary values, difference and axis without losing raw titles', () => {
+  const points = [{ period: '2025-12-31', company: 1_200_000_000, peer: 4_000_000, count: 5 }];
+  for (const locale of ['zh-Hans', 'en'] as const) {
+    const amountScale = financialChartAmountScale(points, locale);
+    const $ = load(
+      chartMarkup(
+        createElement(
+          'article',
+          {},
+          createElement(ChartMetricSummary, { ...points[0]!, unit: 'amount', amountScale }),
+          createElement(HistoryMetricChart, {
+            points,
+            style: 'bars',
+            unit: 'amount',
+            label: 'Amount',
+            selectedPeriod: points[0]!.period,
+            onPeriodChange: () => undefined,
+            amountScale,
+          })
+        ),
+        locale
+      )
+    );
+    assert.equal($('.financial-chart-values dd').length, 2);
+    $('.financial-chart-values dd').each((_index, element) => {
+      assert.ok($(element).text().endsWith(amountScale.label));
+    });
+    assert.ok($('.financial-chart-difference strong').text().endsWith(amountScale.label));
+    assert.ok($('.financial-chart-unit').text().endsWith(amountScale.label));
+    assert.match($('.financial-chart-values dd').first().attr('title') || '', /1,200,000,000/);
+    assert.match($('rect.financial-chart-company-bar title').text(), /1,200,000,000/);
+    assert.ok(
+      Number($('rect.financial-chart-company-bar').attr('x')) <
+        Number($('rect.financial-chart-peer-bar').attr('x'))
+    );
+  }
+  const tiny = load(
+    chartMarkup(
+      createElement(ChartMetricSummary, {
+        company: 0.01,
+        peer: 1_000_000_000,
+        count: 5,
+        unit: 'amount',
+        amountScale: financialChartAmountScale(
+          [{ ...points[0]!, company: 0.01, peer: 1_000_000_000 }],
+          'en'
+        ),
+      }),
+      'en'
+    )
+  );
+  assert.equal(Number(tiny('.financial-chart-values dd').first().text().split(' ')[0]), 1e-11);
+});
+
+test('coincident history markers retain both series and missing annual observations break lines', () => {
+  for (const style of ['lines', 'dumbbell'] as const) {
+    const $ = load(
+      chartMarkup(
+        createElement(HistoryMetricChart, {
+          points: [{ period: '2025-12-31', company: 4, peer: 4, count: 5 }],
+          style,
+          unit: 'percent',
+          label: 'Ratio',
+          selectedPeriod: '2025-12-31',
+          onPeriodChange: () => undefined,
+        })
+      )
+    );
+    assert.deepEqual(
+      $('circle')
+        .map((_index, element) => $(element).attr('class'))
+        .get(),
+      ['financial-chart-peer-dot', 'financial-chart-company-dot']
+    );
+    assert.equal($('circle').first().attr('cx'), $('circle').last().attr('cx'));
+    assert.equal($('circle').first().attr('cy'), $('circle').last().attr('cy'));
+    assert.ok(Number($('circle').first().attr('r')) > Number($('circle').last().attr('r')));
+  }
+  const $ = load(
+    chartMarkup(
+      createElement(HistoryMetricChart, {
+        points: [
+          { period: '2021-12-31', company: -2, peer: null, count: null },
+          { period: '2022-12-31', company: 3, peer: null, count: null },
+          { period: '2024-12-31', company: 4, peer: null, count: null },
+          { period: '2025-12-31', company: null, peer: null, count: null },
+          { period: '2026-12-31', company: 6, peer: null, count: null },
+        ],
+        style: 'lines',
+        unit: 'percent',
+        label: 'Ratio',
+        selectedPeriod: '2024-12-31',
+        onPeriodChange: () => undefined,
+      })
+    )
+  );
+  assert.deepEqual(
+    $('line[data-segment]')
+      .map((_index, element) => $(element).attr('data-segment'))
+      .get(),
+    ['2021-12-31:2022-12-31']
+  );
+  assert.equal($('g[role="button"][tabindex="0"]').attr('aria-pressed'), 'true');
+});
+
+test('fully missing metrics show a named unavailable state instead of empty axes', () => {
+  for (const locale of ['zh-Hans', 'en'] as const) {
+    for (const element of [
+      createElement(HistoryMetricChart, {
+        points: [{ period: '2025-12-31', company: null, peer: null, count: null }],
+        style: 'bars',
+        unit: 'amount',
+        label: 'Revenue',
+        selectedPeriod: '2025-12-31',
+        onPeriodChange: () => undefined,
+      }),
+      createElement(IndustryPairChart, { company: null, peer: null, label: 'Gross margin' }),
+    ]) {
+      const $ = load(chartMarkup(element, locale));
+      assert.equal($('svg').length, 0);
+      assert.equal($('.financial-chart-empty').length, 1);
+      assert.match($('.financial-chart-empty').text(), /Revenue|Gross margin/);
+    }
+  }
+});
+
+test('six annual years and paired signed bars fit a narrow card without shrinking SVG labels', () => {
+  const points = Array.from({ length: 6 }, (_, index) => ({
+    period: `${2020 + index}-12-31`,
+    company: index === 0 ? -2 : index === 1 ? 0 : index + 2,
+    peer: index + 1,
+    count: 5,
+  }));
+  const $ = load(
+    chartMarkup(
+      createElement(HistoryMetricChart, {
+        points,
+        style: 'bars',
+        unit: 'amount',
+        label: 'Cash',
+        selectedPeriod: '2025-12-31',
+        onPeriodChange: () => undefined,
+      })
+    )
+  );
+  const width = Number($('svg').attr('viewBox')!.split(' ')[2]);
+  assert.ok(width <= 274, 'the chart must fit a 390px screen card content area');
+  const years = $('g[role="button"]');
+  assert.equal(years.length, 6);
+  years.each((_index, element) => {
+    const year = $(element);
+    const hit = year.children('rect.financial-chart-year-hit');
+    const start = Number(hit.attr('x'));
+    const end = start + Number(hit.attr('width'));
+    const label = year.children('text').last();
+    assert.ok(Number(label.attr('x')) - 15 >= 0);
+    assert.ok(Number(label.attr('x')) + 15 <= width);
+    year.children('rect:not(.financial-chart-year-hit)').each((_offset, bar) => {
+      assert.ok(Number($(bar).attr('x')) >= start);
+      assert.ok(Number($(bar).attr('x')) + Number($(bar).attr('width')) <= end);
+      assert.ok(Number($(bar).attr('height')) >= 1);
+    });
+  });
+  assert.equal(years.last().children('text').last().text(), '2025');
+  assert.equal(years.last().attr('aria-pressed'), 'true');
 });

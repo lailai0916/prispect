@@ -101,11 +101,18 @@ test('chart values retain distinct profit bases, true zero and negative cash, wi
   assert.equal(values.ocf, -30);
   assert.equal(values.cash, 0);
   assert.equal(values.shortDebt, 0);
-  assert.equal(industryChartValues({}, { SHORT_LOAN: 10 }, {}).shortDebt, null);
-  assert.equal(
-    industryChartValues({}, { SHORT_LOAN: -10, NONCURRENT_LIAB_1YEAR: 30 }, {}).shortDebt,
-    null
-  );
+  assert.equal(values.shortLoan, 0);
+  assert.equal(values.currentPortionDebt, 0);
+  const incomplete = industryChartValues({}, { SHORT_LOAN: 10 }, {});
+  assert.equal(incomplete.shortDebt, null);
+  assert.equal(incomplete.shortLoan, 10);
+  assert.equal(incomplete.currentPortionDebt, null);
+  for (const invalid of [-10, NaN, Infinity, null]) {
+    const debt = industryChartValues({}, { SHORT_LOAN: invalid, NONCURRENT_LIAB_1YEAR: 30 }, {});
+    assert.equal(debt.shortDebt, null);
+    assert.equal(debt.shortLoan, null);
+    assert.equal(debt.currentPortionDebt, 30);
+  }
   for (const revenue of [0, -100, null]) {
     const invalid = industryChartValues({ TOTAL_OPERATE_INCOME: revenue, NETPROFIT: 1 }, {}, {});
     assert.equal(invalid.netMargin, null);
@@ -143,6 +150,40 @@ test('chart peers exclude the target and independently withhold small or missing
   assert.equal(aggregateIndustryCharts(samples, targetCode).netProfit.mean, null);
 });
 
+test('debt component peer counts stay independent from the complete-components sum', () => {
+  for (const field of ['SHORT_LOAN', 'NONCURRENT_LIAB_1YEAR'] as const) {
+    const key = field === 'SHORT_LOAN' ? 'shortLoan' : 'currentPortionDebt';
+    const other = field === 'SHORT_LOAN' ? 'currentPortionDebt' : 'shortLoan';
+    const samples: CompanyIndustrySnapshot['samples'] = codes.map((code, index) => ({
+      code,
+      name: `企业${index}`,
+      noticeDate: null,
+      values: Object.fromEntries(
+        industryMetricKeys.map((metric) => [metric, null])
+      ) as CompanyIndustrySnapshot['samples'][number]['values'],
+      chartValues: industryChartValues(
+        {},
+        {
+          SHORT_LOAN: index * 10,
+          NONCURRENT_LIAB_1YEAR: index * 5,
+          ...(index === 1 ? { [field]: null } : {}),
+        },
+        {}
+      ),
+    }));
+    const metrics = aggregateIndustryCharts(samples, targetCode);
+    assert.equal(metrics[key].count, 4);
+    assert.equal(metrics[key].missing, 1);
+    assert.equal(metrics[key].mean, null);
+    assert.equal(metrics.shortDebt.count, 4);
+    assert.equal(metrics.shortDebt.mean, null);
+    assert.equal(metrics[other].count, 5);
+    assert.equal(metrics[other].mean, field === 'SHORT_LOAN' ? 15 : 30);
+    assert.equal(metrics[key].company, 0);
+    assert.equal(metrics.shortDebt.company, 0);
+  }
+});
+
 test('industry chart retrieval joins the complete same-year cohort and records statement receipts', async () => {
   const dependencies = fixture((_report, result) => result.data.reverse());
   const snapshot = await retrieveIndustrySnapshot(targetCode, period, dependencies);
@@ -159,6 +200,10 @@ test('industry chart retrieval joins the complete same-year cohort and records s
   assert.equal(snapshot.chartMetrics!.netMargin!.company, 10);
   assert.equal(snapshot.chartMetrics!.parentNetMargin!.company, 9);
   assert.equal(snapshot.chartMetrics!.shortDebt!.mean, 45);
+  assert.equal(snapshot.chartMetrics!.shortLoan!.mean, 30);
+  assert.equal(snapshot.chartMetrics!.currentPortionDebt!.mean, 15);
+  assert.equal(snapshot.chartMetrics!.shortLoan!.company, 0);
+  assert.equal(snapshot.chartMetrics!.currentPortionDebt!.company, 0);
   assert.equal(snapshot.chartMetrics!.netProfit!.count, 5);
   assert.equal(
     snapshot.samples.find((sample) => sample.code === targetCode)!.chartValues!.cash,
@@ -170,6 +215,23 @@ test('industry chart retrieval joins the complete same-year cohort and records s
   );
   assert.equal(dependencies.receipts.length, 5);
   assert.equal(dependencies.receipts.at(-1)!.report, 'RPT_DMSK_FN_INCOME');
+});
+
+test('same-year balance retrieval preserves a missing component without replacing it from the sum', async () => {
+  const dependencies = fixture((report, result) => {
+    if (report === 'RPT_DMSK_FN_BALANCE') result.data[1]!.SHORT_LOAN = null;
+  });
+  const snapshot = await retrieveIndustrySnapshot(targetCode, period, dependencies);
+  const peer = snapshot.samples.find((sample) => sample.code === codes[1])!;
+  assert.equal(peer.chartValues!.shortLoan, null);
+  assert.equal(peer.chartValues!.currentPortionDebt, 5);
+  assert.equal(peer.chartValues!.shortDebt, null);
+  assert.equal(snapshot.chartMetrics!.shortLoan!.count, 4);
+  assert.equal(snapshot.chartMetrics!.shortLoan!.mean, null);
+  assert.equal(snapshot.chartMetrics!.shortDebt!.mean, null);
+  assert.equal(snapshot.chartMetrics!.currentPortionDebt!.mean, 15);
+  assert.equal(snapshot.chartMetrics!.cash!.count, 5);
+  assert.equal(dependencies.receipts.length, 5);
 });
 
 test('optional income failure never substitutes attributable profit or blocks existing industry metrics', async () => {
@@ -193,6 +255,8 @@ test('optional income failure never substitutes attributable profit or blocks ex
     assert.equal(snapshot.chartMetrics![key]!.missing, 5);
   }
   assert.equal(snapshot.chartMetrics!.cash!.mean, 203);
+  assert.equal(snapshot.chartMetrics!.shortLoan!.mean, 30);
+  assert.equal(snapshot.chartMetrics!.currentPortionDebt!.mean, 15);
   assert.equal(snapshot.chartMetrics!.ocf!.mean, 83);
   assert.ok(snapshot.warnings.some((warning) => warning.includes('利润表图表参照')));
   assert.equal(snapshot.sources.length, 4);
@@ -238,6 +302,8 @@ test('failed core balance retrieval retains independent income charts and the or
   assert.equal(snapshot.metrics.assetLiabilityRatio.mean, null);
   assert.equal(snapshot.chartMetrics!.cash!.mean, null);
   assert.equal(snapshot.chartMetrics!.shortDebt!.mean, null);
+  assert.equal(snapshot.chartMetrics!.shortLoan!.mean, null);
+  assert.equal(snapshot.chartMetrics!.currentPortionDebt!.mean, null);
   assert.equal(snapshot.chartMetrics!.netProfit!.mean, 20);
   assert.equal(snapshot.chartMetrics!.ocf!.mean, 83);
 });
