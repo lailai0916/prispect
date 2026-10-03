@@ -80,6 +80,30 @@ async function headerControlsFit(page, name) {
   }
   check(`${name}: visible header controls remain inside the viewport`);
 }
+async function headlineFits(page, name) {
+  const lines = await page.locator('.showcase-title-line').evaluateAll((elements) =>
+    elements.map((element) => {
+      const line = element.getBoundingClientRect();
+      const mask = element.parentElement.getBoundingClientRect();
+      return { text: element.textContent, lineWidth: line.width, maskWidth: mask.width };
+    })
+  );
+  for (const line of lines)
+    assert.ok(
+      line.lineWidth <= line.maskWidth + 2,
+      `${name} clips its headline: ${JSON.stringify(line)}`
+    );
+  check(`${name}: complete headline fits its animation masks`);
+}
+async function submitLabelFits(page, name) {
+  const measured = await page.locator('.showcase-search .start-submit > span').evaluate((label) => {
+    const range = document.createRange();
+    range.selectNodeContents(label);
+    return { text: label.textContent, lines: range.getClientRects().length };
+  });
+  assert.equal(measured.lines, 1, `${name} wraps its submit label: ${JSON.stringify(measured)}`);
+  check(`${name}: company query submit label remains on one line`);
+}
 async function capture(page, name) {
   const filename = `${name}.png`;
   await page.screenshot({
@@ -188,6 +212,12 @@ async function openContext({
     );
   });
   await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() =>
+    Array.from(document.querySelectorAll('.showcase-letter')).every((letter) => {
+      const matrix = new DOMMatrixReadOnly(getComputedStyle(letter).transform);
+      return Math.abs(matrix.m42) < 0.01 && matrix.m22 > 0.9999;
+    })
+  );
   return { page, context };
 }
 try {
@@ -212,6 +242,8 @@ try {
   check('Real guest session and enabled Lite company entry');
   await noOverflow(page, 'desktop Lite');
   await headerControlsFit(page, 'desktop Lite');
+  await headlineFits(page, 'desktop Lite');
+  await submitLabelFits(page, 'desktop Lite');
   await capture(page, 'lite-desktop-zh-light');
   const input = page.locator('.showcase-search textarea');
   await input.evaluate((element) =>
@@ -303,6 +335,8 @@ try {
   assert.equal(await mobile.page.locator('html').getAttribute('data-theme'), 'dark');
   await noOverflow(mobile.page, 'mobile English dark');
   await headerControlsFit(mobile.page, 'mobile English dark');
+  await headlineFits(mobile.page, 'mobile English dark');
+  await submitLabelFits(mobile.page, 'mobile English dark');
   await capture(mobile.page, 'lite-mobile-en-dark');
   await mobile.page.locator('.showcase-menu-trigger').click();
   await mobile.page.getByRole('dialog', { name: 'Explore Prispect', exact: true }).waitFor();
@@ -320,9 +354,19 @@ try {
     true
   );
   await noOverflow(reduced.page, 'reduced-motion mobile');
+  await headlineFits(reduced.page, 'reduced-motion mobile');
+  await submitLabelFits(reduced.page, 'reduced-motion mobile');
   await capture(reduced.page, 'lite-mobile-zh-reduced-motion');
   check('375px reduced-motion entry remains visible and editable');
   await reduced.context.close();
+  const englishDesktop = await openContext({ locale: 'en' });
+  await noOverflow(englishDesktop.page, 'desktop English Lite');
+  await headerControlsFit(englishDesktop.page, 'desktop English Lite');
+  await headlineFits(englishDesktop.page, 'desktop English Lite');
+  await submitLabelFits(englishDesktop.page, 'desktop English Lite');
+  await capture(englishDesktop.page, 'lite-desktop-en-light');
+  check('1440px English entry retains the complete canonical headline');
+  await englishDesktop.context.close();
   const narrow = await openContext({
     locale: 'en',
     width: 320,
@@ -331,6 +375,8 @@ try {
   });
   await noOverflow(narrow.page, '320px English Lite');
   await headerControlsFit(narrow.page, '320px English Lite');
+  await headlineFits(narrow.page, '320px English Lite');
+  await submitLabelFits(narrow.page, '320px English Lite');
   await capture(narrow.page, 'lite-320-en-light');
   const narrowTrigger = narrow.page.locator('.showcase-menu-trigger');
   await narrowTrigger.focus();

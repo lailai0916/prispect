@@ -2,7 +2,13 @@
 
 本次发布分支是 `lite-release`，直接基于线上 `896e079f5c12e9a38a086855f8c7513172a20dce`。其中 `b2eda30` 是 Lite 初版，后续提交补上动效复位、章节阅读、失败状态和窄屏细节。Pro 保留恢复后的原专业布局。
 
-用户已经授权部署。当前云环境网络设置已开放，但命令执行器创建网络 socket 仍返回 `EPERM`；GitHub 写入工具被会话的 `never` 审批策略拒绝。尚未推送此分支，尚未部署。它是执行环境阻塞，不是等待用户再次批准。
+2026-10-04 执行环境恢复网络与 socket 能力后，`80be65c2ec47637810746f24e2d27a25f2668b4f` 已成功推送 main 并正式发布。此前的 `EPERM` 与 GitHub 工具写入限制是旧环境阻塞，现已通过具备权限的正常 Git 推送完成发布，无须用户再次确认授权。
+
+- [CI 37144654321](https://github.com/lailai0916/prispect/actions/runs/37144654321)：success。
+- [Deploy 37144944880](https://github.com/lailai0916/prispect/actions/runs/37144944880)：success。
+- 严格 HTTPS `https://prispect.com/api/health`：200、`{"ok":true}`；`X-Prispect-Release` 精确匹配该提交，`X-Prispect-Storage: healthy`。
+
+后续浏览器实测修补了桌面及 320px 英文标题裁切和中文按钮换行，并扩充了 CI 几何检查。当前线上完整 SHA 以健康接口的 `X-Prispect-Release` 为准；发布始终由同一精确提交的 main CI 成功触发。
 
 ## 在具备网络与 GitHub 写入能力的工作区发布
 
@@ -31,6 +37,6 @@ git push origin lite-release-preview:main
 
 ## 验证范围
 
-本地前端构建、严格前端类型检查、相关纯逻辑与 Lite SSR 回归、研究记录和修改文件格式检查已完成。完整检查仍被本地既有缺失的 `cheerio` 依赖阻塞；CI 使用锁文件执行 `npm ci` 后才运行完整检查。
+按原锁文件重新安装依赖后，完整 `npm run check` 通过：类型检查、研究记录、1005 项测试、构建和全仓格式。完整开发测试需 Node 22.15+，生产运行的最低版本保持 Node 22.12。
 
-当前执行器还禁止浏览器启动和本地预览服务监听。新增 CI 脚本会产出八张入口截图与 `receipt.json`，但目前尚无其运行结果。视觉验收记录在 [design-qa.md](../design-qa.md)，结果仍为 `blocked`。结果页、同一记录的版本切换和真实模型回答需要后续实际运行验收；不能用入口截图或代码检查代替。
+真实入口浏览器验收修正后通过 35 项检查和九张截图。另以真实公开来源完成一次松原安全 2025 研究，核对精确金额、来源、章节、窄屏，以及同一记录切换不创建研究或追加采集。两个走查均使用独立临时访客数据；没有触碰生产记录，没有财务假数据。视觉比较与修补证据见 [design-qa.md](../design-qa.md)。没有配置或调用在线模型，不能用入口或结果阅读验收代替真实模型回答验证。

@@ -4,57 +4,63 @@ Date: 2026-10-04 (Asia/Shanghai).
 
 **Findings**
 
-- Blocking evidence gap: there is no browser-rendered implementation capture for this change. Chromium exits with `setsockopt: Operation not permitted` in crashpad. Its supported `--disable-crashpad-for-testing` flag gets past that stage, but startup then fails at `content/browser/sandbox_host_linux.cc:41` because `shutdown` returns `EPERM`. A direct Node HTTP preview-server diagnostic also returns `listen EPERM` for `127.0.0.1`. No UI mismatch is inferred from these environment errors.
-- Visual fidelity, responsive layout, motion behavior, primary interactions and browser console errors remain unverified. Source inspection and successful code checks cannot replace a rendered comparison.
+- [P2, resolved] The English headline was clipped after its entrance completed: the 1440px line measured 1041.625px against a 1020px mask, and the 320px line measured 279.06px against a 265px mask. Reduce the desktop English maximum from 112px to 108px and the mobile minimum from 30px to 28px. Post-fix browser measurements and screenshots retain the complete canonical headline.
+- [P2, resolved] The Chinese query action wrapped at 375px. Let its width follow its content, keep the label on one line and preserve the arrow width. The post-fix Chinese reduced-motion capture and text-range assertion confirm a single line.
+- [P3, resolved] The first mobile capture caught GSAP letters during entrance. The harness now waits for completed letter transforms before capture, rather than using description opacity alone as an entrance-ready signal.
+- No open P0/P1/P2 issue was found in the inspected views. This is a scoped visual and interaction review, not a pixel-identical clone verdict or a live-model acceptance result.
 
 **Comparison target and evidence**
 
 - Source visual truth path: `/workspace/generated_images/exec-b1e23036-727c-4556-9fc6-36d59c0b3f17.png`, the selected second monochrome option. The source was opened and its dimensions checked.
-- Source pixel dimensions: 1487 × 1058. Intended implementation CSS viewport: 1440 × 1024, with intended `deviceScaleFactor: 1`.
+- Source pixel dimensions: 1487 × 1058. Actual desktop implementation CSS viewport: 1440 × 1024, `deviceScaleFactor: 1`, screenshot pixels 1440 × 1024.
 - Implementation: Lite root `/`, followed by the separate saved-company result `/company?run=…&experience=lite`. Pro retains `/query` and the existing `/company` report and seven F destinations.
-- Implementation screenshot path: unavailable; no screenshot was captured. Implementation pixel dimensions, actual CSS viewport and actual device density: unverified.
-- Intended initial comparison state: Chinese, light monochrome theme, Lite homepage at page top, navigation closed, no submitted company query. Source authentication state is unspecified; an implementation visitor state must be documented when capture becomes available.
-- Density normalization: not performed. A later comparison must normalize the 1487 × 1058 source and rendered 1440 × 1024 viewport to a common crop/scale before judging fidelity; those dimensions are not already identical.
-- Full-view comparison evidence: unavailable; no combined source/implementation comparison input exists.
-- Focused region comparison evidence: unavailable for the same capture blocker. Header, giant headline, query controls, paper sculpture and first-fold proportions require focused inspection once a rendered capture exists.
+- Actual application: `http://127.0.0.1:4338`, real production build, fresh signed browser visitor, Chinese/light at page top, navigation closed and no submitted company query. The source authentication state is unspecified.
+- Implementation capture: `output/browser-qa/lite-desktop-zh-light.png`. Additional actual captures cover English desktop, 390px English dark, 375px Chinese reduced motion, 320px English light, menus, the historical source dialog and the restored Pro query.
+- Density normalization: the source is scaled/cropped to the implementation's 1440 × 1024 frame before side-by-side comparison. Original source dimensions are retained; no claim that the original canvases were identical.
+- Full-view comparison input: `output/browser-qa/source-and-implementation-desktop.png`.
+- Focused comparison inputs: `output/browser-qa/compare-header.png`, `compare-headline.png`, `compare-query.png` and `compare-paper.png`. Both the full composition and focused regions were opened and inspected.
+- These are local ignored QA artifacts. CI separately uploads its own entry screenshots and receipt; a successful assertion does not replace visual inspection.
 
 **Required fidelity surfaces**
 
-| Surface                          | Current result                                                                                                               |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Fonts and typography             | Unverified: font rendering, weight, size, wrapping, line height and hierarchy require a rendered capture.                    |
-| Spacing and layout rhythm        | Unverified: region proportions, first-fold composition, margins, alignment and overflow have not been measured in a browser. |
-| Colors and tokens                | Unverified: rendered monochrome palette, contrast, dark theme and semantic states have not been compared.                    |
-| Image quality and asset fidelity | Unverified: actual crop, scale, masking, sharpness and paper treatment have not been compared with the source.               |
-| Copy and app content             | Unverified visually: headline, labels, clipping and state copy have not been inspected in the rendered application.          |
+| Surface                          | Current result                                                                                                                                                                                                                     |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fonts and typography             | Inspected native display-font rendering, giant Chinese hierarchy and body text. English mask clipping is fixed and checked at 1440px and 320px. Native input remains readable.                                                     |
+| Spacing and layout rhythm        | Inspected full composition and header/query crops, desktop and narrow widths. Genuine year/sample/account controls require more space than the concept; the implementation is deliberately less dense. No inspected page overflow. |
+| Colors and tokens                | Inspected neutral light and dark states, query controls, menu and source chapter. The page retains the selected black/white direction; the source chapter uses a dark reading surface.                                             |
+| Image quality and asset fidelity | Inspected generated grayscale paper shape, responsive crop and historical-source dialog. The sculpture adapts the source direction rather than reproducing every drawn line; actual financial originals use retained crops.        |
+| Copy and app content             | Inspected the exact canonical bilingual headline, complete labels, annual selection, historical-example attribution, real result amounts and missing-model state. No fabricated query result substitutes for source data.          |
+
+Intentional adaptations: preserve shared branding, language/theme/account controls, Lite/Pro switching, annual selection, editable sample drafting and the unified assistant. The concept's brush mark, orbit line and bottom mountains are not reproduced; the paper composition and headline are less dense to accommodate functional controls. This is an adaptation of the selected monochrome direction, not exact pixel fidelity.
 
 **Code checks, separate from visual QA**
 
-- The restored-Pro release frontend build and strict frontend entry type check passed. Eight relevant pure test files passed, and the new Lite SSR regressions cover unmatched company names, paused legacy markets and actual cross-owner cache isolation. Research-record validation passed. These do not establish browser behavior or fidelity.
-- Full type checking remains blocked by the existing missing `cheerio@1.1.2` dependency and its transitive packages; the exact packages are absent from the local offline cache.
-- The latest source-based polish covers motion reset/cleanup, layout-trigger refresh, chapter paging and deep links, acquired-source access, failure recovery and narrow-screen control names. These are implementation changes, not findings from a rendered comparison. Browser CI acceptance is prepared for eight entry-flow screenshots and a receipt, but has not run. No production deployment, real-provider verification or current browser acceptance is claimed here.
+- After the execution environment regained sockets/network, an independent install from the unchanged lockfile succeeded. Full `npm run check` passed: types, research manifest, 1005 tests, build and whole-repository formatting. Development tests use Node 22.15+; the packaged service retains its Node 22.12 runtime minimum.
+- Post-fix build and browser entry acceptance passed 35 checks with nine screenshots. `output/browser-qa/receipt.json` records viewport, locale, theme and reduced motion, with zero console/page/network errors or research writes. The exact pre-existing telemetry script is served inertly in the test and recorded as an explicit exclusion; other outgoing source/model requests remain forbidden.
+- A separate real local acquisition of 松原安全 / 300893 / 2025 used genuine public responses, no financial fixtures and no configured model. Its four annual amounts match the saved snapshot exactly, seven source links remain inspectable, and four chapter anchors plus local profit-basis switching work. Same-owning-run Lite → cached Pro → Lite produced no new research POST, outbound source call or context revision. The 320px result and figures show no page overflow; page/console errors are zero. Evidence: `output/browser-qa/lite-results/receipt.json` and seven result captures.
+- `80be65c` passed CI 37144654321 and Deploy 37144944880. Public strict-HTTPS health returned 200 and the exact release header, with healthy storage. Later frontend fixes use the same CI-gated deployment path; online model/assistant answers remain outside this run.
 
 **Open Questions**
 
-- Rendered captures are required before deciding whether any source differences are intentional product adaptations or actionable design drift.
+- Live model answers, other browser engines and all hidden legacy flows were not exercised. Their absence is not inferred to be a visual defect or claimed as acceptance.
 
 **Comparison history**
 
-This change has zero completed visual comparison iterations. Browser and preview diagnostics are environment troubleshooting, not design-QA iterations. The prior workspace QA record below concerns earlier work and is not evidence for this Lite/Pro change.
+Two actual visual iterations were completed. The initial captures preserved the monochrome direction and exposed English clipping and the narrow Chinese action wrap; the enhanced geometry assertions reproduced those failures. After the CSS changes, a fresh production build and nine captures passed the geometry checks, and the corrected English/Chinese states were inspected. `before-fix-desktop-en-headline.png` preserves the clipping evidence. The prior workspace record below concerns earlier work only.
 
 **Implementation Checklist**
 
-1. In an execution surface that permits browser startup and local preview, open the actual application and capture the intended viewport and state.
-2. Normalize density and crop, then put the source and implementation together in one comparison input. Compare full view and focused regions across all five required surfaces.
-3. Capture desktop/narrow, Chinese/English, light/dark and reduced-motion states; verify native input, query submission, source access, menus and assistant follow-ups.
-4. Switch Lite/Pro on the same saved run and verify that research creation and source/model call counts do not change. Inspect console errors and failure states.
-5. Record any P0/P1/P2 findings, fix them, capture again and retain the post-fix comparison evidence before marking QA passed.
+1. Actual browser captures and source density normalization: completed.
+2. Full and focused comparison across all five surfaces: completed with documented adaptations.
+3. Desktop/narrow, bilingual, light/dark, reduced-motion and keyboard entry review: completed.
+4. Genuine result reading, exact annual figures, source links and same-run Lite/Pro call-count review: completed without model calls.
+5. P2 fixes and post-fix captures: completed. Live model/assistant execution remains untested.
 
 **Follow-up Polish**
 
-No P3 refinements are assigned before a rendered comparison.
+Further motion changes should preserve the verified editable input, native scrolling, reduced-motion view and exact source/result semantics. No additional P3 change is required for this release.
 
-final result: blocked
+final result: passed
 
 <details>
 <summary>Historical workspace QA record — previous work only</summary>
