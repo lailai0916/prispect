@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   CornerDownLeft,
   LoaderCircle,
-  MessageCircle,
   Plus,
   RefreshCw,
   Square,
@@ -50,13 +49,7 @@ function readableSource(url: string, page?: number) {
   }
 }
 
-export function CompanyAssistant({
-  route,
-  experience,
-}: {
-  route: string;
-  experience: 'lite' | 'pro';
-}) {
+export function CompanyAssistant({ route }: { route: string }) {
   const { user, t, locale, navigate } = useApp();
   const { company, publish } = useContext(CompanyAssistantContext);
   const { records } = useCompanyRecords();
@@ -384,7 +377,6 @@ export function CompanyAssistant({
         id={panelId}
         ref={panel}
         className="company-assistant-panel"
-        data-experience={experience}
         role="dialog"
         aria-modal="false"
         aria-labelledby={`${panelId}-title`}
@@ -400,7 +392,6 @@ export function CompanyAssistant({
       >
         <header className="company-assistant-header">
           <div>
-            {experience === 'pro' && <MessageCircle size={18} aria-hidden="true" />}
             <h2 id={`${panelId}-title`}>{t('析光助手', 'Prispect assistant')}</h2>
           </div>
           <div className="company-assistant-header-actions">
@@ -439,11 +430,9 @@ export function CompanyAssistant({
         >
           {!messages.length && (
             <div className="company-assistant-empty">
-              {experience === 'lite' && (
-                <div className="company-assistant-welcome">
-                  <p>{t('你好呀，想一起看看什么？', 'Hi! What shall we look into?')}</p>
-                </div>
-              )}
+              <div className="company-assistant-welcome">
+                <p>{t('你好呀，想一起看看什么？', 'Hi! What shall we look into?')}</p>
+              </div>
               <div className="company-assistant-suggestions">
                 {suggestions.map((question) => (
                   <button type="button" key={question} onClick={() => fillSuggestion(question)}>
@@ -602,8 +591,7 @@ export function CompanyAssistant({
         type="button"
         ref={trigger}
         className="company-assistant-trigger"
-        data-experience={experience}
-        data-idle={experience === 'lite' && !open}
+        data-idle={!open}
         data-page-visible={pageVisible}
         aria-label={
           open
@@ -614,23 +602,15 @@ export function CompanyAssistant({
         aria-controls={panelId}
         onClick={() => (open ? close() : setOpen(true))}
       >
-        {experience === 'lite' ? (
-          <>
-            <AssistantCharacter happy={open} />
-            {open && (
-              <span className="company-assistant-close-mark" aria-hidden="true">
-                <X size={12} />
-              </span>
-            )}
-            <span className="company-assistant-trigger-label" aria-hidden="true">
-              {open ? t('收起对话', 'Close chat') : t('问问助手', 'Ask me')}
-            </span>
-          </>
-        ) : open ? (
-          <X size={22} aria-hidden="true" />
-        ) : (
-          <MessageCircle size={23} aria-hidden="true" />
+        <AssistantCharacter happy={open} />
+        {open && (
+          <span className="company-assistant-close-mark" aria-hidden="true">
+            <X size={12} />
+          </span>
         )}
+        <span className="company-assistant-trigger-label" aria-hidden="true">
+          {open ? t('收起对话', 'Close chat') : t('问问助手', 'Ask me')}
+        </span>
       </button>
     </>
   );
