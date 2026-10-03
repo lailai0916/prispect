@@ -12,7 +12,7 @@ export function ThemeControl() {
     theme === 'dark'
       ? t('切换到浅色', 'Switch to light theme')
       : t('切换到深色', 'Switch to dark theme');
-  const Icon = theme === 'dark' ? Sun : Moon;
+  const Icon = theme === 'dark' ? Moon : Sun;
   useLayoutEffect(() => applyTheme(theme), [theme]);
   useLayoutEffect(() => {
     const query = window.matchMedia('(prefers-color-scheme: dark)');
