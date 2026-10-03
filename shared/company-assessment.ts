@@ -8,7 +8,6 @@ import type {
 } from './company-workspace.js';
 import { contextAmountFields } from './company-workspace.js';
 import { contextFen, contextYuan, contextFieldLabels } from './company-analysis.js';
-import { financialMethodNote } from './company-market.js';
 
 export type AssessmentText = readonly [string, string];
 export type AssessmentDimensionId =
@@ -84,7 +83,6 @@ export interface CompanyAssessment {
   grade: 'A' | 'B' | 'C' | 'D' | 'NR';
   score: number | null;
   ratingConstraints?: AssessmentText[];
-  methodNote?: AssessmentText;
   methodologyVersion: 'financial-screen-v1';
   dimensions: AssessmentDimension[];
   metrics: AssessmentMetric[];
@@ -400,12 +398,6 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
     !!run.informationGap ||
     (!!run.identity && !['sse', 'szse'].includes(run.identity.exchange)) ||
     !!snapshot?.warnings.some((warning) => warning.includes('来源主体或机构类型存在冲突'));
-  const methodNote = financialMethodNote(
-    sameEntity ? snapshot?.organizationType : undefined,
-    sameEntity ? snapshot?.profile.industry : undefined,
-    run.identity?.shortName,
-    run.agent?.financialContext?.identity.organizationType || undefined
-  );
   const evidence: AssessmentEvidence[] = [];
   const metrics: AssessmentMetric[] = [];
   const gaps: AssessmentText[] = [];
@@ -1314,7 +1306,6 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
     ...resolveAssessmentRating(score, core),
     score,
     methodologyVersion: ASSESSMENT_METHODOLOGY_VERSION,
-    ...(methodNote ? { methodNote } : {}),
     dimensions,
     metrics,
     evidence,
@@ -1368,7 +1359,6 @@ export function buildAssessmentPublicPayload(
     },
     grade: assessment.grade,
     ratingConstraints: assessment.ratingConstraints,
-    methodNote: assessment.methodNote,
     score: assessment.score,
     methodologyVersion: assessment.methodologyVersion,
     methodology: ASSESSMENT_METHODOLOGY,

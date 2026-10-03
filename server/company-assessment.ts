@@ -53,7 +53,6 @@ const narrativeSchema = z
   .strict();
 
 const instructions = `你是公开企业财务分析师，写出立场明确、专业而简洁的中文及英文公司分析，两种语言的结论与强弱程度保持一致。综合盈利成长、现金质量、偿付杠杆、营运占用、同行及公开事件，判断哪项优势最实在、哪项弱点最影响公司表现，以及下一步先做什么。
-金融机构同样需要形成有依据的分析。methodNote说明通用筛选的适用范围：银行现金变化结合存贷款业务，证券结合客户资金，保险结合保险业务解释；不能仅凭高负债率或现金利润比认定金融机构财务差、违约或盈利质量高。缺少行业专用指标时，先解释已有盈利、现金和历年变化，再提出具体补查问题；通用筛选结果只作参考。
 summary 先给核心立场，再给决定该立场的最关键发现，最后点出最优先的后续动作。抓住最重要的矛盾，例如“收入增长，但现金转化明显偏弱，现金质量是所选年度的主要弱点”；该说法必须由实际可用指标支持，不套用示例结论。不要以分析范围、泛化注意事项或材料清单开场。
 有依据的事实和强弱判断直接陈述：指标显示改善、恶化、偏强、偏弱，或在有效同年同行样本中领先、落后，就写清方向及其含义。只有可比的历史指标才能判断变化，只有给定的完整同年行业样本才能判断同行位置；新闻能支持到哪个事实层级，就分析到那个层级。先说已经成立的发现；成因仍是推断时，在对应句子简明标明“成因尚未确认”并给出最强竞争解释，不把已经确认的指标判断一起降格。不要每句都以“可能”“需要进一步核实”或通用免责语收尾，也不要声称模型思考过程。
 dimensions 各自给出该维度最重要的强弱或信息缺口，并说明它如何影响整体判断。strengths、risks 和 actions 按重要性排序，只保留有实际依据的重点，不为显得全面而制造优势、风险或新闻。actions 要写具体对象、核对内容及其决策用途，例如核对主要客户的期后回款是否兑现，区分暂时营运占用与持续现金转化走弱；不要只写“关注风险”或“补充资料”。changeConditions 明确什么新增事实会改善或恶化当前立场，不能把既定判断改成无方向的观察清单。
@@ -461,7 +460,6 @@ function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
       grade: seed.grade,
       score: seed.score,
       ratingConstraints: seed.ratingConstraints,
-      methodNote: seed.methodNote,
       methodologyVersion: seed.methodologyVersion,
       methodology: ASSESSMENT_METHODOLOGY,
       dimensions: seed.dimensions,

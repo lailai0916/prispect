@@ -15,7 +15,6 @@ import {
 } from './company-assessment.js';
 import type { PublicSignalCoverage } from './company-workspace.js';
 import { contextFen } from './company-analysis.js';
-import { financialMethodNote } from './company-market.js';
 
 export type CompanyResearchStageId = 'sources' | 'investigate' | 'synthesize' | 'review';
 export type CompanyResearchViewState =
@@ -632,40 +631,6 @@ function reportHeadline(
         : ['全年合并净利润为零', 'Annual consolidated net profit is zero'],
       [profit]
     );
-  if (assessment.methodNote) {
-    if (profit && cash)
-      return judgment(
-        cash.value > 0n
-          ? ['全年盈利，经营活动净流入', 'Annual profit with a net operating cash inflow']
-          : ['全年盈利，经营现金净额为零', 'Annual profit with zero net operating cash'],
-        [profit, cash]
-      );
-    if (profit)
-      return judgment(
-        ['全年盈利，经营现金资料待核对', 'Annual profit; operating cash awaits verification'],
-        [profit]
-      );
-    if (cash)
-      return judgment(
-        cash.value > 0n
-          ? [
-              '经营活动净流入，利润资料待核对',
-              'Net operating cash inflow; profit awaits verification',
-            ]
-          : [
-              '经营现金净额为零，利润资料待核对',
-              'Zero net operating cash; profit awaits verification',
-            ],
-        [cash]
-      );
-    return judgment(
-      [
-        '年度利润与现金待核对，先查看已取得资料',
-        'Annual profit and cash await verification; inspect the available sources',
-      ],
-      [revenue, assets, liabilities]
-    );
-  }
   const occupationRising =
     !!occupationChange &&
     !!revenue &&
@@ -852,25 +817,6 @@ const nextChecks: Record<string, AssessmentText> = {
   ],
 };
 
-const financialInstitutionChecks: Record<string, AssessmentText> = {
-  profitability: [
-    '核对利息、手续费、投资及保险业务对年度利润变化的贡献。',
-    'Check how interest, fees, investments and insurance operations contributed to annual profit changes.',
-  ],
-  cash: [
-    '核对存贷款、客户资金或保险业务对现金流的影响，结合流动性指标解释。',
-    'Check the cash-flow effects of deposits, lending, client funds or insurance operations together with liquidity measures.',
-  ],
-  solvency: [
-    '补查适用的资本充足、流动性及监管偿付能力指标与原件依据。',
-    'Obtain the applicable capital-adequacy, liquidity and regulatory solvency measures and their original sources.',
-  ],
-  workingCapital: [
-    '核对金融资产分类、减值及客户资金范围，不用普通存货口径替代。',
-    'Review financial-asset classifications, impairment and client-fund scope rather than substituting ordinary inventory measures.',
-  ],
-};
-
 function provisionalSummary(
   assessment: CompanyAssessment,
   provisional: NonNullable<CompanyResearchBriefView['provisionalRating']>
@@ -916,14 +862,6 @@ export function deriveCompanyResearchBrief(run: CompanyResearchRun): CompanyRese
   const mode = reportMode(assessment);
   const snapshot = scopeState(run);
   const warnings: AssessmentText[] = [];
-  const methodNote =
-    assessment?.methodNote ||
-    financialMethodNote(
-      run.context?.organizationType,
-      run.context?.profile.industry,
-      run.identity?.shortName
-    );
-  if (methodNote) warnings.push(methodNote);
   if (snapshot === 'previous')
     warnings.push([
       '这份分析对应上一份资料快照，未采用刚更新的资料。',
@@ -1026,15 +964,7 @@ export function deriveCompanyResearchBrief(run: CompanyResearchRun): CompanyRese
       : assessment
         ? (attention.length ? attention : core)
             .slice(0, 3)
-            .map((dimension) =>
-              dimensionJudgment(
-                dimension,
-                assessment,
-                assessment.methodNote
-                  ? financialInstitutionChecks[dimension.id]
-                  : nextChecks[dimension.id]
-              )
-            )
+            .map((dimension) => dimensionJudgment(dimension, assessment, nextChecks[dimension.id]))
         : [];
   const headline = assessment
     ? reportHeadline(assessment, provisional)

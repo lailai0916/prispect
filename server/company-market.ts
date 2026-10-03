@@ -4,7 +4,6 @@ import {
   COMPANY_MARKET_WARNINGS as W,
   FINANCIAL_FIELD_SOURCES,
   financialStatementTables,
-  financialMethodNote,
   type CompanyFinancialContext,
   type CompanyFinancialMetric,
   type CompanyFinancialSource,
@@ -327,8 +326,6 @@ export async function retrieveCompanyFinancialContext(
     organizationCode: [...organizations][0] || null,
     organizationType: [...industries][0] || null,
   };
-  const methodNote = financialMethodNote(context.identity.organizationType || undefined);
-  if (methodNote) context.warnings.push(methodNote[0]);
   const allYears = [...new Set(results.flatMap((result) => [...result.rows.keys()]))]
     .sort((a, b) => b - a)
     .slice(0, COMPANY_MARKET_LIMITS.years)

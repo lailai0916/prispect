@@ -18,15 +18,6 @@ export function financialStatementTables(organizationType = '') {
   };
 }
 
-export function financialMethodNote(...descriptions: (string | null | undefined)[]) {
-  return /银行|证券|保险|信托|多元金融/.test(descriptions.filter(Boolean).join(' '))
-    ? ([
-        '金融机构：展示披露金额与计算比例，通用筛选仅作参考；存贷款、客户资金与保险业务需结合行业口径解释。',
-        'Financial institution: disclosed amounts and formula-based ratios are shown; the general screen is a reference. Interpret deposits, lending, client funds and insurance operations in their industry context.',
-      ] as const)
-    : undefined;
-}
-
 /** Third-party web fields in CNY yuan; null is unavailable, never an assumed zero. */
 export const FINANCIAL_FIELD_SOURCES = {
   revenue: { sourceId: 'income', field: 'TOTAL_OPERATE_INCOME' },

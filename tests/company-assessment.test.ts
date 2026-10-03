@@ -338,18 +338,22 @@ test('large integer-cent amounts retain exact accuracy and cannot change a thres
   assert.equal(dimension(result, 'cash').score, 60);
 });
 
-test('financial institutions retain amounts and reference screens while unsupported markets remain paused', () => {
+test('financial institutions use the same metrics and grading while unsupported markets remain paused', () => {
   const run = fixture();
   const baseline = deriveCompanyAssessment(run);
   for (const industry of ['银行', '保险', '证券']) {
+    run.context!.organizationType = industry;
     run.context!.profile.industry = industry;
     const result = deriveCompanyAssessment(run);
     assert.equal(result.grade, baseline.grade);
+    assert.equal(result.score, baseline.score);
+    assert.deepEqual(result.dimensions, baseline.dimensions);
+    assert.deepEqual(result.metrics, baseline.metrics);
+    assert.deepEqual(result.gaps, baseline.gaps);
     assert.equal(metric(result, '2025-netProfit').value, '200.00');
     assert.equal(metric(result, '2025-ocf').value, '180.00');
     assert.equal(metric(result, 'cash-profit').status, 'available');
-    assert.ok(result.methodNote?.[0].includes('通用筛选仅作参考'));
-    assert.deepEqual(buildAssessmentPublicPayload(run).methodNote, result.methodNote);
+    assert.equal('methodNote' in buildAssessmentPublicPayload(run), false);
   }
   run.context!.profile.industry = '汽车零部件';
   run.identity!.exchange = 'bse';

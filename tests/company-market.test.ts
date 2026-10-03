@@ -244,7 +244,7 @@ test('financial institutions resolve their schema from income metadata without e
     assert.ok(source.requests[0]!.includes('GINCOME'));
     assert.ok(source.requests.some((url) => url.includes(`${prefix}CASHFLOW`)));
     assert.ok(source.requests.some((url) => url.includes(`${prefix}BALANCE`)));
-    assert.ok(context.warnings.some((warning) => warning.includes('通用筛选仅作参考')));
+    assert.ok(context.warnings.every((warning) => !warning.includes('通用筛选仅作参考')));
   }
 });
 

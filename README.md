@@ -18,7 +18,7 @@ Prispect (析光), operated by the Prispect team, starts from a company or a mat
 
 Current company research supports A-share issuers, and financial checks use annual consolidated CNY evidence. New US-market research is paused; account-owned historical records and retained originals remain accessible. Unsupported currencies are preserved in their original units, without exchange-rate conversion or CNY reinterpretation.
 
-Banks, securities firms and insurers are included in public financial retrieval and analysis. Income metadata selects the corresponding cash-flow and balance-sheet schemas. Available amounts, ratios and evidence remain visible; general screening results carry an industry-context note, and absent fields are not replaced with zeros. See [financial-institution support](docs/financial-institution-support-2026-10-03.md).
+Banks, securities firms and insurers are included in public financial retrieval and analysis. Income metadata selects the corresponding cash-flow and balance-sheet schemas. All supported issuers use the same metrics, thresholds, grading, report presentation and model analysis rules. Available amounts, ratios and evidence remain visible; absent fields are not replaced with zeros. See [financial-institution support](docs/financial-institution-support-2026-10-03.md).
 
 Built for the Xuejun High School “Echo · 48H Youth Creation Camp”, X-Ray direction. The original cash bridge answers a narrow financial question; the company research Agent adds broader public-data analysis. A single historical cash ratio is not an overall grade. Prispect's transparent financial screening grade is not a credit-agency rating, credit decision or investment advice. Customer demand and willingness to pay remain research assumptions.
 
