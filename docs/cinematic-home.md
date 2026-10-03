@@ -1,94 +1,109 @@
-# Cinematic homepage prototype
+# Cinematic homepage
 
-## Review boundary
+## Story and composition
 
-This is the first viewable implementation of the approved direction: unfold one
-company finding into its original evidence, calculation and unanswered questions,
-then return to the user's own research. It is a visual prototype for review, not
-a production release. Optical rendering and final motion refinement remain behind
-the prototype acceptance checkpoint.
+The anonymous homepage follows one fixed historical finding through its original
+pages, signed cash reconciliation and unresolved explanations. The composition
+changes with the material: a central inspection object, a full-page original,
+a wide cash bridge, two inquiry branches, then the existing research entry.
 
-The implementation uses existing GSAP, React, semantic DOM, SVG and CSS perspective.
-It introduces no WebGL dependency, video background or remote media request.
-Financial amounts remain fixed throughout the story, without numeric counting.
+The opening keeps the canonical product headline and direct entry action.
+Songyuan's 2025 consolidated net profit of CNY 366,373,098.93 and operating cash
+flow of CNY 26,197,123.70 establish the example. Copy describes the pages, amounts,
+adjustments and missing materials rather than repeating product slogans.
 
-## Five connected scenes
+| Chapter     | Material                                                     | Reading position |
+| ----------- | ------------------------------------------------------------ | ---------------- |
+| Discovery   | Original-report papers under a glass inspection surface      | 0.00             |
+| Sources     | Page 190, then page 191, with original row apertures         | 0.245 / 0.33     |
+| Calculation | Original rows assemble into a signed cumulative bridge       | 0.555            |
+| Inquiry     | Two untested explanations and their distinguishing materials | 0.755            |
+| Begin       | Direct action to research another company                    | 0.95             |
 
-| Scene       | Meaning                                                 | Visible object                                   |
-| ----------- | ------------------------------------------------------- | ------------------------------------------------ |
-| Discovery   | A useful finding starts an investigation.               | Historical Songyuan profit and operating cash    |
-| Sources     | Amounts retain the original and annual scope.           | Original PDF table excerpts and row references   |
-| Calculation | Disclosed adjustments reconcile profit to cash.         | Signed original-report cash bridge               |
-| Inquiry     | Reconciled amounts do not establish an operating cause. | Untested explanations and missing materials      |
-| Begin       | The next question belongs to the user.                  | The same finding and the existing research entry |
+The rendered inspection object is illustrative. It does not represent a physical
+Prispect device. Its paper textures are the retained original-report crops.
 
-`src/cinematic/CinematicLanding.tsx` owns the presentation and dialogs.
-`useStoryTimeline.ts` owns one native-scroll timeline; it does not intercept wheel,
-touch or arrow-key input. `story.ts` defines the chapter positions.
-`OpticalField.tsx` draws the decorative brand light field from the same progress,
-without a separate animation loop or per-frame React state.
+## One scroll clock
 
-## Evidence and calculation
+`src/cinematic/useStoryTimeline.ts` owns the native-scroll GSAP timeline, chapter
+navigation and active/inert semantics. It does not intercept wheel, touch or
+keyboard scrolling. An eight-viewport scroll range supplies transitions and
+reading holds; narrow screens use 7.8 viewports. Locale changes preserve the
+current position. Responsive geometry refreshes without rebuilding the pin.
 
-`landing-content.ts` reads the existing Songyuan 2025 observations and matching
-source manifest. It verifies their identity and reconciles original amounts in
-integer fen before rendering. The year, annual consolidated scope, CNY unit,
-issuer and PDF references stay attached to the example.
+The timeline emits `storyframe` events from its progress. `EvidenceSculpture.tsx`
+uses that same progress for the glass separation, page movement, source-row
+extraction, six bridge bodies, inquiry paths and retirement. It has no autonomous
+rotation, numeric counting or independent progress smoothing.
 
-The grouped CNY 217,235,539.32 independently sums 13 disclosed adjustments; it is
-not the annual report's single “Other” row. Profit, that group and the three
-working-capital adjustments reconcile to CNY 26,197,123.70 of operating cash.
-The source dialog exposes exact values, grouped components and the original PDF
-link. Crop provenance and rights are documented in `public/landing/SOURCES.md`.
+Canvas and DOM have complementary roles. The physical transition uses WebGL;
+source-reading holds use exact DOM crops, and the calculation hold uses an
+accessible SVG with DOM labels on narrow screens. Decorative paper and chart
+bodies retire during these holds so they cannot compete with readable content.
 
-This fixed historical example does not create a current assessment, risk grade or
-investment conclusion. Distinguishing materials remain not obtained. Historical
-cash does not enter current cash, future receipts or private plans.
+## Rendering and fallback
 
-## Integration and responsive behavior
+Three.js and its geometry/environment helpers load dynamically only for the
+animated homepage. Both original textures are local. The renderer uses a local
+studio environment, a thin transmitting glass surface and restrained neutral
+materials, without video, remote media, bloom or a postprocessing chain.
 
-- Anonymous `/` renders the story. Authenticated `/` retains the research workbench.
-- Entry buttons open one existing `StartInput` owner. Query routing, login
-  continuation and editable drafts retain existing product behavior.
-- The hypothetical payment-timing example remains optional in the entry dialog,
-  separate from the historical annual-report story.
+- Coalesced animation frames draw only after progress, texture or size changes.
+- Desktop pixel ratio is capped at 1.5; narrow screens are capped at 1.
+- Hidden and offscreen scenes stop drawing.
+- Leaving the route or switching to static reading releases listeners,
+  observers, animation frames, textures, geometries, materials and the renderer.
+- WebGL or texture failure retains a simple paper illustration and the complete
+  DOM story; original-source and research actions remain available.
 - Reduced motion, desktop heights at or below 560px, and mobile heights at or
-  below 750px use the complete static five-scene reading sequence.
-- Larger viewports use one pinned stage below the existing header. Inactive story
-  text and controls use `inert` and `aria-hidden`.
-- Language switches retain story position. Crossing the desktop/mobile width
-  boundary refreshes function-based geometry without rebuilding the pin.
-- Animated SVG selectors are restricted to the pinned stage. Switching to the
-  static view cannot leave transforms on its separate cash bridge.
-- Financial SVG text compensates for viewBox scaling to retain an effective 12px
-  floor. Full labels and exact amounts remain in the accessible description and
-  source dialog beside the abbreviated narrow-screen labels.
+  below 750px use the complete static reading sequence without loading Three.js.
 
-## Verification on 2026-10-03
+The material implementation follows the official
+[MeshPhysicalMaterial documentation](https://threejs.org/docs/pages/MeshPhysicalMaterial.html)
+and [WebGLRenderer documentation](https://threejs.org/docs/pages/WebGLRenderer.html).
 
-Browser checks cover 1280 × 720 desktop and 390 × 844 mobile in both languages,
-375 × 667 static reading, reduced motion, source-dialog crops and exact amounts,
-anonymous query submission through login, an isolated local account's workbench,
-documentation/back/forward cleanup, reverse scrolling, language switches and
-desktop/mobile resizing. Final transition contrast and static SVG cleanup were
-also checked. The inspected browser reported no errors or warnings.
+## Evidence boundary
 
-The local server uses a separate temporary database. These checks do not verify
-production deployment, SMTP, model providers or a real company research result.
-Type checking, research-record validation, build and formatting checks passed.
+`landing-content.ts` reads existing observations and their matching manifest.
+Issuer, annual period, consolidated basis, CNY unit and PDF identity are checked.
+The original adjustments reconcile in integer fen before presentation.
 
-The initial local test run encountered deployment-retention fixtures that require
-Linux mount/cgroup identities, plus three cancellations from an unreferenced
-deadline timer in an in-memory public-source fixture. Ubuntu also reproduced
-those cancellations. That fixture now retains a simulated transport handle until
-completion, with an independent 1-second test timeout and the original 15ms
-request deadline. Deployment safety checks remain unchanged. Ubuntu CI is the
-applicable full-suite gate; the pull request records its actual status.
+The CNY 217,235,539.32 group independently sums 13 disclosed rows; it is not the
+annual report's single “Other” row. The source dialog exposes exact bridge values,
+all 13 components, page crops and the full original PDF link. Component names
+retain their recorded shortened Chinese labels. Provenance and rights remain in
+`public/landing/SOURCES.md`.
 
-## Pending visual acceptance
+The example establishes amounts, not their operating cause. Both explanations
+remain untested and distinguishing materials remain not obtained. Historical
+operating cash does not enter current cash, future receipts or private plans.
 
-Review the full scroll sequence before selecting further optical effects.
-The next pass must preserve evidence relationships, the real research entry,
-static reading, signed figures and readable metadata while refining physical
-motion, lighting and intermediate compositions. This prototype is not the final
-visual acceptance of the requested homepage.
+## Product integration
+
+Anonymous `/` renders the story; authenticated `/` retains the research workbench.
+All entry actions open one existing `StartInput`, preserving company matching,
+editable drafts, authentication continuation and account isolation. The optional
+hypothetical payment-timing example remains separate in that entry dialog and
+returns to its collapsed state after the dialog closes.
+
+The existing application header, logo, documentation, themes, assistant and
+business routes remain shared. The narrow homepage header retains Documentation
+and Login; at 360px and below its search icon is omitted, while command-search
+keyboard access remains available. Chapter controls have at least 44px touch
+height and narrow screens show compact numbered controls with full accessible
+labels. The assistant's lower-right interaction area remains clear.
+
+## Verification
+
+Browser checks on 2026-10-03 cover desktop and narrow layouts, both languages,
+intermediate and stable frames, original crops and precise amounts, modal focus
+restoration, draft persistence, static reading, dynamic reduced-motion changes,
+route cleanup and the anonymous research-to-login continuation. The source dialog
+contains both complete crops and all 13 group components. Visible financial SVG
+text stays above the effective 12px floor on the inspected narrow viewports.
+
+The preview uses an isolated temporary database. Browser checks do not verify a
+production release, SMTP, model-provider output or a new real research report.
+The pull request records the current build and CI results. Linux deployment
+retention fixtures remain a Linux CI gate; their mount and cgroup safety checks
+are not relaxed for macOS.
