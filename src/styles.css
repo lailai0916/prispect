@@ -12,6 +12,7 @@
   background: var(--paper);
   --paper: #ffffff;
   --site-header-height: 52px;
+  --site-header-padding: 24px;
   --sidebar-surface: #f7f7f8;
   --ink: #25262b;
   --muted: #63656f;
@@ -344,7 +345,7 @@ pre {
 .site-header {
   height: var(--site-header-height);
   min-height: var(--site-header-height);
-  padding: 0 24px;
+  padding: 0 var(--site-header-padding);
   display: flex;
   align-items: center;
   gap: 28px;
@@ -393,6 +394,10 @@ pre {
   font-size: 12px;
   font-weight: 500;
   letter-spacing: -0.01em;
+}
+.brand-link {
+  display: inline-flex;
+  align-items: center;
 }
 .brand-link:hover,
 .sidebar-brand:hover {
@@ -554,7 +559,7 @@ pre {
   position: fixed;
   inset: 0 auto 0 0;
   width: var(--sidebar);
-  padding: 16px 12px 12px;
+  padding: 0 12px 12px;
   background: var(--sidebar-surface);
   border-right: 1px solid var(--line-soft);
   display: flex;
@@ -564,9 +569,11 @@ pre {
 .sidebar-brand {
   display: flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
-  margin-bottom: 22px;
+  height: var(--site-header-height);
+  min-height: var(--site-header-height);
+  padding: 0 calc(var(--site-header-padding) - 12px);
+  border-bottom: 1px solid transparent;
+  margin-bottom: 14px;
 }
 .sidebar-create {
   margin: 0 4px 18px;
@@ -1522,6 +1529,7 @@ thead th {
   :root {
     --sidebar: 0px;
     --site-header-height: 56px;
+    --site-header-padding: 18px;
   }
   .business-shell {
     display: block;
@@ -1530,7 +1538,7 @@ thead th {
   .business-shell > .site-header {
     height: var(--site-header-height);
     min-height: var(--site-header-height);
-    padding: 0 18px;
+    padding: 0 var(--site-header-padding);
     gap: 12px;
   }
   .business-shell > .site-header > .brand-link {
@@ -1736,10 +1744,13 @@ thead th {
   }
 }
 @media (max-width: 480px) {
+  :root {
+    --site-header-padding: 12px;
+  }
   .site-header,
   .business-shell > .site-header {
     gap: 8px;
-    padding: 0 12px;
+    padding: 0 var(--site-header-padding);
   }
   .site-header .brand-name > span {
     display: none;

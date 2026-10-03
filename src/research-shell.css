@@ -22,11 +22,8 @@
   min-height: 36px;
 }
 @media (min-width: 981px) and (max-height: 850px) {
-  .business-shell .workspace-sidebar {
-    padding-top: 12px;
-  }
   .business-shell .sidebar-brand {
-    margin-bottom: 12px;
+    margin-bottom: 0;
   }
   .business-shell .sidebar-create {
     margin-bottom: 10px;
