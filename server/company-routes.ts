@@ -13,7 +13,7 @@ import {
 } from './company-agent.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
-import { assertCompanyResearchSupported, assertCompanySearchSupported } from './company-sources.js';
+import { assertCompanyResearchSupported } from './company-sources.js';
 
 export interface CompanyService {
   searchCompanies: typeof searchCompanies;
@@ -310,21 +310,6 @@ export function installCompanyRoutes(
       }
       execute(run, store, true);
       res.status(202).json(structuredClone(run));
-    })
-  );
-  app.get(
-    '/api/companies/search',
-    wrap(async (req, res) => {
-      const query = z.string().trim().min(1).max(80).safeParse(req.query.q);
-      if (!query.success)
-        throw new ApiFault(400, 'INVALID_COMPANY_QUERY', '请输入公司简称或六位证券代码');
-      assertCompanySearchSupported(query.data);
-      options.auth.rateLimit(
-        `company-search:${(res.locals.auth as AuthContext).user.id}`,
-        30,
-        60_000
-      );
-      res.json(await service.searchCompanies(query.data));
     })
   );
   app.get('/api/company-runs', (_req, res) =>

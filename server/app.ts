@@ -16,6 +16,8 @@ import { seeds, WorkspaceStore } from './store.js';
 import { AuthStore, authentication, type AuthContext } from './auth.js';
 import { installDecisionRoutes } from './decision-routes.js';
 import { installCompanyRoutes, type CompanyService } from './company-routes.js';
+import { installCompanySearchRoutes } from './company-search.js';
+import type { CompanyDirectory } from '../shared/company-directory.js';
 import {
   installCompanyChallengeRoutes,
   type CompanyChallengeRouteService,
@@ -31,6 +33,7 @@ export interface AppOptions {
   dataDir?: string;
   model?: ModelConfig;
   companyService?: CompanyService;
+  companyDirectory?: CompanyDirectory | null;
   companyContextService?: CompanyContextService;
   companyChallengeService?: CompanyChallengeRouteService;
   registrationEnabled?: boolean;
@@ -396,7 +399,19 @@ export async function createApp(options: AppOptions = {}) {
       res.json(await auth.changePassword(req.body, res.locals.auth as AuthContext, req, res));
     })
   );
-  app.use('/api', authentication(auth), (_req, res, next) => {
+  app.use('/api', authentication(auth));
+  await installCompanySearchRoutes(app, {
+    root,
+    auth,
+    search: options.companyService?.searchCompanies,
+    directory:
+      options.companyDirectory === undefined
+        ? options.companyService
+          ? null
+          : undefined
+        : options.companyDirectory,
+  });
+  app.use('/api', (_req, res, next) => {
     workspaceForUser((res.locals.auth as AuthContext).user.id)
       .then(async (store) => {
         await store.cleanupUploads();
