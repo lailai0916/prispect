@@ -719,7 +719,7 @@ export function CompanyProfileView({
     capitalWan: ['注册资本（万元）', 'Registered capital (10k yuan)'],
     founded: ['成立日期', 'Founded'],
     listed: ['上市日期', 'Listed'],
-    employees: ['员工数（披露字段）', 'Employees (disclosed field)'],
+    employees: ['员工人数', 'Employees'],
     address: ['注册地址', 'Registered address'],
     business: ['主营业务', 'Business'],
     controller: ['实际控制人', 'Controller'],
@@ -729,73 +729,226 @@ export function CompanyProfileView({
     province: ['省份', 'Province'],
     description: ['企业简介', 'Profile'],
   };
+  const primaryRows: {
+    key: string;
+    label: readonly [string, string];
+    fields: string[];
+  }[] = [
+    { key: 'orgName', label: labels.orgName!, fields: ['orgName'] },
+    { key: 'creditCode', label: labels.creditCode!, fields: ['creditCode'] },
+    { key: 'legalPerson', label: labels.legalPerson!, fields: ['legalPerson'] },
+    { key: 'capitalWan', label: labels.capitalWan!, fields: ['capitalWan'] },
+    { key: 'dates', label: ['成立 / 上市', 'Founded / listed'], fields: ['founded', 'listed'] },
+    { key: 'employees', label: labels.employees!, fields: ['employees'] },
+    { key: 'controller', label: labels.controller!, fields: ['controller'] },
+    { key: 'business', label: labels.business!, fields: ['business'] },
+    { key: 'auditor', label: labels.auditor!, fields: ['auditor'] },
+  ];
+  const hasProfileValue = (key: string) =>
+    typeof snapshot.profile[key] === 'string' && snapshot.profile[key]!.trim() !== '';
+  const primaryFields = new Set(primaryRows.flatMap((row) => row.fields));
+  const visibleProfileRows = primaryRows.filter((row) => row.fields.some(hasProfileValue));
+  const moreProfileFields = [
+    ...new Set([...Object.keys(labels), ...Object.keys(snapshot.profile)]),
+  ].filter((key) => !primaryFields.has(key) && hasProfileValue(key));
+  const profileSources = snapshot.sources.filter(
+    (source) => /profile/i.test(source.id) || /资料|工商|治理/.test(source.dimension)
+  );
+  const holderSources = snapshot.sources.filter(
+    (source) => /shareholder|holder/i.test(source.id) || /股东/.test(source.dimension)
+  );
+  const holderPeriods = new Map<string, CompanyContextSnapshot['shareholders']>();
+  for (const holder of snapshot.shareholders) {
+    const rows = holderPeriods.get(holder.period) || [];
+    rows.push(holder);
+    holderPeriods.set(holder.period, rows);
+  }
+  const validPercentage = (value: number | null): value is number =>
+    typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 100;
+  const renderNews = (rows: CompanyContextSnapshot['news']) =>
+    rows.map((row, index) => (
+      <article className="company-extended-news" key={`${row.url}:${index}`}>
+        <div className="company-extended-news-meta">
+          <time>{row.date}</time>
+          <span>{[row.media, row.provider].filter(Boolean).join(' · ')}</span>
+        </div>
+        <a href={row.url} target="_blank" rel="noreferrer">
+          {row.title}
+          <ArrowUpRight size={12} aria-hidden="true" />
+        </a>
+        {row.digest && <p>{row.digest}</p>}
+      </article>
+    ));
   return (
-    <>
-      <section className="context-section">
-        <h2>{t('公司公开资料', 'Public company profile')}</h2>
-        <p className="muted">{t('资料更新时间未知。', 'The profile update date is unknown.')}</p>
-        <dl className="context-profile-grid">
-          {Object.entries(labels).map(([key, label]) => (
-            <div key={key}>
-              <dt>{t(...label)}</dt>
-              <dd>{snapshot.profile[key] || t('未取得', 'Not retrieved')}</dd>
-            </div>
-          ))}
-        </dl>
+    <div className="company-extended-checks">
+      <section className="company-extended-card" data-card="profile">
+        <h2>{t('工商登记与治理结构', 'Registration and governance')}</h2>
+        <p className="company-extended-note">
+          {t('资料更新日期未知。', 'The profile update date is unknown.')}
+        </p>
+        {visibleProfileRows.length ? (
+          <dl className="company-extended-profile">
+            {visibleProfileRows.map((row) => (
+              <div key={row.key}>
+                <dt>{t(...row.label)}</dt>
+                <dd>
+                  {row.key === 'creditCode' ? (
+                    <code>{snapshot.profile.creditCode}</code>
+                  ) : row.fields.length > 1 ? (
+                    row.fields.map((field) => snapshot.profile[field] || '—').join(' / ')
+                  ) : (
+                    snapshot.profile[row.fields[0]!]
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p className="company-extended-empty">{t('未取得', 'Not retrieved')}</p>
+        )}
+        {moreProfileFields.length > 0 && (
+          <details className="company-extended-more-profile">
+            <summary>{t('更多公开资料', 'More company details')}</summary>
+            <dl className="company-extended-profile">
+              {moreProfileFields.map((key) => (
+                <div key={key}>
+                  <dt>{labels[key] ? t(...labels[key]) : key}</dt>
+                  <dd>{snapshot.profile[key]}</dd>
+                </div>
+              ))}
+            </dl>
+          </details>
+        )}
+        <CompanySourceLinks
+          sources={profileSources.map((source) => ({
+            url: source.url,
+            label: [source.provider, source.provider] as const,
+          }))}
+        />
       </section>
-      <section className="context-section">
+      <section className="company-extended-card" data-card="shareholders">
         <h2>{t('已披露十大直接股东', 'Disclosed top direct shareholders')}</h2>
         {snapshot.shareholders.length ? (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('股东', 'Shareholder')}</th>
-                  <th>{t('比例', 'Ownership')}</th>
-                  <th>{t('持股变动字段', 'Reported change')}</th>
-                  <th>{t('报告期', 'Period')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snapshot.shareholders.map((row, index) => (
-                  <tr key={`${row.name}:${index}`}>
-                    <td>
-                      <a href={row.url} target="_blank" rel="noreferrer">
-                        {row.name}
-                      </a>
-                    </td>
-                    <td>{row.percentage === null ? '—' : `${row.percentage}%`}</td>
-                    <td>{row.change || '—'}</td>
-                    <td>{row.period}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {[...holderPeriods].map(([period, rows]) => {
+              const maxPercentage = Math.max(
+                0,
+                ...rows.flatMap((row) => (validPercentage(row.percentage) ? [row.percentage] : []))
+              );
+              return (
+                <section className="company-extended-holder-period" key={period}>
+                  <h3>
+                    {t('报告期', 'Period')} · {period || t('未取得', 'Not retrieved')}
+                  </h3>
+                  <ol className="company-extended-holders">
+                    {rows.map((row, index) => (
+                      <li
+                        className="company-extended-holder"
+                        key={`${row.name}:${index}`}
+                        data-period={row.period}
+                      >
+                        <span className="company-extended-holder-rank" aria-hidden="true">
+                          {index + 1}
+                        </span>
+                        <a
+                          className="company-extended-holder-name"
+                          href={row.url}
+                          title={row.name}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {row.name}
+                        </a>
+                        {validPercentage(row.percentage) ? (
+                          <span className="company-extended-holder-bar" aria-hidden="true">
+                            <span
+                              style={{
+                                width: `${maxPercentage > 0 ? (row.percentage / maxPercentage) * 100 : 0}%`,
+                              }}
+                            />
+                          </span>
+                        ) : (
+                          <span className="company-extended-holder-bar-missing" aria-hidden="true">
+                            —
+                          </span>
+                        )}
+                        <span className="company-extended-holder-percentage">
+                          {validPercentage(row.percentage) ? `${row.percentage}%` : '—'}
+                        </span>
+                        <div className="company-extended-holder-detail">
+                          <span>{row.change || '—'}</span>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </section>
+              );
+            })}
+            {snapshot.shareholders.some((row) => row.shares !== null) && (
+              <details className="company-extended-holder-quantities">
+                <summary>{t('持股数量', 'Number of shares')}</summary>
+                <dl className="company-extended-quantities">
+                  {snapshot.shareholders
+                    .filter((row) => row.shares !== null)
+                    .map((row, index) => (
+                      <div key={`${row.name}:${row.period}:${index}`}>
+                        <dt>
+                          <a href={row.url} target="_blank" rel="noreferrer">
+                            {row.name}
+                          </a>
+                          <small>{row.period || t('未取得', 'Not retrieved')}</small>
+                        </dt>
+                        <dd>
+                          {row.shares} {t('股', 'shares')}
+                        </dd>
+                      </div>
+                    ))}
+                </dl>
+              </details>
+            )}
+            <p className="company-extended-note">
+              {t(
+                '仅为本期直接持股披露，不等同完整股权穿透。',
+                'Period-specific direct holdings, not a complete ownership structure.'
+              )}
+            </p>
+          </>
         ) : (
-          <p className="muted">{t('本次未取得股东明细。', 'No shareholder details retrieved.')}</p>
+          <p className="company-extended-empty">
+            {t('本次未取得股东明细。', 'No shareholder details retrieved.')}
+          </p>
         )}
+        <CompanySourceLinks
+          sources={holderSources.map((source) => ({
+            url: source.url,
+            label: [source.provider, source.provider] as const,
+          }))}
+        />
       </section>
       {includeNews && (
-        <section className="context-section">
+        <section className="company-extended-card" data-card="news">
           <h2>{t('近期新闻线索', 'Recent news leads')}</h2>
           {snapshot.news.length ? (
-            <div className="context-news-list">
-              {snapshot.news.map((row) => (
-                <article key={row.url}>
-                  <span>
-                    {row.date} · {row.media} · {row.provider}
-                  </span>
-                  <a href={row.url} target="_blank" rel="noreferrer">
-                    {row.title}
-                    <ArrowUpRight size={13} />
-                  </a>
-                  {row.digest && <p>{row.digest}</p>}
-                </article>
-              ))}
-            </div>
+            <>
+              <div className="company-extended-news-list">
+                {renderNews(snapshot.news.slice(0, 8))}
+              </div>
+              {snapshot.news.length > 8 && (
+                <details className="company-extended-more-news">
+                  <summary>
+                    {t(
+                      `更多新闻 · ${snapshot.news.length - 8} 条`,
+                      `More news · ${snapshot.news.length - 8}`
+                    )}
+                  </summary>
+                  <div className="company-extended-news-list">
+                    {renderNews(snapshot.news.slice(8))}
+                  </div>
+                </details>
+              )}
+            </>
           ) : (
-            <p className="muted">
+            <p className="company-extended-empty">
               {t(
                 '本次未取得匹配新闻，请查看来源状态。',
                 'No matched news retrieved; check source status.'
@@ -804,25 +957,29 @@ export function CompanyProfileView({
           )}
         </section>
       )}
-      <section className="context-section">
+      <section className="company-extended-card" data-card="verification">
         <h2>{t('官方与授权核查入口', 'Official and authorised checks')}</h2>
-        <div className="context-verification-grid">
-          {snapshot.verificationLinks.map((link) => (
-            <article key={link.url}>
-              <a href={link.url} target="_blank" rel="noreferrer">
-                {link.label}
-                <ArrowUpRight size={13} />
-              </a>
-              <p>{link.purpose}</p>
-              <small>{link.instruction}</small>
-            </article>
-          ))}
-        </div>
+        {snapshot.verificationLinks.length ? (
+          <div className="company-extended-verification-list">
+            {snapshot.verificationLinks.map((link) => (
+              <article className="company-extended-verification" key={link.url}>
+                <a href={link.url} target="_blank" rel="noreferrer">
+                  {link.label}
+                  <ArrowUpRight size={12} aria-hidden="true" />
+                </a>
+                <p>{link.purpose}</p>
+                <small>{link.instruction}</small>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="company-extended-empty">{t('未取得', 'Not retrieved')}</p>
+        )}
       </section>
-      <p className="muted">
+      <p className="company-extended-fetched-at">
         {t('公开资料获取于', 'Public profile retrieved at')} {date(snapshot.fetchedAt, locale)}
       </p>
-    </>
+    </div>
   );
 }
 

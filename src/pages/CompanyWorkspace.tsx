@@ -744,8 +744,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               </details>
             </>
           ) : section === 'profile' ? (
-            <section id="company-profile" className="company-workspace-section">
-              <CompanyProfileView snapshot={snapshot} includeNews={false} />
+            <section id="company-profile" className="company-extended-checks-page">
+              <CompanyProfileView snapshot={snapshot} />
             </section>
           ) : section === 'coverage' ? (
             <section id="company-data-coverage" className="company-workspace-section">
