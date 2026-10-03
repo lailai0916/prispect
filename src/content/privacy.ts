@@ -182,6 +182,10 @@ export const privacyDocument: ProductDocument = {
           '企业证据实验室的本地撤回与恢复选择不上传，也不发送给模型。明确点击“挑战这个解释”后，服务端按已匹配公司的年度与固定解释补查，并可向模型发送相关公开字段、已知来源、已读短摘录和公开检索结果；不发送本地试验状态、上传预览、私人备注、账号资料或私人现金计划。挑战目标、实际步骤与结果随公司记录保存。',
           'Local evidence-lab withdrawal and restoration choices are not uploaded or sent to a model. After you explicitly select Challenge this explanation, the server researches the matched company, year and fixed explanation and may send relevant public fields, known sources, read excerpts and public search results to the model. It excludes local trial state, uploaded previews, private notes, account details and private cash plans. The target, actual steps and result are retained with the company record.',
         ],
+        [
+          '服务器可在有界内存中复用匿名公开响应、完整同行样本及官方原件解析；私人上传不进入这些公共缓存。同一账号的问题、上下文与资料版本完全一致时，可短暂复用已成功的回答；最新资料或补查请求仍重新执行。解释挑战分别随本账号研究保存，资料变化后重新核对。缓存保留原取得日期，服务重启会清除内存缓存。',
+          'The server may reuse anonymous public responses, complete peer cohorts and official-document parsing in bounded memory; private uploads are excluded from these public caches. Successful answers may be briefly reused within the same account only when the question, conversation and source version match exactly; requests for current information or further research still execute. Explanation challenges are retained separately with the account-owned research and checked again after source changes. Acquisition dates are preserved, and service restarts clear memory caches.',
+        ],
       ],
       table: {
         columns: [

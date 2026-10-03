@@ -19,6 +19,14 @@ import {
 } from './company-sources.js';
 import { readCompanyPdf } from './company-extraction.js';
 import { ApiFault } from './validation.js';
+import {
+  PublicResponseCache,
+  publicRequestCacheKey,
+  publicResponseCache,
+  publicResponseTtl,
+  type PublicResponseCacheStatus,
+  type PublicResponse,
+} from './public-response-cache.js';
 
 export const CONTEXT_ENDPOINT = 'https://datacenter.eastmoney.com/securities/api/data/v1/get';
 const CNINFO = 'https://www.cninfo.com.cn/new/hisAnnouncement/query';
@@ -72,47 +80,126 @@ const decode = (body: Buffer) => {
 
 export class PublicCompanyReader {
   requests = 0;
+  cacheHits = 0;
+  sharedReads = 0;
+  private observed = new Map<string, { url: string; sha256: string }>();
   constructor(
     readonly dependencies: CompanySourceDependencies = {},
     readonly maximumRequests = 50
   ) {}
-  async read(
+  async read(url: string, init: RequestInit = {}, maximum = 2_000_000) {
+    return this.readResponse(url, init, maximum, 'bytes');
+  }
+  private async readResponse(
     url: string,
-    init: RequestInit = {},
-    maximum = 2_000_000
-  ): Promise<{ body: Buffer; url: string; sha256: string }> {
+    init: RequestInit,
+    maximum: number,
+    format: 'bytes' | 'json'
+  ): Promise<{
+    body: Buffer;
+    url: string;
+    sha256: string;
+    fetchedAt: string;
+    cache: PublicResponseCacheStatus;
+  }> {
     const target = new URL(url);
     if (target.protocol !== 'https:' || !allowedHosts.has(target.hostname))
       throw new ApiFault(400, 'CONTEXT_SOURCE_URL', '来源地址不在允许范围');
     this.dependencies.signal?.throwIfAborted();
-    if (++this.requests > this.maximumRequests)
-      throw new ApiFault(429, 'CONTEXT_SOURCE_BUDGET', '达到本次来源读取上限');
     const signal = AbortSignal.any([
       AbortSignal.timeout(15000),
       ...(this.dependencies.signal ? [this.dependencies.signal] : []),
       ...(init.signal ? [init.signal] : []),
     ]);
-    const response = await (this.dependencies.fetch || fetch)(url, {
-      ...init,
-      redirect: 'error',
+    const headers = new Headers({
+      'User-Agent': 'Mozilla/5.0',
+      Referer: 'https://www.cninfo.com.cn/',
+    });
+    new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    const request = { ...init, headers };
+    const key = publicRequestCacheKey(target, request, format);
+    const fetcher = this.dependencies.fetch || fetch;
+    const now = this.dependencies.now || (() => new Date());
+    const result = await (key ? publicResponseCache(fetcher) : new PublicResponseCache()).read({
+      key: key || 'uncached',
+      maximum,
+      ttlMs: key ? publicResponseTtl(target) : 0,
+      bypass: this.dependencies.bypassCache || !key,
       signal,
-      headers: {
-        'User-Agent': 'Mozilla/5.0',
-        Referer: 'https://www.cninfo.com.cn/',
-        ...init.headers,
+      now,
+      onStart: () => {
+        if (this.requests >= this.maximumRequests)
+          throw new ApiFault(429, 'CONTEXT_SOURCE_BUDGET', '达到本次来源读取上限');
+        this.requests++;
+      },
+      load: async (sharedSignal) => {
+        const producerSignal = AbortSignal.any([sharedSignal, AbortSignal.timeout(15000)]);
+        const response = await fetcher(url, {
+          ...request,
+          redirect: 'error',
+          signal: producerSignal,
+        });
+        if (!response.ok)
+          throw new ApiFault(502, 'CONTEXT_SOURCE_HTTP', '公开来源本次没有返回可用结果');
+        const body = await boundedBody(response, maximum, producerSignal);
+        if (
+          target.pathname.toLowerCase().endsWith('.pdf') &&
+          body.subarray(0, 5).toString() !== '%PDF-'
+        )
+          throw new ApiFault(502, 'CONTEXT_SOURCE_FORMAT', '公开来源未返回可读取的 PDF 原件');
+        if (format === 'json') {
+          const value = parseExactFinancialJson(body.toString('utf8'));
+          if (
+            !value ||
+            typeof value !== 'object' ||
+            Array.isArray(value) ||
+            objectValue(value).success === false ||
+            objectValue(value).success === 'false'
+          )
+            throw new ApiFault(502, 'CONTEXT_SOURCE_FORMAT', '公开来源响应格式无法核对');
+        }
+        return { body, url, sha256: digest(body), fetchedAt: now().toISOString() };
       },
     });
-    if (!response.ok)
-      throw new ApiFault(502, 'CONTEXT_SOURCE_HTTP', '公开来源本次没有返回可用结果');
-    const body = await boundedBody(response, maximum, signal);
-    return { body, url, sha256: digest(body) };
+    if (result.cache === 'hit') this.cacheHits++;
+    if (result.cache === 'shared') this.sharedReads++;
+    if (key) {
+      this.observed.set(key, { url, sha256: result.sha256 });
+      while (this.observed.size > 128) this.observed.delete(this.observed.keys().next().value!);
+    }
+    return result;
   }
   async json(url: string, init: RequestInit = {}) {
-    const response = await this.read(url, init);
+    const response = await this.readResponse(url, init, 2_000_000, 'json');
     return {
       ...response,
       value: objectValue(parseExactFinancialJson(response.body.toString('utf8'))),
     };
+  }
+  invalidateResponses(hashes: readonly string[], url?: string): void {
+    const rejected = new Set(hashes);
+    const cache = publicResponseCache(this.dependencies.fetch || fetch);
+    for (const [key, response] of this.observed)
+      if (
+        url
+          ? response.url === url && (!rejected.size || rejected.has(response.sha256))
+          : rejected.has(response.sha256)
+      )
+        cache.discard(key, response.sha256);
+  }
+  discardResponse(
+    url: string,
+    init: RequestInit = {},
+    format: 'bytes' | 'json' = 'json',
+    sha256?: string
+  ): void {
+    const headers = new Headers({
+      'User-Agent': 'Mozilla/5.0',
+      Referer: 'https://www.cninfo.com.cn/',
+    });
+    new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    const key = publicRequestCacheKey(new URL(url), { ...init, headers }, format);
+    if (key) publicResponseCache(this.dependencies.fetch || fetch).discard(key, sha256);
   }
 }
 
@@ -202,6 +289,17 @@ const receipt = (
   note: '本次来源未完成；未取得的数据保持未知',
   responseHashes: [],
 });
+function recordResponse(
+  state: CompanySourceReceipt,
+  response: Pick<PublicResponse, 'sha256' | 'fetchedAt'>
+) {
+  state.responseHashes.push(response.sha256);
+  // Paged sources retain the oldest actual acquisition among their contributing responses.
+  state.fetchedAt =
+    state.responseHashes.length === 1 || response.fetchedAt < state.fetchedAt
+      ? response.fetchedAt
+      : state.fetchedAt;
+}
 const blankPeriod = (period: string): CompanyContextPeriod => ({
   period,
   annual: period.endsWith('-12-31'),
@@ -258,14 +356,10 @@ export async function eastmoneyRows(
   }).toString();
   const response = await reader.json(url.href);
   const result = objectValue(response.value.result);
-  if (
-    !Object.keys(result).length &&
-    response.value.success !== false &&
-    response.value.success !== 'false'
-  )
-    return { ...response, rows: [] };
-  if (response.value.success !== true || !Array.isArray(result.data))
+  if (response.value.success !== true || !Array.isArray(result.data)) {
+    reader.discardResponse(response.url, {}, 'json', response.sha256);
     throw new ApiFault(502, 'CONTEXT_SOURCE_FORMAT', '财务来源响应格式无法核对');
+  }
   return { ...response, rows: arrayValue(result.data) };
 }
 function assertIssuer(row: Record<string, unknown>, identity: CompanyIdentity) {
@@ -329,7 +423,7 @@ export async function retrieveCompanyContext(
     try {
       const response = await eastmoneyRows(reader, tables[kind], `(SECUCODE="${secucode}")`);
       state.url = response.url;
-      state.responseHashes.push(response.sha256);
+      recordResponse(state, response);
       if (kind !== 'ratios') {
         for (const row of response.rows) {
           assertIssuer(row, identity);
@@ -384,6 +478,7 @@ export async function retrieveCompanyContext(
       state.note =
         '第三方网页报表字段；尚未逐项核对官方原件。保留元和分，不作为自动采用的现金桥材料。';
     } catch (error) {
+      reader.invalidateResponses(state.responseHashes, state.url);
       if (error instanceof ApiFault && error.code.startsWith('CONTEXT_SUBJECT'))
         invalidFinancialScope = true;
       if (
@@ -416,10 +511,11 @@ export async function retrieveCompanyContext(
       snapshot.sources.push(state);
       try {
         const response = await reader.json(url.href);
-        state.responseHashes.push(response.sha256);
-        const reports = objectValue(
-          objectValue(objectValue(response.value.result).data).report_list
-        );
+        recordResponse(state, response);
+        const listedReports = objectValue(objectValue(response.value.result).data).report_list;
+        if (!listedReports || typeof listedReports !== 'object' || Array.isArray(listedReports))
+          throw new ApiFault(502, 'CONTEXT_SOURCE_FORMAT', '财务来源响应格式无法核对');
+        const reports = objectValue(listedReports);
         if (!Object.keys(reports).length) {
           state.status = 'empty';
           return;
@@ -452,6 +548,7 @@ export async function retrieveCompanyContext(
         state.status = acceptedPeriods.length ? 'available' : 'empty';
         state.note = '证券代码定位的人民币合并报表；同报告期只补缺，主来源已有数值保持独立并比较。';
       } catch {
+        reader.invalidateResponses(state.responseHashes, state.url);
         state.note = '新浪财经本次未完成；不把来源失败解释为没有数据';
         for (const entry of secondary.values())
           for (const field of Object.values(sinaFields[kind])) {
@@ -650,7 +747,7 @@ async function retrieveProfile(
     );
     const row = response.rows[0];
     state.url = response.url;
-    state.responseHashes.push(response.sha256);
+    recordResponse(state, response);
     if (row) {
       assertIssuer(row, identity);
       const keys = {
@@ -681,6 +778,7 @@ async function retrieveProfile(
     state.status = row ? 'available' : 'empty';
     state.note = '公司公开资料，资料更新时间未知；不等同当前工商登记或完整股权穿透。';
   } catch {
+    reader.invalidateResponses(state.responseHashes, state.url);
     state.note = '公司公开资料本次未取得，保留缺失状态';
   }
   const url = `https://vip.stock.finance.sina.com.cn/corp/go.php/vCI_CorpInfo/stockid/${identity.securityCode}.phtml`;
@@ -688,7 +786,7 @@ async function retrieveProfile(
   snapshot.sources.push(secondary);
   try {
     const response = await reader.read(url);
-    secondary.responseHashes.push(response.sha256);
+    recordResponse(secondary, response);
     const $ = load(decode(response.body)),
       values: Record<string, string> = {};
     $('#comInfo1 tr').each((_index, row) => {
@@ -721,6 +819,7 @@ async function retrieveProfile(
     secondary.status = secondary.count ? 'available' : 'empty';
     secondary.note = '仅补充缺失资料；来源没有提供资料更新日期。';
   } catch {
+    reader.invalidateResponses(secondary.responseHashes, secondary.url);
     secondary.note = '新浪公司资料本次未取得，不代填其他企业资料';
   }
 }
@@ -746,7 +845,7 @@ async function retrieveShareholders(
       'END_DATE'
     );
     state.url = response.url;
-    state.responseHashes.push(response.sha256);
+    recordResponse(state, response);
     const period = dateValue(response.rows[0]?.END_DATE);
     const rows = response.rows.filter((row) => dateValue(row.END_DATE) === period);
     for (const row of rows) assertIssuer(row, identity);
@@ -766,6 +865,7 @@ async function retrieveShareholders(
     state.status = state.count ? 'available' : 'empty';
     state.note = '已披露直接股东，不等同完整股权穿透或当前实时持股。';
   } catch {
+    reader.invalidateResponses(state.responseHashes, state.url);
     state.note = '本次股东来源未通过获取或主体检查；不推断股东不存在';
   }
 }
@@ -816,8 +916,11 @@ async function retrieveNews(
       snapshot.sources.push(state);
       try {
         const response = await reader.json(url.href);
-        state.responseHashes.push(response.sha256);
-        const rows = arrayValue(objectValue(response.value.result).cmsArticleWebOld);
+        recordResponse(state, response);
+        const listedNews = objectValue(response.value.result).cmsArticleWebOld;
+        if (!Array.isArray(listedNews))
+          throw new ApiFault(502, 'CONTEXT_SOURCE_FORMAT', '新闻来源响应格式无法核对');
+        const rows = arrayValue(listedNews);
         for (const row of rows) {
           const title = load(textValue(row.title)).text(),
             description = load(textValue(row.content)).text().slice(0, 100),
@@ -842,6 +945,7 @@ async function retrieveNews(
         state.status = state.count ? 'available' : 'empty';
         state.note = '公司名称过滤的新闻检索，媒体线索不是事实认定，也不代表完整舆情监测。';
       } catch {
+        reader.invalidateResponses(state.responseHashes, state.url);
         state.note = '东方财富新闻来源本次未完成';
       }
     })(),
@@ -855,7 +959,7 @@ async function retrieveNews(
       snapshot.sources.push(state);
       try {
         const response = await reader.read(url.href);
-        state.responseHashes.push(response.sha256);
+        recordResponse(state, response);
         const $ = load(decode(response.body));
         $('ul a[href]').each((_index, element) => {
           const title = $(element).text().trim(),
@@ -882,6 +986,7 @@ async function retrieveNews(
         state.status = state.count ? 'available' : 'empty';
         state.note = '按证券代码定位并按企业名称过滤；收录平台不等同原始媒体。';
       } catch {
+        reader.invalidateResponses(state.responseHashes, state.url);
         state.note = '新浪新闻来源本次未完成';
       }
     })(),
@@ -1054,8 +1159,15 @@ async function retrieveDisclosures(
               isHLtitle: 'false',
             }).toString(),
           });
-          state.responseHashes.push(response.sha256);
-          total = Number(response.value.totalAnnouncement) || 0;
+          recordResponse(state, response);
+          total = Number(response.value.totalAnnouncement);
+          if (
+            !Number.isInteger(total) ||
+            total < 0 ||
+            (total > 0 && !Array.isArray(response.value.announcements)) ||
+            (response.value.announcements != null && !Array.isArray(response.value.announcements))
+          )
+            throw new ApiFault(502, 'CONTEXT_SOURCE_FORMAT', '公告来源响应格式无法核对');
           const announcements = arrayValue(response.value.announcements);
           for (const item of announcements) {
             if (item.secCode !== identity.securityCode || item.orgId !== identity.orgId) continue;
@@ -1080,6 +1192,7 @@ async function retrieveDisclosures(
         state.status = state.count < total ? 'partial' : state.count ? 'available' : 'empty';
         state.note = `近三年共 ${total} 条，本次定位 ${state.count} 条；最多读取 600 条，未覆盖记录不推断不存在。`;
       } catch {
+        reader.invalidateResponses(state.responseHashes, state.url);
         state.status = state.count ? 'partial' : 'error';
         state.note = '公告来源本次未完成；保留已读取记录，明确部分覆盖';
       }
@@ -1109,8 +1222,11 @@ async function retrieveDisclosures(
               Referer: 'https://emweb.eastmoney.com/',
             },
           });
-          state.responseHashes.push(response.sha256);
-          const list = arrayValue(objectValue(response.value.data).list);
+          recordResponse(state, response);
+          const listedAnnouncements = objectValue(response.value.data).list;
+          if (!Array.isArray(listedAnnouncements))
+            throw new ApiFault(502, 'CONTEXT_SOURCE_FORMAT', '公告来源响应格式无法核对');
+          const list = arrayValue(listedAnnouncements);
           if (!list.length) {
             complete = true;
             break;
@@ -1146,6 +1262,7 @@ async function retrieveDisclosures(
         state.status = complete ? (state.count ? 'available' : 'empty') : 'partial';
         state.note = '近三年最多六页、600 条；标题规则用于定位核查事项，不能认证案件或违约事实。';
       } catch {
+        reader.invalidateResponses(state.responseHashes, state.url);
         state.status = state.count ? 'partial' : 'error';
         state.note = '本次来源未读完整，保留已取得记录';
       }
@@ -1173,7 +1290,7 @@ async function retrieveDisclosures(
     if (excerptDeadline.aborted) break;
     try {
       const response = await reader.read(row.url, { signal: excerptDeadline }, 8_000_000);
-      const parsed = await readCompanyPdf(response.body, excerptDeadline);
+      const parsed = await readCompanyPdf(response.body, excerptDeadline, { sourceUrl: row.url });
       const page = parsed.pages
         .slice(0, 3)
         .find((page) => /本次|截至|涉案|逾期|债务|诉讼|担保|减值/.test(page.text));
@@ -1197,6 +1314,7 @@ async function retrieveDisclosures(
           pagesRead: Math.min(parsed.pages.length, 3),
         };
     } catch {
+      reader.invalidateResponses([], row.url);
       /* Failed excerpts leave the original link and explicit coverage intact. */
     }
   }

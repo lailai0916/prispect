@@ -10,6 +10,8 @@ import pdfLimits from './pdf-limits.json' with { type: 'json' };
 export interface CompanySourceDependencies {
   fetch?: typeof fetch;
   signal?: AbortSignal;
+  /** Explicit refresh bypasses reusable public responses, never scope validation. */
+  bypassCache?: boolean;
   now?: () => Date;
   onRetry?: (message: string) => void | Promise<void>;
   budget?: { used: number; maximum: number };

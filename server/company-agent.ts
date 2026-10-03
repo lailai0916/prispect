@@ -1000,7 +1000,9 @@ export async function runCompanyResearch(
     inMemoryFiles.set(ref.sha256, buffer);
     let pending = parsed.get(ref.sha256);
     if (!pending) {
-      pending = readCompanyPdf(buffer, options.signal);
+      pending = readCompanyPdf(buffer, options.signal, {
+        sourceUrl: ref.announcement.sourceUrl,
+      });
       parsed.set(ref.sha256, pending);
     }
     return { downloaded: { buffer, sha256: ref.sha256, bytes: buffer.length }, pdf: await pending };
@@ -1606,7 +1608,9 @@ export async function runCompanyResearch(
                   maxAttempts: 1,
                   maximumPdfBytes: pdfLimits.uploadBytes,
                 });
-                const pdf = await readCompanyPdf(downloaded.buffer, recentSignal);
+                const pdf = await readCompanyPdf(downloaded.buffer, recentSignal, {
+                  sourceUrl: announcement.sourceUrl,
+                });
                 read++;
                 return {
                   value: noteEvidence(pdf, announcement, 'announcement'),

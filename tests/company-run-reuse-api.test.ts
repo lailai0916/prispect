@@ -15,10 +15,8 @@ async function fixture() {
   let calls = 0;
   let gate: Promise<void> | undefined;
   let release!: () => void;
-  let notifyStarted!: () => void;
-  const started = new Promise<void>((resolve) => {
-    notifyStarted = resolve;
-  });
+  let started = Promise.resolve();
+  let notifyStarted = () => {};
   const application = await createApp({
     root: process.cwd(),
     dataDir: directory,
@@ -92,21 +90,29 @@ async function fixture() {
     register,
     call,
     calls: () => calls,
-    waitForStarted: () =>
-      new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(
-          () => reject(new Error('Research service did not start')),
-          10_000
-        );
-        void started.then(() => {
-          clearTimeout(timeout);
-          resolve();
-        });
-      }),
     hold: () => {
+      started = new Promise<void>((resolve) => {
+        notifyStarted = resolve;
+      });
       gate = new Promise<void>((resolve) => {
         release = resolve;
       });
+    },
+    waitForStarted: async () => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          started,
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(
+              () => reject(new Error('Research service did not start within its test deadline')),
+              10_000
+            );
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
     },
     release: () => {
       release?.();
@@ -133,6 +139,8 @@ test('opt-in repeat search reuses own record during active work, at limits, with
     const created = (await first.json()) as CompanyResearchRun & { reused?: boolean };
     assert.equal(created.reused, undefined);
     assert.equal('reuseExisting' in created.input, false);
+    // HTTP202 reserves the job before its first durable progress write finishes.
+    // Wait for provider entry rather than assuming concurrent disk timing.
     await f.waitForStarted();
     const repeat = await f.call(alice, '/company-runs', { ...input, reuseExisting: true });
     assert.equal(repeat.status, 200);

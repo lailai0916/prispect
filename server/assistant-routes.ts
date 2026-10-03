@@ -7,6 +7,13 @@ import type { WorkspaceStore } from './store.js';
 import type { ModelConfig } from './model.js';
 import { assertCompanyResearchSupported } from './company-sources.js';
 import { ApiFault } from './validation.js';
+import { searchProductKnowledge } from './product-knowledge.js';
+import {
+  OwnerAnswerCache,
+  ownerAnswerCacheKey,
+  bypassOwnerAnswerCache,
+  type OwnerAnswerReservation,
+} from './owner-answer-cache.js';
 import {
   assistantClarification,
   assistantCompanyName,
@@ -25,6 +32,7 @@ const requestSchema = z
     previousRunId: z.string().min(1).max(120).optional(),
     basis: z.enum(['consolidated', 'parent']).optional(),
     previousQuestions: z.array(z.string().max(500)).max(6).optional(),
+    refresh: z.boolean().optional(),
   })
   .strict();
 
@@ -62,6 +70,7 @@ export function installAssistantRoutes(
   }
 ) {
   const service = { ...defaultAssistantService, ...options.service };
+  const answers = new OwnerAnswerCache<AssistantAnswer>();
   const pending = new Set<Promise<void>>();
   const owners = new Map<string, number>();
   let active = 0;
@@ -88,8 +97,33 @@ export function installAssistantRoutes(
         throw new ApiFault(429, 'ASSISTANT_BUSY', '助手正在处理其他问题，请稍后重试');
       active++;
       owners.set(owner, (owners.get(owner) || 0) + 1);
+      let reservation: OwnerAnswerReservation | undefined;
       try {
         if (!session || isProductQuestion(request.question, request.previousQuestions)) {
+          const key = ownerAnswerCacheKey({
+            owner,
+            namespace: 'assistant-documentation',
+            question: request.question,
+            locale: request.locale,
+            previousQuestions: request.previousQuestions,
+            model: options.model,
+            documents: searchProductKnowledge(
+              [...(request.previousQuestions || []), request.question].join('\n'),
+              request.locale
+            ),
+          });
+          const bypass = bypassOwnerAnswerCache(request.question, request.refresh);
+          // Anonymous questions stay uncached: an IP address does not identify a person.
+          const cached = session && !bypass ? answers.get(owner, key) : undefined;
+          if (cached) {
+            signal.throwIfAborted();
+            res.json(cached);
+            return;
+          }
+          if (session) {
+            if (bypass) answers.invalidate(owner, key);
+            reservation = answers.reserve(owner, key);
+          }
           const answer = await awaitAssistant(
             service.documentation(
               request.question,
@@ -102,6 +136,8 @@ export function installAssistantRoutes(
             signal
           );
           signal.throwIfAborted();
+          if (session && !bypassOwnerAnswerCache(request.question))
+            answers.set(owner, key, answer, undefined, reservation);
           res.json(answer);
           return;
         }
@@ -126,12 +162,35 @@ export function installAssistantRoutes(
             .digest('hex');
         const expected = fingerprint();
         let publicRun = assistantPublicRun(run);
+        const wantsResearch = service.wantsResearch(request.question);
+        const bypass = wantsResearch || bypassOwnerAnswerCache(request.question, request.refresh);
+        const cacheOwner = `${owner}:${store.dataDir}`;
+        const cacheKey = ownerAnswerCacheKey({
+          owner: cacheOwner,
+          namespace: 'assistant-company',
+          question: request.question,
+          locale: request.locale,
+          basis: request.basis,
+          previousQuestions: request.previousQuestions,
+          publicBasis: publicRun,
+          model: options.model,
+        });
+        const cacheScope = run;
+        const expectedWorkspace = store.state;
+        const cached = bypass ? undefined : answers.get(cacheOwner, cacheKey, cacheScope);
+        if (cached) {
+          signal.throwIfAborted();
+          res.json(cached);
+          return;
+        }
+        if (bypass) answers.invalidate(cacheOwner, cacheKey, cacheScope);
+        reservation = answers.reserve(cacheOwner, cacheKey);
         let research: AssistantAnswer['research'];
         let researchWarning: string | undefined;
-        if (service.wantsResearch(request.question)) {
+        if (wantsResearch) {
           try {
             const retrieved = await awaitAssistant(
-              service.research(publicRun, request.question, { signal }),
+              service.research(publicRun, request.question, { signal, bypassCache: true }),
               signal
             );
             if (
@@ -190,8 +249,17 @@ export function installAssistantRoutes(
           throw error;
         }
         signal.throwIfAborted();
+        if (
+          !wantsResearch &&
+          !bypassOwnerAnswerCache(request.question) &&
+          store.state === expectedWorkspace &&
+          store.state.companyRuns?.includes(run) &&
+          fingerprint() === expected
+        )
+          answers.set(cacheOwner, cacheKey, result, cacheScope, reservation);
         res.json(result);
       } finally {
+        if (reservation) answers.release(reservation);
         active--;
         const count = (owners.get(owner) || 1) - 1;
         if (count) owners.set(owner, count);

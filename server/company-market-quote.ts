@@ -101,13 +101,17 @@ export async function retrieveCompanyMarketQuote(
       responseBytes
     );
     source.responseHashes.push(response.sha256);
+    source.fetchedAt = response.fetchedAt;
+    quote.fetchedAt = response.fetchedAt;
     const result = objectValue(parseExactFinancialJson(response.body.toString('utf8')));
     const data = objectValue(result.data);
     if (result.rc !== '0' || !Object.keys(data).length) {
+      options.reader.invalidateResponses(source.responseHashes, sourceUrl);
       source.note = '本次行情来源未返回有效记录；未采用其他主体或替代数值。';
       return { quote, source };
     }
     if (data.f57 !== run.input.securityCode) {
+      options.reader.invalidateResponses(source.responseHashes, sourceUrl);
       source.note = '行情响应的证券代码与已确认主体不一致，整条行情未采用。';
       return { quote, source };
     }
@@ -147,6 +151,8 @@ export async function retrieveCompanyMarketQuote(
           ? '已核对证券代码；仅展示有效原始字段，缺失或无效字段保持未知。行情时间来自原字段，未用抓取时间替代，不保证实时。'
           : '已核对证券代码，但来源没有可用行情数值；缺失值未补为零，未推测行情时间。';
   } catch (error) {
+    if (!(options.signal?.aborted || options.reader.dependencies.signal?.aborted))
+      options.reader.invalidateResponses(source.responseHashes, sourceUrl);
     if (
       options.signal?.aborted ||
       options.reader.dependencies.signal?.aborted ||

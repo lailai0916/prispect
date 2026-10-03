@@ -16,6 +16,7 @@ import {
 } from './company-context-sources.js';
 import type { CompanySourceDependencies } from './company-sources.js';
 import { ApiFault } from './validation.js';
+import { publicIndustryCohortCache, type PublicIndustryCohort } from './company-industry-cache.js';
 
 const minimumSamples = 5;
 const supported = (code: string) => /^[036]\d{5}$/.test(code);
@@ -165,80 +166,98 @@ export function aggregateIndustryCharts(
     ])
   ) as Record<IndustryChartMetricKey, IndustryMetricSummary>;
 }
+function invalidateIndustrySources(
+  reader: PublicCompanyReader,
+  sources: CompanyIndustrySnapshot['sources']
+): void {
+  for (const source of sources) reader.invalidateResponses([source.sha256], source.url);
+}
+
 export async function industryRows(
   reader: PublicCompanyReader,
   report: string,
   filter: string,
   period: string,
   dateColumn: string
-): Promise<{ rows: Record<string, unknown>[]; sources: CompanyIndustrySnapshot['sources'] }> {
+): Promise<{
+  rows: Record<string, unknown>[];
+  sources: CompanyIndustrySnapshot['sources'];
+  fetchedAt: string | null;
+}> {
   const rows: Record<string, unknown>[] = [],
     sources: CompanyIndustrySnapshot['sources'] = [];
   let pages = 1,
-    count: number | null = null;
-  for (let page = 1; page <= pages; page++) {
-    const url = new URL(CONTEXT_ENDPOINT);
-    url.search = new URLSearchParams({
-      reportName: report,
-      columns: 'ALL',
-      filter,
-      pageNumber: String(page),
-      pageSize: '500',
-      sortColumns: 'SECURITY_CODE',
-      sortTypes: '1',
-      source: 'WEB',
-      client: 'WEB',
-    }).toString();
-    const response = await reader.json(url.href),
-      result = objectValue(response.value.result);
-    if (response.value.success !== true || !Array.isArray(result.data))
-      throw new ApiFault(502, 'INDUSTRY_SOURCE_FORMAT', '行业来源未返回完整可核对数据');
-    if (page === 1) {
-      pages = Number(result.pages) || 1;
-      count = Number(result.count) || 0;
-      if (pages > 20 || pages < 1)
-        throw new ApiFault(
-          422,
-          'INDUSTRY_SAMPLE_LIMIT',
-          '行业样本超过取数上限，不计算截断样本均值'
-        );
+    count: number | null = null,
+    fetchedAt: string | null = null;
+  try {
+    for (let page = 1; page <= pages; page++) {
+      const url = new URL(CONTEXT_ENDPOINT);
+      url.search = new URLSearchParams({
+        reportName: report,
+        columns: 'ALL',
+        filter,
+        pageNumber: String(page),
+        pageSize: '500',
+        sortColumns: 'SECURITY_CODE',
+        sortTypes: '1',
+        source: 'WEB',
+        client: 'WEB',
+      }).toString();
+      const response = await reader.json(url.href),
+        result = objectValue(response.value.result);
+      sources.push({ url: response.url, sha256: response.sha256 });
+      if (response.value.success !== true || !Array.isArray(result.data))
+        throw new ApiFault(502, 'INDUSTRY_SOURCE_FORMAT', '行业来源未返回完整可核对数据');
+      const pageTotal = Number(result.pages),
+        rowTotal = Number(result.count);
+      if (
+        !Number.isInteger(pageTotal) ||
+        !Number.isInteger(rowTotal) ||
+        rowTotal < 0 ||
+        pageTotal < (rowTotal === 0 ? 0 : 1)
+      )
+        throw new ApiFault(422, 'INDUSTRY_PAGE_HEADER', '来源未提供可核对的完整分页总数');
+      if (page === 1) {
+        pages = pageTotal || 1;
+        count = rowTotal;
+        if (pages > 20 || pages < 1)
+          throw new ApiFault(
+            422,
+            'INDUSTRY_SAMPLE_LIMIT',
+            '行业样本超过取数上限，不计算截断样本均值'
+          );
+      } else if (pageTotal !== pages || rowTotal !== count)
+        throw new ApiFault(422, 'INDUSTRY_PAGE_HEADER', '来源分页总数发生变化，未计算混合样本');
+      const batch = arrayValue(result.data);
+      if (!batch.length && count)
+        throw new ApiFault(422, 'INDUSTRY_PAGE_MISSING', '来源分页中断，未计算不完整样本均值');
+      if (batch.some((row) => dateValue(row[dateColumn]) !== period))
+        throw new ApiFault(422, 'INDUSTRY_PERIOD_CONFLICT', '行业来源报告期不一致，未混合计算');
+      rows.push(...batch);
+      if (!fetchedAt || response.fetchedAt < fetchedAt) fetchedAt = response.fetchedAt;
     }
-    const batch = arrayValue(result.data);
-    if (!batch.length && count)
-      throw new ApiFault(422, 'INDUSTRY_PAGE_MISSING', '来源分页中断，未计算不完整样本均值');
-    if (batch.some((row) => dateValue(row[dateColumn]) !== period))
-      throw new ApiFault(422, 'INDUSTRY_PERIOD_CONFLICT', '行业来源报告期不一致，未混合计算');
-    rows.push(...batch);
-    sources.push({ url: response.url, sha256: response.sha256 });
+    if (count !== null && rows.length !== count)
+      throw new ApiFault(422, 'INDUSTRY_COUNT_CONFLICT', '来源记录数与分页总数不一致');
+  } catch (error) {
+    invalidateIndustrySources(reader, sources);
+    throw error;
   }
-  if (count !== null && rows.length !== count)
-    throw new ApiFault(422, 'INDUSTRY_COUNT_CONFLICT', '来源记录数与分页总数不一致');
-  return { rows, sources };
+  return { rows, sources, fetchedAt };
 }
-export async function retrieveIndustrySnapshot(
-  code: string,
+async function retrievePublicIndustryCohort(
+  industryCode: string,
   period: string,
-  dependencies: CompanySourceDependencies = {}
-): Promise<CompanyIndustrySnapshot> {
-  const now = (dependencies.now || (() => new Date()))();
-  validateIndustryInput(code, period, now);
-  const signal = dependencies.signal
-    ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(90000)])
-    : AbortSignal.timeout(90000);
-  const reader = new PublicCompanyReader({ ...dependencies, signal });
-  const first = await industryRows(
-    reader,
-    'RPT_LICO_FN_CPD',
-    `(SECURITY_CODE="${code}")(REPORTDATE='${period}')`,
-    period,
-    'REPORTDATE'
+  dependencies: CompanySourceDependencies,
+  maximumRequests: number,
+  producerSignal: AbortSignal
+): Promise<PublicIndustryCohort> {
+  const signal = AbortSignal.any([producerSignal, AbortSignal.timeout(90000)]);
+  // A parsed-cache miss must not replay a previously malformed HTTP-200 table.
+  // Only a fully validated cohort is reusable; incomplete attempts read afresh.
+  const reader = new PublicCompanyReader(
+    { ...dependencies, signal, bypassCache: true },
+    maximumRequests
   );
-  const target = uniqueIndustryRows(first.rows, period, 'REPORTDATE').get(code);
-  if (!target) throw new ApiFault(422, 'INDUSTRY_TARGET_MISSING', '本企业该年度没有可对齐行业记录');
-  const industryCode = textValue(target.BOARD_CODE),
-    industry = textValue(target.BOARD_NAME);
-  if (!/^BK\d{4,6}$/.test(industryCode) || !industry)
-    throw new ApiFault(422, 'INDUSTRY_CLASSIFICATION', '来源没有提供可核对的细分行业');
   const cohort = await industryRows(
     reader,
     'RPT_LICO_FN_CPD',
@@ -246,34 +265,53 @@ export async function retrieveIndustrySnapshot(
     period,
     'REPORTDATE'
   );
-  if (cohort.rows.some((row) => row.BOARD_CODE !== industryCode))
-    throw new ApiFault(422, 'INDUSTRY_CLASSIFICATION_CONFLICT', '来源返回不同细分行业，未混合计算');
-  const income = uniqueIndustryRows(cohort.rows, period, 'REPORTDATE');
-  if (!income.has(code))
-    throw new ApiFault(422, 'INDUSTRY_TARGET_MISSING', '本企业不在同报告期行业样本内');
-  const codes = [...income.keys()].sort(),
-    sources = [...first.sources, ...cohort.sources],
-    warnings: string[] = [];
-  const statements = async (report: string) => {
-    const rows: Record<string, unknown>[] = [];
-    for (let start = 0; start < codes.length; start += 100) {
-      const filter = codes
-        .slice(start, start + 100)
-        .map((code) => `"${code}"`)
-        .join(',');
-      const result = await industryRows(
-        reader,
-        report,
-        `(SECURITY_CODE in (${filter}))(REPORT_DATE='${period}')`,
-        period,
-        'REPORT_DATE'
+  let income: Map<string, Record<string, unknown>>;
+  try {
+    if (cohort.rows.some((row) => row.BOARD_CODE !== industryCode))
+      throw new ApiFault(
+        422,
+        'INDUSTRY_CLASSIFICATION_CONFLICT',
+        '来源返回不同细分行业，未混合计算'
       );
-      if (result.rows.some((row) => !codes.includes(textValue(row.SECURITY_CODE))))
-        throw new ApiFault(422, 'INDUSTRY_SUBJECT_CONFLICT', '报表返回行业样本之外的主体');
-      rows.push(...result.rows);
-      sources.push(...result.sources);
+    income = uniqueIndustryRows(cohort.rows, period, 'REPORTDATE');
+    if (!income.size)
+      throw new ApiFault(422, 'INDUSTRY_TARGET_MISSING', '该年度没有可核对的行业样本');
+  } catch (error) {
+    invalidateIndustrySources(reader, cohort.sources);
+    throw error;
+  }
+  const codes = [...income.keys()].sort(),
+    sources = [...cohort.sources],
+    warnings: string[] = [];
+  let fetchedAt = cohort.fetchedAt || (dependencies.now || (() => new Date()))().toISOString();
+  const statements = async (report: string) => {
+    const rows: Record<string, unknown>[] = [],
+      receipts: CompanyIndustrySnapshot['sources'] = [];
+    try {
+      for (let start = 0; start < codes.length; start += 100) {
+        const filter = codes
+          .slice(start, start + 100)
+          .map((code) => `"${code}"`)
+          .join(',');
+        const result = await industryRows(
+          reader,
+          report,
+          `(SECURITY_CODE in (${filter}))(REPORT_DATE='${period}')`,
+          period,
+          'REPORT_DATE'
+        );
+        receipts.push(...result.sources);
+        if (result.rows.some((row) => !codes.includes(textValue(row.SECURITY_CODE))))
+          throw new ApiFault(422, 'INDUSTRY_SUBJECT_CONFLICT', '报表返回行业样本之外的主体');
+        rows.push(...result.rows);
+        sources.push(...result.sources);
+        if (result.fetchedAt && result.fetchedAt < fetchedAt) fetchedAt = result.fetchedAt;
+      }
+      return uniqueIndustryRows(rows, period, 'REPORT_DATE');
+    } catch (error) {
+      invalidateIndustrySources(reader, receipts);
+      throw error;
     }
-    return uniqueIndustryRows(rows, period, 'REPORT_DATE');
   };
   const results = await Promise.allSettled([
     statements('RPT_DMSK_FN_BALANCE'),
@@ -294,12 +332,80 @@ export async function retrieveIndustrySnapshot(
   // Optional chart amounts share the same reader, deadline and cohort. Read
   // them after the required tables so they cannot consume the core budget.
   // CPD's attributable profit never substitutes for consolidated NETPROFIT.
-  let chartIncome = new Map<string, Record<string, unknown>>();
+  let chartIncome = new Map<string, Record<string, unknown>>(),
+    chartComplete = false;
   try {
     chartIncome = await statements('RPT_DMSK_FN_INCOME');
+    chartComplete = true;
   } catch {
     warnings.push('利润表图表参照本次未完整取得，相关金额和净利率保留未知。');
   }
+  signal.throwIfAborted();
+  return {
+    period,
+    industryCode,
+    fetchedAt,
+    codes,
+    income,
+    balance,
+    cash,
+    chartIncome,
+    sources,
+    warnings,
+    coreComplete: results.every((result) => result.status === 'fulfilled'),
+    complete: chartComplete && results.every((result) => result.status === 'fulfilled'),
+  };
+}
+
+export async function retrieveIndustrySnapshot(
+  code: string,
+  period: string,
+  dependencies: CompanySourceDependencies = {}
+): Promise<CompanyIndustrySnapshot> {
+  const now = (dependencies.now || (() => new Date()))();
+  validateIndustryInput(code, period, now);
+  const signal = dependencies.signal
+    ? AbortSignal.any([dependencies.signal, AbortSignal.timeout(90000)])
+    : AbortSignal.timeout(90000);
+  const reader = new PublicCompanyReader({ ...dependencies, signal });
+  const first = await industryRows(
+    reader,
+    'RPT_LICO_FN_CPD',
+    `(SECURITY_CODE="${code}")(REPORTDATE='${period}')`,
+    period,
+    'REPORTDATE'
+  );
+  let industryCode: string, industry: string;
+  try {
+    const target = uniqueIndustryRows(first.rows, period, 'REPORTDATE').get(code);
+    if (!target)
+      throw new ApiFault(422, 'INDUSTRY_TARGET_MISSING', '本企业该年度没有可对齐行业记录');
+    industryCode = textValue(target.BOARD_CODE);
+    industry = textValue(target.BOARD_NAME);
+    if (!/^BK\d{4,6}$/.test(industryCode) || !industry)
+      throw new ApiFault(422, 'INDUSTRY_CLASSIFICATION', '来源没有提供可核对的细分行业');
+  } catch (error) {
+    invalidateIndustrySources(reader, first.sources);
+    throw error;
+  }
+  const cohort = await publicIndustryCohortCache(dependencies.fetch || fetch).read(
+    `eastmoney:annual-consolidated:v1:${industryCode}:${industry}:${period}`,
+    (producerSignal) =>
+      retrievePublicIndustryCohort(
+        industryCode,
+        period,
+        dependencies,
+        Math.max(0, reader.maximumRequests - reader.requests),
+        producerSignal
+      ),
+    { signal, bypass: dependencies.bypassCache }
+  );
+  signal.throwIfAborted();
+  const { income, balance, cash, chartIncome, codes } = cohort;
+  if (!income.has(code))
+    throw new ApiFault(422, 'INDUSTRY_TARGET_MISSING', '本企业不在同报告期行业样本内');
+  const sources = [...first.sources, ...cohort.sources],
+    warnings = [...cohort.warnings];
   const samples = codes.map((item) => ({
     code: item,
     name: textValue(income.get(item)!.SECURITY_NAME_ABBR) || item,
@@ -325,10 +431,9 @@ export async function retrieveIndustrySnapshot(
     period,
     industry,
     industryCode,
-    fetchedAt: now.toISOString(),
+    fetchedAt: cohort.fetchedAt,
     status:
-      results.some((result) => result.status === 'rejected') ||
-      industryMetricKeys.some((key) => metrics[key].count < minimumSamples)
+      !cohort.coreComplete || industryMetricKeys.some((key) => metrics[key].count < minimumSamples)
         ? 'partial'
         : 'available',
     peerCount: codes.length - 1,

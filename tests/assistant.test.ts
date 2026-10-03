@@ -12,6 +12,7 @@ import { deriveCompanyAssessment } from '../shared/company-assessment.js';
 import { createApp } from '../server/app.js';
 import type { AssistantService } from '../server/assistant.js';
 import type { ModelConfig } from '../server/model.js';
+import type { CompanyContextService } from '../server/company-context-routes.js';
 import { answerCompanyQuestion } from '../server/company-questions.js';
 import { seeds } from '../server/store.js';
 
@@ -145,7 +146,11 @@ async function waitUntil(predicate: () => boolean) {
   }
 }
 
-async function harness(service: AssistantService = {}, model: ModelConfig = {}) {
+async function harness(
+  service: AssistantService = {},
+  model: ModelConfig = {},
+  companyContextService?: Pick<CompanyContextService, 'question'>
+) {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-assistant-'));
   const inputs: {
     run: CompanyResearchRun;
@@ -158,6 +163,20 @@ async function harness(service: AssistantService = {}, model: ModelConfig = {}) 
     dataDir: directory,
     companyDirectory: null,
     model,
+    ...(companyContextService
+      ? {
+          companyContextService: {
+            ...companyContextService,
+            searchCompanies: async () => {
+              throw Error('Unexpected company search');
+            },
+            context: async () => context(moutai, 2025),
+            industry: async () => {
+              throw Error('Unexpected industry request');
+            },
+          },
+        }
+      : {}),
     assistantService: {
       wantsResearch: () => false,
       question: async (run, question, basis, useModel, _model, signal) => {
@@ -394,13 +413,15 @@ test('saved company questions automatically resolve names, annual scope and conv
     for (const { request, expected } of cases) {
       const response = await h.message(request, owner.headers);
       assert.equal(response.status, 200, request.question);
-      const answer = (await response.json()) as AssistantAnswer;
+      const answer = (await response.json()) as AssistantAnswer & { cached?: boolean };
       assert.equal(answer.kind, 'company', request.question);
       assert.equal(answer.company?.runId, expected.id, request.question);
       assert.equal(answer.company?.year, expected.input.year, request.question);
-      assert.equal(h.inputs.at(-1)?.run.id, expected.id, request.question);
-      assert.equal(h.inputs.at(-1)?.useModel, true);
-      assert.equal(h.inputs.at(-1)?.basis, request.basis || 'consolidated');
+      if (!answer.cached) {
+        assert.equal(h.inputs.at(-1)?.run.id, expected.id, request.question);
+        assert.equal(h.inputs.at(-1)?.useModel, true);
+        assert.equal(h.inputs.at(-1)?.basis, request.basis || 'consolidated');
+      }
     }
   } finally {
     await h.dispose();
@@ -881,6 +902,402 @@ test('product operator and legal responsibility questions override a selected co
     assert.deepEqual(store.state.companyRuns![0]!.assessment, before);
     assert.equal(store.state.companyRuns![0]!.questions?.length || 0, 0);
   } finally {
+    await h.dispose();
+  }
+});
+
+test('repeated owning-company answers reuse a completed result without model calls or duplicated history', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const run = company();
+    const store = await h.save(owner.userId, [run]);
+    const request = { question: '现金质量如何？', locale: 'zh', currentRunId: run.id } as const;
+    const firstResponse = await h.message(request, owner.headers);
+    assert.equal(firstResponse.status, 200);
+    const first = (await firstResponse.json()) as AssistantAnswer;
+    const repeatResponse = await h.message(request, owner.headers);
+    assert.equal(repeatResponse.status, 200);
+    const repeat = (await repeatResponse.json()) as AssistantAnswer & { cached?: boolean };
+    assert.equal(repeat.cached, true);
+    assert.equal(repeat.createdAt, first.createdAt);
+    assert.equal(repeat.snapshotFetchedAt, first.snapshotFetchedAt);
+    assert.equal(repeat.text, first.text);
+    assert.equal(h.inputs.length, 1);
+    assert.equal(store.state.companyRuns![0]!.questions?.length, 1);
+    const refreshed = await h.message({ ...request, refresh: true }, owner.headers);
+    assert.equal(refreshed.status, 200);
+    const fresh = (await refreshed.json()) as AssistantAnswer & { cached?: boolean };
+    assert.equal(fresh.cached, undefined);
+    const afterRefresh = (await (
+      await h.message(request, owner.headers)
+    ).json()) as AssistantAnswer & {
+      cached?: boolean;
+    };
+    assert.equal(afterRefresh.cached, true);
+    assert.equal(afterRefresh.createdAt, fresh.createdAt);
+    assert.equal(h.inputs.length, 2);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('assistant answer cache excludes other owners, including identical imported research IDs', async () => {
+  const h = await harness();
+  try {
+    const one = await h.register();
+    const two = await h.register('cached-other@example.test');
+    const run = company();
+    await h.save(one.userId, [run]);
+    await h.save(two.userId, [structuredClone(run)]);
+    const request = { question: '现金质量如何？', locale: 'zh', currentRunId: run.id } as const;
+    await (await h.message(request, one.headers)).json();
+    const other = await h.message(request, two.headers);
+    assert.equal(other.status, 200);
+    assert.equal(((await other.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(h.inputs.length, 2);
+    const repeat = await h.message(request, one.headers);
+    assert.equal(((await repeat.json()) as { cached?: boolean }).cached, true);
+    assert.equal(h.inputs.length, 2);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('changed public amounts, language, basis and conversation invalidate assistant reuse', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const run = company();
+    await h.save(owner.userId, [run]);
+    const request = { question: '现金质量如何？', locale: 'zh', currentRunId: run.id } as const;
+    await (await h.message(request, owner.headers)).json();
+    run.context!.financials[0]!.amounts.ocf = '71.00';
+    const changed = await h.message(request, owner.headers);
+    assert.equal(((await changed.json()) as { cached?: boolean }).cached, undefined);
+    for (const variant of [
+      { ...request, locale: 'en' as const },
+      { ...request, basis: 'parent' as const },
+      { ...request, previousQuestions: ['利润为什么变化？'] },
+    ]) {
+      const response = await h.message(variant, owner.headers);
+      assert.equal(response.status, 200);
+      assert.equal(((await response.json()) as { cached?: boolean }).cached, undefined);
+    }
+    assert.equal(h.inputs.length, 5);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('deleting and reimporting a research record cannot revive its old assistant memo', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const run = company();
+    const store = await h.save(owner.userId, [run]);
+    const request = { question: '现金质量如何？', locale: 'zh', currentRunId: run.id } as const;
+    await (await h.message(request, owner.headers)).json();
+    store.state.companyRuns = [];
+    const deleted = await h.message(request, owner.headers);
+    assert.equal(deleted.status, 404);
+    await store.reset();
+    store.state.companyRuns = [structuredClone(run)];
+    const imported = await h.message(request, owner.headers);
+    assert.equal(imported.status, 200);
+    assert.equal(((await imported.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(h.inputs.length, 2);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('model failure fallback stays retryable and only the later successful answer is cached', async () => {
+  let calls = 0;
+  const h = await harness({
+    question: async (run, question) => {
+      calls++;
+      return calls === 1
+        ? { ...companyAnswer(run, question), mode: 'rules-fallback', warning: 'Provider failed' }
+        : companyAnswer(run, question);
+    },
+  });
+  try {
+    const owner = await h.register();
+    const run = company();
+    await h.save(owner.userId, [run]);
+    const request = { question: '现金质量如何？', locale: 'zh', currentRunId: run.id } as const;
+    const failed = await h.message(request, owner.headers);
+    assert.equal(((await failed.json()) as AssistantAnswer).mode, 'rules-fallback');
+    const recovered = await h.message(request, owner.headers);
+    assert.equal(((await recovered.json()) as AssistantAnswer).mode, 'model');
+    const reused = await h.message(request, owner.headers);
+    assert.equal(((await reused.json()) as { cached?: boolean }).cached, true);
+    assert.equal(calls, 2);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('failed persistence does not publish an assistant memo or leave an appended answer', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const run = company();
+    const store = await h.save(owner.userId, [run]);
+    const persist = store.persist.bind(store);
+    store.persist = async () => {
+      throw Error('Injected storage failure');
+    };
+    const request = { question: '现金质量如何？', locale: 'zh', currentRunId: run.id } as const;
+    assert.equal((await h.message(request, owner.headers)).status, 500);
+    assert.equal(run.questions, undefined);
+    store.persist = persist;
+    const recovered = await h.message(request, owner.headers);
+    assert.equal(recovered.status, 200);
+    assert.equal(((await recovered.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(h.inputs.length, 2);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('explicit repeated public follow-up performs fresh research rather than answer reuse', async () => {
+  let researchCalls = 0;
+  const h = await harness({
+    wantsResearch: () => true,
+    research: async (run, _question, options) => {
+      researchCalls++;
+      assert.equal(options?.bypassCache, true);
+      return {
+        run: structuredClone(run),
+        research: { status: 'completed', toolCalls: 1, sources: [] },
+      };
+    },
+  });
+  try {
+    const owner = await h.register();
+    const run = company();
+    await h.save(owner.userId, [run]);
+    for (let index = 0; index < 2; index++) {
+      const response = await h.message(
+        { question: '查一下最新公告', locale: 'zh', currentRunId: run.id },
+        owner.headers
+      );
+      assert.equal(response.status, 200);
+      assert.equal(((await response.json()) as { cached?: boolean }).cached, undefined);
+    }
+    assert.equal(researchCalls, 2);
+    assert.equal(h.inputs.length, 2);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('signed-in documentation repeats are owner-scoped and require no private workspace', async () => {
+  let calls = 0;
+  const h = await harness({
+    documentation: async (question) => {
+      calls++;
+      return { ...documentationAnswer(question), mode: 'model' };
+    },
+  });
+  try {
+    const one = await h.register();
+    const two = await h.register('docs-cache-other@example.test');
+    const request = { question: '网站隐私政策如何处理数据？', locale: 'zh' } as const;
+    await (await h.message(request, one.headers)).json();
+    const repeat = await h.message(request, one.headers);
+    assert.equal(((await repeat.json()) as { cached?: boolean }).cached, true);
+    const other = await h.message(request, two.headers);
+    assert.equal(((await other.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(calls, 2);
+    assert.deepEqual(await readdir(path.join(h.directory, 'users')).catch(() => []), []);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('legacy company questions reuse only saved successful owning answers and preserve timestamps', async () => {
+  let calls = 0;
+  const h = await harness(
+    {},
+    {},
+    {
+      question: async (run, question) => {
+        calls++;
+        assert.equal(run.questions, undefined);
+        assert.equal(Object.hasOwn(run, 'originals'), false);
+        return companyAnswer(run, question);
+      },
+    }
+  );
+  try {
+    const owner = await h.register();
+    const run = company();
+    const store = await h.save(owner.userId, [run]);
+    const question = (refresh = false) =>
+      fetch(`${h.base}/api/company-runs/${run.id}/questions`, {
+        method: 'POST',
+        headers: owner.headers,
+        body: JSON.stringify({
+          question: '现金质量如何？',
+          basis: 'consolidated',
+          useModel: true,
+          refresh,
+        }),
+      });
+    const first = (await (await question()).json()) as AssistantAnswer;
+    const cached = (await (await question()).json()) as AssistantAnswer & { cached?: boolean };
+    assert.equal(cached.cached, true);
+    assert.equal(cached.createdAt, first.createdAt);
+    assert.equal(cached.snapshotFetchedAt, first.snapshotFetchedAt);
+    assert.equal(calls, 1);
+    assert.equal(run.questions?.length, 1);
+    const fresh = (await (await question(true)).json()) as AssistantAnswer;
+    assert.equal(calls, 2);
+    const afterRefresh = (await (await question()).json()) as AssistantAnswer & {
+      cached?: boolean;
+    };
+    assert.equal(afterRefresh.cached, true);
+    assert.equal(afterRefresh.createdAt, fresh.createdAt);
+    assert.equal(calls, 2);
+    run.context!.financials[0]!.amounts.ocf = '72.00';
+    await (await question()).json();
+    assert.equal(calls, 3);
+    store.state.companyRuns = [];
+    assert.equal((await question()).status, 404);
+    await store.reset();
+    store.state.companyRuns = [structuredClone(run)];
+    const imported = await question();
+    assert.equal(imported.status, 200);
+    assert.equal(((await imported.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(calls, 4);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('legacy question cache keeps equal research IDs and answers isolated by account', async () => {
+  let calls = 0;
+  const h = await harness(
+    {},
+    {},
+    {
+      question: async (run, question) => {
+        calls++;
+        return companyAnswer(run, question);
+      },
+    }
+  );
+  try {
+    const owner = await h.register();
+    const other = await h.register('legacy-other@example.test');
+    const run = company();
+    await h.save(owner.userId, [run]);
+    await h.save(other.userId, [structuredClone(run)]);
+    const question = (headers: Record<string, string>) =>
+      fetch(`${h.base}/api/company-runs/${run.id}/questions`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ question: '现金质量如何？', basis: 'consolidated', useModel: true }),
+      });
+    await (await question(owner.headers)).json();
+    const second = await question(other.headers);
+    assert.equal(second.status, 200);
+    assert.equal(((await second.json()) as { cached?: boolean }).cached, undefined);
+    assert.equal(calls, 2);
+    const repeat = await question(owner.headers);
+    assert.equal(((await repeat.json()) as { cached?: boolean }).cached, true);
+    assert.equal(calls, 2);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('legacy question fallbacks retry providers and failed storage never publishes answer memo', async () => {
+  let calls = 0;
+  const h = await harness(
+    {},
+    {},
+    {
+      question: async (run, question) => {
+        calls++;
+        return calls === 1
+          ? {
+              ...companyAnswer(run, question),
+              mode: 'rules-fallback',
+              warning: 'Provider unavailable',
+            }
+          : companyAnswer(run, question);
+      },
+    }
+  );
+  try {
+    const owner = await h.register();
+    const run = company();
+    const store = await h.save(owner.userId, [run]);
+    const question = () =>
+      fetch(`${h.base}/api/company-runs/${run.id}/questions`, {
+        method: 'POST',
+        headers: owner.headers,
+        body: JSON.stringify({ question: '现金质量如何？', basis: 'consolidated', useModel: true }),
+      });
+    assert.equal(((await (await question()).json()) as AssistantAnswer).mode, 'rules-fallback');
+    const previousAnswers = run.questions;
+    const persist = store.persist.bind(store);
+    store.persist = async () => {
+      throw Error('Injected legacy storage failure');
+    };
+    assert.equal((await question()).status, 500);
+    assert.equal(run.questions, previousAnswers);
+    store.persist = persist;
+    const recovered = await question();
+    assert.equal(recovered.status, 200);
+    assert.equal(((await recovered.json()) as { cached?: boolean }).cached, undefined);
+    const cached = await question();
+    assert.equal(((await cached.json()) as { cached?: boolean }).cached, true);
+    assert.equal(calls, 3);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('an older in-flight company answer cannot overwrite a later explicitly refreshed memo', async () => {
+  const oldGate = deferred();
+  let calls = 0;
+  let oldStarted = false;
+  const h = await harness({
+    question: async (run, question) => {
+      const call = ++calls;
+      if (call === 1) {
+        oldStarted = true;
+        await oldGate.promise;
+      }
+      return { ...companyAnswer(run, question), text: `Validated public answer ${call}` };
+    },
+  });
+  let old: Promise<Response> | undefined;
+  try {
+    const owner = await h.register();
+    const run = company();
+    await h.save(owner.userId, [run]);
+    const request = { question: '现金质量如何？', locale: 'zh', currentRunId: run.id } as const;
+    old = h.message(request, owner.headers);
+    await waitUntil(() => oldStarted);
+    const fresh = await h.message({ ...request, refresh: true }, owner.headers);
+    assert.equal(fresh.status, 200);
+    assert.equal(((await fresh.json()) as AssistantAnswer).text, 'Validated public answer 2');
+    oldGate.resolve();
+    assert.equal((await old).status, 200);
+    const cached = await h.message(request, owner.headers);
+    const answer = (await cached.json()) as AssistantAnswer & { cached?: boolean };
+    assert.equal(answer.cached, true);
+    assert.equal(answer.text, 'Validated public answer 2');
+    assert.equal(calls, 2);
+  } finally {
+    oldGate.resolve();
+    await old;
     await h.dispose();
   }
 });

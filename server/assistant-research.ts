@@ -25,7 +25,7 @@ import { assertCompanyResearchSupported, officialPdfUrl, shanghaiDate } from './
 import { ApiFault } from './validation.js';
 
 type Research = NonNullable<AssistantAnswer['research']>;
-type Options = { signal?: AbortSignal; fetch?: typeof fetch };
+type Options = { signal?: AbortSignal; fetch?: typeof fetch; bypassCache?: boolean };
 const limits = { requests: 4, milliseconds: 20_000 };
 const publicTopics = /回款|应收|存货|减值|订单|产能|诉讼|监管|处罚|分红|回购|业绩|融资|债务/g;
 const sourceQuestion =
@@ -208,7 +208,12 @@ export async function researchAssistantCompany(
       ...(options.signal ? [options.signal] : []),
     ]),
     reader = new PublicCompanyReader(
-      { fetch: abortableFetch(options.fetch || fetch), signal },
+      {
+        fetch: abortableFetch(options.fetch || fetch),
+        signal,
+        // This branch is entered only for an explicit request to look up public sources.
+        bypassCache: options.bypassCache ?? true,
+      },
       limits.requests
     );
   const aliases = [
@@ -272,6 +277,7 @@ export async function researchAssistantCompany(
     await attempt(source, async () => {
       const response = await reader.json(url.href);
       source.responseHashes.push(response.sha256);
+      source.fetchedAt = response.fetchedAt;
       const raw = objectValue(response.value.result).cmsArticleWebOld;
       if (
         !Array.isArray(raw) ||
@@ -341,6 +347,7 @@ export async function researchAssistantCompany(
       });
       source.responseHashes.push(response.sha256);
       if (!Array.isArray(response.value.announcements)) throw Error('ASSISTANT_DISCLOSURE_FORMAT');
+      source.fetchedAt = response.fetchedAt;
       const rows = [];
       for (const row of arrayValue(response.value.announcements).slice(0, 30)) {
         if (
@@ -389,6 +396,7 @@ export async function researchAssistantCompany(
     await attempt(source, async () => {
       const response = await reader.read(url, {}, 1_500_000);
       source.responseHashes.push(response.sha256);
+      source.fetchedAt = response.fetchedAt;
       const value = readEmbeddedPublicJson(response.body.toString('utf8'), 'article_list');
       if (
         textValue(value.bar_code) !== run.input.securityCode ||

@@ -9,6 +9,7 @@ import {
   FlaskConical,
   LoaderCircle,
   Pause,
+  RefreshCw,
   RotateCcw,
   ScanLine,
   X,
@@ -39,6 +40,7 @@ export type EvidenceLabProps = {
   example?: boolean;
   challenge?: CompanyChallengeState;
   onChallenge?: (target: LabHypothesisId) => void;
+  onRefreshChallenge?: (target: LabHypothesisId) => void;
   challengeDisabled?: boolean;
   onStartResearch?: () => void;
 };
@@ -73,6 +75,7 @@ export function EvidenceLab({
   example = false,
   challenge,
   onChallenge,
+  onRefreshChallenge,
   challengeDisabled = false,
   onStartResearch,
 }: EvidenceLabProps) {
@@ -737,13 +740,25 @@ export function EvidenceLab({
               {t(...companyChallengeDefinitions[challenge.target].title)} ·{' '}
               {t('解释挑战', 'Explanation challenge')}
             </h3>
-            <span>
-              {researchLoading
-                ? t('补查中', 'Researching')
-                : challenge.status === 'failed'
-                  ? t('未完成', 'Incomplete')
-                  : t('本轮结果', 'Run result')}
-            </span>
+            <div className="inline-actions">
+              <span>
+                {researchLoading
+                  ? t('补查中', 'Researching')
+                  : challenge.status === 'failed'
+                    ? t('未完成', 'Incomplete')
+                    : t('本轮结果', 'Run result')}
+              </span>
+              {onRefreshChallenge && !researchLoading && (
+                <button
+                  className="button button-secondary"
+                  disabled={challengeDisabled || researchInapplicable || withdrawn.length > 0}
+                  onClick={() => onRefreshChallenge(challenge.target)}
+                >
+                  <RefreshCw size={13} />
+                  {t('重新补查', 'Research again')}
+                </button>
+              )}
+            </div>
           </div>
           {challenge.status === 'failed' && (
             <p className="lab-result-warning" role="alert">

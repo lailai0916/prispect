@@ -90,7 +90,7 @@ async function waitUntil(predicate: () => boolean) {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
 }
-type Envelope = { challenge: CompanyChallengeState | null; stale: boolean };
+type Envelope = { challenge: CompanyChallengeState | null; stale: boolean; cached?: boolean };
 const result = (run: CompanyResearchRun, target: CompanyChallengeTarget): CompanyChallengeResult =>
   deriveChallengeResult(run, target);
 
@@ -234,6 +234,7 @@ test('challenge API isolates owners, CSRF, payload fields and the service input 
       preview: { value: 'PRIVATE_PREVIEW_SENTINEL' },
       privateAccount: 'PRIVATE_ACCOUNT_SENTINEL',
       questions: ['PRIVATE_QUESTION_SENTINEL'],
+      challengeResults: { private: 'PRIVATE_CHALLENGE_HISTORY_SENTINEL' },
     });
     await h.store.persist();
     const baseline = structuredClone(h.run.context);
@@ -286,6 +287,7 @@ test('challenge API isolates owners, CSRF, payload fields and the service input 
       'PRIVATE_PREVIEW_SENTINEL',
       'PRIVATE_ACCOUNT_SENTINEL',
       'PRIVATE_QUESTION_SENTINEL',
+      'PRIVATE_CHALLENGE_HISTORY_SENTINEL',
     ])
       assert.ok(!JSON.stringify(inputs[0]).includes(sentinel));
     assert.equal((await h.get()).challenge?.trace[0]?.status, 'running');
@@ -320,6 +322,7 @@ test('challenge API isolates owners, CSRF, payload fields and the service input 
     const saved = await h.persisted();
     assert.equal(saved.companyRuns[0].challenge.status, 'ready');
     assert.equal(saved.companyRuns[0].challenge.trace[0].status, 'completed');
+    assert.deepEqual(Object.keys(saved.companyRuns[0].challengeResults), ['expansion']);
   } finally {
     gate.resolve();
     await h.dispose();
@@ -436,8 +439,13 @@ test('cancel aborts the active challenge, retains its predecessor and prevents l
       canceled,
       'a service that returns after cancellation cannot republish'
     );
+    const retained = await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion' });
+    assert.equal(retained.status, 200);
+    assert.deepEqual(((await retained.json()) as Envelope).challenge?.result, predecessor);
+    assert.equal(calls, 2);
     assert.equal(
-      (await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion' })).status,
+      (await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion', refresh: true }))
+        .status,
       202
     );
     await h.app.waitForIdle();
@@ -753,5 +761,280 @@ test('failed initial persistence releases the reservation and never starts publi
   } finally {
     h.store.persist = persist;
     await h.dispose();
+  }
+});
+
+test('all three completed targets roundtrip from the owning workspace without tools, while refresh and content changes invalidate reuse', async () => {
+  const calls: { target: CompanyChallengeTarget; bypass: boolean | undefined }[] = [];
+  const h = await harness({
+    challenge: async (run, target, _model, options) => {
+      assert.equal(run.challengeResults, undefined, 'History must never enter public research.');
+      calls.push({ target, bypass: options?.bypassCache });
+      const value = result(run, target);
+      value.generatedAt = `2026-10-03T00:00:0${calls.length}.000Z`;
+      return value;
+    },
+  });
+  const targets = ['expansion', 'inventory-pressure', 'collection-pressure'] as const;
+  const originals = new Map<CompanyChallengeTarget, CompanyChallengeResult>();
+  try {
+    for (const target of targets) {
+      assert.equal((await h.call(`/company-runs/${h.run.id}/challenge`, { target })).status, 202);
+      await h.app.waitForIdle();
+      originals.set(target, structuredClone(h.run.challenge!.result!));
+    }
+    assert.equal(calls.length, 3);
+    assert.deepEqual(Object.keys(h.run.challengeResults!).sort(), [...targets].sort());
+    for (const target of [...targets, ...targets]) {
+      const response = await h.call(`/company-runs/${h.run.id}/challenge`, { target });
+      assert.equal(response.status, 200);
+      const cached = (await response.json()) as Envelope;
+      assert.equal(cached.cached, true);
+      assert.equal(cached.stale, false);
+      assert.deepEqual(cached.challenge!.result, originals.get(target));
+    }
+    assert.equal(calls.length, 3, 'Six target switches perform no further research.');
+    assert.deepEqual((await h.persisted()).companyRuns[0].challengeResults, h.run.challengeResults);
+    assert.equal(
+      (await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion', refresh: true }))
+        .status,
+      202
+    );
+    await h.app.waitForIdle();
+    assert.equal(calls.length, 4);
+    assert.equal(calls[3]!.bypass, true);
+    assert.notDeepEqual(h.run.challenge!.result, originals.get('expansion'));
+    // Same timestamps and revision, changed exact body hash: old target history cannot match.
+    h.run.context!.sources[0]!.responseHashes = ['b'.repeat(64)];
+    assert.equal(
+      (await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'inventory-pressure' }))
+        .status,
+      202
+    );
+    await h.app.waitForIdle();
+    assert.equal(calls.length, 5);
+    assert.equal(calls[4]!.bypass, false);
+    assert.notDeepEqual(h.run.challenge!.result, originals.get('inventory-pressure'));
+    const changedHash = h.run.challengeResults!['inventory-pressure']!.inputHash;
+    assert.equal(changedHash, companyChallengeInputHash(h.run, 'inventory-pressure'));
+    assert.notEqual(
+      h.run.challengeResults!.expansion!.inputHash,
+      companyChallengeInputHash(h.run, 'expansion')
+    );
+    assert.equal(Object.keys(h.run.challengeResults!).length, 3);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('failed research or save never publishes a target cache entry, and a failed cached switch restores the previous active target', async () => {
+  let failTarget: CompanyChallengeTarget | undefined;
+  let calls = 0;
+  const h = await harness({
+    challenge: async (run, target) => {
+      calls++;
+      if (target === failTarget) throw Error('Provider failure');
+      return result(run, target);
+    },
+  });
+  const persist = h.store.persist.bind(h.store);
+  try {
+    // A legacy saved run with no history still retains its completed result on a failed switch.
+    const legacy = result(h.run, 'expansion');
+    h.run.challenge = {
+      status: 'ready',
+      target: 'expansion',
+      revision: 1,
+      inputHash: companyChallengeInputHash(h.run, 'expansion'),
+      trace: [],
+      result: legacy,
+    };
+    await h.store.persist();
+    failTarget = 'inventory-pressure';
+    await h.call(`/company-runs/${h.run.id}/challenge`, { target: failTarget });
+    await h.app.waitForIdle();
+    assert.equal(h.run.challenge!.status, 'failed');
+    assert.equal(h.run.challengeResults!['inventory-pressure'], undefined);
+    assert.deepEqual(h.run.challengeResults!.expansion!.result, legacy);
+    const cached = await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion' });
+    assert.equal(cached.status, 200);
+    assert.equal(calls, 1);
+    failTarget = undefined;
+    let rejectFinal = true;
+    h.store.persist = async () => {
+      if (
+        rejectFinal &&
+        h.run.challenge?.status === 'ready' &&
+        h.run.challenge.target === 'collection-pressure'
+      ) {
+        rejectFinal = false;
+        throw Error('Final-save failure');
+      }
+      await persist();
+    };
+    await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'collection-pressure' });
+    await h.app.waitForIdle();
+    assert.equal(h.run.challenge!.status, 'failed');
+    assert.equal(h.run.challengeResults!['collection-pressure'], undefined);
+    assert.equal(
+      (await h.persisted()).companyRuns[0].challengeResults['collection-pressure'],
+      undefined
+    );
+    h.store.persist = persist;
+    await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'inventory-pressure' });
+    await h.app.waitForIdle();
+    const before = h.run.challenge;
+    h.store.persist = async () => {
+      throw Error('Cached-view-save failure');
+    };
+    assert.equal(
+      (await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion' })).status,
+      500
+    );
+    assert.equal(h.run.challenge, before);
+    assert.equal(h.run.challenge!.target, 'inventory-pressure');
+    assert.equal(calls, 3, 'A failed cached switch does not start a provider retry.');
+  } finally {
+    h.store.persist = persist;
+    await h.dispose();
+  }
+});
+
+test('identical run IDs across accounts have independent challenge reservations and cancellation', async () => {
+  const gates = [deferred(), deferred()];
+  const signals: AbortSignal[] = [];
+  const h = await harness({
+    challenge: async (run, target, _model, options) => {
+      const index = signals.length;
+      signals.push(options!.signal!);
+      await gates[index]!.promise;
+      return result(run, target);
+    },
+  });
+  try {
+    const other = await h.register('challenge-duplicate-id@example.test');
+    const otherStore = await h.app.workspaceForUser(other.userId);
+    const otherRun = structuredClone(h.run);
+    otherStore.state.companyRuns = [otherRun];
+    await otherStore.persist();
+    assert.equal(
+      (await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion' })).status,
+      202
+    );
+    await waitUntil(() => signals.length === 1);
+    assert.equal(
+      (
+        await h.call(
+          `/company-runs/${h.run.id}/challenge`,
+          { target: 'inventory-pressure' },
+          other.headers
+        )
+      ).status,
+      202
+    );
+    await waitUntil(() => signals.length === 2);
+    await h.call(`/company-runs/${h.run.id}/challenge/cancel`, {});
+    assert.equal(signals[0]!.aborted, true);
+    assert.equal(signals[1]!.aborted, false);
+    gates[1]!.resolve();
+    await waitUntil(() => otherRun.challenge?.status === 'ready');
+    gates[0]!.resolve();
+    await h.app.waitForIdle();
+    assert.equal(h.run.challenge!.status, 'failed');
+    assert.equal(h.run.challengeResults, undefined);
+    assert.equal(otherRun.challenge!.status, 'ready');
+    assert.equal(
+      otherRun.challengeResults!['inventory-pressure']!.result.target,
+      'inventory-pressure'
+    );
+    assert.equal(otherRun.challengeResults!.expansion, undefined);
+    assert.equal(
+      (
+        await h.call(
+          `/company-runs/${h.run.id}/challenge`,
+          { target: 'inventory-pressure' },
+          other.headers
+        )
+      ).status,
+      200
+    );
+    assert.equal(signals.length, 2);
+  } finally {
+    gates.forEach((gate) => gate.resolve());
+    await h.dispose();
+  }
+});
+
+test('deleting or resetting completed research removes all three cached targets instead of leaving reusable account-global results', async () => {
+  for (const reset of [false, true]) {
+    const h = await harness();
+    try {
+      for (const target of ['expansion', 'inventory-pressure', 'collection-pressure'] as const) {
+        await h.call(`/company-runs/${h.run.id}/challenge`, { target });
+        await h.app.waitForIdle();
+      }
+      assert.equal(Object.keys(h.run.challengeResults!).length, 3);
+      const response = reset
+        ? await h.call('/reset', { confirm: 'RESET_DEMO' })
+        : await h.call(`/company-runs/${h.run.id}`, undefined, h.owner.headers, 'DELETE');
+      assert.ok(response.ok);
+      assert.equal(
+        (await h.call(`/company-runs/${h.run.id}/challenge`, { target: 'expansion' })).status,
+        404
+      );
+      assert.equal((await h.persisted()).companyRuns.length, 0);
+    } finally {
+      await h.dispose();
+    }
+  }
+});
+
+test('completed target history survives a server restart and restores earlier targets without provider execution', async () => {
+  const h = await harness();
+  let stopped = false;
+  let restarted: Awaited<ReturnType<typeof createApp>> | undefined;
+  let server: ReturnType<typeof h.app.app.listen> | undefined;
+  let calls = 0;
+  try {
+    for (const target of ['expansion', 'inventory-pressure', 'collection-pressure'] as const) {
+      await h.call(`/company-runs/${h.run.id}/challenge`, { target });
+      await h.app.waitForIdle();
+    }
+    const retained = structuredClone(h.run.challengeResults);
+    await h.stop();
+    stopped = true;
+    restarted = await createApp({
+      dataDir: h.directory,
+      model: {},
+      companyChallengeService: {
+        challenge: async (run, target) => {
+          calls++;
+          return result(run, target);
+        },
+      },
+    });
+    server = restarted.app.listen(0, '127.0.0.1');
+    await new Promise<void>((resolve) => server!.once('listening', resolve));
+    const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const response = await fetch(`${base}/api/company-runs/${h.run.id}/challenge`, {
+      method: 'POST',
+      headers: h.owner.headers,
+      body: JSON.stringify({ target: 'expansion' }),
+    });
+    assert.equal(response.status, 200);
+    assert.equal(((await response.json()) as Envelope).cached, true);
+    const store = await restarted.workspaceForUser(h.owner.userId);
+    const recovered = store.state.companyRuns!.find((run) => run.id === h.run.id)!;
+    assert.deepEqual(recovered.challengeResults, retained);
+    assert.deepEqual(recovered.challenge!.result, retained!.expansion!.result);
+    assert.equal(calls, 0);
+  } finally {
+    if (restarted) {
+      await restarted.waitForIdle();
+      if (server) await new Promise<void>((resolve) => server!.close(() => resolve()));
+      restarted.auth.close();
+    }
+    if (!stopped) await h.stop();
+    await rm(h.directory, { recursive: true, force: true });
   }
 });

@@ -1,5 +1,9 @@
 import type { CompanyAssessment, AssessmentResearchStep } from './company-assessment.js';
-import type { CompanyChallengeState } from './company-challenge.js';
+import type {
+  CompanyChallengeResult,
+  CompanyChallengeState,
+  CompanyChallengeTarget,
+} from './company-challenge.js';
 
 /** Public company context stays separate from adopted original-report evidence. */
 export const companySections = [
@@ -340,6 +344,14 @@ export interface CompanyWorkspaceExtension {
   assessmentFocus?: string;
   assessmentTrace?: AssessmentResearchStep[];
   challenge?: CompanyChallengeState;
+  /** Owning-workspace reuse only: one completed, version-bound result per fixed target.
+   * This history is never part of public model inputs or browser reading snapshots. */
+  challengeResults?: Partial<
+    Record<
+      CompanyChallengeTarget,
+      { version: 1; inputHash: string; result: CompanyChallengeResult }
+    >
+  >;
 }
 
 export interface CompanyRecordSummary {
