@@ -787,7 +787,7 @@ function pageAnchorItems(
     case 'trends':
     case 'financial':
       return [
-        ['company-financial-history', '历史走势', 'History'],
+        ['company-financial-history', ...productTerms.financialTrends],
         ['company-financial-data', '逐年指标', 'Annual metrics'],
       ];
     case 'industry':

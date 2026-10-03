@@ -11,6 +11,7 @@ export const productTerms = {
   researchRecord: ['研究记录', 'Research record'],
   researchRecords: ['研究记录', 'Research records'],
   researchReport: ['研究报告', 'Research report'],
+  financialTrends: ['财务走势', 'Financial trends'],
   financialGrade: ['财务评级', 'Financial grade'],
   loadedCompanies: ['已载入企业', 'Loaded companies'],
   companyQuestions: ['企业问答', 'Company questions'],

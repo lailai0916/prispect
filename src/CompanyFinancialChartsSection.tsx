@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { productTerms } from '../shared/product-terms';
 import { ChevronDown, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import {
@@ -176,7 +177,7 @@ export function CompanyFinancialChartsSection({
         <section id="company-financial-history" className="company-workspace-section">
           <div className="financial-chart-history-heading">
             <h2 className="company-workspace-section-title">
-              {t('历史财务走势', 'Financial history')}
+              {t(...productTerms.financialTrends)}
             </h2>
             {historyPeriods.length > 0 && (
               <div className="financial-chart-history-actions">

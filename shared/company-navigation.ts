@@ -1,9 +1,10 @@
 import type { CompanyRecordSummary } from './company-workspace.js';
+import { productTerms } from './product-terms.js';
 
 /** These destinations stay visible throughout the signed-in workspace. */
 export const companyNavigationSections = [
-  ['overview', '公司概览', 'Company overview'],
-  ['trends', '历史财务走势', 'Financial history'],
+  ['overview', ...productTerms.researchReport],
+  ['trends', ...productTerms.financialTrends],
   ['industry', '行业对比', 'Industry comparison'],
   ['disclosures', '公告线索', 'Disclosure leads'],
   ['profile', '扩展核查', 'Extended checks'],

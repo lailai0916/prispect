@@ -1,4 +1,5 @@
 import { useEffect, useId, useState } from 'react';
+import { productTerms } from '../shared/product-terms';
 import {
   ArrowUpRight,
   ChartColumn,
@@ -131,7 +132,7 @@ export function CompanyFinancialTrends({
     return (
       <details className="company-record-details company-financial-history-old">
         <summary>
-          {t('历史财务走势', 'Financial history')} <span>{t('未保存', 'Unsaved')}</span>
+          {t(...productTerms.financialTrends)} <span>{t('未保存', 'Unsaved')}</span>
         </summary>
         <p className="field-note">
           {run.status === 'queued' || run.status === 'running'
@@ -161,7 +162,7 @@ export function CompanyFinancialTrends({
         <div>
           <h2 id="company-history-heading">
             <ChartNoAxesCombined size={20} aria-hidden="true" />
-            {t('历史财务走势', 'Financial history')}
+            {t(...productTerms.financialTrends)}
           </h2>
           <p>
             {t(

@@ -42,7 +42,7 @@ test('initial loading and empty routes retain all fixed items as real disabled c
         .children()
         .toArray()
         .map((element) => $(element).text()),
-      ['公司概览', '历史财务走势', '行业对比', '公告线索', '扩展核查', '数据覆盖', '来源比对'],
+      ['研究报告', '财务走势', '行业对比', '公告线索', '扩展核查', '数据覆盖', '来源比对'],
       route
     );
     assert.equal(menu.find('button:disabled').length, 7, route);

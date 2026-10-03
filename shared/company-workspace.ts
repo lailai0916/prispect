@@ -1,4 +1,5 @@
 import type { CompanyAssessment, AssessmentResearchStep } from './company-assessment.js';
+import { productTerms } from './product-terms.js';
 import type {
   CompanyChallengeResult,
   CompanyChallengeState,
@@ -7,8 +8,8 @@ import type {
 
 /** Public company context stays separate from adopted original-report evidence. */
 export const companySections = [
-  ['overview', '公司概览', 'Company overview'],
-  ['trends', '历史财务走势', 'Financial history'],
+  ['overview', ...productTerms.researchReport],
+  ['trends', ...productTerms.financialTrends],
   ['industry', '行业对比', 'Industry comparison'],
   ['disclosures', '公告线索', 'Disclosure leads'],
   ['profile', '扩展核查', 'Extended checks'],
