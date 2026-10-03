@@ -1,8 +1,6 @@
 .company-assistant-trigger {
-  --fish-swim-distance: -40px;
-  --fish-hop-height: -12px;
-  --fish-idle-duration: 12s;
-  --fish-idle-delay: 1.6s;
+  --character-idle-duration: 14s;
+  --character-idle-delay: 1.6s;
   position: fixed;
   right: 24px;
   bottom: max(24px, env(safe-area-inset-bottom));
@@ -12,8 +10,8 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  width: 76px;
-  height: 76px;
+  width: 80px;
+  height: 100px;
   padding: 2px;
   border: 0;
   border-radius: 16px;
@@ -28,21 +26,21 @@
 .company-assistant-trigger:active {
   transform: scale(0.96);
 }
-.assistant-fish {
+.assistant-character {
   position: relative;
   display: inline-block;
   flex-shrink: 0;
-  width: 64px;
-  height: 56px;
+  width: 72px;
+  height: 76px;
   pointer-events: none;
   transform-origin: 50% 80%;
 }
-.assistant-fish-visual {
+.assistant-character-visual {
   position: absolute;
   inset: 0;
   display: block;
 }
-.assistant-fish img {
+.assistant-character img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -51,20 +49,21 @@
   user-select: none;
   transition: opacity 160ms ease;
 }
-.assistant-fish-idle {
+.assistant-character-idle {
   opacity: 1;
 }
-.assistant-fish-happy {
+.assistant-character-happy,
+.assistant-character-wave {
   opacity: 0;
 }
-.assistant-fish[data-happy='true'] .assistant-fish-idle {
+.assistant-character[data-happy='true'] .assistant-character-idle {
   opacity: 0;
 }
-.assistant-fish[data-happy='true'] .assistant-fish-happy {
+.assistant-character[data-happy='true'] .assistant-character-happy {
   opacity: 1;
 }
-.company-assistant-trigger[aria-expanded='true'] > .assistant-fish {
-  animation: assistant-fish-delight 620ms ease-out;
+.company-assistant-trigger[aria-expanded='true'] > .assistant-character {
+  animation: assistant-character-delight 460ms ease-out;
 }
 .company-assistant-trigger-label {
   font-size: var(--text-meta);
@@ -86,133 +85,98 @@
   color: var(--on-action);
   pointer-events: none;
 }
-@keyframes assistant-fish-delight {
+@keyframes assistant-character-delight {
   0%,
   100% {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) rotate(0);
   }
-  20% {
-    transform: translateY(2px) scale(1.08, 0.91);
+  30% {
+    transform: translateY(-3px) rotate(-2deg);
   }
-  48% {
-    transform: translateY(-5px) scale(0.96, 1.05) rotate(-3deg);
-  }
-  72% {
-    transform: translateY(1px) scale(1.03, 0.98) rotate(2deg);
+  65% {
+    transform: translateY(1px) rotate(1deg);
   }
 }
 @media (prefers-reduced-motion: no-preference) {
-  .company-assistant-trigger[data-idle='true'] {
-    animation: assistant-fish-swim var(--fish-idle-duration) ease-in-out var(--fish-idle-delay)
-      infinite;
+  .company-assistant-trigger[data-idle='true'] > .assistant-character {
+    animation: assistant-character-sway var(--character-idle-duration) ease-in-out
+      var(--character-idle-delay) infinite;
   }
-  .company-assistant-trigger[data-idle='true'] > .assistant-fish {
-    animation: assistant-fish-sway var(--fish-idle-duration) ease-in-out var(--fish-idle-delay)
-      infinite;
+  .company-assistant-trigger[data-idle='true'] .assistant-character-idle {
+    animation: assistant-character-resting var(--character-idle-duration) step-end
+      var(--character-idle-delay) infinite;
   }
-  .company-assistant-trigger[data-idle='true'] .assistant-fish-visual {
-    animation: assistant-fish-turn var(--fish-idle-duration) step-end var(--fish-idle-delay)
-      infinite;
+  .company-assistant-trigger[data-idle='true'] .assistant-character-happy {
+    animation: assistant-character-blink var(--character-idle-duration) step-end
+      var(--character-idle-delay) infinite;
   }
-  .company-assistant-trigger[data-idle='true'] .assistant-fish-idle {
-    animation: assistant-fish-resting-eyes var(--fish-idle-duration) step-end var(--fish-idle-delay)
-      infinite;
+  .company-assistant-trigger[data-idle='true'] .assistant-character-wave {
+    animation: assistant-character-wave var(--character-idle-duration) step-end
+      var(--character-idle-delay) infinite;
   }
-  .company-assistant-trigger[data-idle='true'] .assistant-fish-happy {
-    animation: assistant-fish-smiling-eyes var(--fish-idle-duration) step-end var(--fish-idle-delay)
-      infinite;
-  }
-  .company-assistant-trigger[data-idle='true']:is(:hover, :focus-visible, :active),
   .company-assistant-trigger[data-idle='true']:is(:hover, :focus-visible, :active) *,
-  .company-assistant-trigger[data-page-visible='false'],
-  .company-assistant-trigger[data-page-visible='false'] .assistant-fish,
-  .company-assistant-trigger[data-page-visible='false'] .assistant-fish * {
+  .company-assistant-trigger[data-page-visible='false'] .assistant-character,
+  .company-assistant-trigger[data-page-visible='false'] .assistant-character * {
     animation-play-state: paused;
   }
 }
-@keyframes assistant-fish-swim {
+@keyframes assistant-character-sway {
   0%,
-  8%,
-  90%,
+  12%,
+  44%,
+  64%,
+  86%,
   100% {
-    transform: translate(0, 0);
+    transform: translateY(0) rotate(0);
   }
-  20% {
-    transform: translate(calc(var(--fish-swim-distance) * 0.35), -3px);
-  }
-  34%,
-  38%,
-  47%,
-  50% {
-    transform: translate(var(--fish-swim-distance), 0);
-  }
-  42% {
-    transform: translate(var(--fish-swim-distance), var(--fish-hop-height));
-  }
-  65% {
-    transform: translate(calc(var(--fish-swim-distance) * 0.6), -4px);
-  }
-  78% {
-    transform: translate(calc(var(--fish-swim-distance) * 0.25), -6px);
-  }
-}
-@keyframes assistant-fish-sway {
-  0%,
-  8%,
-  34%,
-  50%,
-  90%,
-  100% {
-    transform: rotate(0) scale(1);
+  6%,
+  35% {
+    transform: translateY(-2px) rotate(-1deg);
   }
   20%,
-  65% {
-    transform: rotate(-4deg) scale(1.02, 0.98);
+  54% {
+    transform: translateY(-1px) rotate(1deg);
   }
-  38% {
-    transform: rotate(-2deg) scale(1.06, 0.92);
+  70%,
+  76% {
+    transform: translateY(-1px) rotate(-2deg);
   }
-  42% {
-    transform: rotate(5deg) scale(0.96, 1.04);
+  73%,
+  79% {
+    transform: translateY(-1px) rotate(2deg);
   }
-  47% {
-    transform: rotate(-2deg) scale(1.04, 0.96);
-  }
-  78% {
-    transform: rotate(3deg) scale(0.98, 1.02);
-  }
-}
-@keyframes assistant-fish-turn {
-  0%,
-  44%,
-  100% {
-    transform: scaleX(1);
-  }
-  50%,
-  94% {
-    transform: scaleX(-1);
+  82% {
+    transform: translateY(0) rotate(0);
   }
 }
-@keyframes assistant-fish-resting-eyes {
+@keyframes assistant-character-resting {
   0%,
-  32%,
-  72%,
+  11%,
+  82%,
   100% {
     opacity: 1;
   }
-  28%,
+  9%,
   68% {
     opacity: 0;
   }
 }
-@keyframes assistant-fish-smiling-eyes {
+@keyframes assistant-character-blink {
   0%,
-  32%,
-  72%,
+  11%,
   100% {
     opacity: 0;
   }
-  28%,
+  9% {
+    opacity: 1;
+  }
+}
+@keyframes assistant-character-wave {
+  0%,
+  82%,
+  100% {
+    opacity: 0;
+  }
   68% {
     opacity: 1;
   }
@@ -224,12 +188,12 @@
 .company-assistant-panel {
   position: fixed;
   right: 24px;
-  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 88px);
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 112px);
   z-index: 60;
   display: flex;
   flex-direction: column;
   width: min(390px, calc(100% - 32px));
-  height: min(600px, calc(100dvh - 144px));
+  height: min(600px, calc(100dvh - 168px));
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -245,7 +209,7 @@
 }
 .company-assistant-panel:has(.company-assistant-empty) {
   height: auto;
-  max-height: min(600px, calc(100dvh - 144px));
+  max-height: min(600px, calc(100dvh - 168px));
 }
 .company-assistant-header {
   display: flex;
@@ -267,9 +231,9 @@
   flex: 0 0 auto;
   gap: 4px;
 }
-.company-assistant-header .assistant-fish {
-  width: 30px;
-  height: 26px;
+.company-assistant-header .assistant-character {
+  width: 32px;
+  height: 32px;
 }
 .company-assistant-header h2 {
   margin: 0;
@@ -302,9 +266,9 @@
   align-items: center;
   gap: 10px;
 }
-.company-assistant-welcome .assistant-fish {
-  width: 48px;
-  height: 42px;
+.company-assistant-welcome .assistant-character {
+  width: 60px;
+  height: 68px;
 }
 .company-assistant-welcome p {
   margin: 0;
@@ -520,26 +484,24 @@
     font-size: 16px;
   }
   .company-assistant-trigger {
-    --fish-swim-distance: -24px;
-    --fish-hop-height: -8px;
     right: 16px;
     bottom: max(16px, env(safe-area-inset-bottom));
-    width: 68px;
-    height: 68px;
+    width: 72px;
+    height: 92px;
   }
-  .company-assistant-trigger > .assistant-fish {
-    width: 58px;
-    height: 50px;
+  .company-assistant-trigger > .assistant-character {
+    width: 64px;
+    height: 68px;
   }
   .company-assistant-panel {
     right: 16px;
-    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 80px);
-    height: min(600px, calc(100dvh - 116px));
-    max-height: calc(100dvh - 116px);
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 104px);
+    height: min(600px, calc(100dvh - 140px));
+    max-height: calc(100dvh - 140px);
     border-radius: var(--card-radius);
   }
   .company-assistant-panel:has(.company-assistant-empty) {
-    max-height: min(600px, calc(100dvh - 116px));
+    max-height: min(600px, calc(100dvh - 140px));
   }
   .company-assistant-header .icon-button {
     min-width: 36px;
@@ -556,9 +518,9 @@
 @media (max-height: 500px) {
   .company-assistant-panel,
   .company-assistant-panel:has(.company-assistant-empty) {
-    right: 108px;
+    right: 116px;
     bottom: max(16px, env(safe-area-inset-bottom));
-    width: min(390px, calc(100% - 124px));
+    width: min(390px, calc(100% - 132px));
     height: calc(100dvh - 32px);
     max-height: calc(100dvh - 32px);
   }
@@ -576,13 +538,13 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .company-assistant-trigger,
-  .assistant-fish img,
+  .assistant-character img,
   .company-assistant-send,
   .company-assistant-suggestions button {
     transition: none;
   }
   .company-assistant-panel:not([hidden]),
-  .company-assistant-trigger[aria-expanded='true'] > .assistant-fish,
+  .company-assistant-trigger[aria-expanded='true'] > .assistant-character,
   .company-assistant-pending .spinner {
     animation: none;
   }
