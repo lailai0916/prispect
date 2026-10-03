@@ -74,6 +74,7 @@ export function CompanyAssistant({ route }: { route: string }) {
   const current =
     routeRun && company?.owner === owner && company.run.id === routeRun ? company : null;
   const [open, setOpen] = useState(false);
+  const [pageVisible, setPageVisible] = useState(true);
   const [conversation, setConversation] = useState<AssistantConversation>({
     owner,
     draft: '',
@@ -121,6 +122,12 @@ export function CompanyAssistant({ route }: { route: string }) {
     setOpen(false);
     trigger.current?.focus();
   };
+  useEffect(() => {
+    const updateVisibility = () => setPageVisible(!document.hidden);
+    updateVisibility();
+    document.addEventListener('visibilitychange', updateVisibility);
+    return () => document.removeEventListener('visibilitychange', updateVisibility);
+  }, []);
   useEffect(() => {
     mounted.current = true;
     return () => {
@@ -586,6 +593,8 @@ export function CompanyAssistant({ route }: { route: string }) {
         type="button"
         ref={trigger}
         className="company-assistant-trigger"
+        data-idle={!open}
+        data-page-visible={pageVisible}
         aria-label={
           open
             ? t('收起析光助手', 'Close Prispect assistant')

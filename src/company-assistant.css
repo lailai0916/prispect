@@ -1,4 +1,8 @@
 .company-assistant-trigger {
+  --fish-swim-distance: -40px;
+  --fish-hop-height: -12px;
+  --fish-idle-duration: 12s;
+  --fish-idle-delay: 1.6s;
   position: fixed;
   right: 24px;
   bottom: max(24px, env(safe-area-inset-bottom));
@@ -32,6 +36,11 @@
   height: 56px;
   pointer-events: none;
   transform-origin: 50% 80%;
+}
+.assistant-fish-visual {
+  position: absolute;
+  inset: 0;
+  display: block;
 }
 .assistant-fish img {
   position: absolute;
@@ -90,6 +99,122 @@
   }
   72% {
     transform: translateY(1px) scale(1.03, 0.98) rotate(2deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .company-assistant-trigger[data-idle='true'] {
+    animation: assistant-fish-swim var(--fish-idle-duration) ease-in-out var(--fish-idle-delay)
+      infinite;
+  }
+  .company-assistant-trigger[data-idle='true'] > .assistant-fish {
+    animation: assistant-fish-sway var(--fish-idle-duration) ease-in-out var(--fish-idle-delay)
+      infinite;
+  }
+  .company-assistant-trigger[data-idle='true'] .assistant-fish-visual {
+    animation: assistant-fish-turn var(--fish-idle-duration) step-end var(--fish-idle-delay)
+      infinite;
+  }
+  .company-assistant-trigger[data-idle='true'] .assistant-fish-idle {
+    animation: assistant-fish-resting-eyes var(--fish-idle-duration) step-end var(--fish-idle-delay)
+      infinite;
+  }
+  .company-assistant-trigger[data-idle='true'] .assistant-fish-happy {
+    animation: assistant-fish-smiling-eyes var(--fish-idle-duration) step-end var(--fish-idle-delay)
+      infinite;
+  }
+  .company-assistant-trigger[data-idle='true']:is(:hover, :focus-visible, :active),
+  .company-assistant-trigger[data-idle='true']:is(:hover, :focus-visible, :active) *,
+  .company-assistant-trigger[data-page-visible='false'],
+  .company-assistant-trigger[data-page-visible='false'] .assistant-fish,
+  .company-assistant-trigger[data-page-visible='false'] .assistant-fish * {
+    animation-play-state: paused;
+  }
+}
+@keyframes assistant-fish-swim {
+  0%,
+  8%,
+  90%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(calc(var(--fish-swim-distance) * 0.35), -3px);
+  }
+  34%,
+  38%,
+  47%,
+  50% {
+    transform: translate(var(--fish-swim-distance), 0);
+  }
+  42% {
+    transform: translate(var(--fish-swim-distance), var(--fish-hop-height));
+  }
+  65% {
+    transform: translate(calc(var(--fish-swim-distance) * 0.6), -4px);
+  }
+  78% {
+    transform: translate(calc(var(--fish-swim-distance) * 0.25), -6px);
+  }
+}
+@keyframes assistant-fish-sway {
+  0%,
+  8%,
+  34%,
+  50%,
+  90%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  20%,
+  65% {
+    transform: rotate(-4deg) scale(1.02, 0.98);
+  }
+  38% {
+    transform: rotate(-2deg) scale(1.06, 0.92);
+  }
+  42% {
+    transform: rotate(5deg) scale(0.96, 1.04);
+  }
+  47% {
+    transform: rotate(-2deg) scale(1.04, 0.96);
+  }
+  78% {
+    transform: rotate(3deg) scale(0.98, 1.02);
+  }
+}
+@keyframes assistant-fish-turn {
+  0%,
+  44%,
+  100% {
+    transform: scaleX(1);
+  }
+  50%,
+  94% {
+    transform: scaleX(-1);
+  }
+}
+@keyframes assistant-fish-resting-eyes {
+  0%,
+  32%,
+  72%,
+  100% {
+    opacity: 1;
+  }
+  28%,
+  68% {
+    opacity: 0;
+  }
+}
+@keyframes assistant-fish-smiling-eyes {
+  0%,
+  32%,
+  72%,
+  100% {
+    opacity: 0;
+  }
+  28%,
+  68% {
+    opacity: 1;
   }
 }
 .company-assistant-trigger:focus-visible {
@@ -395,6 +520,8 @@
     font-size: 16px;
   }
   .company-assistant-trigger {
+    --fish-swim-distance: -24px;
+    --fish-hop-height: -8px;
     right: 16px;
     bottom: max(16px, env(safe-area-inset-bottom));
     width: 68px;
