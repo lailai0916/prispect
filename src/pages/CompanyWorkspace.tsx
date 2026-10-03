@@ -553,7 +553,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </button>
         </div>
       </header>
-      {pageAnchors.length > 0 && !pausedMarket && (snapshot || section === 'overview') && (
+      {pageAnchors.length > 1 && !pausedMarket && (snapshot || section === 'overview') && (
         <CompanyPageIndex key={`${user?.id}:${run.id}:${section}`} anchors={pageAnchors} />
       )}
       {error && (
