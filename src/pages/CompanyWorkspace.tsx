@@ -42,7 +42,7 @@ import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
 import { CompanyPublicInformation } from '../CompanyPublicInformation';
-import { PageLoading } from '../Experience';
+import { OriginalReviewLoading, PageLoading } from '../Experience';
 import { readPageScroll } from '../page-scroll';
 import { lazyPage } from '../lazy-page';
 const OriginalReview = lazyPage(
@@ -549,8 +549,19 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         </div>
       )}
       {section === 'evidence' ? (
-        <Suspense fallback={<LoaderCircle className="spinner" />}>
-          <OriginalReview key={run.id} query={new URLSearchParams({ run: run.id })} embedded />
+        <Suspense
+          fallback={
+            <OriginalReviewLoading
+              label={t('正在打开原件核查…', 'Opening original-document review…')}
+            />
+          }
+        >
+          <OriginalReview
+            key={run.id}
+            query={new URLSearchParams({ run: run.id })}
+            initialRun={run}
+            embedded
+          />
         </Suspense>
       ) : pausedMarket ? (
         <section className="company-review-section">

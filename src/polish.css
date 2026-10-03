@@ -243,6 +243,38 @@ kbd {
   width: 70%;
   margin-top: 14px;
 }
+.original-review-loading {
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-bottom: 24px;
+}
+.original-loading-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding-block: 24px;
+  border-top: 1px solid var(--line-soft);
+}
+.original-loading-heading > div {
+  flex: 1;
+  min-width: 0;
+}
+.original-loading-state {
+  flex-shrink: 0;
+  width: 72px;
+  height: 24px;
+}
+.original-loading-evidence {
+  padding-top: 24px;
+  border-top: 1px solid var(--line-soft);
+}
+.original-loading-evidence > .skeleton-heading {
+  height: 18px;
+}
+.original-loading-evidence > .skeleton-subheading {
+  width: 65%;
+  margin-bottom: 24px;
+}
 @keyframes skeleton-breathe {
   to {
     opacity: 0.4;
