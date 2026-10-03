@@ -9,7 +9,11 @@
 }
 .sidebar-companies {
   border-top: 1px solid var(--line);
+  margin-top: 0;
   padding-top: 8px;
+}
+.sidebar-bottom .sidebar-method {
+  margin-bottom: 8px;
 }
 .sidebar-account-divider {
   border-top: 1px solid var(--line);
@@ -44,9 +48,6 @@
   .business-shell .sidebar-company-context > .sidebar-group-label {
     margin-top: 2px;
     margin-bottom: 6px;
-  }
-  .business-shell .sidebar-companies {
-    margin-top: 10px;
   }
   .business-shell .sidebar-bottom {
     padding-top: 14px;
