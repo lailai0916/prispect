@@ -6,13 +6,16 @@ import { load } from 'cheerio';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import {
   contextAmountFields,
+  industryMetricKeys,
   type CompanyContextSnapshot,
   type CompanyContextPeriod,
+  type CompanyIndustrySnapshot,
 } from '../shared/company-workspace.js';
 import { AppContext, type AppContextValue } from '../src/context.js';
 import { CompanyContextOverview, CompanyCoverageView } from '../src/CompanyContextViews.js';
 import { CompanyContextHistory } from '../src/CompanyContextHistory.js';
 import { CompanyFinancialChartsSection } from '../src/CompanyFinancialChartsSection.js';
+import { CompanyIndustryView } from '../src/CompanyIndustryView.js';
 import {
   ChartMetricSummary,
   HistoryMetricChart,
@@ -444,4 +447,177 @@ test('six annual years and paired signed bars fit a narrow card without shrinkin
   });
   assert.equal(years.last().children('text').last().text(), '2025');
   assert.equal(years.last().attr('aria-pressed'), 'true');
+});
+
+function peerFixture(period = '2024-12-31'): CompanyIndustrySnapshot {
+  const metric = { company: 1, mean: 0.5, median: 0.5, count: 5, missing: 0, difference: 0.5 };
+  return {
+    version: 1,
+    securityCode: '600519',
+    period,
+    industry: '界面同行样本',
+    industryCode: 'fixture',
+    fetchedAt: '2026-10-03T00:00:00Z',
+    status: 'available',
+    peerCount: 5,
+    minimumSamples: 5,
+    metrics: Object.fromEntries(
+      industryMetricKeys.map((key) => [key, metric])
+    ) as CompanyIndustrySnapshot['metrics'],
+    samples: Array.from({ length: 5 }, (_, index) => ({
+      code: `60000${index}`,
+      name: `同行${index}`,
+      noticeDate: null,
+      values: Object.fromEntries(
+        industryMetricKeys.map((key) => [key, index / 4])
+      ) as CompanyIndustrySnapshot['samples'][number]['values'],
+    })),
+    sources: [],
+    warnings: [],
+  };
+}
+
+test('standalone history and industry views preserve the query annual year without stacking pages', () => {
+  const run = fixture('12.00');
+  run.input.year = 2024;
+  run.context!.financials.unshift({ ...run.context!.financials[0]!, period: '2024-12-31' });
+  run.industry = { '2024-12-31': peerFixture() };
+  const history = load(
+    chartMarkup(
+      createElement(CompanyFinancialChartsSection, {
+        run,
+        snapshot: run.context!,
+        basis: 'parent',
+        view: 'history',
+      })
+    )
+  );
+  assert.equal(history('#company-financial-history').length, 1);
+  assert.equal(history('#company-industry').length, 0);
+  assert.equal(
+    history('.context-history [aria-pressed="true"]')
+      .first()
+      .clone()
+      .children()
+      .remove()
+      .end()
+      .text(),
+    '2024'
+  );
+
+  const industry = load(
+    chartMarkup(
+      createElement(CompanyFinancialChartsSection, {
+        run,
+        snapshot: run.context!,
+        basis: 'parent',
+        view: 'industry',
+      })
+    )
+  );
+  assert.equal(industry('#company-industry').length, 1);
+  assert.equal(industry('#company-financial-history, .context-history').length, 0);
+  assert.match(industry('.context-section-title p').text(), /2024-12-31/);
+  assert.equal(industry('svg[data-chart-type="horizontal-bars"]').length, 6);
+});
+
+test('industry uses three local F presentations and comparison cards target the matching histogram pane', () => {
+  const run = fixture('12.00');
+  run.input.year = 2024;
+  run.context!.financials.unshift({ ...run.context!.financials[0]!, period: '2024-12-31' });
+  run.industry = { '2024-12-31': peerFixture() };
+  const $ = load(chartMarkup(createElement(CompanyIndustryView, { run })));
+  assert.match($('.context-section-title p').text(), /2024-12-31/);
+  assert.deepEqual(
+    $('.financial-chart-industry-views button')
+      .map((_index, element) => $(element).text())
+      .get(),
+    ['对比图表', '同行分布', '数据明细']
+  );
+  assert.equal($('.financial-chart-industry-views [aria-pressed="true"]').text(), '对比图表');
+  assert.equal($('.financial-chart-industry-pane:not([hidden])').length, 1);
+  const histogramId = $('.financial-chart-distribution').attr('id');
+  assert.ok(histogramId);
+  assert.equal($('.financial-chart-card-footer button').length, 6);
+  $('.financial-chart-card-footer button').each((_index, element) => {
+    assert.equal($(element).attr('aria-controls'), histogramId);
+  });
+  assert.equal($('.financial-chart-data').length, 0);
+});
+
+test('each historical card exposes exact annual values while withholding gaps', () => {
+  const run = fixture('12.01');
+  run.context!.financials.unshift({
+    ...run.context!.financials[0]!,
+    period: '2024-12-31',
+    amounts: { ...run.context!.financials[0]!.amounts, netProfit: null },
+  });
+  const $ = load(
+    chartMarkup(
+      createElement(CompanyContextHistory, {
+        snapshot: run.context!,
+        basis: 'consolidated',
+        selectedPeriod: '2025-12-31',
+      })
+    )
+  );
+  const values = $('[data-chart-group="cash"] [data-chart-metric="profit"] .financial-chart-data');
+  assert.equal(values.find('summary').text(), '逐年数值');
+  assert.equal(values.find('tbody tr').length, 2);
+  assert.equal(values.find('tbody tr').first().find('td').first().text(), '—');
+  assert.equal(values.find('tbody tr[data-selected="true"] td').first().text(), '12.01 元');
+  assert.equal(values.find('tbody tr').last().find('td').eq(1).text(), '—');
+});
+
+test('quarter-unit ticks preserve their true amount and percentage positions', () => {
+  for (const unit of ['amount', 'percent'] as const) {
+    const $ = load(
+      chartMarkup(
+        createElement(HistoryMetricChart, {
+          points: [
+            {
+              period: '2025-12-31',
+              company: unit === 'amount' ? 100_000_000 : 1,
+              peer: null,
+              count: null,
+            },
+          ],
+          style: 'bars',
+          unit,
+          label: 'Quarter ticks',
+          selectedPeriod: '2025-12-31',
+          onPeriodChange: () => undefined,
+        })
+      )
+    );
+    const ticks = $('svg > g > text[text-anchor="end"]')
+      .map((_index, element) => $(element).text())
+      .get();
+    assert.deepEqual(ticks, ['0', '0.25', '0.5', '0.75', '1']);
+  }
+  const pair = load(
+    chartMarkup(createElement(IndustryPairChart, { company: 1, peer: 0, label: 'Quarter ticks' }))
+  );
+  assert.deepEqual(
+    pair('svg > g > text[text-anchor="middle"]')
+      .map((_index, element) => pair(element).text())
+      .get(),
+    ['0%', '0.25%', '0.5%', '0.75%', '1%']
+  );
+});
+
+test('monetary difference titles retain one fen without binary subtraction residue', () => {
+  const $ = load(
+    chartMarkup(
+      createElement(ChartMetricSummary, {
+        company: 1_000_000_000.01,
+        peer: 1_000_000_000,
+        unit: 'amount',
+        count: 5,
+      }),
+      'en'
+    )
+  );
+  assert.equal($('.financial-chart-difference strong').attr('title'), '0.01 CNY');
+  assert.doesNotMatch($('.financial-chart-difference strong').text(), /999999/);
 });

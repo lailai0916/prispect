@@ -33,23 +33,17 @@ export const guideDocument: ProductDocument = {
               '核对合同责任、收款与预付款条件',
               'Review responsibility, receipt and prepayment conditions',
             ],
-            [
-              '核查工具 → 付款与交接 → 付款前核对',
-              'Review tools → Payments and handovers → Before payment',
-            ],
+            ['付款与交接 → 付款前核对', 'Payments and handovers → Before payment'],
           ],
           [
             ['接手前问清财务问题或安排收付款', 'Review handover questions or cash arrangements'],
-            [
-              '核查工具 → 付款与交接 → 接手核查',
-              'Review tools → Payments and handovers → Company handover',
-            ],
+            ['付款与交接 → 接手核查', 'Payments and handovers → Company handover'],
           ],
           [
             ['已有年报或结构化财务数据', 'You already have reports or structured financial data'],
             [
-              '核查工具 → 材料 → 导入；财报核查 → 新建财报核查',
-              'Review tools → Materials → Import; Financial reviews → New financial review',
+              '材料 → 导入；财报核查 → 新建财报核查',
+              'Materials → Import; Financial reviews → New financial review',
             ],
           ],
         ],
@@ -66,16 +60,16 @@ export const guideDocument: ProductDocument = {
       title: ['公司研究与确认候选', 'Company research and candidate confirmation'],
       bullets: [
         [
-          '从首页或“新建研究”输入公司名称或证券代码，确认匹配的披露主体后进入研究报告。公开资料取得后自动研究，首屏先给一句核心判断、评级与解释，再展示关键金额、资料覆盖和四个实际研究阶段。点击“依据与计算”核对原文，点击“检验解释”或“挑战解释”进入已有证据实验；展开入口不会自动启动补查。入口保留当前账号的输入草稿，年报原件继续在后台核查。',
-          'Enter a company name or security code from the home page or New research and confirm the matched issuer. Research starts when public data is available. The first screen leads with a concise judgment, grade and explanation, followed by key amounts, source coverage and four recorded research stages. Evidence and calculations opens the sources; Test an explanation or Challenge an explanation opens the existing evidence lab without automatically starting retrieval. The entry retains your draft while original reports continue in the background.',
+          '从首页或“新建研究”输入公司名称或证券代码，确认披露主体后进入公司概览。默认通过公开财务接口取得年度金额、经营现金与规则观察，点击“数据与计算”核对字段、公式和来源。页面不自动调用模型或下载年报 PDF；需要深入分析或原件核查时，再明确执行对应操作。入口保留当前账号的输入草稿。',
+          'Enter a company name or security code from Home or New research, confirm the disclosure entity and open Company overview. The default retrieves annual amounts, operating cash and rule observations from public financial interfaces. Select Data and calculation to inspect fields, formulas and sources. Models and annual-report PDFs are used only when you explicitly request their corresponding analysis or review. The entry retains the current owner’s draft.',
         ],
         [
-          '主导航保留“新建研究”和“研究库”，材料、付款与交接、财报核查及核查比较统一放在“核查工具”。研究库可按公司、代码、年度和状态筛选已有记录，筛选不会重新研究。打开企业后只有四个入口：研究报告、财务分析、资料与来源、原件核查。先读研究报告中的判断与下一步，再按需要核对财务、来源或原件。',
-          'The main navigation keeps New research and Research library. Materials, Payments and handovers, Financial reviews and Compare reviews share Review tools. Filter existing records by company, code, year or state without restarting research. Each company has four destinations: Research report, Financial analysis, Sources and references and Original-document review. Start with the report’s judgment and next checks, then inspect financials, sources or originals as needed.',
+          '登录后固定显示公司概览、历史财务走势、行业对比、公告线索、扩展核查、企业问答、数据覆盖、来源比对八项导航。有研究记录时，企业问答打开同一个析光助手；其他入口使用当前企业或本账号最后创建的查询，不按更新时间排序。没有记录时八项菜单禁用，可从“新建研究”建立记录。研究库从查询页“全部记录”或顶栏命令搜索打开，本地筛选不启动研究；旧原件和私人核查链接继续兼容。',
+          'Eight fixed signed-in entries provide Company overview, Financial history, Industry comparison, Disclosure leads, Extended checks, Company questions, Data coverage and Source comparison. With a research record, Company questions opens the same Prispect assistant. Other entries use the current company or the account’s most recently created query, rather than its most recently updated record. With no record, all eight entries are disabled; start from New research. Open Research library from All records on the query page or header command search. Local filters do not start research; saved original-review and private-workflow links remain compatible.',
         ],
         [
-          '研究报告保留“检验解释”“六维分析与计算依据”和下一步核查；“财务分析”汇集历史走势、完整财务数据、行业对比与原件字段对照；“资料与来源”汇集新闻讨论、公告、公司与股东资料、数据覆盖和来源比对；“原件核查”确认和采用年报候选。旧专题链接会定位到合并页面的对应内容。财务分析保留归母与合并利润切换，行业均值剔除本企业并要求同年度至少五家有效同行；原件现金桥使用同年度合并净利润。',
-          'The report contains Test an explanation, Dimensions and calculation evidence and next checks. Financial analysis brings together history, complete financial data, industry comparison and web-to-original fields. Sources and references contains news, discussions, announcements, company/shareholder facts, coverage and source comparison. Original-document review confirms and adopts annual-report candidates. Legacy topic links focus the corresponding merged content. Financial analysis retains attributable and consolidated profit controls; industry averages exclude the target and require at least five valid same-year peers. Original cash bridges use same-year consolidated profit.',
+          '概览、走势、行业、公告、扩展核查、覆盖和来源各有独立页面，保留字段与来源入口。阅读默认归母利润，可切换合并利润；历史与行业共享选定年度，切换年份或展示方式仅使用已保存资料。图表页会有限补齐尚未取得且未失败的同行年度，保存后复用；行业均值剔除本企业，并要求同年度至少五家有效同行。原件现金桥仍使用同年度合并净利润。',
+          'Overview, history, industry, disclosures, extended checks, coverage and sources have separate pages with field and source access. Reading defaults to attributable profit, with consolidated profit available. History and Industry share the selected year; changing a year or presentation reads saved data only. Chart pages fill a bounded set of unsettled missing peer years and reuse saved results. Peer means exclude the target and require at least five valid same-year peers. Original cash bridges retain same-year consolidated profit.',
         ],
         [
           '侧边栏“已载入企业”记录右侧的 × 可删除本次研究记录和问答，已采用材料保留；研究、分析或解释补查进行中暂不可删除。新建公司研究与保存需要账号。',
@@ -90,8 +84,8 @@ export const guideDocument: ProductDocument = {
           'Enter an exact company name or security code. An exact unique match can start directly; ambiguous names require choosing a disclosure identity. Coverage is currently mainland A-share disclosures on CNINFO. No match does not establish that a company does not exist or has no risk.',
         ],
         [
-          '默认选择上一年度，以实际检索到的完整年报为准；缺少该年度年报时会说明。明确指定年度时按该年度核查。AI 自动协助检索和分析；检索选项用于调整年度与核查用途。',
-          'The default selects the previous year, subject to finding its complete annual report; a missing report is stated. If you specify a year, that year is used. AI automatically assists retrieval and analysis. Lookup options let you adjust the year and review purpose.',
+          '默认选择上一年度，以实际取得的年度财务字段为准；缺少查询年度时会说明。明确指定年度时按该年度查看，查询选项可调整年度与用途。深入研究、企业问答与财报解释按各自操作使用 AI，默认财务查询不需要模型。',
+          'The default selects the previous year, using the acquired annual financial fields and stating when the query year is missing. An explicit year is used as requested, and query options adjust the year and purpose. Deep research, company questions and financial-report explanations use AI through their corresponding actions; default financial queries do not require a model.',
         ],
         [
           '再次搜索相同披露主体、年度和用途时，直接打开已保存的研究，并优先显示本地缓存的公开资料和报告。资料取得日期保留，不会因为再次打开而自动变新；需要最新资料时点击“刷新资料”。同行样本和相同公开原件解析可复用，挑战结果按解释分别保留；需要重新核对时点击“重新补查”。上传原件与私人内容不进入本地企业缓存。退出、切换账号、删除记录或清空工作区会清理相应缓存；浏览器清理或空间不足也可能移除缓存，研究记录仍可从服务器读取。',
@@ -102,12 +96,12 @@ export const guideDocument: ProductDocument = {
           'During execution, inspect task tracks and actual activity. Completion, failure, cancellation and recoverability have distinct states. Cancellation retains obtained content; resume is offered only for recoverable runs. Returning to an existing run does not require creating it again.',
         ],
         [
-          '阅读判断、重点发现与下一步，点击“依据”核对对应指标、公式和来源，或展开“六维分析与计算依据”。需要采用年报时进入“原件核查”，核对金额、年度、单位和合并范围后，点击“采用并核查”。析光保存材料、建立规则报告并进行 AI 解读；公开研究不会自动采用候选，缺失或冲突会暂停依赖相应字段的解释。',
-          'Read the judgment, findings and next checks, then select Evidence to inspect metrics, formulas and sources or expand Dimensions and calculation evidence. To adopt an annual report, open Original-document review, check amounts, years, units and consolidated scope, then select Adopt and review. Prispect saves the material, creates a rules-based report and requests AI interpretation. Public research never automatically adopts candidates; missing or conflicting inputs pause dependent explanations.',
+          '阅读概览中的财务观察，点击“数据与计算”核对金额、公式和来源。需要进一步判断时按需展开“深入分析”；需要采用年报时进入兼容的原件核查，核对金额、年度、单位和合并范围后再采用。采用后建立规则报告并请求 AI 解读；公开网页字段不会自动采用，缺失或冲突会暂停依赖相应字段的解释。',
+          'Read the financial observations in Company overview and select Data and calculation to inspect amounts, formulas and sources. Open Further analysis when needed. To adopt an annual report, use the compatible original-review flow and confirm amounts, years, units and consolidated scope. Adoption creates a rule report and requests AI interpretation. Public web fields are never adopted automatically; missing or conflicting inputs pause dependent explanations.',
         ],
         [
-          '历史财务图表并行读取东方财富公开网页的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',
-          'Historical charts read annual fields from Eastmoney’s public website in parallel, without an Eastmoney account or API key. Switch between profit and operating cash, revenue and profit, or year-end monetary funds and two liability items; select a year to inspect exact amounts, field names and response sources. Web fields are stored separately from annual-report candidates. Equal amounts indicate a matching comparison only; verify scope against the original. Missing values stay unknown. Monetary funds are not today’s available cash, and short-term loans plus non-current liabilities due within one year do not include all payment obligations.',
+          '历史财务图表读取东方财富公开接口的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',
+          'Historical charts read annual fields from Eastmoney’s public interfaces, without an Eastmoney account or API key. Switch between profit and operating cash, revenue and profit, or year-end monetary funds and two liability items; select a year to inspect exact amounts, field names and response sources. Web fields are stored separately from annual-report candidates. Equal amounts indicate a matching comparison only; verify scope against the original. Missing values stay unknown. Monetary funds are not today’s available cash, and short-term loans plus non-current liabilities due within one year do not include all payment obligations.',
         ],
         [
           '公告标题不代表已读全文；附注与公告覆盖范围会注明。材料不足或原表加总有差额时，候选可以保留，但相关解释会停止并列出需要复核的项目。',
@@ -121,25 +115,25 @@ export const guideDocument: ProductDocument = {
     },
     {
       id: 'company-analysis',
-      title: ['阅读公司分析与继续研究', 'Read company analysis and research further'],
+      title: ['按需深入分析', 'Deep analysis on request'],
       paragraphs: [
         [
-          '公司分析使用所选年度合并财务、最多六个年度的历史资料、同年度同行、公告、新闻和公开讨论。系统先分页收集资料，再由 AI 根据已有证据和研究目标选择主题补查、核对原文，并检查反向线索，形成总体判断、优势、风险、后续核查及判断变化条件。页面显示实际执行过程与资料覆盖；研究可能持续数分钟，未取得内容保持未知。',
-          'Company analysis uses selected-year consolidated financials, up to six annual periods of history, same-year peers, disclosures, news and public discussions. It first collects paginated sources; AI then chooses focused follow-ups and source-text checks and considers contrary evidence before reporting judgments, strengths, risks, next checks and reassessment conditions. The page shows actual steps and coverage. Research may take several minutes; missing material stays unknown.',
+          '在公司概览中按需展开“深入分析”，或打开已有深度研究记录。明确开始研究后，模型根据已取得的公开证据与研究目标选择补查、核对原文并检查反向线索；保留总体判断、后续核查与实际执行记录。未取得内容保持未知，展开或阅读已保存分析本身不发起模型请求。',
+          'Open Further analysis in Company overview when needed, or read an existing deep-research record. After you explicitly start research, the model uses acquired public evidence and the research goal to select follow-ups, check originals and examine contrary clues. Judgments, next checks and actual execution records remain available. Missing material stays unknown; opening saved analysis does not itself make a model request.',
         ],
       ],
       bullets: [
         [
-          '“核查框架”列出本次主体、年度、目标、实际资料范围和仍缺的直接材料；它不是自动生成并已执行的任务清单。目标示例只填写输入，不立即发起研究。“来源关系与读取范围”显示有限已检查条目的同链接、同采集组或相同节选关系；来源独立性仍未知，条数不表示确信度。',
-          'The review framework records the entity, year, goal, actual source scope and missing direct evidence; it is not an automatically executed task plan. Goal examples fill the input without starting research. Source relationships and read scope show bounded same-location, collection-group or identical-excerpt relationships. Independence stays unknown; counts are not confidence.',
+          '已有深度研究记录中的“核查框架”保留主体、年度、目标、实际资料范围和仍缺的直接材料；它不是自动执行的任务清单。来源关系只能显示已检查条目的链接、采集组或相同节选关系，来源独立性仍未知，条数不表示确信度。',
+          'The review framework in an existing deep-research record retains its entity, year, goal, actual source scope and missing direct evidence; it is not an automatically executed task plan. Source relationships show only checked links, collection groups or identical excerpts. Independence stays unknown; counts are not confidence.',
         ],
         [
-          '点击“查看研究过程”，展开取得资料、定向补查、形成判断和反向复核四阶段。阶段状态、调用记录和时间来自实际执行；没有记录时会说明，缓存命中也不会伪装成新调用。研究未完成时，上一份分析与当前资料分别标明时点。',
-          'Select View research process to inspect Gather sources, Targeted research, Form judgments and Review contrary evidence. Stage states, call records and times come from actual execution. Missing records are stated, and cache reuse is not presented as a new call. During unfinished research, the previous analysis and current sources retain separate timestamps.',
+          '默认公司概览展示财务数据与规则观察。需要模型分析时，展开“深入分析”中的“进一步研究”，填写可选目标并点击“开始研究”；打开折叠内容本身不发送请求。已有分析与当前资料保留各自时点，实际调用、失败和缓存状态以执行记录为准。',
+          'The default Company overview presents financial data and rule observations. For model analysis, open Further analysis, expand Research further, enter an optional goal and select Start research. Opening the disclosure itself makes no request. Existing analysis and current sources retain separate timestamps; calls, failures and cache states follow actual execution records.',
         ],
         [
-          '新闻来自东方财富与新浪的有限目录，公开讨论来自所选公司的股吧，最多保留 180 条去重新闻与 240 条帖子。自动收集会尝试读取最多 8 条新闻和 8 篇帖子正文，之后可按研究需要继续核对。查看来源日期、媒体和“标题／摘要／正文节选”标记：目录条数不等于读过全文的数量，模型收到的节选也可能因文本上限而缩短。一个平台的帖子不代表整体舆论，转载不等于多份独立证据。',
-          'News comes from bounded Eastmoney and Sina catalogs; discussions come from the selected issuer’s Guba board, retaining up to 180 deduplicated news records and 240 posts. Automatic collection attempts up to eight news bodies and eight post bodies, with focused follow-ups when needed. Check dates, media and title/digest/body-excerpt labels. Catalog counts do not mean all bodies were read, and model excerpts may be shortened by text limits. One board is not representative of public opinion; reposts are not independent evidence.',
+          '明确开始深入研究后，新闻来自东方财富与新浪的有限目录，公开讨论来自所选公司的股吧，最多保留 180 条去重新闻与 240 条帖子。研究会尝试有限正文读取；查看来源日期、媒体和“标题／摘要／正文节选”标记，目录条数不等于读过全文的数量。一个平台的帖子不代表整体舆论，转载不等于独立证据。',
+          'After deep research is explicitly started, news comes from bounded Eastmoney and Sina catalogs and discussions from the selected issuer’s Guba board, retaining up to 180 deduplicated news records and 240 posts. Research attempts bounded body reads. Check dates, media and title/digest/body-excerpt labels; catalog counts do not mean all bodies were read. One board is not representative of public opinion, and reposts are not independent evidence.',
         ],
         [
           '展开“新闻与公开讨论”后，先看六条来源；继续展开可按关键词、媒体和已取得的内容范围筛选，按日期排序，每页十二条。选择左侧来源，在右侧读取其标题、摘要或已取得节选；窄屏可打开阅读面板。筛选仅查看已保存目录，不重新调用模型或取得全文。',
@@ -199,8 +193,8 @@ export const guideDocument: ProductDocument = {
           'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or financial grades or sending a model request.',
         ],
         [
-          '研究报告先呈现摘要、关键数值、重点发现和下一步；需要检验判断时再展开“检验解释”，查看实验室和挑战操作。已保存的核查报告也先给摘要与下一步，继续展开可看实验室、原件、计算和解释。研究并打开公司后，才能执行该公司的解释补查。',
-          'The research report first presents its summary, key values, findings and next checks. Expand Test an explanation to open the lab and challenge actions. Saved review reports also start with the summary and next checks, with the lab, originals, calculations and explanations further down. Research and open a company to run its explanation research.',
+          '已有深度研究的“深入分析”保留“检验解释”，可按需查看实验室和挑战操作。已保存核查报告也保留实验室、原件、计算和解释；明确执行挑战后才发起对应补查。',
+          'Existing deep research retains Test an explanation under Further analysis, with the lab and challenge actions available on demand. Saved review reports retain their lab, originals, calculations and explanations. A challenge starts its corresponding follow-up only when explicitly requested.',
         ],
         [
           '恢复已撤回事实后，选择扩张备货、存货去化压力或回款压力，再点击“挑战这个解释”，补查公开新闻、公告及有限原文，分别查看支持、反向线索与资料缺口。模型未配置或失败时保留实际补查和规则线索；“所需材料”仍表示尚未取得，不代表已经拿到订单、库龄或期后流水。',
@@ -481,8 +475,8 @@ export const guideDocument: ProductDocument = {
       title: ['AI、语言与外观', 'AI, language and appearance'],
       paragraphs: [
         [
-          '公司研究、财报核查和企业问答自动使用 AI，不需要单独启用。模型未完成时保留已有核查结果，并显示实际状态。数据处理范围与第三方服务说明见隐私政策。',
-          'Company research, financial reviews and company questions use AI automatically without a separate switch. If the model does not complete, existing review results are retained with its actual status. See the privacy policy for data-processing scope and third-party services.',
+          '默认公司财务查询使用结构化公开接口，不自动调用 AI 或下载 PDF。明确请求深入研究、财报解释或登录后的助手回答时，使用已配置模型；未完成时保留已有规则结果并显示实际状态。数据处理范围与第三方服务说明见隐私政策。',
+          'Default company financial queries use structured public interfaces without automatic AI calls or PDF downloads. Explicit deep research, financial-report explanations and signed-in assistant answers use the configured model. Incomplete model work retains rule results with its actual status. See the privacy policy for processing scope and third-party services.',
         ],
         [
           '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。打开网页或系统主题变化时，外观自动跟随系统；随时点击顶栏图标即可切换深色与浅色。',

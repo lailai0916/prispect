@@ -92,7 +92,13 @@ test('owner-only cancellation/resume, revision checks and duplicate request iden
   try {
     const owner = await register('graph-owner@fixture.test'),
       other = await register('graph-other@fixture.test');
-    const input = { securityCode: '300750', orgId: 'GD165627', year: 2025, useModel: false };
+    const input = {
+      securityCode: '300750',
+      orgId: 'GD165627',
+      year: 2025,
+      useModel: false,
+      researchMode: 'deep',
+    };
     const requestKey = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
     const headers = { ...owner, 'Idempotency-Key': requestKey };
     const created = await fetch(base + '/api/company-runs', {
@@ -332,7 +338,12 @@ for (const interruption of ['publication-failure', 'cancel-retain', 'commit-canc
       const created = await fetch(base + '/api/company-runs', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ securityCode: '300750', orgId: 'GD165627', year: 2025 }),
+        body: JSON.stringify({
+          securityCode: '300750',
+          orgId: 'GD165627',
+          year: 2025,
+          researchMode: 'deep',
+        }),
       });
       assert.equal(created.status, 202);
       const first = (await created.json()) as CompanyResearchRun;

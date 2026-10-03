@@ -407,6 +407,7 @@ test('supported search accepts all terms while unsupported research routes prese
       securityCode: identity.securityCode,
       orgId: identity.orgId,
       year: 2025,
+      researchMode: 'deep',
     });
     assert.equal(created.status, 202);
     await application.waitForIdle();

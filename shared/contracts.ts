@@ -342,6 +342,8 @@ export interface CompanyRunInput {
   year: number;
   purpose?: ReviewPurpose;
   useModel?: boolean;
+  /** Structured financial research is the default; original-document agents are explicit. */
+  researchMode?: 'financial' | 'deep';
 }
 export interface CompanyResearchRun extends CompanyWorkspaceExtension {
   agent?: CompanyGraphProgress;

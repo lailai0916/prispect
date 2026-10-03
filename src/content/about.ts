@@ -25,12 +25,12 @@ export const aboutDocument: ProductDocument = {
       title: ['从公开资料理解公司', 'Understand a company from public disclosures'],
       paragraphs: [
         [
-          '公司研究的原件检索当前覆盖巨潮资讯的大陆 A 股披露。输入代码或公司名称后，析光核对披露主体、读取指定年度完整年报，并按实际可取得的资料检查财务表、附注与近期公告。主体有歧义时需要你选择；没有匹配或来源受限时会说明范围及停止原因。',
-          'Original retrieval in company research currently covers mainland A-share disclosures on CNINFO. After a code or company name is entered, Prispect checks the disclosure identity, reads the complete annual report for the selected year, and examines financial tables, notes and recent announcements that it can obtain. Ambiguous identities require your selection. Missing matches or restricted sources show their scope and stopping reason.',
+          '公司财务分析当前覆盖沪深 A 股。输入代码或公司名称后，析光核对所选主体，通过公开接口取得截至所选年度的最多六个年度财务记录与同年同行数据，展示财务观察、年度趋势和同行参照。主体有歧义时需要你选择；没有匹配或来源受限时会说明范围及停止原因。',
+          'Company financial analysis currently covers Shanghai and Shenzhen A-share issuers. After a code or company name is entered, Prispect checks the selected identity and retrieves up to six annual financial periods ending with the selected year, plus same-year peer data, through public interfaces. It presents financial observations, annual trends and peer comparisons. Ambiguous identities require your selection. Missing matches or restricted sources show their scope and stopping reason.',
         ],
         [
-          '结果优先展示取得的财务观察、对应来源和仍缺少的证据。AI 自动协助公开资料检索和解释，金额仍需核对原文及规则计算；候选字段由你确认采用后进入财报核查。',
-          'Results prioritize financial observations, their sources and evidence still missing. AI automatically assists public-source retrieval and explanation. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
+          '结果优先展示取得的财务观察、对应来源和仍缺少的证据。默认流程不自动下载年报 PDF 或调用模型；明确请求的深度研究、原件核查与财报核查解释可使用 AI。金额仍需核对原文及规则计算；候选字段由你确认采用后进入财报核查。',
+          'Results prioritize financial observations, their sources and evidence still missing. The default flow does not automatically download annual-report PDFs or call a model. Explicit requests for deep research, original-report reviews and financial-review explanations may use AI. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
         ],
       ],
       links: [{ label: productTerms.companyResearch, href: '/query' }],
@@ -131,8 +131,8 @@ export const aboutDocument: ProductDocument = {
           'Prispect organizes material, traces evidence and calculates conditional results. It does not provide comprehensive corporate-registry, judicial or credit coverage, or replace checks of bank deposit products, legal due diligence, audits or professional financial advice. No matching disclosure does not mean no risk; a completed calculation does not establish that a payment is executable.',
         ],
         [
-          'AI 自动参与公司研究、财报核查和企业问答。数据处理范围与外部服务说明见隐私政策。',
-          'AI automatically participates in company research, financial reviews and company questions. See the privacy policy for data-processing scope and external services.',
+          '默认公司财务分析不调用模型。深度研究、原件核查、财报核查解释和登录后的助手问题可使用 AI，数据处理范围与外部服务说明见隐私政策。',
+          'Default company financial analysis does not call a model. Deep research, original-report reviews, financial-review explanations and signed-in assistant questions may use AI. See the privacy policy for data-processing scope and external services.',
         ],
       ],
       links: [

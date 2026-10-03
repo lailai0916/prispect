@@ -97,7 +97,15 @@ test('portable demo uses real owner routes without public retrieval or model cal
     assert.equal(created.status, 202);
     const id = ((await created.json()) as CompanyResearchRun).id;
     await service.waitForIdle();
-    assert.equal((await call(`/company-runs/${id}/context`, {})).status, 202);
+    const acquired = (await (await call(`/company-runs/${id}`)).json()) as CompanyResearchRun;
+    assert.equal(acquired.input.researchMode, 'financial');
+    assert.equal(acquired.input.useModel, false);
+    assert.equal(acquired.model.requested, false);
+    assert.equal(acquired.contextStatus, 'ready');
+    assert.equal(acquired.assessment, undefined);
+    assert.equal(acquired.preview, undefined);
+    assert.equal((await call(`/company-runs/${id}/context`, {})).status, 200);
+    assert.equal((await call(`/company-runs/${id}/assessment`, {})).status, 202);
     await service.waitForIdle();
     const run = (await (await call(`/company-runs/${id}`)).json()) as CompanyResearchRun;
     assert.equal(run.context?.companyName, researchDemoIdentity.companyName);

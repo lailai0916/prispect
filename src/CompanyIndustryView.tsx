@@ -74,12 +74,20 @@ export function CompanyIndustryView({
 }) {
   const { t, locale, user } = useApp(),
     years = [
-      ...new Set(run.context?.financials.filter((row) => row.annual).map((row) => row.period)),
+      ...new Set(
+        run.context?.financials
+          .filter((row) => row.annual && /^20\d{2}-12-31$/.test(row.period))
+          .map((row) => row.period)
+      ),
     ]
       .sort()
       .reverse();
-  const [requestedPeriod, setPeriod] = useState(years[0] || `${run.input.year}-12-31`);
-  const requested = selectedPeriod ?? requestedPeriod;
+  const researchPeriod = `${run.input.year}-12-31`;
+  const initialPeriod = years.includes(researchPeriod)
+    ? researchPeriod
+    : years[0] || researchPeriod;
+  const [requestedPeriod, setPeriod] = useState<string | null>(null);
+  const requested = selectedPeriod ?? requestedPeriod ?? initialPeriod;
   const period = years.length && !years.includes(requested) ? years[0]! : requested;
   const scope = `${user?.id || ''}:${run.id}:${run.input.securityCode}:${period}`;
   const presentation = useRef({ t, locale });
@@ -92,7 +100,8 @@ export function CompanyIndustryView({
     } | null>(null),
     [loadingScope, setLoadingScope] = useState<string | null>(null),
     [evidence, setEvidence] = useState<EvidenceMetric | null>(null),
-    [distributionMetric, setDistributionMetric] = useState<IndustryMetricKey>('grossMargin');
+    [distributionMetric, setDistributionMetric] = useState<IndustryMetricKey>('grossMargin'),
+    [view, setView] = useState<'charts' | 'distribution' | 'table'>('charts');
   const generation = useRef(0),
     request = useRef<AbortController | null>(null);
   const distributionId = useId();
@@ -100,6 +109,7 @@ export function CompanyIndustryView({
   const distributionRef = useRef<HTMLElement>(null);
   const openDistribution = (key: IndustryMetricKey) => {
     setDistributionMetric(key);
+    setView('distribution');
     requestAnimationFrame(() => {
       distributionRef.current?.focus({ preventScroll: true });
       distributionRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' });
@@ -125,6 +135,7 @@ export function CompanyIndustryView({
     const context = run.context;
     if (
       !context ||
+      context.orgId !== run.input.orgId ||
       context.securityCode !== snapshot?.securityCode ||
       !context.financials.some((row) => row.annual && row.period === period) ||
       !isChartAmount(key)
@@ -289,7 +300,33 @@ export function CompanyIndustryView({
             {stale && <Tag>{t('上次快照', 'Previous snapshot')}</Tag>}
             {snapshot.status === 'partial' && <Tag>{t('部分指标可用', 'Partial coverage')}</Tag>}
           </div>
-          <div className="financial-chart-grid">
+          <div
+            className="context-tabs financial-chart-industry-views"
+            aria-label={t('行业对比展示方式', 'Industry comparison view')}
+          >
+            {(
+              [
+                ['charts', t('对比图表', 'Comparison charts')],
+                ['distribution', t('同行分布', 'Peer distribution')],
+                ['table', t('数据明细', 'Data details')],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={view === key}
+                aria-controls={key === 'distribution' ? distributionId : `${comparisonId}-${key}`}
+                onClick={() => setView(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div
+            id={`${comparisonId}-charts`}
+            className="financial-chart-grid financial-chart-industry-pane"
+            hidden={view !== 'charts'}
+          >
             {industryMetricKeys.map((key) => {
               const metric = snapshot.metrics[key];
               return (
@@ -349,8 +386,9 @@ export function CompanyIndustryView({
             id={distributionId}
             ref={distributionRef}
             tabIndex={-1}
-            className="financial-chart-card financial-chart-distribution"
+            className="financial-chart-card financial-chart-distribution financial-chart-industry-pane"
             aria-label={t('同行分布', 'Peer distribution')}
+            hidden={view !== 'distribution'}
           >
             <div className="financial-chart-header">
               <h3>{t('同行分布', 'Peer distribution')}</h3>
@@ -403,11 +441,14 @@ export function CompanyIndustryView({
               )}
             </p>
           </section>
-          <details className="context-disclosure">
-            <summary id={`${comparisonId}-full`}>
-              <ChevronDown size={14} aria-hidden="true" />
-              <span>{t('完整对比数据', 'Full comparison data')}</span>
-            </summary>
+          <section
+            id={`${comparisonId}-table`}
+            className="financial-chart-industry-pane"
+            hidden={view !== 'table'}
+          >
+            <h3 id={`${comparisonId}-full`} className="financial-chart-detail-heading">
+              {t('完整对比数据', 'Full comparison data')}
+            </h3>
             <div
               className="table-scroll"
               role="region"
@@ -475,9 +516,12 @@ export function CompanyIndustryView({
                 )}
               </p>
             </div>
-          </details>
+          </section>
           {snapshot.chartMetrics && (
-            <details className="context-disclosure">
+            <details
+              className="context-disclosure financial-chart-industry-pane"
+              hidden={view !== 'table'}
+            >
               <summary id={`${comparisonId}-amounts`}>
                 <ChevronDown size={14} aria-hidden="true" />
                 <span>{t('金额与净利率参照', 'Amount and net-margin references')}</span>

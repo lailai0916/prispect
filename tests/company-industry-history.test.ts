@@ -418,7 +418,7 @@ test('annual history endpoint checks ownership and scope, durably retains outcom
     const other = await register('history-other@example.test');
     const post = (url: string, body: unknown, headers = owner) =>
       fetch(`${base}/api${url}`, { method: 'POST', headers, body: JSON.stringify(body) });
-    const created = await post('/company-runs', historyRun().input);
+    const created = await post('/company-runs', { ...historyRun().input, researchMode: 'deep' });
     assert.equal(created.status, 202);
     const run = (await created.json()) as CompanyResearchRun;
     await app.waitForIdle();

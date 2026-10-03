@@ -59,9 +59,11 @@ function sourceGroups(sources: CompanySourceReceipt[]) {
 export function CompanyBrief({
   run,
   sourceHref,
+  showIdentity = true,
 }: {
   run: CompanyResearchRun;
   sourceHref?: string;
+  showIdentity?: boolean;
 }) {
   const { t, locale } = useApp();
   const headingId = useId();
@@ -85,6 +87,9 @@ export function CompanyBrief({
   const capital = decimal(profile.capitalWan);
   const employeeCount = decimal(profile.employees);
   const facts = [
+    ...(!showIdentity
+      ? [{ id: 'company-name', label: t('公司名称', 'Company name'), value: legalName }]
+      : []),
     {
       id: 'credit-code',
       label: t('统一社会信用代码', 'Registration code'),
@@ -183,27 +188,34 @@ export function CompanyBrief({
       : provider;
 
   return (
-    <section className="company-brief" aria-labelledby={headingId} data-testid="company-brief">
-      <header className="company-brief-heading">
-        <div className="company-brief-identity">
-          <h2 id={headingId}>{legalName}</h2>
-          <div className="company-brief-identifiers">
-            <span className="company-brief-security">{run.input.securityCode}</span>
-            {exchange && exchange !== 'unknown' && (
-              <span>
-                {exchange === 'szse'
-                  ? t('深交所', 'SZSE')
-                  : exchange === 'sse'
-                    ? t('上交所', 'SSE')
-                    : exchange === 'us'
-                      ? t('美股', 'US')
-                      : t('北交所', 'BSE')}
-              </span>
-            )}
-            {industry && <span>{industry}</span>}
+    <section
+      className="company-brief"
+      aria-labelledby={showIdentity ? headingId : undefined}
+      aria-label={showIdentity ? undefined : legalName}
+      data-testid="company-brief"
+    >
+      {showIdentity && (
+        <header className="company-brief-heading">
+          <div className="company-brief-identity">
+            <h2 id={headingId}>{legalName}</h2>
+            <div className="company-brief-identifiers">
+              <span className="company-brief-security">{run.input.securityCode}</span>
+              {exchange && exchange !== 'unknown' && (
+                <span>
+                  {exchange === 'szse'
+                    ? t('深交所', 'SZSE')
+                    : exchange === 'sse'
+                      ? t('上交所', 'SSE')
+                      : exchange === 'us'
+                        ? t('美股', 'US')
+                        : t('北交所', 'BSE')}
+                </span>
+              )}
+              {industry && <span>{industry}</span>}
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {quote && (
         <div

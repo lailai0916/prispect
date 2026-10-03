@@ -7,6 +7,7 @@ import type {
 import {
   analyzeCompanyContext,
   contextFieldLabels,
+  contextSum,
   type CompanyReadingBasis,
 } from '../shared/company-analysis';
 import {
@@ -174,6 +175,61 @@ export function CompanyContextHistory({
           amountScale={amountScale}
         />
         <p className="financial-chart-note">{t(...metric.note)}</p>
+        <details className="financial-chart-data">
+          <summary>{t('逐年数值', 'Annual values')}</summary>
+          <div
+            className="table-scroll"
+            tabIndex={0}
+            role="region"
+            aria-label={t(`${label}逐年数值`, `${label} annual values`)}
+          >
+            <table className="financial-chart-data-table">
+              <thead>
+                <tr>
+                  <th>{t('年度', 'Year')}</th>
+                  <th>{t('企业值', 'Company')}</th>
+                  <th>{t('同行均值', 'Peer mean')}</th>
+                  <th>{t('有效同行', 'Valid peers')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {series[key].map((annualPoint) => {
+                  const companyAmount =
+                    metric.unit === 'amount' && annualPoint.company !== null
+                      ? contextSum(
+                          fields.map((field) =>
+                            financialChartAmount(snapshot, annualPoint.period, field)
+                          )
+                        )
+                      : null;
+                  const displayValue = (value: number | null, company = false) =>
+                    value === null
+                      ? '—'
+                      : metric.unit === 'amount'
+                        ? `${money(company ? companyAmount : String(value), locale, false)} ${t('元', 'CNY')}`
+                        : `${value.toLocaleString(locale, { maximumFractionDigits: 2 })}%`;
+                  return (
+                    <tr key={annualPoint.period} data-selected={annualPoint.period === period}>
+                      <th scope="row">
+                        <button
+                          type="button"
+                          className="text-link"
+                          aria-pressed={annualPoint.period === period}
+                          onClick={() => changePeriod(annualPoint.period)}
+                        >
+                          {annualPoint.period.slice(0, 4)}
+                        </button>
+                      </th>
+                      <td>{displayValue(annualPoint.company, true)}</td>
+                      <td>{displayValue(annualPoint.peer)}</td>
+                      <td>{annualPoint.count ?? '—'}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </details>
       </article>
     );
   };

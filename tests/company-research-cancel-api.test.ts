@@ -154,6 +154,7 @@ async function harness(overrides: Partial<CompanyContextService> = {}) {
     orgId: identity.orgId,
     year: 2025,
     purpose: 'handover',
+    researchMode: 'deep',
   });
   assert.equal(created.status, 202);
   const id = ((await created.json()) as CompanyResearchRun).id;
@@ -355,6 +356,9 @@ test('cancelled context cleanup cannot detach or release a replacement retrieval
     await h.app.waitForIdle();
     assert.equal(h.run.context?.fetchedAt, '2026-10-03T00:02:00.000Z');
     assert.equal(h.run.contextStatus, 'ready');
+    assert.equal(h.synthesisCalls(), 0, 'A replacement context does not start synthesis.');
+    assert.equal((await h.call(`/company-runs/${h.id}/assessment`, {})).status, 202);
+    await h.app.waitForIdle();
     assert.equal(h.run.assessmentStatus, 'ready');
     assert.equal(h.synthesisCalls(), 1);
   } finally {

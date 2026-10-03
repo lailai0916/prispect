@@ -8,6 +8,29 @@ import { chartScale, money, type Locale } from './format';
 type Unit = 'amount' | 'percent';
 export type FinancialChartAmountScale = ReturnType<typeof chartScale>;
 const present = (value: number | null): value is number => value !== null && Number.isFinite(value);
+function tickDigits(ticks: number[], divisor = 1): number {
+  const step = Math.abs((ticks[1] ?? 0) - (ticks[0] ?? 0)) / divisor;
+  if (!step || !Number.isFinite(step)) return 0;
+  const [mantissa, exponent = '0'] = String(Number(step.toPrecision(12))).split('e');
+  return Math.min(12, Math.max(0, (mantissa!.split('.')[1]?.length || 0) - Number(exponent)));
+}
+function amountDifference(company: number, peer: number): string {
+  const decimal = (value: number) => {
+    const [mantissa, exponent = '0'] = String(value).split('e');
+    const fraction = mantissa!.split('.')[1]?.length || 0;
+    const scale = fraction - Number(exponent);
+    const integer = BigInt(mantissa!.replace('.', ''));
+    return scale < 0 ? { integer: integer * 10n ** BigInt(-scale), scale: 0 } : { integer, scale };
+  };
+  const a = decimal(company),
+    b = decimal(peer),
+    scale = Math.max(a.scale, b.scale),
+    difference =
+      a.integer * 10n ** BigInt(scale - a.scale) - b.integer * 10n ** BigInt(scale - b.scale),
+    sign = difference < 0n ? '-' : '',
+    digits = String(difference < 0n ? -difference : difference).padStart(scale + 1, '0');
+  return scale ? `${sign}${digits.slice(0, -scale)}.${digits.slice(-scale)}` : `${sign}${digits}`;
+}
 export function financialChartAmountScale(
   points: FinancialChartPoint[],
   locale: Locale,
@@ -18,12 +41,13 @@ export function financialChartAmountScale(
       ? [sharedRange.minimum, sharedRange.maximum]
       : points.flatMap((point) => [point.company, point.peer])
   );
-  return chartScale(
+  const scale = chartScale(
     Math.max(Math.abs(range.minimum), Math.abs(range.maximum)),
     range.maximum - range.minimum,
     locale,
     range.ticks.length - 1
   );
+  return { ...scale, digits: Math.max(scale.digits, tickDigits(range.ticks, scale.divisor)) };
 }
 function formatted(
   value: number | null,
@@ -125,7 +149,14 @@ export function ChartMetricSummary({
   amountScale?: FinancialChartAmountScale;
 }) {
   const { t, locale } = useApp();
-  const difference = present(company) && present(peer) ? company - peer : null;
+  const exactDifference =
+    unit === 'amount' && present(company) && present(peer) ? amountDifference(company, peer) : null;
+  const difference =
+    exactDifference !== null
+      ? Number(exactDifference)
+      : present(company) && present(peer)
+        ? company - peer
+        : null;
   const hasPeer = count !== undefined && count !== null;
   const scale =
     unit === 'amount'
@@ -156,7 +187,13 @@ export function ChartMetricSummary({
           ) : (
             <>
               {t('与均值差异', 'Difference')}{' '}
-              <strong title={exactFormatted(difference, unit, locale)}>
+              <strong
+                title={
+                  exactDifference !== null
+                    ? `${money(exactDifference, locale, false)} ${t('元（CNY）', 'CNY')}`
+                    : exactFormatted(difference, unit, locale)
+                }
+              >
                 {unit === 'percent'
                   ? `${difference > 0 ? '+' : ''}${difference.toFixed(2)} ${t('个百分点', 'pp')}`
                   : `${difference > 0 ? '+' : ''}${formatted(difference, unit, locale, scale)}`}
@@ -214,8 +251,7 @@ export function HistoryMetricChart({
       ? {
           divisor: 1,
           label: '%',
-          digits: chartScale(0, range.maximum - range.minimum, locale, range.ticks.length - 1)
-            .digits,
+          digits: tickDigits(range.ticks),
         }
       : amountScale || financialChartAmountScale(points, locale, sharedRange);
   const height = 210,
@@ -275,7 +311,10 @@ export function HistoryMetricChart({
               />
               <text x={left - 8} y={y(tick) + 4} textAnchor="end">
                 {(tick / axis.divisor).toLocaleString(locale, {
-                  maximumFractionDigits: axis.digits,
+                  maximumFractionDigits: Math.max(
+                    axis.digits,
+                    tickDigits(range.ticks, axis.divisor)
+                  ),
                 })}
               </text>
             </g>
@@ -416,12 +455,7 @@ export function IndustryPairChart({
   const id = `pair-${useId().replace(/:/g, '')}`;
   const { ref, width } = usePlotWidth(340);
   const range = chartRange([company, peer]);
-  const digits = chartScale(
-    0,
-    range.maximum - range.minimum,
-    locale,
-    range.ticks.length - 1
-  ).digits;
+  const digits = tickDigits(range.ticks);
   const left = 54,
     right = 24,
     height = 116;
@@ -507,12 +541,7 @@ export function IndustryDistributionChart({
       </p>
     );
   const range = chartRange([...values, item.company, item.mean], false);
-  const digits = chartScale(
-    0,
-    range.maximum - range.minimum,
-    locale,
-    range.ticks.length - 1
-  ).digits;
+  const digits = tickDigits(range.ticks);
   const bins = distributionBins(values, range);
   const maximum = Math.max(1, ...bins.map((bin) => bin.count));
   const height = 250,

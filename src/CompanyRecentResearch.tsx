@@ -1,5 +1,6 @@
 import { ArrowRight, ChevronRight, RefreshCw } from 'lucide-react';
 import { companyPath, type CompanyRecordSummary } from '../shared/company-workspace';
+import { financialRecordState } from '../shared/company-record-status';
 import { useCompanyRecords } from './CompanyRecordsContext';
 import { useApp } from './context';
 import { RecordListLoading } from './Experience';
@@ -24,12 +25,15 @@ export function CompanyRecentResearch() {
     if (record.informationGap) return t('主体待确认', 'Entity needs confirmation');
     if (record.assessmentStatus === 'failed') return t('分析未完成', 'Analysis interrupted');
     if (record.contextStatus === 'failed') return t('资料不完整', 'Sources incomplete');
-    if (record.status === 'failed') return t('原件未完成', 'Original interrupted');
+    if (record.status === 'failed' && record.input.researchMode !== 'financial')
+      return t('原件未完成', 'Original interrupted');
     if (record.result?.stale) return t('分析待更新', 'Analysis outdated');
     if (record.result)
       return record.result.modelStatus === 'completed'
         ? null
         : t('规则分析', 'Rule-based analysis');
+    const financialState = financialRecordState(record);
+    if (financialState) return t(...financialState);
     return t('未完成', 'Incomplete');
   };
   return (

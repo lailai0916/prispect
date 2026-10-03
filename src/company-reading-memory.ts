@@ -4,6 +4,9 @@ import type { CompanySection } from '../shared/company-workspace';
 /** Only document sections, never arbitrary element IDs, inputs or private drafts. */
 export const companyReadingAnchors: Record<CompanySection, readonly string[]> = {
   overview: [
+    'company-financial-overview',
+    'company-financial-attention',
+    'company-financial-data',
     'research-summary-heading',
     'research-findings-heading',
     'research-next-heading',
@@ -15,6 +18,11 @@ export const companyReadingAnchors: Record<CompanySection, readonly string[]> = 
     'company-research-framework',
     'company-source-trust',
   ],
+  trends: ['company-financial-history', 'company-financial-data', 'company-original-comparison'],
+  industry: ['company-industry'],
+  disclosures: ['company-disclosures', 'company-public-signals'],
+  profile: ['company-profile'],
+  coverage: ['company-source-trust', 'company-data-coverage'],
   financial: [
     'company-financial-history',
     'company-financial-data',
@@ -35,11 +43,17 @@ export const companyReadingAnchors: Record<CompanySection, readonly string[]> = 
 
 export const companyReadingDisclosures: Record<CompanySection, readonly string[]> = {
   overview: [
+    'company-financial-data',
     'company-research-process',
     'company-evidence-lab',
     'company-full-report',
     'company-next-checks',
   ],
+  trends: ['company-financial-data', 'company-original-comparison'],
+  industry: [],
+  disclosures: ['company-public-signals'],
+  profile: [],
+  coverage: [],
   financial: ['company-financial-data', 'company-industry', 'company-original-comparison'],
   sources: ['company-profile', 'company-data-coverage', 'company-source-comparison'],
   evidence: [],
@@ -53,6 +67,11 @@ export interface CompanyReadingScope {
 
 export const companyReadingDefaultOpen: Record<CompanySection, readonly string[]> = {
   overview: ['company-next-checks'],
+  trends: [],
+  industry: [],
+  disclosures: [],
+  profile: [],
+  coverage: [],
   financial: [],
   sources: [],
   evidence: [],

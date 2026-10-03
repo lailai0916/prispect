@@ -155,13 +155,19 @@ export class WorkspaceStore {
           run.status = 'failed';
           run.error = '服务重启中断了公开证据查询，可重新查询；已有原件与任务保留。';
           const agent = (run as CompanyResearchRun & { agent?: CompanyGraphProgress }).agent;
-          if (agent?.version === 'langgraph-v1') {
+          if (agent?.version === 'langgraph-v1' || agent?.version === 'financial-v1') {
             agent.recoverable = true;
             agent.revision += 1;
-            run.error = '服务重启中断了查询，可恢复公开证据步骤；主体与年度快照保持。';
+            run.error =
+              agent.version === 'financial-v1'
+                ? '服务重启中断了公开资料读取；已取得的快照保留，可以重试读取。'
+                : '服务重启中断了查询，可恢复公开证据步骤；主体与年度快照保持。';
             for (const branch of agent.branches)
-              if (branch.status === 'running') {
-                branch.status = 'failed';
+              if (
+                branch.status === 'running' ||
+                (agent.version === 'financial-v1' && branch.status === 'pending')
+              ) {
+                branch.status = branch.status === 'running' ? 'failed' : 'skipped';
                 branch.finishedAt = new Date().toISOString();
                 branch.summary = run.error;
               }

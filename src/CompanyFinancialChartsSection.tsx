@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
-import type { CompanyContextSnapshot, CompanyIndustrySnapshot } from '../shared/company-workspace';
+import {
+  companyPath,
+  type CompanyContextSnapshot,
+  type CompanyIndustrySnapshot,
+} from '../shared/company-workspace';
 import type { CompanyReadingBasis } from '../shared/company-analysis';
 import { CompanyContextHistory } from './CompanyContextHistory';
 import { CompanyIndustryView } from './CompanyIndustryView';
@@ -14,29 +18,47 @@ import {
 import { loadIndustryHistory } from './company-industry-history';
 import { useApp } from './context';
 import { date } from './format';
+import { companyChartSelectionMemory, companyChartSelectionScope } from './company-chart-selection';
 
 /** Fill missing annual peers once; settled snapshots and failures require explicit refresh. */
 export function CompanyFinancialChartsSection({
   run,
   snapshot,
   basis,
+  view = 'combined',
   onHistoryResult,
 }: {
   run: CompanyResearchRun;
   snapshot: CompanyContextSnapshot;
   basis: CompanyReadingBasis;
+  view?: 'history' | 'industry' | 'combined';
   onHistoryResult?: (result: IndustryHistoryResult) => void;
 }) {
-  const { t, locale } = useApp();
+  const { t, locale, user } = useApp();
+  const owner = user?.id || '';
+  const selectionScope = companyChartSelectionScope(run);
+  const compatibleSnapshot =
+    snapshot.securityCode === run.input.securityCode && snapshot.orgId === run.input.orgId;
   const periods = [
-    ...new Set(snapshot.financials.filter((row) => row.annual).map((row) => row.period)),
+    ...new Set(
+      snapshot.financials
+        .filter((row) => row.annual && /^20\d{2}-12-31$/.test(row.period))
+        .map((row) => row.period)
+    ),
   ].sort();
   const researchPeriod = `${run.input.year}-12-31`;
   const initialPeriod = periods.includes(researchPeriod)
     ? researchPeriod
     : periods.at(-1) || researchPeriod;
   // No local choice yet: new acquired periods continue to follow the research year.
-  const [requested, setPeriod] = useState<string | null>(null);
+  const [requested, setRequested] = useState<string | null>(() =>
+    companyChartSelectionMemory.read(owner, selectionScope)
+  );
+  const setPeriod = (next: string) => {
+    if (!periods.includes(next)) return;
+    setRequested(next);
+    companyChartSelectionMemory.save(owner, selectionScope, next);
+  };
   const period = requested && periods.includes(requested) ? requested : initialPeriod;
   const [results, setResults] = useState<Record<string, IndustryHistoryResult>>({});
   const [loading, setLoading] = useState(false);
@@ -66,9 +88,10 @@ export function CompanyFinancialChartsSection({
       return status ? [[year, status]] : [];
     })
   );
-  const busy = run.contextStatus === 'loading' || run.assessmentStatus === 'loading';
-  const latest = useRef({ run: currentRun, onHistoryResult, t, locale });
-  latest.current = { run: currentRun, onHistoryResult, t, locale };
+  const busy =
+    !compatibleSnapshot || run.contextStatus === 'loading' || run.assessmentStatus === 'loading';
+  const latest = useRef({ run: currentRun, onHistoryResult, t, locale, owner, selectionScope });
+  latest.current = { run: currentRun, onHistoryResult, t, locale, owner, selectionScope };
   const candidate = industries[period];
   const industry =
     candidate?.version === 1 &&
@@ -92,15 +115,25 @@ export function CompanyFinancialChartsSection({
     request.current = controller;
     setLoading(true);
     setError('');
+    const activeOwner = owner;
+    const activeScope = selectionScope;
+    const stillCurrent = () =>
+      !controller.signal.aborted &&
+      latest.current.owner === activeOwner &&
+      latest.current.selectionScope === activeScope;
     try {
       await loadIndustryHistory(latest.current.run, {
         mode,
         signal: controller.signal,
-        onResult: rememberResult,
-        onProgress: (completed, total) => setProgress({ completed, total }),
+        onResult: (result) => {
+          if (stillCurrent()) rememberResult(result);
+        },
+        onProgress: (completed, total) => {
+          if (stillCurrent()) setProgress({ completed, total });
+        },
       });
     } catch (cause) {
-      if (!controller.signal.aborted) setError(requestErrorText(cause, latest.current.locale));
+      if (stillCurrent()) setError(requestErrorText(cause, latest.current.locale));
     } finally {
       if (request.current === controller) {
         setLoading(false);
@@ -110,13 +143,19 @@ export function CompanyFinancialChartsSection({
   };
   const historyScope = historyPeriods.join(',');
   useEffect(() => {
+    setRequested(companyChartSelectionMemory.read(owner, selectionScope));
+    setResults({});
+    setError('');
+    setRevealed(false);
+  }, [owner, selectionScope]);
+  useEffect(() => {
     setLoading(false);
     if (!busy) void loadPeers('missing');
     return () => {
       request.current?.abort();
       request.current = null;
     };
-  }, [run.id, run.input.securityCode, historyScope, busy]);
+  }, [owner, selectionScope, historyScope, busy]);
   const openPeers = () => {
     const element = document.getElementById('company-industry') as HTMLDetailsElement | null;
     if (element) {
@@ -125,117 +164,147 @@ export function CompanyFinancialChartsSection({
       element.scrollIntoView({ block: 'start', behavior: 'auto' });
     }
   };
+  if (!compatibleSnapshot)
+    return (
+      <p className="context-empty">
+        {t('财务资料与当前企业不匹配。', 'The financial data does not match this company.')}
+      </p>
+    );
   return (
     <>
-      <section id="company-financial-history" className="company-workspace-section">
-        <div className="financial-chart-history-heading">
-          <h2 className="company-workspace-section-title">
-            {t('历史财务走势', 'Financial history')}
-          </h2>
-          {historyPeriods.length > 0 && (
-            <div className="financial-chart-history-actions">
-              {industry?.chartMetrics && (
-                <button className="context-evidence-button" type="button" onClick={openPeers}>
-                  {t('查看同行依据', 'View peer evidence')}
-                </button>
-              )}
-              <button
-                className="context-evidence-button"
-                type="button"
-                disabled={loading || busy}
-                aria-busy={loading}
-                onClick={() => void loadPeers('refresh')}
-              >
-                {loading ? <LoaderCircle size={14} className="spinner" /> : <RefreshCw size={14} />}
-                {loading
-                  ? t(
-                      `读取同行 ${progress.completed}/${progress.total} 年`,
-                      `Reading peers ${progress.completed}/${progress.total} years`
-                    )
-                  : t('刷新历年同行', 'Refresh annual peers')}
-              </button>
-              {Object.keys(failures).length > 0 && (
+      {view !== 'industry' && (
+        <section id="company-financial-history" className="company-workspace-section">
+          <div className="financial-chart-history-heading">
+            <h2 className="company-workspace-section-title">
+              {t('历史财务走势', 'Financial history')}
+            </h2>
+            {historyPeriods.length > 0 && (
+              <div className="financial-chart-history-actions">
+                {industry?.chartMetrics &&
+                  (view === 'history' ? (
+                    <a className="context-evidence-button" href={companyPath(run.id, 'industry')}>
+                      {t('查看同行依据', 'View peer evidence')}
+                    </a>
+                  ) : (
+                    <button className="context-evidence-button" type="button" onClick={openPeers}>
+                      {t('查看同行依据', 'View peer evidence')}
+                    </button>
+                  ))}
                 <button
                   className="context-evidence-button"
                   type="button"
                   disabled={loading || busy}
-                  onClick={() => void loadPeers('retry')}
+                  aria-busy={loading}
+                  onClick={() => void loadPeers('refresh')}
                 >
-                  {t('重试缺失年份', 'Retry missing years')}
+                  {loading ? (
+                    <LoaderCircle size={14} className="spinner" />
+                  ) : (
+                    <RefreshCw size={14} />
+                  )}
+                  {loading
+                    ? t(
+                        `读取同行 ${progress.completed}/${progress.total} 年`,
+                        `Reading peers ${progress.completed}/${progress.total} years`
+                      )
+                    : t('刷新历年同行', 'Refresh annual peers')}
                 </button>
-              )}
-            </div>
-          )}
-        </div>
-        {periods.length > 0 && !periods.includes(researchPeriod) && (
-          <p className="context-data-note">
-            {t(
-              `未取得 ${run.input.year} 年度财务资料，当前展示 ${period.slice(0, 4)} 年度。`,
-              `Financial data for ${run.input.year} is unavailable; showing ${period.slice(0, 4)}.`
+                {Object.keys(failures).length > 0 && (
+                  <button
+                    className="context-evidence-button"
+                    type="button"
+                    disabled={loading || busy}
+                    onClick={() => void loadPeers('retry')}
+                  >
+                    {t('重试缺失年份', 'Retry missing years')}
+                  </button>
+                )}
+              </div>
             )}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="inline-error">
-            <span>{error}</span>
-            <button
-              className="text-link"
-              type="button"
-              onClick={() => void loadPeers('retry')}
-              disabled={loading || busy}
-            >
-              {t('重试', 'Retry')}
-            </button>
-          </p>
-        )}
-        {Object.keys(failures).length > 0 && (
-          <p role="status" className="financial-chart-reference">
-            {Object.entries(failures).map(([year, failure]) => (
-              <span key={year}>
-                {year.slice(0, 4)} · {t('读取失败', 'Retrieval failed')}
-                {industries[year] && t('（保留上次资料）', ' (previous data retained)')}{' '}
-                <time dateTime={failure.attemptedAt}>{date(failure.attemptedAt, locale)}</time>
-                {'　'}
-              </span>
-            ))}
-          </p>
-        )}
-        {industry && (
-          <p className="financial-chart-reference">
-            {industry.industry} · {industry.peerCount} {t('家同行', 'peers')} ·{' '}
-            {t('取得于', 'Retrieved')} {date(industry.fetchedAt, locale)}
-          </p>
-        )}
-        <CompanyContextHistory
-          snapshot={snapshot}
-          basis={basis}
-          industries={industries}
-          selectedPeriod={period}
-          onPeriodChange={setPeriod}
-          peerStatuses={peerStatuses}
-        />
-      </section>
-      <details
-        id="company-industry"
-        className="company-review-details"
-        onToggle={(event) => {
-          if (event.currentTarget.open) setRevealed(true);
-        }}
-      >
-        <summary>
-          <ChevronDown size={14} />
-          {t('行业对比', 'Industry comparison')}
-        </summary>
-        {revealed && (
+          </div>
+          {periods.length > 0 && !periods.includes(researchPeriod) && (
+            <p className="context-data-note">
+              {t(
+                `未取得 ${run.input.year} 年度财务资料，当前展示 ${period.slice(0, 4)} 年度。`,
+                `Financial data for ${run.input.year} is unavailable; showing ${period.slice(0, 4)}.`
+              )}
+            </p>
+          )}
+          {error && (
+            <p role="alert" className="inline-error">
+              <span>{error}</span>
+              <button
+                className="text-link"
+                type="button"
+                onClick={() => void loadPeers('retry')}
+                disabled={loading || busy}
+              >
+                {t('重试', 'Retry')}
+              </button>
+            </p>
+          )}
+          {Object.keys(failures).length > 0 && (
+            <p role="status" className="financial-chart-reference">
+              {Object.entries(failures).map(([year, failure]) => (
+                <span key={year}>
+                  {year.slice(0, 4)} · {t('读取失败', 'Retrieval failed')}
+                  {industries[year] && t('（保留上次资料）', ' (previous data retained)')}{' '}
+                  <time dateTime={failure.attemptedAt}>{date(failure.attemptedAt, locale)}</time>
+                  {'　'}
+                </span>
+              ))}
+            </p>
+          )}
+          {industry && (
+            <p className="financial-chart-reference">
+              {industry.industry} · {industry.peerCount} {t('家同行', 'peers')} ·{' '}
+              {t('取得于', 'Retrieved')} {date(industry.fetchedAt, locale)}
+            </p>
+          )}
+          <CompanyContextHistory
+            snapshot={snapshot}
+            basis={basis}
+            industries={industries}
+            selectedPeriod={period}
+            onPeriodChange={setPeriod}
+            peerStatuses={peerStatuses}
+          />
+        </section>
+      )}
+      {view === 'industry' && (
+        <section id="company-industry" className="company-workspace-section">
           <CompanyIndustryView
-            run={run}
+            run={currentRun}
             industries={industries}
             selectedPeriod={period}
             onPeriodChange={setPeriod}
             onSnapshot={remember}
           />
-        )}
-      </details>
+        </section>
+      )}
+      {view === 'combined' && (
+        <details
+          id="company-industry"
+          className="company-review-details"
+          onToggle={(event) => {
+            if (event.currentTarget.open) setRevealed(true);
+          }}
+        >
+          <summary>
+            <ChevronDown size={14} />
+            {t('行业对比', 'Industry comparison')}
+          </summary>
+          {revealed && (
+            <CompanyIndustryView
+              run={currentRun}
+              industries={industries}
+              selectedPeriod={period}
+              onPeriodChange={setPeriod}
+              onSnapshot={remember}
+            />
+          )}
+        </details>
+      )}
     </>
   );
 }

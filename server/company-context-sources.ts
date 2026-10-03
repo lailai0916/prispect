@@ -370,6 +370,9 @@ export async function retrieveCompanyContext(
   identity: CompanyIdentity,
   dependencies: CompanySourceDependencies & {
     onSnapshot?: (snapshot: CompanyContextSnapshot) => Promise<void>;
+    /** False collects disclosure links without downloading or parsing originals. */
+    disclosureExcerpts?: boolean;
+    onAcquisitionProgress?: (sourceRequests: number) => Promise<void>;
   } = {}
 ): Promise<CompanyContextSnapshot> {
   const now = (dependencies.now || (() => new Date()))();
@@ -578,8 +581,9 @@ export async function retrieveCompanyContext(
       }
     })
   );
-  const extras = retrieveCompanyExtras(snapshot, identity, reader);
+  const extras = retrieveCompanyExtras(snapshot, identity, reader, dependencies.disclosureExcerpts);
   await Promise.allSettled(tasks);
+  await dependencies.onAcquisitionProgress?.(reader.requests);
   if (organizations.size > 1 || organizationTypes.size > 1) invalidFinancialScope = true;
   for (const kind of blockedTables)
     if (kind !== 'ratios')
@@ -638,6 +642,7 @@ export async function retrieveCompanyContext(
   snapshot.status = snapshot.financials.length ? 'partial' : 'unavailable';
   await dependencies.onSnapshot?.(structuredClone(snapshot));
   await extras;
+  await dependencies.onAcquisitionProgress?.(reader.requests);
   for (const row of snapshot.financials)
     row.originalUrl = contextReportUrl(row.period, snapshot.announcements);
   snapshot.verificationLinks = verificationLinks(
@@ -681,13 +686,14 @@ export async function retrieveCompanyContext(
 async function retrieveCompanyExtras(
   snapshot: CompanyContextSnapshot,
   identity: CompanyIdentity,
-  reader: PublicCompanyReader
+  reader: PublicCompanyReader,
+  disclosureExcerpts?: boolean
 ) {
   await Promise.allSettled([
     retrieveProfile(snapshot, identity, reader),
     retrieveShareholders(snapshot, identity, reader),
     retrieveNews(snapshot, identity, reader),
-    retrieveDisclosures(snapshot, identity, reader),
+    retrieveDisclosures(snapshot, identity, reader, disclosureExcerpts),
   ]);
 }
 
@@ -1139,7 +1145,8 @@ export function mergeDisclosures(rows: CompanyDisclosure[]): CompanyDisclosure[]
 async function retrieveDisclosures(
   snapshot: CompanyContextSnapshot,
   identity: CompanyIdentity,
-  reader: PublicCompanyReader
+  reader: PublicCompanyReader,
+  disclosureExcerpts?: boolean
 ) {
   const now = (reader.dependencies.now || (() => new Date()))(),
     since = shanghaiDate(new Date(now.getTime() - 3 * 365 * 86400000));
@@ -1292,6 +1299,7 @@ async function retrieveDisclosures(
       snapshot.announcements.filter((row) =>
         row.sources.some((source) => source.provider === state.provider)
       )[0]?.date || null;
+  if (disclosureExcerpts === false) return;
   const excerptDeadline = AbortSignal.any([
     reader.dependencies.signal || new AbortController().signal,
     AbortSignal.timeout(45000),

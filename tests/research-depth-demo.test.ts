@@ -61,7 +61,14 @@ test('offline walkthrough retains acquired sources, reports and prior challenges
     const endpoint = `/company-runs/${id}`;
     const read = async () => (await (await call(endpoint)).json()) as CompanyResearchRun;
     await service.waitForIdle();
-    assert.equal((await call(`${endpoint}/context`, {})).status, 202);
+    const acquired = await read();
+    assert.equal(acquired.input.researchMode, 'financial');
+    assert.equal(acquired.input.useModel, false);
+    assert.equal(acquired.model.requested, false);
+    assert.equal(acquired.contextStatus, 'ready');
+    assert.equal(acquired.assessment, undefined);
+    assert.equal((await call(`${endpoint}/context`, {})).status, 200);
+    assert.equal((await call(`${endpoint}/assessment`, {})).status, 202);
     await service.waitForIdle();
     const initial = await read();
     assert.equal(initial.contextStatus, 'ready');
@@ -88,6 +95,15 @@ test('offline walkthrough retains acquired sources, reports and prior challenges
 
     faults.context = false;
     assert.equal((await call(`${endpoint}/context`, { refresh: true })).status, 202);
+    await service.waitForIdle();
+    const refreshedSources = await read();
+    assert.equal(refreshedSources.contextStatus, 'ready');
+    assert.deepEqual(
+      refreshedSources.assessment,
+      initial.assessment,
+      'refreshing sources retains the old report until an explicit assessment'
+    );
+    assert.equal((await call(`${endpoint}/assessment`, {})).status, 202);
     await service.waitForIdle();
     const recovered = await read();
     assert.equal(recovered.contextStatus, 'ready');

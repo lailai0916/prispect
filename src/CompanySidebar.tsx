@@ -1,9 +1,13 @@
 import { productTerms } from '../shared/product-terms';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Building2,
   ChartNoAxesCombined,
-  FolderOpen,
+  Columns3,
+  Database,
+  FileSearch,
+  GitCompareArrows,
+  MessageSquare,
   ScanSearch,
   LoaderCircle,
   RefreshCw,
@@ -11,7 +15,14 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { CompanyRecordSummary } from '../shared/company-workspace';
-import { companySections, companyPath } from '../shared/company-workspace';
+import { companyPath } from '../shared/company-workspace';
+import {
+  companyNavigationItems,
+  companyRecordsByCreation,
+  OPEN_COMPANY_ASSISTANT_EVENT,
+  selectCompanyNavigationTarget,
+  type OpenCompanyAssistantDetail,
+} from '../shared/company-navigation';
 import { api } from './api';
 import { useCompanyRecords } from './CompanyRecordsContext';
 import { COMPANY_RECORDS_EVENT } from './company-record-events';
@@ -20,11 +31,15 @@ import { resolveCompanySection } from './routing';
 import { Hint } from './components';
 
 export { COMPANY_RECORDS_EVENT } from './company-record-events';
-const icons: Record<'overview' | 'financial' | 'sources' | 'evidence', LucideIcon> = {
+const icons: Record<(typeof companyNavigationItems)[number][0], LucideIcon> = {
   overview: Building2,
-  financial: ChartNoAxesCombined,
-  sources: FolderOpen,
-  evidence: ScanSearch,
+  trends: ChartNoAxesCombined,
+  industry: Columns3,
+  disclosures: FileSearch,
+  profile: ScanSearch,
+  qa: MessageSquare,
+  coverage: Database,
+  sources: GitCompareArrows,
 };
 
 const sameCompany = (first: CompanyRecordSummary, second: CompanyRecordSummary) =>
@@ -32,15 +47,7 @@ const sameCompany = (first: CompanyRecordSummary, second: CompanyRecordSummary) 
   first.input.orgId === second.input.orgId &&
   first.name === second.name;
 
-export function CompanySidebar({
-  route,
-  onClose,
-  tools,
-}: {
-  route: string;
-  onClose: () => void;
-  tools: ReactNode;
-}) {
+export function CompanySidebar({ route, onClose }: { route: string; onClose: () => void }) {
   const { user, t, execute, navigate } = useApp();
   const { records, error, loading, reload, removeLocal, isCurrentOwner } = useCompanyRecords();
   const [deleting, setDeleting] = useState<string[]>([]);
@@ -53,7 +60,9 @@ export function CompanySidebar({
   const list = useRef<HTMLDivElement>(null);
   const latest = useRef({ owner: user?.id, route, records });
   latest.current = { owner: user?.id, route, records };
-  const query = new URLSearchParams(route.split('?')[1]);
+  const url = new URL(route, 'https://prispect.com');
+  const query = url.searchParams;
+  const companyPage = url.pathname === '/company';
   const currentId = query.get('run');
   const section = resolveCompanySection(query.get('section'));
   useEffect(() => {
@@ -77,17 +86,23 @@ export function CompanySidebar({
         ?.querySelector<HTMLButtonElement>('.sidebar-create');
     target?.focus({ preventScroll: true });
   }, [records, user?.id]);
-  const sorted = [...records].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const selected = records.find((run) => run.id === currentId);
+  const sorted = companyRecordsByCreation(records);
+  const selected = companyPage ? records.find((run) => run.id === currentId) : undefined;
   const companies = sorted
     .filter((run, index) => sorted.findIndex((item) => sameCompany(item, run)) === index)
     .map((run) => (selected && sameCompany(selected, run) ? selected : run));
-  const current = route.split('?')[0] === '/company' ? selected : undefined;
+  const current = selectCompanyNavigationTarget(route, records);
   const remove = async (run: CompanyRecordSummary, button: HTMLButtonElement) => {
     if (!user) return;
     const owner = user.id;
     const key = `${owner}:${run.id}`;
     if (pendingDeletes.current.has(key)) return;
+    // Native disabled controls leave the tab order. Keep keyboard focus on the
+    // record while deleting, then restore it to an adjacent surviving record.
+    const focusedLink = button
+      .closest('.sidebar-company-row')
+      ?.querySelector<HTMLAnchorElement>('a');
+    if (document.activeElement === button) focusedLink?.focus({ preventScroll: true });
     pendingDeletes.current.add(key);
     setDeleting((previous) => [...previous, run.id]);
     try {
@@ -95,7 +110,7 @@ export function CompanySidebar({
         async () => {
           await api(`/company-runs/${encodeURIComponent(run.id)}`, { method: 'DELETE' });
           if (!isCurrentOwner() || latest.current.owner !== owner) return;
-          const restoreFocus = document.activeElement === button;
+          const restoreFocus = document.activeElement === focusedLink;
           const row = button.closest('.sidebar-company-row');
           const nextLink =
             row?.nextElementSibling?.querySelector<HTMLAnchorElement>('a') ||
@@ -105,14 +120,13 @@ export function CompanySidebar({
           const remaining = latest.current.records.filter((record) => record.id !== run.id);
           removeLocal(run.id);
           window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
-          const currentQuery = new URLSearchParams(latest.current.route.split('?')[1]);
-          if (
-            latest.current.route.split('?')[0] === '/company' &&
-            currentQuery.get('run') === run.id
-          ) {
-            const next = remaining
-              .filter((record) => !pendingDeletes.current.has(`${owner}:${record.id}`))
-              .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+          const currentUrl = new URL(latest.current.route, 'https://prispect.com');
+          const currentQuery = currentUrl.searchParams;
+          if (currentUrl.pathname === '/company' && currentQuery.get('run') === run.id) {
+            const next = selectCompanyNavigationTarget(
+              '/query',
+              remaining.filter((record) => !pendingDeletes.current.has(`${owner}:${record.id}`))
+            );
             navigate(
               next
                 ? companyPath(next.id, resolveCompanySection(currentQuery.get('section')))
@@ -132,36 +146,70 @@ export function CompanySidebar({
   };
   return (
     <>
-      {current && (
-        <section className="sidebar-company-context" aria-label={t('当前企业', 'Current company')}>
-          <span className="sidebar-group-label" title={current.name}>
-            {current.name}
-          </span>
-          <nav
-            className="sidebar-navigation company-sidebar-navigation"
-            aria-label={t('企业功能', 'Company pages')}
-          >
-            {companySections.map(([id, zh, en]) => {
-              const Icon = icons[id];
-              const href = current ? companyPath(current.id, id) : `/query?section=${id}`;
-              const active = route.startsWith('/company?') && section === id;
+      <section className="sidebar-company-context" aria-label={t('企业研究', 'Company research')}>
+        <span className="sidebar-group-label" title={current?.name}>
+          {current?.name || t('企业研究', 'Company research')}
+        </span>
+        <nav
+          className="sidebar-navigation company-sidebar-navigation"
+          aria-label={t('企业功能', 'Company pages')}
+        >
+          {companyNavigationItems.map(([id, zh, en]) => {
+            const Icon = icons[id];
+            if (id === 'qa')
               return (
-                <a
+                <button
                   key={id}
-                  href={href}
-                  className={active ? 'active' : ''}
-                  aria-current={active ? 'page' : undefined}
-                  onClick={onClose}
+                  type="button"
+                  disabled={!current}
+                  title={
+                    !current
+                      ? t('新建研究后可提问', 'Available after starting research')
+                      : undefined
+                  }
+                  onClick={() => {
+                    if (!current || !user || !isCurrentOwner()) return;
+                    onClose();
+                    window.dispatchEvent(
+                      new CustomEvent<OpenCompanyAssistantDetail>(OPEN_COMPANY_ASSISTANT_EVENT, {
+                        detail: { owner: user.id, runId: current.id },
+                      })
+                    );
+                  }}
                 >
-                  <Icon size={16} />
+                  <Icon size={16} aria-hidden="true" />
                   <span>{t(zh, en)}</span>
-                </a>
+                </button>
               );
-            })}
-          </nav>
-        </section>
-      )}
-      {tools}
+            if (!current)
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  disabled
+                  title={t('新建研究后可查看', 'Available after starting research')}
+                >
+                  <Icon size={16} aria-hidden="true" />
+                  <span>{t(zh, en)}</span>
+                </button>
+              );
+            const href = companyPath(current.id, id);
+            const active = Boolean(selected && section === id);
+            return (
+              <a
+                key={id}
+                href={href}
+                className={active ? 'active' : ''}
+                aria-current={active ? 'page' : undefined}
+                onClick={onClose}
+              >
+                <Icon size={16} aria-hidden="true" />
+                <span>{t(zh, en)}</span>
+              </a>
+            );
+          })}
+        </nav>
+      </section>
       <section className="sidebar-companies" aria-label={t(...productTerms.loadedCompanies)}>
         <span className="sidebar-group-label">{t(...productTerms.loadedCompanies)}</span>
         <div
@@ -193,7 +241,7 @@ export function CompanySidebar({
             </p>
           )}
           {companies.map((run) => {
-            const active = currentId === run.id;
+            const active = Boolean(selected && selected.id === run.id);
             const removing = deleting.includes(run.id);
             const running =
               run.deletionBlocked || run.status === 'queued' || run.status === 'running';
@@ -208,7 +256,7 @@ export function CompanySidebar({
                 aria-busy={removing || undefined}
               >
                 <a
-                  href={companyPath(run.id, current ? section : 'overview')}
+                  href={companyPath(run.id, selected ? section : 'overview')}
                   className={`sidebar-company ${active ? 'active' : ''}`}
                   aria-current={active ? 'page' : undefined}
                   onClick={onClose}
@@ -234,7 +282,7 @@ export function CompanySidebar({
                     type="button"
                     className="sidebar-company-delete icon-button"
                     aria-label={deleteLabel}
-                    aria-disabled={removing || running || undefined}
+                    disabled={removing || running}
                     onClick={(event) => {
                       if (!removing && !running) void remove(run, event.currentTarget);
                     }}

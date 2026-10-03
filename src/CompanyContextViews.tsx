@@ -10,7 +10,6 @@ import type {
   PublicSourceState,
 } from '../shared/company-workspace';
 import {
-  analyzeCompanyContext,
   contextFieldLabels,
   contextFen,
   contextRatio,
@@ -18,6 +17,7 @@ import {
   companyCheckPriorities,
   type CompanyReadingBasis,
 } from '../shared/company-analysis';
+import { companyContextOverviewAnalysis } from '../shared/company-financial-overview';
 import {
   companyEvidenceComparisons,
   companyEvidenceSourceUrls,
@@ -322,14 +322,16 @@ export function CompanyContextOverview({
   run,
   basis,
   view,
+  selectedYear,
 }: {
   snapshot: CompanyContextSnapshot;
   run: CompanyResearchRun;
   basis: CompanyReadingBasis;
   view: 'public' | 'manager';
+  selectedYear?: number;
 }) {
   const { t, locale } = useApp(),
-    analysis = analyzeCompanyContext(snapshot, basis),
+    analysis = companyContextOverviewAnalysis(snapshot, run, basis, selectedYear),
     last = analysis.latestAnnual,
     a = last?.amounts;
   const profitField = analysis.profitField,
@@ -372,7 +374,7 @@ export function CompanyContextOverview({
             </span>
           </div>
           <dl>
-            {(['revenue', 'parentProfit', 'ocf', 'cash'] as ContextAmountField[]).map((field) => (
+            {(['revenue', profitField, 'ocf', 'cash'] as ContextAmountField[]).map((field) => (
               <div key={field}>
                 <dt>{t(...contextFieldLabels[field])}</dt>
                 <dd>{money(interim.amounts[field], locale)}</dd>
@@ -382,7 +384,7 @@ export function CompanyContextOverview({
           <CompanyContextEvidence
             snapshot={snapshot}
             row={interim}
-            fields={['revenue', 'parentProfit', 'ocf', 'cash']}
+            fields={['revenue', profitField, 'ocf', 'cash']}
           />
         </section>
       )}
@@ -429,7 +431,13 @@ export function CompanyContextOverview({
             <CompanyContextEvidence
               snapshot={snapshot}
               row={last}
-              periods={analysis.annuals.slice(-3)}
+              periods={
+                selectedYear === undefined
+                  ? analysis.annuals.slice(-3)
+                  : analysis.annuals.filter((row) =>
+                      analysis.threeYear.periods.includes(row.period)
+                    )
+              }
               fields={[profitField, 'ocf', 'revenue']}
               formula={t(
                 `近三个连续年度经营现金净额合计 ÷ ${profitName}合计；利润非正、薄基数或缺失时不解读。`,
