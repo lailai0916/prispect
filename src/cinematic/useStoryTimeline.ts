@@ -23,7 +23,7 @@ export function useStoryTimeline(root: RefObject<HTMLDivElement | null>) {
           if (!context.conditions!.animated || context.conditions!.short) {
             container.dataset.motion = 'static';
             return () => {
-              delete container.dataset.motion;
+              if (container.dataset.motion === 'static') delete container.dataset.motion;
             };
           }
           container.dataset.motion = 'cinematic';
