@@ -126,17 +126,8 @@ kbd {
   }
 }
 .app-shell .toast {
-  bottom: 90px;
   overflow: hidden;
   animation: toast-enter var(--motion-medium) var(--motion-ease) both;
-}
-.app-shell:has(.company-assistant-panel:not([hidden])) .toast {
-  right: auto;
-  left: calc(var(--sidebar) + 24px);
-  bottom: 24px;
-}
-.public-shell:has(.company-assistant-panel:not([hidden])) .toast {
-  left: 24px;
 }
 .toast-lifetime {
   position: absolute;
@@ -654,18 +645,6 @@ kbd {
   }
   .app-shell .empty-state {
     padding: 44px 8px;
-  }
-  .app-shell .toast {
-    left: 16px;
-    right: 16px;
-    bottom: 88px;
-    max-width: none;
-  }
-  .app-shell:has(.company-assistant-panel:not([hidden])) .toast {
-    left: 16px;
-    right: 16px;
-    top: calc(var(--site-header-height) + 16px);
-    bottom: auto;
   }
   .dialog.command-dialog {
     top: 74px;
