@@ -602,8 +602,14 @@ pre {
   margin-bottom: 14px;
 }
 .button.sidebar-create {
+  position: relative;
   margin: 0 4px 18px;
-  justify-content: flex-start;
+  justify-content: center;
+  padding-inline: 36px;
+}
+.button.sidebar-create > svg {
+  position: absolute;
+  inset-inline-start: 14px;
 }
 .sidebar-navigation {
   display: flex;
