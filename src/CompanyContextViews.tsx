@@ -18,6 +18,7 @@ import {
   type CompanyReadingBasis,
 } from '../shared/company-analysis';
 import { companyContextOverviewAnalysis } from '../shared/company-financial-overview';
+import { CompanySourceLinks } from './CompanySourceLinks';
 import {
   companyEvidenceComparisons,
   companyEvidenceSourceUrls,
@@ -289,22 +290,14 @@ export function CompanyContextEvidence({
               </tbody>
             </table>
           </div>
-          {row.originalUrl && (
-            <a className="text-link" href={row.originalUrl} target="_blank" rel="noreferrer">
-              {t('打开披露原文', 'Open the disclosed original')}
-              <ArrowUpRight size={13} />
-            </a>
-          )}
-          {[...new Set((periods || [row]).flatMap((period) => period.sourceUrls))].map(
-            (url, index) => (
-              <p key={url}>
-                <a className="text-link" href={url} target="_blank" rel="noreferrer">
-                  {t(`取数字段入口 ${index + 1}`, `Field source ${index + 1}`)}
-                  <ArrowUpRight size={12} />
-                </a>
-              </p>
-            )
-          )}
+          <CompanySourceLinks
+            sources={[
+              ...(row.originalUrl
+                ? [{ url: row.originalUrl, label: ['披露原文', 'Original disclosure'] as const }]
+                : []),
+              ...selectedPeriods.flatMap((period) => period.sourceUrls.map((url) => ({ url }))),
+            ]}
+          />
           <p className="muted">
             {t(
               '现金流调整需另查补充表。',

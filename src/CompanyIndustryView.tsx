@@ -1,6 +1,6 @@
 import { Select } from './Select';
 import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowUpRight, ChevronDown, FileSearch, LoaderCircle, RefreshCw } from 'lucide-react';
+import { ChevronDown, FileSearch, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import {
   industryChartMetricKeys,
@@ -14,6 +14,7 @@ import { contextSum } from '../shared/company-analysis';
 import { financialChartAmount } from '../shared/company-financial-charts';
 import { api, requestErrorText } from './api';
 import { Dialog, Tag } from './components';
+import { CompanySourceLinks } from './CompanySourceLinks';
 import { useApp } from './context';
 import { date, money } from './format';
 import {
@@ -656,20 +657,12 @@ export function CompanyIndustryView({
                     {t('同行快照获取时间', 'Peer snapshot retrieved at')}{' '}
                     {date(snapshot.fetchedAt, locale)}
                   </p>
-                  {[
-                    ...new Set(
-                      run
-                        .context!.financials.filter((row) => row.annual && row.period === period)
-                        .flatMap((row) => row.sourceUrls)
-                    ),
-                  ].map((url, index) => (
-                    <p key={url}>
-                      <a className="text-link" href={url} target="_blank" rel="noreferrer">
-                        {t(`财务字段来源 ${index + 1}`, `Financial field source ${index + 1}`)}
-                        <ArrowUpRight size={12} />
-                      </a>
-                    </p>
-                  ))}
+                  <CompanySourceLinks
+                    title={['财务快照来源', 'Financial snapshot sources']}
+                    sources={run
+                      .context!.financials.filter((row) => row.annual && row.period === period)
+                      .flatMap((row) => row.sourceUrls.map((url) => ({ url })))}
+                  />
                 </>
               )}
               <div className="table-scroll">
@@ -708,16 +701,7 @@ export function CompanyIndustryView({
                   </tbody>
                 </table>
               </div>
-              {snapshot.sources.map((source, index) => (
-                <details key={`${source.url}:${index}`}>
-                  <summary>{t(`样本来源 ${index + 1}`, `Sample source ${index + 1}`)}</summary>
-                  <a className="text-link" href={source.url} target="_blank" rel="noreferrer">
-                    {t('打开取数入口', 'Open field source')}
-                    <ArrowUpRight size={12} />
-                  </a>
-                  <code>{source.sha256}</code>
-                </details>
-              ))}
+              <CompanySourceLinks sources={snapshot.sources} />
             </Dialog>
           )}
         </>
