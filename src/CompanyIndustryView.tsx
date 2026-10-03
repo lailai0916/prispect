@@ -227,43 +227,35 @@ export function CompanyIndustryView({
   }
   return (
     <>
-      <div className="context-section-title">
-        <div>
-          <h2>{t('企业与同行', 'Company and peers')}</h2>
-          <p className="muted">
-            {period} · {t('完整年报', 'Full annual report')}
-          </p>
-        </div>
-        <div className="context-filters">
-          <label>
-            {t('年度', 'Year')}
-            <Select
-              aria-label={t('行业对比年度', 'Industry-comparison year')}
-              value={period}
-              onValueChange={(selectedValue) => {
-                setPeriod(selectedValue);
-                onPeriodChange?.(selectedValue);
-              }}
-            >
-              {(years.length ? years : [period]).map((year) => (
-                <option key={year} value={year}>
-                  {year.slice(0, 4)} {t('年报', 'annual')}
-                </option>
-              ))}
-            </Select>
-          </label>
-          {snapshot && (
-            <button
-              className="icon-button"
-              type="button"
-              aria-label={t('更新行业数据', 'Refresh industry data')}
-              disabled={loading}
-              onClick={() => loadIndustry(true)}
-            >
-              {loading ? <LoaderCircle size={16} className="spinner" /> : <RefreshCw size={16} />}
-            </button>
-          )}
-        </div>
+      <div className="context-filters">
+        <label>
+          {t('年度', 'Year')}
+          <Select
+            aria-label={t('行业对比年度', 'Industry-comparison year')}
+            value={period}
+            onValueChange={(selectedValue) => {
+              setPeriod(selectedValue);
+              onPeriodChange?.(selectedValue);
+            }}
+          >
+            {(years.length ? years : [period]).map((year) => (
+              <option key={year} value={year}>
+                {year.slice(0, 4)} {t('年报', 'annual')}
+              </option>
+            ))}
+          </Select>
+        </label>
+        {snapshot && (
+          <button
+            className="icon-button"
+            type="button"
+            aria-label={t('更新行业数据', 'Refresh industry data')}
+            disabled={loading}
+            onClick={() => loadIndustry(true)}
+          >
+            {loading ? <LoaderCircle size={16} className="spinner" /> : <RefreshCw size={16} />}
+          </button>
+        )}
       </div>
       {error && (
         <p className="inline-error" role="alert">
