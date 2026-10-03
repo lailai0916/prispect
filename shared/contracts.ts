@@ -298,7 +298,7 @@ export interface CompanyIdentity {
   orgId: string;
   shortName: string;
   companyName: string | null;
-  exchange: 'szse' | 'sse' | 'bse' | 'us' | 'unknown';
+  exchange: 'szse' | 'sse' | 'bse' | 'us' | 'cn-private' | 'unknown';
   sourceUrl: string;
 }
 export interface CompanySearchResponse {
@@ -307,6 +307,10 @@ export interface CompanySearchResponse {
   limitedToListed: true;
   source: 'cninfo' | 'sec';
   truncated: boolean;
+  /** 无结果且关键词疑似未上市中国公司时置 true（未上市数据源接口已预留）。 */
+  unlisted?: boolean;
+  /** 未上市数据源状态；status 为 ready 时前端应提示可核查。 */
+  privateSource?: { key: 'cn-private'; status: 'pending' | 'ready'; note: string };
 }
 export interface CompanyAnnouncement {
   id: string;

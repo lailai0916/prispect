@@ -13,6 +13,7 @@ import {
 } from './company-agent.js';
 import { companyReputation } from './company-reputation.js';
 import { secCompanyQuarter } from './company-sec.js';
+import { privateCompanySource } from './company-private.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
 
@@ -294,7 +295,12 @@ export function installCompanyRoutes(
         30,
         60_000
       );
-      res.json(await service.searchCompanies(query.data));
+      const result = await service.searchCompanies(query.data);
+      // 附加未上市数据源状态：接口已预留，前端据此提示"未上市主体可接入核查"
+      res.json({
+        ...result,
+        privateSource: privateCompanySource,
+      });
     })
   );
   app.get('/api/company-runs', (_req, res) =>

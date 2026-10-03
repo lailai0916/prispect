@@ -183,6 +183,7 @@ export function issuerCodeEvidence(
     szse: '深圳证券交易所',
     bse: '北京证券交易所',
     us: '美国证券交易委员会',
+    'cn-private': '',
     unknown: '',
   }[exchange];
   const cells = (line: string) =>
@@ -237,9 +238,14 @@ export function issuerCodeEvidence(
         ) {
           const marketNames = [
             exchangeLabel,
-            { sse: '上交所', szse: '深交所', bse: '北交所', us: '纽交所/纳斯达克', unknown: '' }[
-              exchange
-            ],
+            {
+              sse: '上交所',
+              szse: '深交所',
+              bse: '北交所',
+              us: '纽交所/纳斯达克',
+              'cn-private': '未上市',
+              unknown: '',
+            }[exchange],
           ];
           for (let column = 1; column < header.length; column++) {
             if (

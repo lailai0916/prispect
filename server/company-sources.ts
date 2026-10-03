@@ -227,7 +227,20 @@ export async function searchCompanies(
     });
   }
   // 巨潮无匹配（如"英伟达"等美股中文名）时，回落到 SEC EDGAR 的别名与名称检索。
-  if (!candidates.length) return secSearchCompanies(query);
+  if (!candidates.length) {
+    const secResult = await secSearchCompanies(query);
+    if (secResult.candidates.length) return secResult;
+    // 两个上市源均无结果：若关键词像中文公司名，标记"疑似未上市主体"，
+    // 供前端提示未上市数据源接口已预留（见 contracts.ts CompanySearchResponse）。
+    return {
+      query,
+      candidates: [],
+      limitedToListed: true,
+      source: 'cninfo',
+      truncated: false,
+      unlisted: /[\u4e00-\u9fff]/.test(query),
+    };
+  }
   return {
     query,
     candidates,

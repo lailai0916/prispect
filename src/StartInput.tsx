@@ -52,6 +52,7 @@ export function StartInput({
   );
   const [error, setError] = useState('');
   const [candidates, setCandidates] = useState<CompanyIdentity[]>([]);
+  const [unlisted, setUnlisted] = useState(false);
   const [finding, setFinding] = useState(false);
   const [searched, setSearched] = useState(false);
   const [searchFailed, setSearchFailed] = useState(false);
@@ -66,6 +67,7 @@ export function StartInput({
   const companyIntent = companyOnly || intent.kind === 'company';
   useEffect(() => {
     setCandidates([]);
+    setUnlisted(false);
     setSearched(false);
     setSearchFailed(false);
     setActiveCandidate(-1);
@@ -89,6 +91,7 @@ export function StartInput({
         .then((response) => {
           if (!controller.signal.aborted) {
             setCandidates(response.candidates);
+            setUnlisted(Boolean(response.unlisted));
             setSearched(true);
           }
         })
@@ -388,10 +391,15 @@ export function StartInput({
             ))}
           {!finding && !candidates.length && (
             <p className="company-completions-state">
-              {t(
-                '未匹配到支持的上市主体。检查名称或证券代码，也可以继续保存资料缺口。',
-                'No supported listed entity matched. Check the name or ticker, or continue to save an information gap.'
-              )}
+              {unlisted
+                ? t(
+                    '该主体可能未上市。未上市中国公司的核查接口已预留（接入工商/融资/舆情数据源后即可核查）。',
+                    'This company may not be listed. The unlisted-company interface is reserved; it activates once a registry/funding/sentiment source is connected.'
+                  )
+                : t(
+                    '未匹配到支持的上市主体。检查名称或证券代码，也可以继续保存资料缺口。',
+                    'No supported listed entity matched. Check the name or ticker, or continue to save an information gap.'
+                  )}
             </p>
           )}
         </div>

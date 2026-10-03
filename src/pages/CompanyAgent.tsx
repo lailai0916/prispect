@@ -605,12 +605,21 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               <h3>
                 {t('未找到当前检索范围的公司匹配', 'No company match in the current coverage')}
               </h3>
-              <p>
-                {t(
-                  '核对名称与代码，或使用自己的公司材料。当前查询不覆盖所有企业。',
-                  'Check the name or code, or use your own documents. This search does not cover every company.'
-                )}
-              </p>
+              {results.unlisted ? (
+                <p>
+                  {t(
+                    '该主体可能未上市。未上市中国公司的核查接口已预留（需工商/融资/舆情类数据源接入后启用）。',
+                    'This company may not be listed. The interface for unlisted Chinese companies is reserved and will activate once a registry/funding/sentiment data source is connected.'
+                  )}
+                </p>
+              ) : (
+                <p>
+                  {t(
+                    '核对名称与代码，或使用自己的公司材料。当前查询不覆盖所有企业。',
+                    'Check the name or code, or use your own documents. This search does not cover every company.'
+                  )}
+                </p>
+              )}
               <p>{annualMaterialRequest}</p>
               <p>{purposeMaterialRequest}</p>
               <button type="button" className="button button-secondary" onClick={importOwn}>
