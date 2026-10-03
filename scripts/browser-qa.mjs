@@ -398,6 +398,22 @@ async function readingCardRoutes(page) {
     [0, 'finance'],
   ]) {
     assert.equal(await cards.nth(index).getAttribute('href'), '#showcase-evidence');
+    const previousHash = new URL(page.url()).hash;
+    if (previousHash !== '#showcase-evidence') {
+      await page.evaluate(() => {
+        window.__readingCardHashReady = false;
+        window.addEventListener(
+          'hashchange',
+          () =>
+            requestAnimationFrame(() =>
+              requestAnimationFrame(() => {
+                window.__readingCardHashReady = true;
+              })
+            ),
+          { once: true }
+        );
+      });
+    }
     await cards.nth(index).focus();
     await page.keyboard.press('Enter');
     await page.waitForFunction(
@@ -406,6 +422,16 @@ async function readingCardRoutes(page) {
       channel
     );
     assert.equal(new URL(page.url()).hash, '#showcase-evidence');
+    if (previousHash !== '#showcase-evidence') {
+      // Complete the native hash navigation and its scheduled focus transfer before
+      // focusing another card, so that transfer cannot steal the next Enter press.
+      await page.waitForFunction(
+        () =>
+          window.__readingCardHashReady &&
+          document.activeElement === document.getElementById('showcase-evidence')
+      );
+      await page.evaluate(() => delete window.__readingCardHashReady);
+    }
   }
   assert.equal(receipt.researchWrites.length, writesBefore);
   check(
