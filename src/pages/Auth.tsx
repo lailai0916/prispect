@@ -420,21 +420,21 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 <span>{t('创建账号前，请阅读', 'Before creating an account, read')} </span>
               )}
               <a
-                href="/terms"
+                href="/docs/terms"
                 target="_blank"
                 rel="noreferrer"
-                aria-label={`${t(...documentTitles['/terms'])}${t('（新标签页）', ' (new tab)')}`}
+                aria-label={`${t(...documentTitles['/docs/terms'])}${t('（新标签页）', ' (new tab)')}`}
               >
-                {t(...documentTitles['/terms'])}
+                {t(...documentTitles['/docs/terms'])}
               </a>
               <span> · </span>
               <a
-                href="/privacy"
+                href="/docs/privacy"
                 target="_blank"
                 rel="noreferrer"
-                aria-label={`${t(...documentTitles['/privacy'])}${t('（新标签页）', ' (new tab)')}`}
+                aria-label={`${t(...documentTitles['/docs/privacy'])}${t('（新标签页）', ' (new tab)')}`}
               >
-                {t(...documentTitles['/privacy'])}
+                {t(...documentTitles['/docs/privacy'])}
               </a>
             </p>
           </>

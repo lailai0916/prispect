@@ -1511,7 +1511,7 @@ export function AccountPage() {
                 </div>
                 <p className="account-muted">
                   {t('注册于', 'Joined')} {date(overview.user.createdAt, locale)} ·{' '}
-                  <a href="/privacy">
+                  <a href="/docs/privacy">
                     {t('查看数据与来源边界', 'Read data and source boundaries')}
                   </a>
                 </p>

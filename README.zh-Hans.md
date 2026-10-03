@@ -19,7 +19,7 @@
 
 本项目参加学军中学「回响·48H 青年创造营」X-Ray 方向。原件现金桥核对明确的财务问题，公司研究 Agent 扩展公开数据分析。单一历史现金比例不等于整体评级；析光的透明财务筛选等级不属于评级机构信用等级、授信决策或投资建议。用户需求与付费意愿仍属于研究假设。
 
-产品信息见[使用文档](https://prispect.com/docs)、[产品介绍](https://prispect.com/about)、[隐私政策](https://prispect.com/privacy)、[用户协议](https://prispect.com/terms)与[版权说明](https://prispect.com/copyright)。政策描述已实现的服务，不等于法律合规认证。联系邮箱：`lailai0x394@gmail.com`。
+[文档主页](https://prispect.com/docs)提供六篇文章：[关于析光](https://prispect.com/docs/about)、[使用指南](https://prispect.com/docs/guide)、[核查方法](https://prispect.com/docs/methodology)、[隐私政策](https://prispect.com/docs/privacy)、[用户协议](https://prispect.com/docs/terms)与[版权声明](https://prispect.com/docs/copyright)。旧文章地址与原使用文档的章节链接仍兼容。政策描述已实现的服务，不等于法律合规认证。联系邮箱：`lailai0x394@gmail.com`。
 
 验证包括本机完整检查与浏览器交互回放；模型提供商验证和生产发布验收分别记录。具体范围、证据和发布准备见[重构方案与验收任务](docs/rebuild-plan.md)及[生产容量记录](docs/production-capacity-2026-10-03.md)。
 

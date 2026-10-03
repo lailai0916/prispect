@@ -2,7 +2,7 @@ import { DOCUMENT_VERSION, type ProductDocument } from './document';
 import { documentTitles } from './document-navigation';
 
 export const guideDocument: ProductDocument = {
-  title: documentTitles['/docs'],
+  title: documentTitles['/docs/guide'],
   description: [
     '从公司分析到保存核查：评级依据、研究目标、材料与现金条件的使用方法。',
     'From company analysis to saved reviews: grading evidence, research goals, materials and cash conditions.',
@@ -237,7 +237,7 @@ export const guideDocument: ProductDocument = {
           'A passed scope check only means adopted fields meet that rule. Missing fields, conflicts or a difference between original-row totals and reported cash stop the relevant calculation. The system does not plug a residual. Possible causes remain hypotheses; questions identify the customer, settlement, inventory or other evidence needed next.',
         ],
       ],
-      links: [{ label: ['查看核查方法', 'Read the review method'], href: '/method' }],
+      links: [{ label: ['查看核查方法', 'Read the review method'], href: '/docs/methodology' }],
     },
     {
       id: 'external',
@@ -454,7 +454,7 @@ export const guideDocument: ProductDocument = {
           'Use header search or ⌘ K / Ctrl K to jump to pages, saved companies, reports and materials. Typing filters this workspace without a model request. Use arrows to select, Enter to open and Esc to close. Esc clears list searches; page animations respect the system reduced-motion preference.',
         ],
       ],
-      links: [{ label: ['数据与隐私', 'Data and privacy'], href: '/privacy?section=ai' }],
+      links: [{ label: ['数据与隐私', 'Data and privacy'], href: '/docs/privacy?section=ai' }],
     },
     {
       id: 'troubleshooting',

@@ -1757,7 +1757,7 @@ thead th {
 }
 
 @media (max-width: 360px) {
-  .public-shell > .site-header .navigation a[href='/method'] {
+  .public-shell > .site-header .navigation a[href='/docs/methodology'] {
     display: none;
   }
 }

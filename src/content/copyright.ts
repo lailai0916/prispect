@@ -2,7 +2,7 @@ import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './documen
 import { documentTitles } from './document-navigation';
 
 export const copyrightDocument: ProductDocument = {
-  title: documentTitles['/copyright'],
+  title: documentTitles['/docs/copyright'],
   description: [
     '区分析光代码许可、第三方内容与你提供的材料，保留来源和许可条件。',
     'Distinguishing the Prispect code license, third-party content and your materials, while retaining sources and license conditions.',
@@ -114,8 +114,11 @@ export const copyrightDocument: ProductDocument = {
         ],
       ],
       links: [
-        { label: ['材料使用与服务约定', 'Terms for materials and service use'], href: '/terms' },
-        { label: ['私人数据处理', 'Private-data processing'], href: '/privacy' },
+        {
+          label: ['材料使用与服务约定', 'Terms for materials and service use'],
+          href: '/docs/terms',
+        },
+        { label: ['私人数据处理', 'Private-data processing'], href: '/docs/privacy' },
       ],
     },
     {

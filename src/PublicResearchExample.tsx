@@ -22,7 +22,7 @@ export function PublicResearchExample() {
             )}
           </p>
         </div>
-        <a href="/method">
+        <a href="/docs/methodology">
           {t('方法与范围', 'Methods and scope')}
           <ArrowUpRight size={13} />
         </a>

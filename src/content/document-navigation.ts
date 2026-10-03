@@ -3,23 +3,61 @@ import type { BilingualText } from './document';
 // Page names are shared by navigation, document headings and browser titles.
 // Keep this separate from document bodies so the app shell stays lightweight.
 export const documentTitles = {
-  '/about': ['关于析光', 'About Prispect'],
-  '/docs': ['使用文档', 'Documentation'],
-  '/privacy': ['隐私政策', 'Privacy policy'],
-  '/terms': ['用户协议', 'Terms of service'],
-  '/copyright': ['版权声明', 'Copyright notice'],
+  '/docs/about': ['关于析光', 'About Prispect'],
+  '/docs/guide': ['使用指南', 'User guide'],
+  '/docs/methodology': ['核查方法', 'Review methodology'],
+  '/docs/privacy': ['隐私政策', 'Privacy policy'],
+  '/docs/terms': ['用户协议', 'Terms of service'],
+  '/docs/copyright': ['版权声明', 'Copyright notice'],
 } as const satisfies Record<string, BilingualText>;
 
+export const documentationTitle = ['文档', 'Documentation'] as const;
 export type DocumentPath = keyof typeof documentTitles;
 export const documentPaths = Object.keys(documentTitles) as DocumentPath[];
 
 export const documentNavigation = [
-  { path: '/about', label: documentTitles['/about'] },
-  { path: '/docs', label: documentTitles['/docs'] },
-  { path: '/method', label: ['方法', 'Method'] },
-  { path: '/privacy', label: documentTitles['/privacy'] },
-  { path: '/terms', label: documentTitles['/terms'] },
-  { path: '/copyright', label: documentTitles['/copyright'] },
+  {
+    path: '/docs/about',
+    label: documentTitles['/docs/about'],
+    description: ['产品用途、功能与适用范围。', 'Product purpose, features and scope.'],
+  },
+  {
+    path: '/docs/guide',
+    label: documentTitles['/docs/guide'],
+    description: [
+      '公司研究、材料管理与核查记录。',
+      'Company research, materials and review records.',
+    ],
+  },
+  {
+    path: '/docs/methodology',
+    label: documentTitles['/docs/methodology'],
+    description: [
+      '计算口径、证据要求与分析边界。',
+      'Calculations, evidence requirements and analysis limits.',
+    ],
+  },
+  {
+    path: '/docs/privacy',
+    label: documentTitles['/docs/privacy'],
+    description: ['数据处理、AI 使用与保存规则。', 'Data processing, AI use and retention.'],
+  },
+  {
+    path: '/docs/terms',
+    label: documentTitles['/docs/terms'],
+    description: [
+      '服务范围、账号使用与双方责任。',
+      'Service scope, account use and responsibilities.',
+    ],
+  },
+  {
+    path: '/docs/copyright',
+    label: documentTitles['/docs/copyright'],
+    description: [
+      '代码许可、第三方内容与材料权利。',
+      'Code licensing, third-party content and material rights.',
+    ],
+  },
 ] as const;
 
-export type DocumentRoute = (typeof documentNavigation)[number]['path'];
+export type DocumentRoute = DocumentPath | '/docs';

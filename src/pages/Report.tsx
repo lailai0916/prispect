@@ -1279,7 +1279,7 @@ export function ReportView({
                   <Columns3 size={16} />
                   {t('与历史任务比较', 'Compare with history')}
                 </button>
-                <a href="/method" className="text-link">
+                <a href="/docs/methodology" className="text-link">
                   {t('阅读方法说明', 'Read the methodology')}
                   <ArrowUpRight size={15} />
                 </a>

@@ -27,7 +27,9 @@ test('company navigation and content resolve missing, invalid and legacy section
 });
 
 test('legacy links retain encoded task IDs, query values and document sections', () => {
-  assert.equal(legacyRoute('#/docs?section=materials', origin), '/docs?section=materials');
+  assert.equal(legacyRoute('#/docs?section=materials', origin), '/docs/guide?section=materials');
+  assert.equal(legacyRoute('#/docs', origin), '/docs');
+  assert.equal(legacyRoute('#/method#method-privacy', origin), '/docs/methodology#method-privacy');
   assert.equal(legacyRoute('#/tasks/a%20b?from=compare', origin), '/tasks/a%20b?from=compare');
   assert.equal(
     legacyRoute('#/login?next=%2Fdecisions%3Fid%3Da', origin),
@@ -56,7 +58,7 @@ test('login return paths cannot redirect outside the app or into server endpoint
 });
 
 test('SPA links leave originals, downloads, external sites and page anchors to the browser', () => {
-  assert.equal(appLinkPath('/docs?section=privacy', origin), '/docs?section=privacy');
+  assert.equal(appLinkPath('/docs?section=privacy', origin), '/docs/guide?section=privacy');
   assert.equal(appLinkPath(origin + '/account', origin), '/account');
   assert.equal(appLinkPath('/research', origin), '/research');
   for (const native of [
@@ -65,6 +67,8 @@ test('SPA links leave originals, downloads, external sites and page anchors to t
     '#main',
     '#method-privacy',
     '/method#method-privacy',
+    '/docs/methodology#method-privacy',
+    '/docs/guide?section=materials#main',
     'https://other.example/docs',
     'mailto:contact@example.test',
   ])
@@ -72,6 +76,65 @@ test('SPA links leave originals, downloads, external sites and page anchors to t
 });
 
 test('trailing slashes normalize without losing queries or genuine fragments', () => {
-  assert.equal(appPath('/docs/?section=import#main', origin), '/docs?section=import#main');
+  assert.equal(appPath('/docs/?section=import#main', origin), '/docs/guide?section=import#main');
+  assert.equal(
+    appPath('/docs/guide/?section=import#main', origin),
+    '/docs/guide?section=import#main'
+  );
+  assert.equal(appPath('/docs/', origin), '/docs');
   assert.equal(appPath('/', origin), '/');
+});
+
+test('documentation hub and article routes work for navigation and login returns', () => {
+  for (const path of [
+    '/docs',
+    '/docs/about',
+    '/docs/guide',
+    '/docs/methodology',
+    '/docs/privacy',
+    '/docs/terms',
+    '/docs/copyright',
+  ]) {
+    assert.equal(appPath(path, origin), path, path);
+    assert.equal(appLinkPath(origin + path, origin), path, path);
+    assert.equal(loginDestination(path, origin), path, path);
+  }
+  assert.equal(
+    loginDestination('/docs/guide?section=materials#main', origin),
+    '/docs/guide?section=materials#main'
+  );
+});
+
+test('old documentation routes canonicalize while preserving queries and fragments', () => {
+  for (const [alias, canonical] of [
+    ['/about', '/docs/about'],
+    ['/method', '/docs/methodology'],
+    ['/privacy', '/docs/privacy'],
+    ['/terms', '/docs/terms'],
+    ['/copyright', '/docs/copyright'],
+  ]) {
+    assert.equal(appPath(alias + '/?from=footer#main', origin), canonical + '?from=footer#main');
+    assert.equal(legacyRoute('#' + alias + '?from=footer', origin), canonical + '?from=footer');
+    assert.equal(appLinkPath(alias + '?from=footer', origin), canonical + '?from=footer');
+    assert.equal(loginDestination(alias, origin), canonical);
+  }
+});
+
+test('old guide section links retain the full query and native document anchor', () => {
+  const query = '?from=footer&section=materials%2Fimport&section=review';
+  assert.equal(appPath('/docs' + query + '#main', origin), '/docs/guide' + query + '#main');
+  assert.equal(legacyRoute('#/docs/' + query + '#main', origin), '/docs/guide' + query + '#main');
+  assert.equal(appLinkPath('/docs' + query, origin), '/docs/guide' + query);
+  assert.equal(appPath('/docs?from=footer#main', origin), '/docs?from=footer#main');
+});
+
+test('unknown documentation articles and external documentation URLs remain rejected', () => {
+  for (const path of ['/docs/evil', '/docs/guide/extra', '/docs/evil?section=materials']) {
+    assert.equal(appPath(path, origin), null, path);
+    assert.equal(legacyRoute('#' + path, origin), null, path);
+    assert.equal(appLinkPath(path, origin), null, path);
+    assert.equal(loginDestination(path, origin), '/workspace', path);
+  }
+  assert.equal(appLinkPath('https://evil.example/docs/guide', origin), null);
+  assert.equal(loginDestination('https://evil.example/docs/guide', origin), '/workspace');
 });

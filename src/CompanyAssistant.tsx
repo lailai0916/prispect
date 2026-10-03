@@ -393,9 +393,9 @@ export function CompanyAssistant({ route }: { route: string }) {
                 </article>
               ))}
             </div>
-            <a className="text-link" href="/docs">
+            <a className="text-link" href="/docs/guide">
               <BookOpen size={13} />
-              {t('查看使用文档', 'Open documentation')}
+              {t('查看使用指南', 'Open the user guide')}
             </a>
           </div>
           <div className="context-question-footer">

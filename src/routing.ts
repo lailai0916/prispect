@@ -1,4 +1,5 @@
 import { companySections, type CompanySection } from '../shared/company-workspace';
+import { documentPaths } from './content/document-navigation';
 
 export const ROUTE_CHANGE_EVENT = 'prispect:routechange';
 
@@ -9,12 +10,8 @@ export function resolveCompanySection(value: string | null | undefined): Company
 
 const pages = new Set([
   '/',
-  '/about',
   '/docs',
-  '/privacy',
-  '/terms',
-  '/copyright',
-  '/method',
+  ...documentPaths,
   '/login',
   '/register',
   '/account',
@@ -28,13 +25,27 @@ const pages = new Set([
   '/compare',
 ]);
 
+const legacyDocuments: Record<string, string> = {
+  '/about': '/docs/about',
+  '/method': '/docs/methodology',
+  '/privacy': '/docs/privacy',
+  '/terms': '/docs/terms',
+  '/copyright': '/docs/copyright',
+};
+
 /** Accept only local application pages, never server endpoints or external URLs. */
 export function appPath(value: string, origin: string): string | null {
   if (!value.startsWith('/') || value.startsWith('//') || /[\\\u0000-\u0020\u007f]/.test(value))
     return null;
   try {
     const url = new URL(value, origin);
-    const pathname = url.pathname.replace(/\/+$/, '') || '/';
+    const originalPath = url.pathname.replace(/\/+$/, '') || '/';
+    const pathname =
+      legacyDocuments[originalPath] ||
+      (originalPath === '/docs' &&
+      (url.searchParams.has('section') || url.hash.startsWith('#document-'))
+        ? '/docs/guide'
+        : originalPath);
     if (url.origin !== origin || (!pages.has(pathname) && !/^\/tasks\/[^/]+$/.test(pathname)))
       return null;
     return pathname + url.search + url.hash;

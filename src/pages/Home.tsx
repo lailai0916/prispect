@@ -24,7 +24,7 @@ export function Home({ exampleOnly = false }: { exampleOnly?: boolean }) {
   return (
     <div className="home-landing research-entry-page">
       <CompanyResearchLauncher
-        metadata={<a href="/docs?section=company">{t('支持范围', 'Coverage')}</a>}
+        metadata={<a href="/docs/guide?section=company">{t('支持范围', 'Coverage')}</a>}
       >
         <StartInput key={user?.id || 'anonymous'} compact />
       </CompanyResearchLauncher>

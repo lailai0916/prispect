@@ -2,7 +2,7 @@ import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './documen
 import { documentTitles } from './document-navigation';
 
 export const aboutDocument: ProductDocument = {
-  title: documentTitles['/about'],
+  title: documentTitles['/docs/about'],
   description: [
     '企业资料核查与条件计算：从公开财报到具体安排。',
     'Company-evidence review and conditional calculations, from public financials to specific arrangements.',
@@ -54,7 +54,7 @@ export const aboutDocument: ProductDocument = {
       ],
       links: [
         { label: ['导入财务材料', 'Import financial material'], href: '/materials' },
-        { label: ['了解核查方法', 'Read the method'], href: '/method' },
+        { label: ['了解核查方法', 'Read the method'], href: '/docs/methodology' },
       ],
     },
     {
@@ -124,7 +124,7 @@ export const aboutDocument: ProductDocument = {
           'Financial reviews can be compared and exported as HTML or JSON working papers. Private reviews can export the current version. Exports retain applicable conditions and do not create public sharing links.',
         ],
       ],
-      links: [{ label: documentTitles['/docs'], href: '/docs' }],
+      links: [{ label: documentTitles['/docs/guide'], href: '/docs/guide' }],
     },
     {
       id: 'limits-and-data',
@@ -140,8 +140,8 @@ export const aboutDocument: ProductDocument = {
         ],
       ],
       links: [
-        { label: ['数据与隐私', 'Data and privacy'], href: '/privacy' },
-        { label: documentTitles['/terms'], href: '/terms' },
+        { label: ['数据与隐私', 'Data and privacy'], href: '/docs/privacy' },
+        { label: documentTitles['/docs/terms'], href: '/docs/terms' },
       ],
     },
   ],

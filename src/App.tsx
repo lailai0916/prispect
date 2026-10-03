@@ -36,7 +36,7 @@ import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } 
 import {
   documentNavigation,
   documentPaths,
-  documentTitles,
+  documentationTitle,
   type DocumentPath,
 } from './content/document-navigation';
 import { CompanySidebar } from './CompanySidebar';
@@ -116,15 +116,15 @@ const ComparePage = lazyPage(
   () => import('./pages/Compare'),
   (module) => module.ComparePage
 );
-const MethodPage = lazyPage(
-  () => import('./pages/Method'),
-  (module) => module.MethodPage
-);
 const DocumentationPage = lazyPage(
   () => import('./pages/Documentation'),
   (module) => module.DocumentationPage
 );
-const publicPages = ['/', '/method', '/login', '/register', ...documentPaths];
+const DocsHome = lazyPage(
+  () => import('./pages/DocsHome'),
+  (module) => module.DocsHome
+);
+const publicPages = ['/', '/docs', '/login', '/register', ...documentPaths];
 
 export function App() {
   const [locale, setLocale] = useState<Locale>(storedLocale);
@@ -332,7 +332,7 @@ export function App() {
   useEffect(() => {
     if (
       documentPaths.includes(route.split('?')[0] as DocumentPath) ||
-      route.split('?')[0] === '/method'
+      route.split('?')[0] === '/docs'
     )
       return;
     const titles: Record<string, string> = {
@@ -356,7 +356,7 @@ export function App() {
   }, [t, route, workspace]);
   const page = route.split('?')[0];
   const documentPage = documentPaths.includes(page as DocumentPath);
-  const documentationRoute = documentPage || page === '/method';
+  const documentationRoute = documentPage || page === '/docs';
   const protectedPage = !publicPages.includes(page);
   useEffect(() => {
     if (loaded && !loadError && page === '/register' && !registrationEnabled) {
@@ -394,7 +394,7 @@ export function App() {
   const navigation = [...primaryNavigation, ...secondaryNavigation];
   const sessionAvailable = loaded && !loadError;
   const business = Boolean(
-    sessionAvailable && user && !['/login', '/register', '/method', ...documentPaths].includes(page)
+    sessionAvailable && user && !['/login', '/register', '/docs', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
     ? t('财报核查', 'Financial review')
@@ -402,8 +402,8 @@ export function App() {
       ? t('新建财报核查', 'New financial review')
       : page === '/account'
         ? t('账号', 'Account')
-        : page === '/method'
-          ? t('方法', 'Method')
+        : documentationRoute
+          ? t(...documentationTitle)
           : page === '/company'
             ? t('企业研究', 'Company research')
             : page === '/' || page === '/query'
@@ -491,7 +491,7 @@ export function App() {
       <div className="sidebar-bottom">
         <a href="/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
           <BookOpen size={16} />
-          {t(...documentTitles['/docs'])}
+          {t(...documentationTitle)}
         </a>
         {user && (
           <ActionMenu
@@ -536,9 +536,9 @@ export function App() {
                 <Logo />
               </a>
               {business && <span className="header-context">{currentSection}</span>}
-              {!business && page !== '/docs' && (
+              {!business && !documentationRoute && (
                 <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
-                  <a href="/docs">{t(...documentTitles['/docs'])}</a>
+                  <a href="/docs">{t(...documentationTitle)}</a>
                 </nav>
               )}
               <div className="header-actions">
@@ -657,13 +657,13 @@ export function App() {
                 onRetry={resetFailedLazyPages}
               >
                 <Suspense fallback={<PageLoading label={t('正在打开页面…', 'Opening page…')} />}>
-                  {documentPage ? (
+                  {page === '/docs' ? (
+                    <DocsHome />
+                  ) : documentPage ? (
                     <DocumentationPage
                       path={page as DocumentPath}
                       section={new URLSearchParams(route.split('?')[1]).get('section')}
                     />
-                  ) : page === '/method' ? (
-                    <MethodPage section={new URLSearchParams(route.split('?')[1]).get('section')} />
                   ) : loadError ? (
                     <div className="connection-error">
                       <CircleAlert />
@@ -740,7 +740,8 @@ export function App() {
               <footer className="site-footer">
                 <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
                 <div>
-                  {documentNavigation.map((item) => (
+                  <a href="/docs">{t(...documentationTitle)}</a>
+                  {documentNavigation.slice(3).map((item) => (
                     <a key={item.path} href={item.path}>
                       {t(item.label[0], item.label[1])}
                     </a>

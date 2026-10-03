@@ -2,7 +2,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useApp } from './context';
 import { ROUTE_CHANGE_EVENT } from './routing';
-import { documentNavigation, type DocumentRoute } from './content/document-navigation';
+import {
+  documentationTitle,
+  documentNavigation,
+  type DocumentRoute,
+} from './content/document-navigation';
 import './styles/documentation.css';
 
 export type { DocumentRoute } from './content/document-navigation';
@@ -29,6 +33,8 @@ export function DocumentLayout({
   const article = useRef<HTMLElement>(null);
   const mobileDocuments = useRef<HTMLDetailsElement>(null);
   const mobileContents = useRef<HTMLDetailsElement>(null);
+  const home = path === '/docs';
+  const hasContents = headings.length > 0;
   // Only IDs and query keys affect navigation; translation changes don't reset reading position.
   const targets = JSON.stringify(headings.map(({ id, section: key }) => ({ id, key })));
 
@@ -130,6 +136,9 @@ export function DocumentLayout({
 
   const documents = (
     <nav className="document-navigation" aria-label={t('文档导航', 'Documents')}>
+      <a className="document-navigation-home" href="/docs" aria-current={home ? 'page' : undefined}>
+        {t(documentationTitle[0], documentationTitle[1])}
+      </a>
       {articleLinks(0, 3)}
       <span className="document-navigation-label">{t('条款与政策', 'Policies')}</span>
       {articleLinks(3, 6)}
@@ -150,11 +159,8 @@ export function DocumentLayout({
   );
 
   return (
-    <div className="document-layout">
-      <aside className="document-sidebar">
-        <p className="document-navigation-title">{t('文档', 'Docs')}</p>
-        {documents}
-      </aside>
+    <div className={`document-layout${home ? ' document-layout-home' : ''}`}>
+      <aside className="document-sidebar">{documents}</aside>
       <div className="document-reading-column">
         <div className="document-mobile-navigation">
           <details ref={mobileDocuments} className="document-mobile-documents">
@@ -164,22 +170,26 @@ export function DocumentLayout({
             </summary>
             {documents}
           </details>
-          <details ref={mobileContents} className="document-mobile-contents">
-            <summary>
-              {t('本页目录', 'On this page')}
-              <ChevronDown size={16} aria-hidden="true" />
-            </summary>
-            {contents}
-          </details>
+          {hasContents && (
+            <details ref={mobileContents} className="document-mobile-contents">
+              <summary>
+                {t('本页目录', 'On this page')}
+                <ChevronDown size={16} aria-hidden="true" />
+              </summary>
+              {contents}
+            </details>
+          )}
         </div>
         <article ref={article} className="document-page">
           {children}
         </article>
       </div>
-      <aside className="document-outline">
-        <p className="document-navigation-title">{t('本页目录', 'On this page')}</p>
-        {contents}
-      </aside>
+      {hasContents && (
+        <aside className="document-outline">
+          <p className="document-navigation-title">{t('本页目录', 'On this page')}</p>
+          {contents}
+        </aside>
+      )}
     </div>
   );
 }
