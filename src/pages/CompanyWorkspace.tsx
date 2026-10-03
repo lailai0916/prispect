@@ -51,8 +51,6 @@ import { SourceTrust } from '../SourceTrust';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyFinancialOverview } from '../CompanyFinancialOverview';
-import { CompanyReportLanding } from '../CompanyReportLanding';
-import '../company-report-landing.css';
 import { CompanyAIResearchStatus } from '../CompanyAIResearchStatus';
 import { CompanyAICoreReport } from '../CompanyAICoreReport';
 import { ResearchPlan } from '../ResearchPlan';
@@ -559,16 +557,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             )}
             {run.input.year}{' '}
             {section === 'overview' && !pausedMarket
-              ? t('年度财务报告', 'annual financial report')
+              ? t('年度财务说明书', 'annual financial overview')
               : t('年度公开资料', 'annual public sources')}{' '}
-            {section !== 'overview' && (
-              <>
-                ·{' '}
-                {run.input.purpose === 'handover'
-                  ? t('内部交接', 'Internal handover')
-                  : t('外部付款', 'External payment')}
-              </>
-            )}
+            ·{' '}
+            {run.input.purpose === 'handover'
+              ? t('内部交接', 'Internal handover')
+              : t('外部付款', 'External payment')}
           </p>
         </div>
         <div className="context-page-actions">
@@ -584,7 +578,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           {section === 'overview' && (
             <button className="button button-secondary" onClick={() => window.print()}>
               <Printer size={14} />
-              {t('打印报告', 'Print report')}
+              {aiReport ? t('打印报告', 'Print report') : t('打印摘要', 'Print summary')}
             </button>
           )}
           {!run.informationGap && !pausedMarket && (
@@ -623,18 +617,15 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           starting={assessmentUpdating}
           cancelling={cancellingResearch}
           disabled={!canWriteRun}
-          reportView
+          reportView={aiReport}
         />
       )}
-      {pageAnchors.length > 1 &&
-        (section !== 'overview' || aiReport) &&
-        !pausedMarket &&
-        (snapshot || section === 'overview') && (
-          <CompanyPageIndex
-            key={`${user?.id}:${run.id}:${section}:${aiReport}`}
-            anchors={pageAnchors}
-          />
-        )}
+      {pageAnchors.length > 1 && !pausedMarket && (snapshot || section === 'overview') && (
+        <CompanyPageIndex
+          key={`${user?.id}:${run.id}:${section}:${aiReport}`}
+          anchors={pageAnchors}
+        />
+      )}
       {error && (
         <p role="alert" className="field-error">
           {error}
@@ -683,7 +674,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       {snapshot &&
         !pausedMarket &&
         !run.informationGap &&
-        (section === 'trends' || section === 'financial') &&
+        ((section === 'overview' && !aiReport) ||
+          section === 'trends' ||
+          section === 'financial') &&
         readingControls}
       {snapshot && !pausedMarket && !run.informationGap && section !== 'evidence' && (
         <CompanyFinancialChartsSection
@@ -695,10 +688,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             section === 'industry' ? 'industry' : section === 'financial' ? 'combined' : 'history'
           }
           visible={section === 'trends' || section === 'industry' || section === 'financial'}
-          autoLoad={
-            (section === 'trends' || section === 'industry' || section === 'financial') &&
-            verifiedRunScope === `${user?.id}:${id}`
-          }
+          autoLoad={verifiedRunScope === `${user?.id}:${id}`}
           onHistoryResult={rememberIndustryHistory}
         />
       )}
@@ -738,7 +728,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         <div className="company-ai-report-page">
           <a className="text-link company-ai-report-return" href={dataHref}>
             <ArrowLeft size={13} aria-hidden="true" />
-            {t('返回财务报告', 'Back to financial report')}
+            {t('返回财务数据', 'Back to financial data')}
           </a>
           <CompanyAICoreReport
             run={run}
@@ -817,41 +807,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           )}
           {section === 'overview' ? (
             <>
-              <CompanyReportLanding
-                run={run}
-                basis={basis}
-                readingControls={readingControls}
-                reportHref={reportHref}
-                disabled={!canWriteRun}
-                onInspect={(judgment) =>
-                  user &&
-                  run.assessment &&
-                  setCoreEvidence({
-                    owner: user.id,
-                    runId: run.id,
-                    generatedAt: run.assessment.generatedAt,
-                    judgment,
-                  })
-                }
-              />
-              <details id="company-financial-findings-details" className="company-review-details">
-                <summary>
-                  <ChevronDown size={14} />
-                  {t('展开财务发现与计算', 'Expand financial findings and calculations')}
-                </summary>
-                <CompanyFinancialOverview run={run} basis={basis} />
-              </details>
-              <details id="company-report-company-info" className="company-review-details">
-                <summary>
-                  <ChevronDown size={14} />
-                  {t('企业资料与来源概况', 'Company information and source overview')}
-                </summary>
-                <CompanyBrief run={run} showIdentity={false} />
-              </details>
+              <CompanyBrief run={run} showIdentity={false} />
+              <CompanyFinancialOverview run={run} basis={basis} />
               <details id="company-financial-data" className="company-review-details">
                 <summary>
                   <ChevronDown size={14} />
-                  {t('完整财务指标', 'Complete financial metrics')}
+                  {t('核查清单与完整指标', 'Checks and complete metrics')}
                 </summary>
                 <CompanyContextOverview
                   snapshot={snapshot}
@@ -861,18 +822,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                   selectedYear={run.input.year}
                 />
               </details>
-              {run.assessment &&
-                coreEvidence &&
-                coreEvidence.owner === user?.id &&
-                coreEvidence.runId === run.id &&
-                coreEvidence.generatedAt === run.assessment.generatedAt && (
-                  <CompanyAssessmentEvidence
-                    assessment={run.assessment}
-                    judgment={coreEvidence.judgment}
-                    title={t('核心判断的依据', 'Evidence for the core judgment')}
-                    onClose={() => setCoreEvidence(null)}
-                  />
-                )}
             </>
           ) : section === 'trends' || section === 'financial' ? (
             <>
@@ -955,10 +904,6 @@ function pageAnchorItems(
   switch (section) {
     case 'overview':
       return [
-        ['company-report-conclusion', '核心判断', 'Core judgment'],
-        ['company-report-numbers', '关键数字', 'Key figures'],
-        ['company-report-trend', '利润与现金', 'Profit and cash'],
-        ['company-report-details', '详细数据', 'Detailed data'],
         ['company-financial-overview', '财务概览', 'Financial overview'],
         ['company-financial-attention', '值得注意的事', 'What deserves attention'],
         ['company-financial-data', '完整指标', 'Complete metrics'],

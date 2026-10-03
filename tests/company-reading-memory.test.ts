@@ -28,23 +28,6 @@ const reading: CompanyReadingPosition = {
   openDetails: ['company-full-report'],
 };
 
-test('report reading restores its data destination and optional company details in the same scope', () => {
-  const memory = new CompanyReadingMemory();
-  const scope = companyReadingScope('alice', run());
-  memory.enter(scope);
-  const position: CompanyReadingPosition = {
-    scrollY: 1280,
-    anchor: 'company-report-details',
-    offset: -52,
-    openDetails: ['company-financial-findings-details', 'company-report-company-info'],
-  };
-  assert.equal(memory.save(scope, 'overview', position), true);
-  assert.deepEqual(memory.read(scope, 'overview'), position);
-  assert.equal(memory.save(scope, 'trends', position), false);
-  memory.changeOwner('bob');
-  assert.equal(memory.read(scope, 'overview'), null);
-});
-
 test('company reading scopes bind issuer, org, annual year and acquired snapshots, not polling status', () => {
   const original = run();
   const scope = companyReadingScope('alice', original);

@@ -4,12 +4,6 @@ import type { CompanySection } from '../shared/company-workspace';
 /** Only document sections, never arbitrary element IDs, inputs or private drafts. */
 export const companyReadingAnchors: Record<CompanySection, readonly string[]> = {
   overview: [
-    'company-report-conclusion',
-    'company-report-numbers',
-    'company-report-trend',
-    'company-report-details',
-    'company-financial-findings-details',
-    'company-report-company-info',
     'company-financial-overview',
     'company-financial-attention',
     'company-financial-data',
@@ -49,8 +43,6 @@ export const companyReadingAnchors: Record<CompanySection, readonly string[]> = 
 
 export const companyReadingDisclosures: Record<CompanySection, readonly string[]> = {
   overview: [
-    'company-financial-findings-details',
-    'company-report-company-info',
     'company-financial-data',
     'company-research-process',
     'company-evidence-lab',
