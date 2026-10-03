@@ -634,11 +634,6 @@ export function App() {
     <>
       <CompanySidebar route={route} onClose={() => setMenuOpen(false)} />
       <div className="sidebar-bottom">
-        <a href="/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
-          <BookOpen size={16} />
-          {t(...documentationTitle)}
-        </a>
-        {user && <div className="sidebar-account-divider" aria-hidden="true" />}
         {user && (
           <ActionMenu
             label={t('账号菜单', 'Account menu')}
@@ -677,6 +672,13 @@ export function App() {
                 </nav>
               )}
               <div className="header-actions">
+                {business && (
+                  <Hint label={t(...documentationTitle)}>
+                    <a className="icon-button" href="/docs" aria-label={t(...documentationTitle)}>
+                      <BookOpen size={17} />
+                    </a>
+                  </Hint>
+                )}
                 {sessionAvailable && (
                   <Hint label={t('搜索与跳转', 'Search and jump to')}>
                     <button
