@@ -197,7 +197,14 @@ export function usePageEntrance(route: string) {
       if (child === current) return;
       current = child;
       animation?.cancel();
-      if (!preference.matches && child && !child.classList.contains('page-loading')) {
+      // The cinematic timeline owns its entrance; keep generic route effects off
+      // its root so opacity and fixed-stage positioning have one owner.
+      if (
+        !preference.matches &&
+        child &&
+        !child.classList.contains('page-loading') &&
+        !child.classList.contains('cinematic-home')
+      ) {
         animation = child.animate([{ opacity: 0.85 }, { opacity: 1 }], {
           duration: 120,
           easing: 'cubic-bezier(.2,.8,.2,1)',

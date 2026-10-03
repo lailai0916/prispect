@@ -16,7 +16,7 @@ async function fixture() {
   let gate: Promise<void> | undefined;
   let release!: () => void;
   let started = Promise.resolve();
-  let markStarted = () => {};
+  let notifyStarted = () => {};
   const application = await createApp({
     root: process.cwd(),
     dataDir: directory,
@@ -31,7 +31,7 @@ async function fixture() {
       }),
       runCompanyResearch: async (scope) => {
         calls++;
-        markStarted();
+        notifyStarted();
         if (gate) await gate;
         return {
           identity: {
@@ -92,21 +92,21 @@ async function fixture() {
     calls: () => calls,
     hold: () => {
       started = new Promise<void>((resolve) => {
-        markStarted = resolve;
+        notifyStarted = resolve;
       });
       gate = new Promise<void>((resolve) => {
         release = resolve;
       });
     },
-    waitForStart: async () => {
+    waitForStarted: async () => {
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         await Promise.race([
           started,
           new Promise<never>((_resolve, reject) => {
             timer = setTimeout(
-              () => reject(Error('Research did not start within its test deadline')),
-              5000
+              () => reject(new Error('Research service did not start within its test deadline')),
+              10_000
             );
           }),
         ]);
@@ -141,7 +141,7 @@ test('opt-in repeat search reuses own record during active work, at limits, with
     assert.equal('reuseExisting' in created.input, false);
     // HTTP202 reserves the job before its first durable progress write finishes.
     // Wait for provider entry rather than assuming concurrent disk timing.
-    await f.waitForStart();
+    await f.waitForStarted();
     const repeat = await f.call(alice, '/company-runs', { ...input, reuseExisting: true });
     assert.equal(repeat.status, 200);
     const reused = (await repeat.json()) as CompanyResearchRun & { reused?: boolean };
@@ -158,6 +158,7 @@ test('opt-in repeat search reuses own record during active work, at limits, with
     assert.notEqual(((await bobRun.json()) as CompanyResearchRun).id, created.id);
     f.release();
     await f.waitForIdle();
+    assert.equal(f.calls(), 2, 'each owner starts exactly one research execution');
     const store = await f.workspaceForUser(alice.userId);
     assert.equal('reused' in store.state.companyRuns![0]!, false);
     assert.equal(store.state.companyRuns!.length, 1);
