@@ -113,7 +113,10 @@ test('official search accepts English text; unmatched queries fall back to SEC o
   );
   // 巨潮无匹配时回落 SEC EDGAR 官方主体表
   const apple = await searchCompanies('AAPL', { fetch: sourceFetch });
-  assert.deepEqual(apple.candidates.map((item) => item.securityCode), ['AAPL']);
+  assert.deepEqual(
+    apple.candidates.map((item) => item.securityCode),
+    ['AAPL']
+  );
   assert.equal(apple.source, 'sec');
   // 中文未命中保留支持的源，并标记疑似未上市（接口预留）
   const chinese = await searchCompanies('你好', { fetch: sourceFetch });

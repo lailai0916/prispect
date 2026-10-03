@@ -421,13 +421,10 @@ test('parent/consolidated, mixed currency and conflicting values stop calculatio
     currency: 'CNY',
   });
   assert.equal(run(currency).verdict, 'conflict');
-  // 单一外币口径也不能进入人民币核查，不能以币种内部一致替代适用范围检查。
+  // 单一外币口径（如 SEC EDGAR 全部 USD）不再视为冲突，可保留计算
   const usdOnly = structuredClone(fixture.materials[0]!);
   for (const observation of usdOnly.observations) observation.currency = 'USD';
-  const usdReport = run(usdOnly);
-  assert.equal(usdReport.verdict, 'conflict');
-  assert.ok(usdReport.metrics.every((item) => item.value === null && item.previousValue === null));
-  assert.equal(usdReport.bridge, null);
+  assert.notEqual(run(usdOnly).verdict, 'conflict');
   const subject = analyze(
     { title: '混主体', company: '其他公司', year: 2025, materialIds: [m.id] },
     [m]
