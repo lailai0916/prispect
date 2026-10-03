@@ -21,18 +21,22 @@ import { useApp } from './context';
 import { date } from './format';
 import { companyChartSelectionMemory, companyChartSelectionScope } from './company-chart-selection';
 
-/** Fill missing annual peers once; settled snapshots and failures require explicit refresh. */
+/** Keep peer loading alive across workspace sections; render charts only in their own pages. */
 export function CompanyFinancialChartsSection({
   run,
   snapshot,
   basis,
   view = 'combined',
+  visible = true,
+  autoLoad = true,
   onHistoryResult,
 }: {
   run: CompanyResearchRun;
   snapshot: CompanyContextSnapshot;
   basis: CompanyReadingBasis;
   view?: 'history' | 'industry' | 'combined';
+  visible?: boolean;
+  autoLoad?: boolean;
   onHistoryResult?: (result: IndustryHistoryResult) => void;
 }) {
   const { t, locale, user } = useApp();
@@ -151,12 +155,14 @@ export function CompanyFinancialChartsSection({
   }, [owner, selectionScope]);
   useEffect(() => {
     setLoading(false);
-    if (!busy) void loadPeers('missing');
     return () => {
       request.current?.abort();
       request.current = null;
     };
   }, [owner, selectionScope, historyScope, busy]);
+  useEffect(() => {
+    if (!busy && autoLoad) void loadPeers('missing');
+  }, [owner, selectionScope, historyScope, busy, autoLoad]);
   const openPeers = () => {
     const element = document.getElementById('company-industry') as HTMLDetailsElement | null;
     if (element) {
@@ -165,6 +171,7 @@ export function CompanyFinancialChartsSection({
       element.scrollIntoView({ block: 'start', behavior: 'auto' });
     }
   };
+  if (!visible) return null;
   if (!compatibleSnapshot)
     return (
       <p className="context-empty">

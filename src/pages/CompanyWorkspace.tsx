@@ -87,6 +87,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     if (user && next) cacheCompanyRun(user.id, next);
   };
   const savedOnly = query.get('cached') === '1';
+  // Cached reports render immediately; confirm the live record before starting new peer writes.
+  const [verifiedRunScope, setVerifiedRunScope] = useState<string | null>(null);
   const rememberIndustryHistory = (result: IndustryHistoryResult) => {
     const owner = user?.id;
     if (!owner || !isCurrentOwner()) return;
@@ -148,6 +150,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         });
         if (controller.signal.aborted) return;
         setRun(next);
+        setVerifiedRunScope(scope);
         clearResolvedFailure(next);
         if (
           section !== 'evidence' &&
@@ -647,6 +650,18 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           )}
           {(section === 'overview' || section === 'trends' || section === 'financial') &&
             readingControls}
+          <CompanyFinancialChartsSection
+            key={`${user?.id}:${run.id}:charts`}
+            run={run}
+            snapshot={snapshot}
+            basis={basis}
+            view={
+              section === 'industry' ? 'industry' : section === 'financial' ? 'combined' : 'history'
+            }
+            visible={section === 'trends' || section === 'industry' || section === 'financial'}
+            autoLoad={verifiedRunScope === `${user?.id}:${id}`}
+            onHistoryResult={rememberIndustryHistory}
+          />
           {section === 'overview' ? (
             <>
               <CompanyBrief run={run} showIdentity={false} />
@@ -690,14 +705,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             </>
           ) : section === 'trends' || section === 'financial' ? (
             <>
-              <CompanyFinancialChartsSection
-                key={`${user?.id}:${run.id}:history`}
-                run={run}
-                snapshot={snapshot}
-                basis={basis}
-                view={section === 'financial' ? 'combined' : 'history'}
-                onHistoryResult={rememberIndustryHistory}
-              />
               <details id="company-financial-data" className="company-review-details">
                 <summary>
                   <ChevronDown size={14} />
@@ -723,16 +730,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                 </details>
               )}
             </>
-          ) : section === 'industry' ? (
-            <CompanyFinancialChartsSection
-              key={`${user?.id}:${run.id}:industry`}
-              run={run}
-              snapshot={snapshot}
-              basis={basis}
-              view="industry"
-              onHistoryResult={rememberIndustryHistory}
-            />
-          ) : section === 'disclosures' ? (
+          ) : section === 'industry' ? null : section === 'disclosures' ? (
             <>
               <section id="company-disclosures" className="company-workspace-section">
                 <CompanyDisclosuresView snapshot={snapshot} />
