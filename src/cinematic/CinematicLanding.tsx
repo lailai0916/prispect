@@ -271,6 +271,7 @@ export function CinematicLanding() {
   return (
     <div ref={root} className="cinematic-home" data-locale={locale}>
       <div className="landing-stage">
+        <div className="scene-darkness" aria-hidden="true" />
         <div className="scene-backdrop" aria-hidden="true" />
         <EvidenceSculpture />
         <div className="sculpture-fallback" aria-hidden="true">
@@ -409,7 +410,7 @@ export function CinematicLanding() {
           </div>
         </div>
 
-        <div className="scene-identity" data-story-panel="0 1 2 3">
+        <div className="scene-identity" data-story-panel="0 1 2 3 4">
           <span>
             {text(landingExample.company.shortName)} · {landingExample.company.code} ·{' '}
             {t('2025 年报', '2025 annual report')}

@@ -15,9 +15,9 @@ adjustments and missing materials rather than repeating product slogans.
 | Chapter     | Material                                                     | Reading position |
 | ----------- | ------------------------------------------------------------ | ---------------- |
 | Discovery   | Original-report papers under a glass inspection surface      | 0.00             |
-| Sources     | Page 190, then page 191, with original row apertures         | 0.245 / 0.33     |
+| Sources     | Page 190, then page 191, with original row apertures         | 0.26 / 0.3475    |
 | Calculation | Original rows assemble into a signed cumulative bridge       | 0.555            |
-| Inquiry     | Two untested explanations and their distinguishing materials | 0.755            |
+| Inquiry     | Two untested explanations and their distinguishing materials | 0.775            |
 | Begin       | Direct action to research another company                    | 0.95             |
 
 The rendered inspection object is illustrative. It does not represent a physical
@@ -41,6 +41,21 @@ source-reading holds use exact DOM crops, and the calculation hold uses an
 accessible SVG with DOM labels on narrow screens. Decorative paper and chart
 bodies retire during these holds so they cannot compete with readable content.
 
+The source-page handoff curve and chapter reading positions live in `story.ts`.
+The DOM and renderer share the page curve; reading copies do not translate
+independently beneath moving papers. The 3D bridge projects into the SVG's step,
+amount scale and zero-line position before retiring ahead of the reading figure.
+Inquiry paths retire before the explanatory text enters. Paper turns and the final
+glass closure stay within the stage rather than crossing the title or bottom bar.
+
+The light/dark transition composites a single background layer. Foreground
+palettes change at luminance thresholds instead of interpolating through the same
+gray as the background; subdued colors return at the reading holds.
+
+The cinematic root skips the application's generic translated page entrance.
+Animating an ancestor's CSS `translate` would change the fixed stage's containing
+block and move it out of the viewport when scrolling immediately after loading.
+
 ## Rendering and fallback
 
 Three.js and its geometry/environment helpers load dynamically only for the
@@ -48,7 +63,11 @@ animated homepage. Both original textures are local. The renderer uses a local
 studio environment, a thin transmitting glass surface and restrained neutral
 materials, without video, remote media, bloom or a postprocessing chain.
 
-- Coalesced animation frames draw only after progress, texture or size changes.
+- Progress renders in the same GSAP tick as the DOM. Texture, size and visibility
+  changes coalesce into a requested frame instead of starting another loop.
+- Fixed opaque and fading material variants compile asynchronously before the
+  canvas replaces its paper fallback. Scrolling does not change shader defines.
+- Reading holds clear the decorative canvas once and stop submitting empty scenes.
 - Desktop pixel ratio is capped at 1.5; narrow screens are capped at 1.
 - Hidden and offscreen scenes stop drawing.
 - Leaving the route or switching to static reading releases listeners,
@@ -107,3 +126,10 @@ production release, SMTP, model-provider output or a new real research report.
 The pull request records the current build and CI results. Linux deployment
 retention fixtures remain a Linux CI gate; their mount and cgroup safety checks
 are not relaxed for macOS.
+
+A 14-second continuous-scroll check on M3 Max, Chrome/ANGLE Metal, 1440×960 and
+DPR 1 measured a maximum frame interval of 234.2ms before the material fix and
+11.5ms afterward; the latter had no frame intervals above 25ms or main-thread long
+tasks during scrolling. Initialization separately included a 74.8ms interval.
+These measurements describe this local workload, not a frame-rate guarantee for
+other devices or first-load performance.

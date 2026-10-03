@@ -159,7 +159,14 @@ export function usePageEntrance(route: string) {
       if (child === current) return;
       current = child;
       animation?.cancel();
-      if (!preference.matches && child && !child.classList.contains('page-loading')) {
+      // A translated ancestor changes the cinematic stage's fixed containing block.
+      // Its scroll timeline already owns the entrance and must remain viewport-bound.
+      if (
+        !preference.matches &&
+        child &&
+        !child.classList.contains('page-loading') &&
+        !child.classList.contains('cinematic-home')
+      ) {
         animation = child.animate(
           [
             { opacity: 0, translate: '0 5px' },

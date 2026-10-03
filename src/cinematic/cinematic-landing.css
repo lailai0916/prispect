@@ -23,6 +23,14 @@
   pointer-events: none;
   background: radial-gradient(ellipse at 50% 55%, rgba(174, 184, 218, 0.075), transparent 65%);
 }
+.scene-darkness {
+  position: absolute;
+  inset: 0;
+  background: #0b0d13;
+  opacity: 0;
+  will-change: opacity;
+  pointer-events: none;
+}
 .evidence-sculpture {
   position: absolute;
   inset: 0;
@@ -178,7 +186,7 @@
 .cinematic-home button:focus-visible,
 .cinematic-home a:focus-visible,
 .cinematic-home summary:focus-visible {
-  outline: 2px solid #8589a7;
+  outline: 2px solid var(--scene-ink);
   outline-offset: 5px;
 }
 .initial-amounts {
@@ -264,6 +272,9 @@
 .source-page {
   position: absolute;
   inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  will-change: opacity;
 }
 .document-page {
   position: relative;
@@ -334,7 +345,6 @@
   top: 51%;
   left: 50%;
   width: min(820px, 75vw, 86vh);
-  transform: translate(-50%, -50%);
 }
 .bridge-figure {
   margin: 0;
@@ -520,7 +530,6 @@
   cursor: pointer;
   color: var(--scene-muted);
   font-size: 12px;
-  transition: color 150ms;
   position: relative;
 }
 .story-nav button[aria-current] {
@@ -536,7 +545,6 @@
   background: currentColor;
 }
 .story-nav button span:first-child {
-  opacity: 0.6;
   font-variant-numeric: tabular-nums;
 }
 .story-track {
