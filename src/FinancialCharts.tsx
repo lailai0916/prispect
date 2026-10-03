@@ -453,7 +453,7 @@ export function IndustryPairChart({
 }) {
   const { t, locale } = useApp();
   const id = `pair-${useId().replace(/:/g, '')}`;
-  const { ref, width } = usePlotWidth(340);
+  const { ref, element, width } = usePlotWidth(240);
   const range = chartRange([company, peer]);
   const digits = tickDigits(range.ticks);
   const left = 54,
@@ -461,6 +461,16 @@ export function IndustryPairChart({
     height = 116;
   const x = (value: number) =>
     left + ((value - range.minimum) / (range.maximum - range.minimum)) * (width - left - right);
+  const tickLabels = range.ticks.map(
+    (tick) => `${tick.toLocaleString(locale, { maximumFractionDigits: digits })}%`
+  );
+  const tickSpacing = (width - left - right) / Math.max(1, range.ticks.length - 1);
+  const labelStride = element
+    ? Math.max(
+        1,
+        Math.ceil((Math.max(...tickLabels.map((label) => label.length)) * 7 + 12) / tickSpacing)
+      )
+    : 1;
   if (!present(company) && !present(peer)) return <EmptyChart label={label} />;
   return (
     <div ref={ref} className="financial-chart-scroll" tabIndex={0} aria-label={label}>
@@ -473,7 +483,7 @@ export function IndustryPairChart({
         data-chart-type="horizontal-bars"
       >
         <PeerPattern id={id} />
-        {range.ticks.map((tick) => (
+        {range.ticks.map((tick, index) => (
           <g key={tick}>
             <line
               x1={x(tick)}
@@ -482,9 +492,13 @@ export function IndustryPairChart({
               y2={82}
               className={tick === 0 ? 'financial-chart-zero' : 'financial-chart-grid-line'}
             />
-            <text x={x(tick)} y={106} textAnchor="middle">
-              {tick.toLocaleString(locale, { maximumFractionDigits: digits })}%
-            </text>
+            {(index === 0 ||
+              index === range.ticks.length - 1 ||
+              (index % labelStride === 0 && range.ticks.length - 1 - index >= labelStride)) && (
+              <text x={x(tick)} y={106} textAnchor="middle">
+                {tickLabels[index]}
+              </text>
+            )}
           </g>
         ))}
         {([company, peer] as const).map((value, index) => (

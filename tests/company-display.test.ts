@@ -517,7 +517,10 @@ test('standalone history and industry views preserve the query annual year witho
   );
   assert.equal(industry('#company-industry').length, 1);
   assert.equal(industry('#company-financial-history, .context-history').length, 0);
-  assert.match(industry('.context-section-title p').text(), /2024-12-31/);
+  assert.equal(
+    industry('.context-filters [aria-label="行业对比年度"] .select-value').text(),
+    '2024 年报'
+  );
   assert.equal(industry('svg[data-chart-type="horizontal-bars"]').length, 6);
 });
 
@@ -527,7 +530,7 @@ test('industry uses three local F presentations and comparison cards target the 
   run.context!.financials.unshift({ ...run.context!.financials[0]!, period: '2024-12-31' });
   run.industry = { '2024-12-31': peerFixture() };
   const $ = load(chartMarkup(createElement(CompanyIndustryView, { run })));
-  assert.match($('.context-section-title p').text(), /2024-12-31/);
+  assert.equal($('.context-filters [aria-label="行业对比年度"] .select-value').text(), '2024 年报');
   assert.deepEqual(
     $('.financial-chart-industry-views button')
       .map((_index, element) => $(element).text())

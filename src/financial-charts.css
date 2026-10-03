@@ -3,6 +3,9 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--card-gap);
 }
+.financial-chart-grid.financial-chart-industry-pane {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
 .financial-chart-card {
   min-width: 0;
   padding: var(--card-padding);
@@ -334,8 +337,14 @@
 .context-year-detail .context-exact-fields strong {
   overflow-wrap: anywhere;
 }
+@media (max-width: 1239px) {
+  .financial-chart-grid.financial-chart-industry-pane {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 800px) {
-  .financial-chart-grid {
+  .financial-chart-grid,
+  .financial-chart-grid.financial-chart-industry-pane {
     grid-template-columns: minmax(0, 1fr);
   }
   .financial-chart-card {
