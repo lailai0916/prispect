@@ -257,6 +257,7 @@ async function harness(overrides: Partial<CompanyContextService> = {}) {
       orgId: identity.orgId,
       year: 2025,
       purpose: 'handover',
+      researchMode: 'deep',
     });
     assert.equal(response.status, 202);
     const run = (await response.json()) as CompanyResearchRun;
@@ -268,6 +269,11 @@ async function harness(overrides: Partial<CompanyContextService> = {}) {
     assert.equal(response.status, 200);
     return (await response.json()) as CompanyResearchRun;
   };
+  const loadContextAndStartAssessment = async (id: string) => {
+    assert.equal((await call(`/company-runs/${id}/context`, {})).status, 202);
+    await app.waitForIdle();
+    assert.equal((await call(`/company-runs/${id}/assessment`, {})).status, 202);
+  };
   const stop = async () => {
     await app.waitForIdle();
     await new Promise<void>((resolve) => server.close(() => resolve()));
@@ -277,7 +283,20 @@ async function harness(overrides: Partial<CompanyContextService> = {}) {
     await stop();
     await rm(directory, { recursive: true, force: true });
   };
-  return { app, directory, service, base, owner, register, call, createRun, getRun, stop, dispose };
+  return {
+    app,
+    directory,
+    service,
+    base,
+    owner,
+    register,
+    call,
+    createRun,
+    getRun,
+    loadContextAndStartAssessment,
+    stop,
+    dispose,
+  };
 }
 
 async function seedSummaryRecord(h: Awaited<ReturnType<typeof harness>>) {
@@ -347,6 +366,14 @@ test('company-record metadata exposes only account-local lightweight public resu
     const records = JSON.parse(body) as CompanyRecordSummary[];
     assert.equal(records.length, 1);
     assert.equal(records[0].id, run.id);
+    assert.equal(records[0].input.researchMode, 'deep');
+    assert.deepEqual(Object.keys(records[0].input).sort(), [
+      'orgId',
+      'purpose',
+      'researchMode',
+      'securityCode',
+      'year',
+    ]);
     assert.equal(records[0].updatedAt, run.updatedAt);
     assert.equal(records[0].contextStatus, 'ready');
     assert.equal(records[0].assessmentStatus, 'ready');
@@ -387,6 +414,53 @@ test('company-record metadata exposes only account-local lightweight public resu
     assert.deepEqual(await (await h.call('/company-records', undefined, other.headers)).json(), []);
     assert.equal((await fetch(`${h.base}/api/company-records`)).status, 401);
     assert.equal(contextCalls, 0);
+    assert.equal(modelCalls, 0);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('financial record metadata exposes its saved-source mode without inventing an assessment', async () => {
+  let modelCalls = 0;
+  const h = await harness({
+    assessment: async () => {
+      modelCalls++;
+      throw Error('Saving financial data must not call an assessment model.');
+    },
+  });
+  try {
+    const response = await h.call('/company-runs', {
+      securityCode: identity.securityCode,
+      orgId: identity.orgId,
+      year: 2025,
+      purpose: 'external',
+    });
+    assert.equal(response.status, 202);
+    const created = (await response.json()) as CompanyResearchRun;
+    await h.app.waitForIdle();
+    const recordsResponse = await h.call('/company-records');
+    assert.equal(recordsResponse.status, 200);
+    const records = (await recordsResponse.json()) as CompanyRecordSummary[];
+    assert.equal(records.length, 1);
+    assert.equal(records[0].id, created.id);
+    assert.equal(records[0].input.researchMode, 'financial');
+    assert.equal(records[0].contextStatus, 'ready');
+    assert.equal(records[0].status, 'ready');
+    assert.equal(records[0].assessmentStatus, undefined);
+    assert.equal(records[0].result, undefined);
+    assert.deepEqual(Object.keys(records[0].input).sort(), [
+      'orgId',
+      'purpose',
+      'researchMode',
+      'securityCode',
+      'year',
+    ]);
+    assert.equal('context' in records[0], false);
+    assert.equal('assessment' in records[0], false);
+    assert.equal('model' in records[0], false);
+    const other = await h.register('financial-metadata-other@example.test');
+    assert.deepEqual(await (await h.call('/company-records', undefined, other.headers)).json(), []);
+    assert.equal((await fetch(`${h.base}/api/company-records`)).status, 401);
     assert.equal(modelCalls, 0);
   } finally {
     await h.dispose();
@@ -506,6 +580,9 @@ test('analysis starts after context and selected-year peers, deduplicates and st
     });
     await ownerStore.persist();
     assert.equal((await h.call(`/company-runs/${run.id}/context`, {})).status, 202);
+    await h.app.waitForIdle();
+    assert.equal(calls, 0, 'Reading context does not start a model assessment.');
+    assert.equal((await h.call(`/company-runs/${run.id}/assessment`, {})).status, 202);
     await waitUntil(() => calls === 1);
     assert.deepEqual(industryRequests, [[identity.securityCode, '2025-12-31']]);
     assert.equal(inputs[0]!.context?.securityCode, identity.securityCode);
@@ -588,7 +665,7 @@ test('missing or mismatched peer data does not fabricate peers or prevent public
     });
     try {
       const run = await h.createRun();
-      await h.call(`/company-runs/${run.id}/context`, {});
+      await h.loadContextAndStartAssessment(run.id);
       await h.app.waitForIdle();
       const ready = await h.getRun(run.id);
       assert.equal(ready.contextStatus, 'ready', mode);
@@ -624,7 +701,7 @@ test('a failed refresh keeps its earlier analysis and original/private records a
       materials: store.state.materials,
       decisions: store.state.decisions,
     });
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     const first = await h.getRun(run.id);
     assert.equal(first.assessmentStatus, 'ready');
@@ -680,7 +757,7 @@ test('analysis from an old public snapshot cannot publish after a source refresh
   });
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     const first = await h.getRun(run.id);
     await h.call(`/company-runs/${run.id}/assessment`, { refresh: true });
@@ -731,7 +808,7 @@ test('an in-flight model result cannot resurrect a record removed from the works
   });
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await waitUntil(() => calls === 1);
     assert.equal((await (await h.call('/company-records')).json())[0].deletionBlocked, true);
     const removed = await h.call(`/company-runs/${run.id}`, undefined, h.owner.headers, 'DELETE');
@@ -765,7 +842,7 @@ test('restart marks an interrupted analysis failed while retaining its completed
   let restartedServer: ReturnType<typeof h.app.app.listen> | undefined;
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     const first = await h.getRun(run.id);
     const store = await h.app.workspaceForUser(h.owner.userId);
@@ -897,7 +974,7 @@ test('research streams its actual steps, feeds sourced additions into analysis a
   });
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     assert.equal(researchCalls, 1);
     assert.equal(inputs[0]?.context?.news[0]?.title, 'Fixture public headline');
@@ -976,21 +1053,21 @@ test('fresh cached reads avoid model work while manual analysis obeys its separa
   });
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     for (let attempt = 0; attempt < 3; attempt++)
       assert.equal((await h.call(`/company-runs/${run.id}/assessment`, {})).status, 200);
     assert.equal(calls, 1);
-    // Automatic work follows the separate context limit; manual research allows twelve jobs.
-    for (let attempt = 0; attempt < 12; attempt++) {
+    // The initial explicit assessment and eleven refreshes use the twelve-job limit.
+    for (let attempt = 0; attempt < 11; attempt++) {
       const response = await h.call(`/company-runs/${run.id}/assessment`, { refresh: true });
       assert.equal(response.status, 202);
       await h.app.waitForIdle();
     }
-    assert.equal(calls, 13);
+    assert.equal(calls, 12);
     const limited = await h.call(`/company-runs/${run.id}/assessment`, { refresh: true });
     assert.equal(limited.status, 429);
-    assert.equal(calls, 13);
+    assert.equal(calls, 12);
     assert.equal((await h.getRun(run.id)).assessmentStatus, 'ready');
     assert.equal((await h.call(`/company-runs/${run.id}/assessment`, {})).status, 200);
   } finally {
@@ -1054,7 +1131,7 @@ test('an answer from the prior public context cannot publish after research adds
   let pendingQuestion: Promise<Response> | undefined;
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     const first = await h.getRun(run.id);
     const store = await h.app.workspaceForUser(h.owner.userId);
@@ -1135,7 +1212,7 @@ test('synthesis reports its actual attempts even when the model falls back after
   });
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await waitUntil(() => started);
     const loading = await h.getRun(run.id);
     assert.equal(loading.assessmentStatus, 'loading');
@@ -1223,7 +1300,7 @@ test('a failed final save rolls back the new analysis, public supplements, peers
   let restorePersist: (() => void) | undefined;
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     const first = await h.getRun(run.id);
     const store = await h.app.workspaceForUser(h.owner.userId);
@@ -1337,7 +1414,7 @@ test('peer updates and analysis exclude each other while both allow saved peer r
   let pendingIndustry: Promise<Response> | undefined;
   try {
     const run = await h.createRun();
-    await h.call(`/company-runs/${run.id}/context`, {});
+    await h.loadContextAndStartAssessment(run.id);
     await h.app.waitForIdle();
     assert.equal(industryCalls, 1);
     assert.equal(modelCalls, 1);

@@ -344,6 +344,34 @@ function reportFetch(reportDate: string, titles: string[]): typeof fetch {
   };
 }
 
+test('financial context without original excerpts preserves financial sources and disclosure links without downloading PDFs', async () => {
+  const baseline = reportFetch('2025-12-31', ['贵州茅台：关于重大诉讼事项的公告']);
+  const requests: string[] = [];
+  let acquiredRequests = -1;
+  const snapshot = await retrieveCompanyContext(identity, {
+    now: () => new Date('2026-10-02T00:00:00Z'),
+    disclosureExcerpts: false,
+    onAcquisitionProgress: async (count) => {
+      acquiredRequests = count;
+    },
+    fetch: async (url, init) => {
+      requests.push(String(url));
+      assert.ok(!new URL(String(url)).pathname.toLowerCase().endsWith('.pdf'));
+      return baseline(url, init);
+    },
+  });
+  assert.equal(acquiredRequests, requests.length);
+  assert.equal(snapshot.financials[0]?.amounts.netProfit, '90071992547409.91');
+  assert.equal(snapshot.financials[0]?.amounts.ocf, '80.00');
+  assert.equal(snapshot.announcements.length, 1);
+  assert.equal(snapshot.announcements[0]?.attention, 'high');
+  assert.ok(snapshot.announcements[0]?.url.endsWith('.PDF'));
+  assert.equal(snapshot.announcements[0]?.excerpt, undefined);
+  assert.ok(snapshot.sources.filter((row) => row.id.startsWith('em-')).length >= 4);
+  assert.ok(snapshot.sources.some((row) => row.id === 'sina-income'));
+  assert.ok(!snapshot.warnings.some((warning) => warning.includes('尝试前 3 页摘录')));
+});
+
 test('financial original links match exact year and quarter in early and final context snapshots', async () => {
   const reports = [
     ['2025-03-31', '第一季度'],

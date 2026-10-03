@@ -9,15 +9,10 @@ import {
   Suspense,
 } from 'react';
 import {
-  Activity,
-  Building2,
-  ListChecks,
   ChevronDown,
   LogOut,
   CircleAlert,
-  Columns3,
   Eye,
-  FolderOpen,
   Menu,
   Plus,
   RefreshCw,
@@ -224,7 +219,6 @@ export function App() {
   } | null>(null);
   const [evidence, setEvidence] = useState<{ refs: EvidenceRef[]; report?: Report } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [toolsExpanded, setToolsExpanded] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [assistantCompany, setAssistantCompany] = useState<AssistantCompany | null>(null);
   const refreshGeneration = useRef(0);
@@ -584,20 +578,13 @@ export function App() {
     busy: pending > 0,
     historyNavigation: historyEntry?.route === route,
   };
-  const primaryNavigation = [['/research', t(...productTerms.researchLibrary), Building2]] as const;
-  const secondaryNavigation = [
-    ['/workspace', t(...productTerms.financialReviews), Activity],
-    ['/materials', t(...productTerms.materials), FolderOpen],
-    ['/decisions', t(...productTerms.paymentsAndHandovers), ListChecks],
-    ['/compare', t(...productTerms.compareReviews), Columns3],
+  const navigation = [
+    ['/research', t(...productTerms.researchLibrary)],
+    ['/workspace', t(...productTerms.financialReviews)],
+    ['/materials', t(...productTerms.materials)],
+    ['/decisions', t(...productTerms.paymentsAndHandovers)],
+    ['/compare', t(...productTerms.compareReviews)],
   ] as const;
-  const navigation = [...primaryNavigation, ...secondaryNavigation];
-  const activeNavigation = (path: string) =>
-    page === path || (path === '/workspace' && (page === '/new' || page.startsWith('/tasks/')));
-  const toolsPage = secondaryNavigation.some(([path]) => activeNavigation(path));
-  useEffect(() => {
-    if (toolsPage) setToolsExpanded(true);
-  }, [toolsPage, page]);
   const companySection = resolveCompanySection(
     new URLSearchParams(route.split('?')[1]).get('section')
   );
@@ -656,54 +643,7 @@ export function App() {
   ];
   const renderNavigation = () => (
     <>
-      <nav
-        className="sidebar-navigation research-primary-navigation"
-        aria-label={t('工作区', 'Workspace')}
-      >
-        {primaryNavigation.map(([path, label, Icon]) => (
-          <a
-            key={path}
-            href={path}
-            className={activeNavigation(path) ? 'active' : ''}
-            aria-current={activeNavigation(path) ? 'page' : undefined}
-            onClick={() => setMenuOpen(false)}
-          >
-            <Icon size={16} />
-            <span>{label}</span>
-          </a>
-        ))}
-      </nav>
-      <CompanySidebar
-        route={route}
-        onClose={() => setMenuOpen(false)}
-        tools={
-          <details
-            className="sidebar-tools-group"
-            open={toolsExpanded}
-            onToggle={(event) => setToolsExpanded(event.currentTarget.open)}
-          >
-            <summary className="sidebar-tools">
-              <ListChecks size={16} />
-              <span>{t(...productTerms.reviewTools)}</span>
-              <ChevronDown size={13} />
-            </summary>
-            <nav className="sidebar-navigation" aria-label={t(...productTerms.reviewTools)}>
-              {secondaryNavigation.map(([path, label, Icon]) => (
-                <a
-                  key={path}
-                  href={path}
-                  className={activeNavigation(path) ? 'active' : ''}
-                  aria-current={activeNavigation(path) ? 'page' : undefined}
-                  onClick={() => setMenuOpen(false)}
-                >
-                  <Icon size={16} />
-                  <span>{label}</span>
-                </a>
-              ))}
-            </nav>
-          </details>
-        }
-      />
+      <CompanySidebar route={route} onClose={() => setMenuOpen(false)} />
       <div className="sidebar-bottom">
         <a href="/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
           <BookOpen size={16} />

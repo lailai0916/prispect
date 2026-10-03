@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { ArrowRight, Building2, FileText, LoaderCircle, Plus, RefreshCw } from 'lucide-react';
 import type { CompanyRecordSummary } from '../../shared/company-workspace';
 import { companyPath } from '../../shared/company-workspace';
+import { financialRecordState, hasSavedCompanyRecord } from '../../shared/company-record-status';
 import { PageHeading, Tag } from '../components';
 import { RecordListLoading, SearchField } from '../Experience';
 import { Select } from '../Select';
@@ -16,10 +17,14 @@ function recordState(record: CompanyRecordSummary) {
   if (record.deletionBlocked) return ['处理中', 'Processing'] as const;
   if (record.result?.stale) return ['分析待更新', 'Analysis outdated'] as const;
   if (record.assessmentStatus === 'failed') return ['分析未完成', 'Analysis interrupted'] as const;
+  if (record.input.researchMode === 'financial' && record.contextStatus === 'failed')
+    return ['财务资料未完成', 'Financial data incomplete'] as const;
   if (record.result)
     return record.result.modelStatus === 'completed'
       ? (['分析已保存', 'Analysis saved'] as const)
       : (['规则分析', 'Rule-based analysis'] as const);
+  const financialState = financialRecordState(record);
+  if (financialState) return financialState;
   if (record.status === 'adopted') return ['原件已采用', 'Original adopted'] as const;
   if (record.status === 'ready') return ['候选待确认', 'Candidates need confirmation'] as const;
   if (record.status === 'cancelled') return ['已取消', 'Cancelled'] as const;
@@ -32,7 +37,7 @@ export function ResearchLibraryPage() {
   const { records, loading, refreshing, error, reload } = useCompanyRecords();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
-  const savedCount = records.filter((record) => Boolean(record.result)).length;
+  const savedCount = records.filter(hasSavedCompanyRecord).length;
   const activeCount = records.filter((record) => record.deletionBlocked).length;
   const visible = useMemo(() => {
     const text = query.trim().toLocaleLowerCase();
@@ -44,10 +49,14 @@ export function ResearchLibraryPage() {
       )
       .filter((record) => {
         if (filter === 'active') return record.deletionBlocked;
-        if (filter === 'saved') return Boolean(record.result);
+        if (filter === 'saved') return hasSavedCompanyRecord(record);
         if (filter === 'follow-up')
           return (
-            record.informationGap || record.result?.stale || record.assessmentStatus === 'failed'
+            record.informationGap ||
+            record.result?.stale ||
+            record.assessmentStatus === 'failed' ||
+            (record.input.researchMode === 'financial' &&
+              (record.contextStatus === 'failed' || record.status === 'failed'))
           );
         return true;
       })
@@ -90,7 +99,7 @@ export function ResearchLibraryPage() {
             <FileText size={19} />
           </span>
           <div>
-            <span>{t('已保存分析', 'Saved analyses')}</span>
+            <span>{t('已保存资料或分析', 'Saved data or analyses')}</span>
             <strong>
               {loading ? (
                 <span className="skeleton research-stat-placeholder" aria-hidden="true" />
@@ -135,7 +144,7 @@ export function ResearchLibraryPage() {
             onValueChange={setFilter}
           >
             <option value="all">{t('全部记录', 'All records')}</option>
-            <option value="saved">{t('有分析结果', 'With analysis')}</option>
+            <option value="saved">{t('有资料或分析', 'With data or analysis')}</option>
             <option value="active">{t('处理中', 'Processing')}</option>
             <option value="follow-up">{t('需要跟进', 'Needs follow-up')}</option>
           </Select>
@@ -243,8 +252,8 @@ export function ResearchLibraryPage() {
                   'Try another company name or change the filter.'
                 )
               : t(
-                  '新建研究后，研究报告与来源会保存在这里。',
-                  'Start research to save the company’s research report and sources here.'
+                  '新建研究后，企业资料与分析会保存在这里。',
+                  'Start research to save company data and analyses here.'
                 )}
           </p>
           <button

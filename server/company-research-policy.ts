@@ -1,7 +1,40 @@
-import type { CompanyResearchRun } from '../shared/contracts.js';
+import type { CompanyResearchRun, CompanyRunInput } from '../shared/contracts.js';
+import type { CompanyGraphProgress } from '../shared/company-contracts.js';
 import type { AssessmentDimensionId } from '../shared/company-assessment.js';
 import { buildAssessmentPublicPayload } from '../shared/company-assessment.js';
 import { officialPdfUrl } from './company-sources.js';
+
+/** Missing mode on a saved record preserves its original-report workflow. */
+export function isFinancialCompanyRun(input: CompanyRunInput): boolean {
+  return input.researchMode === 'financial';
+}
+
+/** Public table acquisition has two finite steps and does not create a graph checkpoint. */
+export function initialFinancialCompanyProgress(
+  previous?: CompanyGraphProgress
+): CompanyGraphProgress {
+  return {
+    version: 'financial-v1',
+    revision: previous?.revision || 1,
+    ...(previous?.requestKey ? { requestKey: previous.requestKey } : {}),
+    branches: [
+      { id: 'identity', status: 'pending' },
+      { id: 'finance', status: 'pending' },
+    ],
+    recoverable: false,
+    cancelRequested: false,
+    evidence: [],
+    competingExplanations: [],
+    coverage: {
+      annualReports: 0,
+      recentTitles: 0,
+      recentFullTexts: 0,
+      recentTruncated: false,
+      warnings: [],
+    },
+    budget: { sourceRequests: 0, modelRequests: 0, maxSourceRequests: 52, maxModelRequests: 0 },
+  };
+}
 
 const coreDimensions = ['cash', 'solvency', 'workingCapital', 'profitability'] as const;
 const dimensionQuestions: Record<

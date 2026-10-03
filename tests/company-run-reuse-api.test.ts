@@ -8,7 +8,13 @@ import type { AddressInfo } from 'node:net';
 import { createApp } from '../server/app.js';
 import type { AuthSession, CompanyResearchRun } from '../shared/contracts.js';
 
-const input = { securityCode: '600519', orgId: 'gssh0600519', year: 2025, purpose: 'external' };
+const input = {
+  securityCode: '600519',
+  orgId: 'gssh0600519',
+  year: 2025,
+  purpose: 'external',
+  researchMode: 'deep',
+};
 
 async function fixture() {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-run-reuse-'));

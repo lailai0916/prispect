@@ -293,6 +293,7 @@ export function CompanyAgentPage({
         year,
         purpose,
         useModel: true,
+        researchMode: 'deep',
       };
       const inputKey = JSON.stringify(input);
       const key = runKeys.current.get(inputKey) || crypto.randomUUID();

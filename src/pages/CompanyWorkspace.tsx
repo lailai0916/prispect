@@ -48,9 +48,10 @@ import { CompanyAssessment } from '../CompanyAssessment';
 import { SourceTrust } from '../SourceTrust';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
+import { CompanyFinancialOverview } from '../CompanyFinancialOverview';
 import { CompanyPageIndex } from '../CompanyPageIndex';
 import { CompanyReadingSession } from '../CompanyReadingSession';
-import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
+import { openCompanyReportSection } from '../CompanyResearchReport';
 import { CompanyPublicInformation } from '../CompanyPublicInformation';
 import { OriginalReviewLoading, PageLoading } from '../Experience';
 import { readPageScroll } from '../page-scroll';
@@ -111,13 +112,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const error = failure?.text || '';
   const errorKind = failure?.kind || 'status';
   const [version, setVersion] = useState(0);
-  const [basis, setBasis] = useState<CompanyReadingBasis>('consolidated');
+  const [basis, setBasis] = useState<CompanyReadingBasis>('parent');
   const [updating, setUpdating] = useState(false);
   const [assessmentUpdating, setAssessmentUpdating] = useState(false);
   const [cancellingResearch, setCancellingResearch] = useState(false);
   const request = useRef<AbortController | null>(null);
   const cancelOperation = useRef<symbol | null>(null);
-  const assessmentRequested = useRef(new Set<string>());
   const revealedLocation = useRef<string | null>(null);
   const clearResolvedFailure = (next: CompanyResearchRun) =>
     setFailure((previous) =>
@@ -150,7 +150,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         setRun(next);
         clearResolvedFailure(next);
         if (
-          section === 'overview' &&
+          section !== 'evidence' &&
           (savedScope.current !== scope || manualScope.current === scope) &&
           !contextRequested &&
           researchSupported(next) &&
@@ -166,32 +166,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             body: '{}',
             signal: controller.signal,
           });
-        }
-        if (controller.signal.aborted) return;
-        const assessmentKey = next.context ? `${id}:${next.context.fetchedAt}` : '';
-        if (
-          section === 'overview' &&
-          (savedScope.current !== scope || manualScope.current === scope) &&
-          assessmentKey &&
-          researchSupported(next) &&
-          !next.informationGap &&
-          !next.assessment &&
-          next.contextStatus !== 'loading' &&
-          next.assessmentStatus !== 'loading' &&
-          next.assessmentStatus !== 'failed' &&
-          !assessmentRequested.current.has(assessmentKey)
-        ) {
-          assessmentRequested.current.add(assessmentKey);
-          setRun(next);
-          kind = 'analysis';
-          next = await api<CompanyResearchRun>(
-            `/company-runs/${encodeURIComponent(id)}/assessment`,
-            {
-              method: 'POST',
-              body: '{}',
-              signal: controller.signal,
-            }
-          );
         }
         if (controller.signal.aborted) return;
         setRun(next);
@@ -251,36 +225,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   }, [run, id, basis, user?.id, publish]);
   useEffect(() => {
     if (run?.id !== id) return;
-    const targets: string[] =
-      section === 'overview'
-        ? [
-            'research-summary-heading',
-            'company-full-report',
-            'company-research-process',
-            'company-research-goal',
-            'company-evidence-lab',
-            'company-review-requests',
-            'company-research-framework',
-            'company-source-trust',
-          ]
-        : section === 'financial'
-          ? [
-              'company-financial-history',
-              'company-financial-data',
-              'company-financial-findings',
-              'company-industry',
-              'company-original-comparison',
-            ]
-          : section === 'sources'
-            ? [
-                'company-public-signals',
-                'company-disclosures',
-                'company-profile',
-                'company-data-coverage',
-                'company-source-trust',
-                'company-source-comparison',
-              ]
-            : [];
+    const targets = pageAnchorIds(section);
     const reveal = (explicit = false, historyReturn = false) => {
       const hashId = location.hash.slice(1);
       const target =
@@ -481,29 +426,47 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       </label>
     </div>
   );
-  const pageAnchors: readonly (readonly [string, string, string])[] =
-    section === 'overview'
-      ? [
-          ['research-summary-heading', '研究摘要', 'Summary'],
-          ['company-research-process', '研究过程', 'Research process'],
-          ['company-evidence-lab', '检验解释', 'Test an explanation'],
-          ['company-full-report', '六维分析', 'Dimensions'],
-        ]
-      : section === 'financial'
-        ? [
-            ['company-financial-history', '历史走势', 'History'],
-            ['company-financial-data', '关键指标', 'Key metrics'],
-            ['company-industry', '行业对比', 'Industry comparison'],
-          ]
-        : section === 'sources'
-          ? [
-              ['company-public-signals', '新闻与讨论', 'News and discussions'],
-              ['company-disclosures', '公告', 'Announcements'],
-              ['company-profile', '公司资料', 'Company profile'],
-              ['company-data-coverage', '数据覆盖', 'Data coverage'],
-              ['company-source-comparison', '来源比对', 'Source comparison'],
-            ]
-          : [];
+  const pageAnchors = pageAnchorItems(section);
+  const scopeNote = snapshot
+    ? `${t('数据更新于', 'Data updated at')} ${date(snapshot.fetchedAt, locale)}`
+    : '';
+  const emptySources = (
+    <section className="context-empty" aria-live="polite">
+      {run.informationGap ? (
+        <>
+          <h2>{t('未匹配到支持的上市主体', 'No supported listed entity matched')}</h2>
+          <a className="button button-secondary" href="/query">
+            {t('新建研究', 'New research')}
+          </a>
+        </>
+      ) : run.contextStatus === 'loading' || active ? (
+        <>
+          <LoaderCircle className="spinner" />
+          <p>{t('正在获取企业资料…', 'Retrieving company data…')}</p>
+          <button
+            type="button"
+            className="text-link"
+            disabled={cancellingResearch}
+            onClick={() => void cancelResearch()}
+          >
+            {t('取消', 'Cancel')}
+          </button>
+        </>
+      ) : (
+        <>
+          <p>{t('本次未取得企业资料', 'Company data is unavailable')}</p>
+          <button
+            type="button"
+            className="button button-secondary"
+            disabled={updating}
+            onClick={() => void refresh()}
+          >
+            {t('重新获取', 'Try again')}
+          </button>
+        </>
+      )}
+    </section>
+  );
   return (
     <div
       className={'company-workspace' + (section === 'overview' ? ' company-workspace-report' : '')}
@@ -541,7 +504,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             )}
             {run.input.year}{' '}
             {section === 'overview' && !pausedMarket
-              ? t('年度分析 · 合并口径', 'annual analysis · consolidated scope')
+              ? t('年度财务说明书', 'annual financial overview')
               : t('年度公开资料', 'annual public sources')}{' '}
             ·{' '}
             {run.input.purpose === 'handover'
@@ -550,6 +513,15 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </p>
         </div>
         <div className="context-page-actions">
+          {companyResearchAvailability(run).canCancel && (
+            <button
+              className="button button-secondary"
+              disabled={cancellingResearch}
+              onClick={() => void cancelResearch()}
+            >
+              {cancellingResearch ? t('正在取消…', 'Cancelling…') : t('取消', 'Cancel')}
+            </button>
+          )}
           {section === 'overview' && (
             <button className="button button-secondary" onClick={() => window.print()}>
               <Printer size={14} />
@@ -656,85 +628,17 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </a>
           {snapshot && <CompanySourcesView snapshot={snapshot} />}
         </section>
-      ) : section === 'overview' ? (
-        <>
-          {run.contextError && (
-            <p role="alert" className="context-data-note">
-              {run.contextError}
-              <button
-                className="text-link"
-                disabled={updating || run.contextStatus === 'loading'}
-                onClick={() => void refresh()}
-              >
-                {t('重试', 'Retry')}
-              </button>
-            </p>
-          )}
-          <CompanyResearchReport
-            key={'report-' + run.id}
-            run={run}
-            onRefresh={(focus) => void refreshAssessment(focus)}
-            refreshing={assessmentUpdating}
-            onRetrySources={() => void refresh()}
-            onCancel={() => void cancelResearch()}
-            cancelling={cancellingResearch}
-          />
-          <CompanyBrief run={run} />
-          <details
-            id="company-evidence-lab"
-            className="company-review-details company-explanation-trial"
-          >
-            <summary>
-              <ChevronDown size={14} />
-              {t('检验解释', 'Test an explanation')}
-              <span className="company-detail-description">
-                {t('挑战解释，或撤回一条依据', 'Challenge an explanation or withdraw a fact')}
-              </span>
-            </summary>
-            <CompanyEvidenceLab
-              key={'lab-' + run.id}
-              run={run}
-              updating={updating || assessmentUpdating}
-            />
-          </details>
-          <details id="company-full-report" className="company-review-details company-lab-report">
-            <summary>
-              <ChevronDown size={14} />
-              {t('六维分析与计算依据', 'Dimensions and calculation evidence')}
-            </summary>
-            <CompanyAssessment
-              key={'assessment-' + run.id}
-              run={run}
-              onRefresh={(focus) => void refreshAssessment(focus)}
-              refreshing={assessmentUpdating}
-            />
-          </details>
-          <nav className="company-next-sections" aria-label={t('继续研究', 'Continue research')}>
-            {companySections
-              .filter(([key]) => key !== 'overview')
-              .map(([key, zh, en]) => (
-                <a key={key} href={companyPath(run.id, key)}>
-                  {t(zh, en)}
-                  <ArrowUpRight size={13} />
-                </a>
-              ))}
-          </nav>
-        </>
+      ) : run.informationGap ? (
+        emptySources
+      ) : !snapshot ? (
+        emptySources
       ) : (
         <>
-          {section === 'financial' && readingControls}
-          <p className="context-data-note">
-            {snapshot
-              ? `${t('公开数据获取于', 'Public data retrieved at')} ${date(snapshot.fetchedAt, locale)}`
-              : run.contextStatus === 'loading'
-                ? t('正在读取企业公开数据', 'Retrieving public company data')
-                : t('尚未取得企业公开数据', 'Public company data is unavailable')}
-            {run.contextStatus === 'loading' ? ` · ${t('更新进行中', 'Refresh in progress')}` : ''}
-          </p>
           {run.contextError && (
             <p role="alert" className="context-data-note">
               {run.contextError}
               <button
+                type="button"
                 className="text-link"
                 disabled={updating || run.contextStatus === 'loading'}
                 onClick={() => void refresh()}
@@ -743,103 +647,173 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               </button>
             </p>
           )}
-          {!snapshot ? (
-            <div className="context-empty">
-              {run.contextStatus === 'loading' ? <LoaderCircle className="spinner" /> : null}
-              <p>
-                {t(
-                  '可以查看原件核查过程，或重试公开数据。',
-                  'Open the original review or retry public sources.'
-                )}
-              </p>
-              <a className="text-link" href={companyPath(run.id, 'evidence')}>
-                {t('查看原件核查', 'Open original review')}
-                <ArrowUpRight size={12} />
-              </a>
-            </div>
-          ) : (
+          {(section === 'overview' || section === 'trends' || section === 'financial') &&
+            readingControls}
+          {section === 'overview' ? (
             <>
-              {snapshot.warnings.length > 0 && (
-                <details className="context-warnings">
+              <CompanyBrief run={run} showIdentity={false} />
+              <CompanyFinancialOverview run={run} basis={basis} />
+              <details id="company-financial-data" className="company-review-details">
+                <summary>
+                  <ChevronDown size={14} />
+                  {t('核查清单与完整指标', 'Checks and complete metrics')}
+                </summary>
+                <CompanyContextOverview
+                  snapshot={snapshot}
+                  run={run}
+                  basis={basis}
+                  view="manager"
+                  selectedYear={run.input.year}
+                />
+              </details>
+              <details id="company-full-report" className="company-review-details">
+                <summary>
+                  <ChevronDown size={14} />
+                  {t('深入分析', 'Further analysis')}
+                </summary>
+                <CompanyAssessment
+                  key={'assessment-' + run.id}
+                  run={run}
+                  onRefresh={(focus) => void refreshAssessment(focus)}
+                  refreshing={assessmentUpdating}
+                />
+                <details id="company-evidence-lab" className="company-review-details">
                   <summary>
-                    {t('数据范围与缺口', 'Scope and gaps')} · {snapshot.warnings.length}
+                    <ChevronDown size={14} />
+                    {t('检验解释', 'Test an explanation')}
                   </summary>
-                  {snapshot.warnings.map((warning, index) => (
-                    <p key={index}>{warning}</p>
-                  ))}
+                  <CompanyEvidenceLab
+                    key={'lab-' + run.id}
+                    run={run}
+                    updating={updating || assessmentUpdating}
+                  />
+                </details>
+              </details>
+            </>
+          ) : section === 'trends' || section === 'financial' ? (
+            <>
+              <CompanyFinancialChartsSection
+                key={`${user?.id}:${run.id}:history`}
+                run={run}
+                snapshot={snapshot}
+                basis={basis}
+                view={section === 'financial' ? 'combined' : 'history'}
+                onHistoryResult={rememberIndustryHistory}
+              />
+              <details id="company-financial-data" className="company-review-details">
+                <summary>
+                  <ChevronDown size={14} />
+                  {t('逐年指标与计算', 'Annual metrics and calculations')}
+                </summary>
+                <CompanyContextOverview
+                  snapshot={snapshot}
+                  run={run}
+                  basis={basis}
+                  view="manager"
+                />
+                <section id="company-financial-findings">
+                  <CompanyFinancialFindings run={run} onPage={originalPage} />
+                </section>
+              </details>
+              {run.agent?.financialContext && (
+                <details id="company-original-comparison" className="company-review-details">
+                  <summary>
+                    <ChevronDown size={14} />
+                    {t('原件字段对照', 'Original-field comparison')}
+                  </summary>
+                  <CompanyFinancialTrends run={run} onPage={originalPage} />
                 </details>
               )}
-              {section === 'financial' && (
-                <>
-                  <CompanyFinancialChartsSection
-                    key={`${user?.id}:${run.id}`}
-                    run={run}
-                    snapshot={snapshot}
-                    basis={basis}
-                    onHistoryResult={rememberIndustryHistory}
-                  />
-                  <details id="company-financial-data" className="company-review-details">
-                    <summary>
-                      <ChevronDown size={14} />
-                      {t('关键指标与核查清单', 'Key metrics and checks')}
-                    </summary>
-                    <CompanyContextOverview
-                      snapshot={snapshot}
-                      run={run}
-                      basis={basis}
-                      view="manager"
-                    />
-                    <section id="company-financial-findings">
-                      <CompanyFinancialFindings run={run} onPage={originalPage} />
-                    </section>
-                  </details>
-                  {run.agent?.financialContext && (
-                    <details id="company-original-comparison" className="company-review-details">
-                      <summary>
-                        <ChevronDown size={14} />
-                        {t('原件字段对照', 'Original-field comparison')}
-                      </summary>
-                      <CompanyFinancialTrends run={run} onPage={originalPage} />
-                    </details>
-                  )}
-                </>
-              )}
-              {section === 'sources' && (
-                <>
-                  <section id="company-public-signals" className="company-workspace-section">
-                    <CompanyPublicInformation run={run} />
-                  </section>
-                  <section id="company-disclosures" className="company-workspace-section">
-                    <CompanyDisclosuresView snapshot={snapshot} />
-                  </section>
-                  <details id="company-profile" className="company-review-details">
-                    <summary>
-                      <ChevronDown size={14} />
-                      {t('公司资料与股东', 'Company profile and shareholders')}
-                    </summary>
-                    <CompanyProfileView snapshot={snapshot} includeNews={false} />
-                  </details>
-                  <details id="company-data-coverage" className="company-review-details">
-                    <summary>
-                      <ChevronDown size={14} />
-                      {t('数据覆盖', 'Data coverage')}
-                    </summary>
-                    <SourceTrust run={run} />
-                    <CompanyCoverageView snapshot={snapshot} run={run} />
-                  </details>
-                  <details id="company-source-comparison" className="company-review-details">
-                    <summary>
-                      <ChevronDown size={14} />
-                      {t('来源比对', 'Source comparison')}
-                    </summary>
-                    <CompanySourcesView snapshot={snapshot} />
-                  </details>
-                </>
-              )}
             </>
+          ) : section === 'industry' ? (
+            <CompanyFinancialChartsSection
+              key={`${user?.id}:${run.id}:industry`}
+              run={run}
+              snapshot={snapshot}
+              basis={basis}
+              view="industry"
+              onHistoryResult={rememberIndustryHistory}
+            />
+          ) : section === 'disclosures' ? (
+            <>
+              <section id="company-disclosures" className="company-workspace-section">
+                <CompanyDisclosuresView snapshot={snapshot} />
+              </section>
+              <details id="company-public-signals" className="company-review-details">
+                <summary>
+                  <ChevronDown size={14} />
+                  {t('新闻与讨论', 'News and discussions')}
+                </summary>
+                <CompanyPublicInformation run={run} />
+              </details>
+            </>
+          ) : section === 'profile' ? (
+            <section id="company-profile" className="company-workspace-section">
+              <CompanyProfileView snapshot={snapshot} includeNews={false} />
+            </section>
+          ) : section === 'coverage' ? (
+            <section id="company-data-coverage" className="company-workspace-section">
+              <CompanyCoverageView snapshot={snapshot} run={run} />
+              <SourceTrust run={run} />
+            </section>
+          ) : (
+            <section id="company-source-comparison" className="company-workspace-section">
+              <CompanySourcesView snapshot={snapshot} />
+            </section>
+          )}
+          {scopeNote && section !== 'overview' && (
+            <p className="context-data-note">
+              {scopeNote}
+              {run.contextStatus === 'loading' ? ` · ${t('更新中', 'Updating')}` : ''}
+            </p>
           )}
         </>
       )}
     </div>
   );
+}
+
+function pageAnchorItems(
+  section: ReturnType<typeof resolveCompanyLocation>['section']
+): readonly (readonly [string, string, string])[] {
+  switch (section) {
+    case 'overview':
+      return [
+        ['company-financial-overview', '财务概览', 'Financial overview'],
+        ['company-financial-attention', '值得注意的事', 'What deserves attention'],
+        ['company-financial-data', '完整指标', 'Complete metrics'],
+        ['company-full-report', '深入分析', 'Further analysis'],
+      ];
+    case 'trends':
+    case 'financial':
+      return [
+        ['company-financial-history', '历史走势', 'History'],
+        ['company-financial-data', '逐年指标', 'Annual metrics'],
+      ];
+    case 'industry':
+      return [['company-industry', '行业对比', 'Industry comparison']];
+    case 'disclosures':
+      return [
+        ['company-disclosures', '公告线索', 'Announcements'],
+        ['company-public-signals', '新闻与讨论', 'News and discussions'],
+      ];
+    case 'profile':
+      return [['company-profile', '企业与股东', 'Company and shareholders']];
+    case 'coverage':
+      return [
+        ['company-data-coverage', '数据覆盖', 'Data coverage'],
+        ['company-source-trust', '来源关系', 'Source relationships'],
+      ];
+    case 'sources':
+      return [['company-source-comparison', '来源比对', 'Source comparison']];
+    default:
+      return [];
+  }
+}
+function pageAnchorIds(section: ReturnType<typeof resolveCompanyLocation>['section']): string[] {
+  return [
+    ...pageAnchorItems(section).map(([id]) => id),
+    'company-evidence-lab',
+    'company-original-comparison',
+  ];
 }

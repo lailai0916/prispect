@@ -12,9 +12,14 @@ import {
   searchCompanies,
 } from './company-agent.js';
 import type { WorkspaceStore } from './store.js';
-import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
+import { ApiFault, validateMaterial } from './validation.js';
 import { assertCompanyResearchSupported } from './company-sources.js';
 import { findReusableCompanyRun } from '../shared/company-run-reuse.js';
+import { retrieveCompanyContext } from './company-context-sources.js';
+import {
+  initialFinancialCompanyProgress,
+  isFinancialCompanyRun,
+} from './company-research-policy.js';
 
 export interface CompanyService {
   searchCompanies: typeof searchCompanies;
@@ -22,12 +27,20 @@ export interface CompanyService {
 }
 export function installCompanyRoutes(
   app: express.Express,
-  options: { root: string; auth: AuthStore; model: ModelConfig; service?: CompanyService }
+  options: {
+    root: string;
+    auth: AuthStore;
+    model: ModelConfig;
+    service?: CompanyService;
+    context?: typeof retrieveCompanyContext;
+  }
 ) {
   const service = options.service || { searchCompanies, runCompanyResearch };
   const active = new Set<string>();
   const controllers = new Map<string, AbortController>();
   const executions = new Map<string, symbol>();
+  const financialCancellations = new Map<string, Promise<void>>();
+  const financialOwners = new Map<string, WorkspaceStore>();
   const publishing = new Set<string>();
   const adopting = new Set<string>();
   const schema = z
@@ -40,7 +53,9 @@ export function installCompanyRoutes(
         .min(2010)
         .max(new Date().getUTCFullYear() - 1),
       purpose: z.enum(['external', 'handover']).default('external'),
-      useModel: modelEnabledSchema,
+      // The legacy flag does not select the execution pipeline. Deep research is explicit.
+      useModel: z.boolean().optional(),
+      researchMode: z.enum(['financial', 'deep']).default('financial'),
       reuseExisting: z.boolean().optional(),
     })
     .strict();
@@ -95,7 +110,247 @@ export function installCompanyRoutes(
     run.contextStatus === 'loading' ||
     run.assessmentStatus === 'loading' ||
     run.challenge?.status === 'loading';
+  const executeFinancial = (run: CompanyResearchRun, store: WorkspaceStore) => {
+    const controller = new AbortController();
+    const execution = Symbol(run.id);
+    controllers.set(run.id, controller);
+    executions.set(run.id, execution);
+    financialOwners.set(run.id, store);
+    let contextRevision: number | undefined;
+    const ownsExecution = () =>
+      executions.get(run.id) === execution &&
+      financialOwners.get(run.id) === store &&
+      store.state.companyRuns?.includes(run);
+    const isCurrent = () =>
+      ownsExecution() && (contextRevision === undefined || run.contextRevision === contextRevision);
+    const assertCurrent = async () => {
+      await financialCancellations.get(run.id);
+      if (!isCurrent() || controller.signal.aborted)
+        throw new ApiFault(499, 'COMPANY_CANCELLED', '本次公开资料读取已取消');
+    };
+    setImmediate(() => {
+      void (async () => {
+        const timeout = setTimeout(() => controller.abort(), 120_000);
+        const identityBudget = { used: 0, maximum: 2 };
+        const step = async (
+          id: 'identity' | 'finance',
+          status: 'running' | 'completed',
+          summary: string
+        ) => {
+          await assertCurrent();
+          const now = new Date().toISOString();
+          const branch = run.agent!.branches.find((branch) => branch.id === id)!;
+          branch.status = status;
+          branch.summary = summary;
+          branch.startedAt ||= now;
+          if (status === 'completed') branch.finishedAt = now;
+          const traceId = `financial-${id}-${run.agent!.revision}`;
+          const index = run.trace.findIndex((entry) => entry.id === traceId);
+          const entry = {
+            id: traceId,
+            branchId: id,
+            tool: id === 'identity' ? 'resolve-official-identity' : 'collect-public-context',
+            label: id === 'identity' ? '核对上市主体' : '读取公开财务与资料',
+            status,
+            startedAt: branch.startedAt,
+            ...(branch.finishedAt ? { finishedAt: branch.finishedAt } : {}),
+            inputSummary: `${run.input.securityCode} · ${run.input.year} 年`,
+            outputSummary: summary,
+            sources: [],
+          };
+          if (index === -1) run.trace.push(entry);
+          else run.trace[index] = entry;
+          run.updatedAt = now;
+          await store.persist();
+        };
+        try {
+          await assertCurrent();
+          run.status = 'running';
+          run.contextStatus = 'loading';
+          run.contextError = undefined;
+          run.contextRevision = (run.contextRevision || 0) + 1;
+          contextRevision = run.contextRevision;
+          await step('identity', 'running', '正在通过官方披露平台核对证券代码与机构标识。');
+          const response = await service.searchCompanies(run.input.securityCode, {
+            signal: controller.signal,
+            budget: identityBudget,
+          });
+          await assertCurrent();
+          run.agent!.budget.sourceRequests = identityBudget.used;
+          const identity = response.candidates.find(
+            (item) => item.securityCode === run.input.securityCode && item.orgId === run.input.orgId
+          );
+          if (!identity)
+            throw new ApiFault(
+              422,
+              'CONTEXT_IDENTITY',
+              '官方来源未确认所选上市主体，未使用相似名称替代'
+            );
+          assertCompanyResearchSupported(identity.securityCode, identity.exchange);
+          run.identity = structuredClone(identity);
+          await step('identity', 'completed', '官方证券代码与机构标识相符。');
+          await step('finance', 'running', '正在读取同主体财务报表、来源比对与公开资料。');
+          const snapshot = await (options.context || retrieveCompanyContext)(identity, {
+            signal: controller.signal,
+            disclosureExcerpts: false,
+            onAcquisitionProgress: async (requests) => {
+              await assertCurrent();
+              run.agent!.budget.sourceRequests = identityBudget.used + requests;
+            },
+            onSnapshot: async (snapshot) => {
+              await assertCurrent();
+              if (
+                snapshot.securityCode !== run.input.securityCode ||
+                snapshot.orgId !== run.input.orgId
+              )
+                throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '公开快照主体与研究记录不一致');
+              run.context = structuredClone(snapshot);
+              run.updatedAt = new Date().toISOString();
+              await store.persist();
+            },
+          });
+          await assertCurrent();
+          if (
+            snapshot.securityCode !== run.input.securityCode ||
+            snapshot.orgId !== run.input.orgId
+          )
+            throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '公开快照主体与研究记录不一致');
+          run.context = structuredClone(snapshot);
+          run.contextStatus = 'ready';
+          run.contextError = undefined;
+          await step(
+            'finance',
+            'completed',
+            '公开快照已保存；缺失和冲突字段保留其来源与未知状态。'
+          );
+          await assertCurrent();
+          publishing.add(run.id);
+          run.status = 'ready';
+          run.agent!.recoverable = false;
+          run.updatedAt = new Date().toISOString();
+          await store.persist();
+        } catch (error) {
+          await financialCancellations.get(run.id);
+          if (!isCurrent()) return;
+          run.status = 'failed';
+          run.contextStatus = 'failed';
+          run.updatedAt = new Date().toISOString();
+          run.error = controller.signal.aborted
+            ? '公开资料读取已中止；已取得的快照保留，可以重试。'
+            : error instanceof ApiFault
+              ? error.message
+              : '公开资料本次未完成；已取得的快照保留，可以重试。';
+          run.contextError = run.error;
+          run.agent!.recoverable = true;
+          run.agent!.budget.sourceRequests = Math.max(
+            run.agent!.budget.sourceRequests,
+            identityBudget.used
+          );
+          for (const branch of run.agent!.branches)
+            if (branch.status === 'running' || branch.status === 'pending') {
+              branch.status = branch.status === 'running' ? 'failed' : 'skipped';
+              branch.finishedAt = run.updatedAt;
+              branch.summary = run.error;
+            }
+          for (const entry of run.trace)
+            if (entry.status === 'running') {
+              entry.status = 'failed';
+              entry.finishedAt = run.updatedAt;
+              entry.outputSummary = run.error;
+            }
+          await store.persist().catch(() => undefined);
+        } finally {
+          await financialCancellations.get(run.id);
+          clearTimeout(timeout);
+          if (ownsExecution()) {
+            publishing.delete(run.id);
+            executions.delete(run.id);
+            controllers.delete(run.id);
+            financialOwners.delete(run.id);
+            active.delete(run.id);
+          }
+        }
+      })();
+    });
+  };
+  const financialContextRunning = (store: WorkspaceStore, run: CompanyResearchRun) =>
+    store.state.companyRuns?.includes(run) &&
+    isFinancialCompanyRun(run.input) &&
+    financialOwners.get(run.id) === store &&
+    active.has(run.id) &&
+    controllers.has(run.id);
+  const cancelFinancialContext = async (
+    store: WorkspaceStore,
+    run: CompanyResearchRun,
+    revision: number
+  ) => {
+    await financialCancellations.get(run.id);
+    if (
+      !financialContextRunning(store, run) ||
+      run.contextStatus !== 'loading' ||
+      revision !== run.contextRevision ||
+      publishing.has(run.id)
+    )
+      throw new ApiFault(409, 'RESEARCH_STALE_REVISION', '公开资料版本已变化，请刷新后取消');
+    const controller = controllers.get(run.id)!;
+    const previous = {
+      contextRevision: run.contextRevision,
+      contextStatus: run.contextStatus,
+      status: run.status,
+      updatedAt: run.updatedAt,
+      error: run.error,
+      contextError: run.contextError,
+      agent: structuredClone(run.agent),
+      trace: structuredClone(run.trace),
+    };
+    let finish!: () => void;
+    const transaction = new Promise<void>((resolve) => (finish = resolve));
+    financialCancellations.set(run.id, transaction);
+    const now = new Date().toISOString();
+    run.contextRevision = revision + 1;
+    run.contextStatus = 'failed';
+    run.status = 'failed';
+    run.updatedAt = now;
+    run.error = '公开资料读取已中止；已取得的快照保留，可以重试。';
+    run.contextError = run.error;
+    run.agent!.revision++;
+    run.agent!.recoverable = true;
+    run.agent!.cancelRequested = true;
+    run.agent!.cancelledAt = now;
+    for (const branch of run.agent!.branches)
+      if (branch.status === 'running' || branch.status === 'pending') {
+        branch.status = branch.status === 'running' ? 'failed' : 'skipped';
+        branch.finishedAt = now;
+        branch.summary = run.error;
+      }
+    for (const entry of run.trace)
+      if (entry.status === 'running') {
+        entry.status = 'failed';
+        entry.finishedAt = now;
+        entry.outputSummary = run.error;
+      }
+    try {
+      await store.persist();
+      controller.abort();
+      // The old callback remains fenced by its reservation identity.
+      executions.delete(run.id);
+      controllers.delete(run.id);
+      financialOwners.delete(run.id);
+      active.delete(run.id);
+    } catch (error) {
+      Object.assign(run, previous);
+      await store.persist().catch(() => undefined);
+      throw error;
+    } finally {
+      if (financialCancellations.get(run.id) === transaction) financialCancellations.delete(run.id);
+      finish();
+    }
+  };
   const execute = (run: CompanyResearchRun, store: WorkspaceStore, resume: boolean) => {
+    if (isFinancialCompanyRun(run.input)) {
+      executeFinancial(run, store);
+      return;
+    }
     run.input.useModel = true;
     run.model.requested = true;
     if (run.model.status === 'not-requested') {
@@ -261,6 +516,11 @@ export function installCompanyRoutes(
       const controller = controllers.get(run.id);
       if (!controller || !active.has(run.id))
         throw new ApiFault(409, 'COMPANY_NOT_RUNNING', '本次研究没有正在运行的步骤');
+      if (isFinancialCompanyRun(run.input)) {
+        await cancelFinancialContext(store, run, run.contextRevision!);
+        res.status(202).json(structuredClone(run));
+        return;
+      }
       run.agent ||= initialCompanyGraphProgress();
       run.agent.cancelRequested = true;
       run.agent.cancelledAt = new Date().toISOString();
@@ -279,11 +539,23 @@ export function installCompanyRoutes(
       const body = z.object({ revision: z.number().int().positive() }).strict().safeParse(req.body);
       if (!body.success || body.data.revision !== run.agent?.revision)
         throw new ApiFault(409, 'COMPANY_STALE_REVISION', '研究记录版本已变化，请刷新后恢复');
+      if (
+        isFinancialCompanyRun(run.input) &&
+        (run.contextStatus === 'loading' || run.assessmentStatus === 'loading')
+      )
+        throw new ApiFault(
+          409,
+          'COMPANY_SOURCE_BUSY',
+          '公开资料或综合研究正在更新，请完成或取消后重试'
+        );
       if (run.status !== 'failed' || !run.agent.recoverable || run.adoptedMaterialId)
         throw new ApiFault(409, 'COMPANY_NOT_RECOVERABLE', '本次结果不支持断点恢复，请新建研究');
       if (active.size >= 2 || busy(store))
         throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公司研究正在进行，请稍后重试');
-      if (Date.now() - Date.parse(run.createdAt) > 24 * 60 * 60 * 1000) {
+      if (
+        !isFinancialCompanyRun(run.input) &&
+        Date.now() - Date.parse(run.createdAt) > 24 * 60 * 60 * 1000
+      ) {
         await rm(path.join(store.dataDir, 'company-agent', run.id), {
           recursive: true,
           force: true,
@@ -301,7 +573,9 @@ export function installCompanyRoutes(
         12,
         3_600_000
       );
-      run.agent = initialCompanyGraphProgress(run.agent);
+      run.agent = isFinancialCompanyRun(run.input)
+        ? initialFinancialCompanyProgress(run.agent)
+        : initialCompanyGraphProgress(run.agent);
       run.agent.revision++;
       run.status = 'queued';
       run.error = undefined;
@@ -335,7 +609,9 @@ export function installCompanyRoutes(
       if (!input.success)
         throw new ApiFault(400, 'INVALID_COMPANY_RUN', '公司代码、标识、年度或研究选项无效');
       assertCompanyResearchSupported(input.data.securityCode);
-      const { reuseExisting, ...runInput } = input.data;
+      const { reuseExisting, ...parsedInput } = input.data;
+      const financial = parsedInput.researchMode === 'financial';
+      const runInput = { ...parsedInput, useModel: !financial };
       const store = res.locals.store as WorkspaceStore;
       const requestKey = req.get('Idempotency-Key');
       if (requestKey && !/^[a-f0-9-]{36}$/.test(requestKey))
@@ -344,7 +620,14 @@ export function installCompanyRoutes(
         ? records(store).find((item) => item.agent?.requestKey === requestKey)
         : undefined;
       if (existing) {
-        if (JSON.stringify(existing.input) !== JSON.stringify(runInput))
+        if (
+          existing.input.securityCode !== runInput.securityCode ||
+          existing.input.orgId !== runInput.orgId ||
+          existing.input.year !== runInput.year ||
+          (existing.input.purpose || 'external') !== runInput.purpose ||
+          (existing.input.researchMode || 'deep') !== runInput.researchMode ||
+          Boolean(existing.input.useModel) !== runInput.useModel
+        )
           throw new ApiFault(
             409,
             'COMPANY_REQUEST_KEY_REUSED',
@@ -380,10 +663,17 @@ export function installCompanyRoutes(
         updatedAt: now,
         trace: [],
         announcements: [],
-        agent: { ...initialCompanyGraphProgress(), ...(requestKey ? { requestKey } : {}) },
+        agent: {
+          ...(financial ? initialFinancialCompanyProgress() : initialCompanyGraphProgress()),
+          ...(requestKey ? { requestKey } : {}),
+        },
         model: {
-          requested: true,
-          status: options.model.apiKey ? 'not-called' : 'not-configured',
+          requested: !financial,
+          status: financial
+            ? 'not-requested'
+            : options.model.apiKey
+              ? 'not-called'
+              : 'not-configured',
         },
       };
       records(store).unshift(run);
@@ -556,6 +846,8 @@ export function installCompanyRoutes(
   return {
     busy,
     deletionBlocked,
+    financialContextRunning,
+    cancelFinancialContext,
     waitForIdle: async () => {
       while (active.size || adopting.size) await new Promise((resolve) => setTimeout(resolve, 10));
     },

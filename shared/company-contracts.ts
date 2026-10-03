@@ -70,7 +70,7 @@ export interface CompanyModelRequestDiagnostic {
   failure?: CompanyModelFailure;
 }
 export interface CompanyGraphProgress {
-  version: 'langgraph-v1';
+  version: 'langgraph-v1' | 'financial-v1';
   requestKey?: string;
   revision: number;
   branches: CompanyBranchProgress[];

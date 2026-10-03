@@ -24,6 +24,7 @@ import { answerCompanyQuestion } from './company-questions.js';
 import { analyzeCompanyWithModel } from './company-assessment.js';
 import { runCompanyResearchAgent } from './company-research-agent.js';
 import { deriveCompanyResearchBrief } from '../shared/company-research-view.js';
+import { isFinancialCompanyRun } from './company-research-policy.js';
 
 export interface CompanyContextService {
   searchCompanies: typeof searchCompanies;
@@ -40,6 +41,12 @@ export function installCompanyContextRoutes(
     model: ModelConfig;
     service?: CompanyContextService;
     deletionBlocked?: (run: CompanyResearchRun) => boolean;
+    financialContextRunning?: (store: WorkspaceStore, run: CompanyResearchRun) => boolean;
+    cancelFinancialContext?: (
+      store: WorkspaceStore,
+      run: CompanyResearchRun,
+      revision: number
+    ) => Promise<void>;
   }
 ) {
   const service = options.service || {
@@ -377,6 +384,7 @@ export function installCompanyContextRoutes(
             orgId: run.input.orgId,
             year: run.input.year,
             purpose: run.input.purpose || 'external',
+            researchMode: run.input.researchMode,
           },
           name:
             run.informationGap?.name ||
@@ -448,7 +456,8 @@ export function installCompanyContextRoutes(
           orgId: '',
           year: body.data.year,
           purpose: body.data.purpose,
-          useModel: true,
+          researchMode: 'financial',
+          useModel: false,
         },
         status: 'ready',
         createdAt: now,
@@ -456,9 +465,8 @@ export function installCompanyContextRoutes(
         trace: [],
         announcements: [],
         model: {
-          requested: true,
-          status: options.model.apiKey ? 'not-called' : 'not-configured',
-          error: reason,
+          requested: false,
+          status: 'not-requested',
         },
         informationGap: { name: body.data.name, reason },
         contextStatus: 'ready',
@@ -502,6 +510,10 @@ export function installCompanyContextRoutes(
       }
       const ownerKey = runKey(store, run);
       await waitForCancellation(store, run);
+      if (options.financialContextRunning?.(store, run)) {
+        res.status(202).json(structuredClone(run));
+        return;
+      }
       if (jobs.has(ownerKey) || sourceJobs.has(ownerKey)) {
         res.status(202).json(run);
         return;
@@ -533,18 +545,14 @@ export function installCompanyContextRoutes(
         try {
           await waitForCancellation(store, run);
           if (!current(store, run, revision) || controller.signal.aborted) return;
-          let identity = run.identity;
-          if (!identity) {
-            const response = await service.searchCompanies(run.input.securityCode, {
-              signal: controller.signal,
-            });
-            await waitForCancellation(store, run);
-            if (!current(store, run, revision) || controller.signal.aborted) return;
-            identity = response.candidates.find(
-              (item) =>
-                item.securityCode === run.input.securityCode && item.orgId === run.input.orgId
-            );
-          }
+          const response = await service.searchCompanies(run.input.securityCode, {
+            signal: controller.signal,
+          });
+          await waitForCancellation(store, run);
+          if (!current(store, run, revision) || controller.signal.aborted) return;
+          const identity = response.candidates.find(
+            (item) => item.securityCode === run.input.securityCode && item.orgId === run.input.orgId
+          );
           if (!identity)
             throw new ApiFault(
               422,
@@ -555,6 +563,7 @@ export function installCompanyContextRoutes(
           const snapshot = await service.context(identity, {
             signal: controller.signal,
             bypassCache: body.data.refresh,
+            disclosureExcerpts: false,
             onSnapshot: async (snapshot) => {
               await waitForCancellation(store, run);
               if (!current(store, run, revision) || controller.signal.aborted) return;
@@ -579,17 +588,15 @@ export function installCompanyContextRoutes(
           run.context = structuredClone(snapshot);
           run.contextStatus = 'ready';
           run.contextError = undefined;
+          if (isFinancialCompanyRun(run.input) && run.status === 'failed') {
+            run.status = 'ready';
+            run.error = undefined;
+          }
           run.identity ||= identity;
           await store.persist();
           await waitForCancellation(store, run);
           if (!current(store, run, revision) || controller.signal.aborted) return;
           if (jobs.get(ownerKey) === job) sourceJobs.delete(ownerKey);
-          await scheduleAssessment(store, run, body.data.refresh).catch(async () => {
-            if (!current(store, run, revision) || controller.signal.aborted) return;
-            run.assessmentStatus = 'failed';
-            run.assessmentError = '综合研究尚未开始，可以在报告中重试；公开数据已保留。';
-            await store.persist().catch(() => undefined);
-          });
         } catch (error) {
           await waitForCancellation(store, run);
           if (!current(store, run, revision) || controller.signal.aborted) return;
@@ -652,6 +659,15 @@ export function installCompanyContextRoutes(
           body.data.assessmentRevision !== (run.assessmentRevision || 0))
       )
         throw new ApiFault(409, 'RESEARCH_CANCEL_STALE', '研究已进入新一轮，请刷新后再操作');
+      if (
+        body.data.contextRevision !== undefined &&
+        options.financialContextRunning?.(store, run) &&
+        options.cancelFinancialContext
+      ) {
+        await options.cancelFinancialContext(store, run, body.data.contextRevision);
+        res.json(structuredClone(run));
+        return;
+      }
       const contextController = contextControllers.get(ownerKey);
       const assessmentController = assessmentControllers.get(ownerKey);
       const cancelContext =

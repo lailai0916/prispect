@@ -49,7 +49,10 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
   const currentLocale = useRef(locale);
   currentLocale.current = locale;
   const owner = user?.id || null;
-  const [records, setRecords] = useState<CompanyRecordSummary[]>([]);
+  const [collection, setCollection] = useState<{
+    owner: string | null;
+    records: CompanyRecordSummary[];
+  }>({ owner, records: [] });
   const [loading, setLoading] = useState(Boolean(owner));
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
@@ -62,7 +65,7 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
   const currentOwner = useRef(owner);
   currentOwner.current = owner;
   const reload = useCallback(async () => {
-    if (!owner || !mounted.current) return;
+    if (!owner || !mounted.current || currentOwner.current !== owner) return;
     if (request.current && !request.current.signal.aborted) {
       pendingRefresh.current = true;
       return;
@@ -77,14 +80,20 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
       const next = await api<CompanyRecordSummary[]>('/company-records', {
         signal: controller.signal,
       });
-      if (!mounted.current || controller.signal.aborted || ticket !== generation.current) return;
+      if (
+        !mounted.current ||
+        currentOwner.current !== owner ||
+        controller.signal.aborted ||
+        ticket !== generation.current
+      )
+        return;
       const available = next.filter((record) => !removedIds.current.has(record.id));
       retainCachedCompanyRuns(
         owner,
         available.map((record) => record.id),
         cachedAtRequest
       );
-      setRecords(available);
+      setCollection({ owner, records: available });
       setError('');
       if (
         available.some(
@@ -94,11 +103,21 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
         timer.current = setTimeout(() => void reload(), 2500);
       }
     } catch (cause) {
-      if (mounted.current && !controller.signal.aborted && ticket === generation.current) {
+      if (
+        mounted.current &&
+        currentOwner.current === owner &&
+        !controller.signal.aborted &&
+        ticket === generation.current
+      ) {
         setError(requestErrorText(cause, currentLocale.current));
       }
     } finally {
-      if (mounted.current && !controller.signal.aborted && ticket === generation.current) {
+      if (
+        mounted.current &&
+        currentOwner.current === owner &&
+        !controller.signal.aborted &&
+        ticket === generation.current
+      ) {
         request.current = null;
         setLoading(false);
         setRefreshing(false);
@@ -113,9 +132,10 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
     mounted.current = true;
     activateCompanyRunCache(owner);
     removedIds.current.clear();
-    setRecords([]);
+    setCollection({ owner, records: [] });
     setError('');
     setLoading(Boolean(owner));
+    setRefreshing(false);
     void reload();
     const update = () => void reload();
     const invalidate = (event: Event) => {
@@ -138,9 +158,14 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
   }, [owner, reload]);
   const removeLocal = useCallback(
     (id: string) => {
+      if (!owner || currentOwner.current !== owner || !mounted.current) return;
       if (owner) removeCachedCompanyRun(owner, id);
       removedIds.current.add(id);
-      setRecords((current) => current.filter((record) => record.id !== id));
+      setCollection((current) =>
+        current.owner === owner
+          ? { owner, records: current.records.filter((record) => record.id !== id) }
+          : current
+      );
     },
     [owner]
   );
@@ -148,9 +173,19 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
     () => Boolean(owner && mounted.current && currentOwner.current === owner),
     [owner]
   );
+  const scoped = collection.owner === owner;
   return (
     <CompanyRecordsContext.Provider
-      value={{ owner, records, loading, refreshing, error, reload, removeLocal, isCurrentOwner }}
+      value={{
+        owner,
+        records: scoped ? collection.records : [],
+        loading: scoped ? loading : Boolean(owner),
+        refreshing: scoped ? refreshing : false,
+        error: scoped ? error : '',
+        reload,
+        removeLocal,
+        isCurrentOwner,
+      }}
     >
       {children}
     </CompanyRecordsContext.Provider>

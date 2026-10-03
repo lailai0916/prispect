@@ -409,12 +409,20 @@ export async function createApp(options: AppOptions = {}) {
     res.json((res.locals.store as WorkspaceStore).workspace(provider));
   });
   installDecisionRoutes(app, { auth });
-  const company = installCompanyRoutes(app, { root, auth, model, service: options.companyService });
+  const company = installCompanyRoutes(app, {
+    root,
+    auth,
+    model,
+    service: options.companyService,
+    context: options.companyContextService?.context,
+  });
   const companyContext = installCompanyContextRoutes(app, {
     auth,
     model,
     service: options.companyContextService,
     deletionBlocked: company.deletionBlocked,
+    financialContextRunning: (store, run) => Boolean(company.financialContextRunning(store, run)),
+    cancelFinancialContext: company.cancelFinancialContext,
   });
   const companyChallenge = installCompanyChallengeRoutes(app, {
     auth,

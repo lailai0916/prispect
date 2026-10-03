@@ -33,8 +33,8 @@ export const termsDocument: ProductDocument = {
       ],
       bullets: [
         [
-          '公司研究：自动读取财务历史、同行、公告与新闻，按你可选的研究目标继续补查，给出六维判断、财务评级、风险与后续核查。公开研究与待确认的年报候选分别保留，不自动采用候选。',
-          'Company research automatically reviews financial history, peers, disclosures and news, with further research guided by an optional goal. It provides six-dimensional judgments, a financial grade, risks and next checks. Public research remains separate from unconfirmed annual-report candidates and does not automatically adopt them.',
+          '公司研究：默认取得结构化年度财务与同行数据，展示财务观察、年度趋势和同年同行参照，不自动下载年报 PDF 或调用模型。你明确请求深度研究时，可按目标补查公告、新闻等公开资料并生成研究判断。公开研究与待确认的年报候选分别保留，不自动采用候选。',
+          'Company research retrieves structured annual financial and peer data by default, presenting financial observations, annual trends and same-year peer comparisons without automatically downloading annual-report PDFs or calling a model. Explicit deep-research requests may retrieve disclosures, news and other public information according to the goal and generate research judgments. Public research remains separate from unconfirmed annual-report candidates and does not automatically adopt them.',
         ],
         [
           '财报核查：按同期间、同主体与合并范围核对利润和经营现金；必要材料缺失或冲突时，暂停相关计算。',
@@ -93,8 +93,8 @@ export const termsDocument: ProductDocument = {
       title: ['5. 数据处理与 AI', '5. Data processing and AI'],
       paragraphs: [
         [
-          'AI 自动参与公司研究中的原件检索与公开资料分析、财报核查和企业问答，无需单独启用，也不提供关闭选项。自定义研究目标会与公开资料一起发送给模型，请勿填写私人信息。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
-          'AI is an automatic part of original retrieval and public-source analysis in company research, financial reviews and company questions, with no separate enable or disable option. Custom research goals are sent to the model with public information; do not include private information. The privacy policy describes processing scope, external services and record retention.',
+          '默认公司财务分析不调用模型。你明确请求深度研究、原件核查、财报核查解释，或提交登录后的助手问题时，相应功能可使用 AI，且不提供单独关闭模型的选项。使用 AI 的研究目标会与公开资料一起发送给模型，请勿填写私人信息。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
+          'Default company financial analysis does not call a model. Explicit deep-research, original-report review and financial-review explanation requests, and signed-in assistant questions, may use AI with no separate model-disable switch. Goals for research using AI are sent to the model with public information; do not include private information. The privacy policy describes processing scope, external services and record retention.',
         ],
         [
           '阅读或接受本协议不替代依法需要的数据使用告知与同意。你可以停止使用相应功能；已发生的数据处理及后续保留，依照隐私政策与适用法律处理。',

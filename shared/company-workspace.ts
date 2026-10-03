@@ -7,42 +7,41 @@ import type {
 
 /** Public company context stays separate from adopted original-report evidence. */
 export const companySections = [
-  ['overview', '研究报告', 'Research report'],
+  ['overview', '公司概览', 'Company overview'],
+  ['trends', '历史财务走势', 'Financial history'],
+  ['industry', '行业对比', 'Industry comparison'],
+  ['disclosures', '公告线索', 'Disclosure leads'],
+  ['profile', '扩展核查', 'Extended checks'],
+  ['coverage', '数据覆盖', 'Data coverage'],
+  ['sources', '来源比对', 'Source comparison'],
+  // Retain saved original-review and combined-financial links without adding menu clutter.
   ['financial', '财务分析', 'Financial analysis'],
-  ['sources', '资料与来源', 'Sources and references'],
   ['evidence', '原件核查', 'Original-document review'],
 ] as const;
 export type CompanySection = (typeof companySections)[number][0];
-export type LegacyCompanySection =
-  | 'trends'
-  | 'industry'
-  | 'disclosures'
-  | 'profile'
-  | 'coverage'
-  | 'qa';
-
-const legacyCompanySections: Record<
-  LegacyCompanySection,
-  { section: CompanySection; focus: string | null }
-> = {
-  trends: { section: 'financial', focus: 'history' },
-  industry: { section: 'financial', focus: 'industry' },
-  disclosures: { section: 'sources', focus: 'announcements' },
-  profile: { section: 'sources', focus: 'profile' },
-  coverage: { section: 'sources', focus: 'coverage' },
-  qa: { section: 'overview', focus: null },
-};
+export type LegacyCompanySection = 'qa';
 
 const companyFocusTargets: Record<CompanySection, Record<string, string>> = {
   overview: {
     report: 'company-full-report',
-    research: 'company-research-process',
-    goal: 'company-research-goal',
+    research: 'company-full-report',
+    goal: 'company-full-report',
     lab: 'company-evidence-lab',
-    checklist: 'company-review-requests',
-    plan: 'company-research-framework',
+    checklist: 'company-financial-data',
+    plan: 'company-full-report',
     trust: 'company-source-trust',
+    summary: 'company-financial-overview',
+    findings: 'company-financial-attention',
   },
+  trends: {
+    history: 'company-financial-history',
+    data: 'company-financial-data',
+    findings: 'company-financial-findings',
+  },
+  industry: { industry: 'company-industry' },
+  disclosures: { news: 'company-public-signals', announcements: 'company-disclosures' },
+  profile: { profile: 'company-profile' },
+  coverage: { coverage: 'company-data-coverage', trust: 'company-source-trust' },
   financial: {
     history: 'company-financial-history',
     data: 'company-financial-data',
@@ -60,20 +59,23 @@ const companyFocusTargets: Record<CompanySection, Record<string, string>> = {
   evidence: {},
 };
 
-/** Resolve saved links to their merged page while retaining the requested content. */
+/** Fixed F destinations keep existing focused links usable. */
 export function resolveCompanyLocation(
   sectionValue: string | null | undefined,
   focusValue?: string | null
 ): { section: CompanySection; focus: string | null } {
-  const legacy = Object.hasOwn(legacyCompanySections, sectionValue || '')
-    ? legacyCompanySections[sectionValue as LegacyCompanySection]
-    : undefined;
-  let section =
-    legacy?.section || companySections.find(([id]) => id === sectionValue)?.[0] || 'overview';
-  let focus = focusValue || legacy?.focus || null;
-  if (section === 'overview' && focus === 'data') section = 'financial';
-  else if (section === 'overview' && focus === 'news') section = 'sources';
-  if (focus && !Object.hasOwn(companyFocusTargets[section], focus)) focus = legacy?.focus || null;
+  let section = companySections.find(([id]) => id === sectionValue)?.[0] || 'overview';
+  let focus = focusValue || null;
+  if (section === 'overview' && focus === 'data') section = 'trends';
+  else if (section === 'overview' && focus === 'news') section = 'disclosures';
+  else if (section === 'overview' && focus === 'trust') section = 'coverage';
+  if (section === 'financial' && focus === 'industry') section = 'industry';
+  if (section === 'sources' && focus === 'news') section = 'disclosures';
+  else if (section === 'sources' && focus === 'announcements') section = 'disclosures';
+  else if (section === 'sources' && focus === 'profile') section = 'profile';
+  else if (section === 'sources' && (focus === 'coverage' || focus === 'trust'))
+    section = 'coverage';
+  if (focus && !Object.hasOwn(companyFocusTargets[section], focus)) focus = null;
   return { section, focus };
 }
 
@@ -367,6 +369,7 @@ export interface CompanyRecordSummary {
     orgId: string;
     year: number;
     purpose?: 'external' | 'handover';
+    researchMode?: 'financial' | 'deep';
   };
   name: string;
   status: string;

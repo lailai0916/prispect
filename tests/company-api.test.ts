@@ -143,6 +143,7 @@ const runInput = {
   orgId: identity.orgId,
   year: 2025,
   purpose: 'handover',
+  researchMode: 'deep' as const,
 };
 async function makeRun(
   service: Awaited<ReturnType<typeof openService>>,
@@ -161,7 +162,7 @@ async function makeRun(
   return (await result.json()) as CompanyResearchRun;
 }
 
-test('company research automatically requests AI with omitted, false and true legacy flags', async () => {
+test('explicit deep company research requests AI with omitted, false and true legacy flags', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-company-ai-'));
   const service = await openService(directory, await serviceMock());
   try {

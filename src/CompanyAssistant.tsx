@@ -1,3 +1,7 @@
+import {
+  OPEN_COMPANY_ASSISTANT_EVENT,
+  type OpenCompanyAssistantDetail,
+} from '../shared/company-navigation';
 import { useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowUp,
@@ -50,7 +54,22 @@ export function CompanyAssistant({ route }: { route: string }) {
   const { records } = useCompanyRecords();
   const owner = user?.id || null;
   const query = new URLSearchParams(route.split('?')[1]);
-  const routeRun = route.split('?')[0] === '/company' ? query.get('run') : null;
+  const [selectedCompany, setSelectedCompany] = useState<{ owner: string; runId: string } | null>(
+    null
+  );
+  const requestedPageRun = route.split('?')[0] === '/company' ? query.get('run') : null;
+  const pageRun =
+    requestedPageRun &&
+    (records.some((record) => record.id === requestedPageRun) ||
+      (company?.owner === owner && company.run.id === requestedPageRun))
+      ? requestedPageRun
+      : null;
+  const routeRun =
+    pageRun ||
+    (selectedCompany?.owner === owner &&
+    records.some((record) => record.id === selectedCompany.runId)
+      ? selectedCompany.runId
+      : null);
   const current =
     routeRun && company?.owner === owner && company.run.id === routeRun ? company : null;
   const [open, setOpen] = useState(false);
@@ -64,9 +83,7 @@ export function CompanyAssistant({ route }: { route: string }) {
   const pending = messages.find((message) => message.status === 'pending');
   const previousCompany = [...messages].reverse().find((message) => message.answer?.company)
     ?.answer?.company;
-  const recent = [...records].sort((a, b) =>
-    (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt)
-  )[0];
+  const recent = [...records].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   const currentRecord = records.find((record) => record.id === routeRun);
   const backgroundCompany = current
     ? {
@@ -122,6 +139,24 @@ export function CompanyAssistant({ route }: { route: string }) {
     setOpen(false);
     following.current = true;
   }, [owner, conversation.owner]);
+  useEffect(() => {
+    setSelectedCompany(null);
+  }, [route, owner]);
+  useEffect(() => {
+    const openCompanyAssistant = (event: Event) => {
+      const detail = (event as CustomEvent<OpenCompanyAssistantDetail>).detail;
+      if (
+        !owner ||
+        detail?.owner !== owner ||
+        !records.some((record) => record.id === detail.runId)
+      )
+        return;
+      setSelectedCompany({ owner, runId: detail.runId });
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_COMPANY_ASSISTANT_EVENT, openCompanyAssistant);
+    return () => window.removeEventListener(OPEN_COMPANY_ASSISTANT_EVENT, openCompanyAssistant);
+  }, [owner, records]);
   useEffect(() => {
     if (routeRun && query.get('section') === 'qa') {
       setOpen(true);

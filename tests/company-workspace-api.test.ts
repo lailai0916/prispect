@@ -156,6 +156,7 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
       orgId: 'gssh0600519',
       year: 2025,
       purpose: 'handover',
+      researchMode: 'deep',
     });
     assert.equal(created.status, 202);
     const run = (await created.json()) as CompanyResearchRun;
@@ -184,6 +185,9 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     assert.equal(ready.context?.financials[0]?.amounts.ocf, '80.00');
     assert.equal((await call(`/company-runs/${run.id}/context`, {})).status, 200);
     assert.equal(calls, 1);
+    assert.deepEqual(researchRefreshChoices, []);
+    assert.equal((await call(`/company-runs/${run.id}/assessment`, {})).status, 202);
+    await app.waitForIdle();
     for (const choice of [undefined, false, true]) {
       const answer = await call(`/company-runs/${run.id}/questions`, {
         question: '现金和利润有什么差异？',
@@ -226,9 +230,10 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     const gapRun = (await gap.json()) as CompanyResearchRun;
     assert.equal(gapRun.informationGap?.name, '未上市制造公司');
     assert.equal(gapRun.context?.financials.length, 0);
-    assert.equal(gapRun.input.useModel, true);
-    assert.equal(gapRun.model.requested, true);
-    assert.equal(gapRun.model.status, 'not-configured');
+    assert.equal(gapRun.input.researchMode, 'financial');
+    assert.equal(gapRun.input.useModel, false);
+    assert.equal(gapRun.model.requested, false);
+    assert.equal(gapRun.model.status, 'not-requested');
     assert.equal(
       (await call(`/company-runs/${gapRun.id}/industry`, { period: '2025-12-31' })).status,
       422
