@@ -94,7 +94,7 @@ test('adopted original evidence is reported as adopted in coverage and detailed 
       createElement(CompanyCoverageView, { snapshot: run.context!, run })
     )
   );
-  assert.match(coverage, /原件材料已确认采用/);
+  assert.match(coverage, /原件已采用/);
   assert.doesNotMatch(coverage, /尚未形成候选|已有候选，待确认采用/);
   assert.match(overview(run), /原件材料已确认采用/);
   assert.doesNotMatch(overview(run), /仍需确认后采用|原件读取尚未完成/);

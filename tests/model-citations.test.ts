@@ -95,7 +95,7 @@ test('model prose is escaped text and English UI preserves original Chinese resp
   assert.equal(html.includes('<img'), false);
   assert.equal(html.includes('<script'), false);
   assert.ok(html.includes('中文原文'));
-  assert.ok(html.includes('Original model response in Chinese; not translated.'));
+  assert.ok(html.includes('Original AI interpretation in Chinese; not translated.'));
   assert.ok(html.includes('[missing-id]'));
   assert.equal((html.match(/class="model-explanation-paragraph"/g) || []).length, 2);
   assert.equal((html.match(/<button/g) || []).length, 1);

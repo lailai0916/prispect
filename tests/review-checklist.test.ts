@@ -227,7 +227,7 @@ test('no-report exports explicitly stop, and untranslated user evidence remains 
   const pending = task();
   for (const locale of ['zh-Hans', 'en'] as const) {
     const markdown = buildReviewChecklist(pending, locale);
-    assert.match(markdown, locale === 'en' ? /no saved report/ : /尚无已保存报告/);
+    assert.match(markdown, locale === 'en' ? /no saved review report/ : /尚无已保存核查报告/);
     assert.ok(!markdown.includes('### 1.'));
   }
   const report = review(fixture.materials[0]!);
