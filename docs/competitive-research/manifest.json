@@ -98,6 +98,8 @@
     "acceptance": "validation/acceptance.md",
     "value_scope_audit": "validation/value-audit.md",
     "evidence_integrity": "evidence/EVIDENCE-MANIFEST.json",
-    "release_scope": "Isolated reviewable branch; no main merge, PR, production deployment, real model success or measured user outcome."
+    "release_scope": "Isolated reviewable branch; no main merge, PR, production deployment, real model success or measured user outcome.",
+    "code_commit": "e611b5cab6072f7aab5a903db607d5535caa4062",
+    "branch_url": "https://github.com/lailai0916/prispect/tree/research/competitive-integration-20261003"
   }
 }
