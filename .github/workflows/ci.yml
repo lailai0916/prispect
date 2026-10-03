@@ -35,3 +35,18 @@ jobs:
         working-directory: project
       - run: npm run check
         working-directory: project
+
+      - name: Install browser for entry-flow acceptance
+        run: node node_modules/playwright/cli.js install --with-deps chromium
+        working-directory: project
+      - name: Verify real Lite and Pro entry flows
+        run: node --import tsx scripts/browser-qa.mjs
+        working-directory: project
+      - name: Upload browser acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-qa-${{ github.sha }}
+          path: project/output/browser-qa/
+          if-no-files-found: warn
+          retention-days: 14

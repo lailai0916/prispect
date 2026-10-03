@@ -1,3 +1,64 @@
+# Lite / Pro design QA
+
+Date: 2026-10-04 (Asia/Shanghai).
+
+**Findings**
+
+- Blocking evidence gap: there is no browser-rendered implementation capture for this change. Chromium exits with `setsockopt: Operation not permitted` in crashpad. Its supported `--disable-crashpad-for-testing` flag gets past that stage, but startup then fails at `content/browser/sandbox_host_linux.cc:41` because `shutdown` returns `EPERM`. A direct Node HTTP preview-server diagnostic also returns `listen EPERM` for `127.0.0.1`. No UI mismatch is inferred from these environment errors.
+- Visual fidelity, responsive layout, motion behavior, primary interactions and browser console errors remain unverified. Source inspection and successful code checks cannot replace a rendered comparison.
+
+**Comparison target and evidence**
+
+- Source visual truth path: `/workspace/generated_images/exec-b1e23036-727c-4556-9fc6-36d59c0b3f17.png`, the selected second monochrome option. The source was opened and its dimensions checked.
+- Source pixel dimensions: 1487 × 1058. Intended implementation CSS viewport: 1440 × 1024, with intended `deviceScaleFactor: 1`.
+- Implementation: Lite root `/`, followed by the separate saved-company result `/company?run=…&experience=lite`. Pro retains `/query` and the existing `/company` report and seven F destinations.
+- Implementation screenshot path: unavailable; no screenshot was captured. Implementation pixel dimensions, actual CSS viewport and actual device density: unverified.
+- Intended initial comparison state: Chinese, light monochrome theme, Lite homepage at page top, navigation closed, no submitted company query. Source authentication state is unspecified; an implementation visitor state must be documented when capture becomes available.
+- Density normalization: not performed. A later comparison must normalize the 1487 × 1058 source and rendered 1440 × 1024 viewport to a common crop/scale before judging fidelity; those dimensions are not already identical.
+- Full-view comparison evidence: unavailable; no combined source/implementation comparison input exists.
+- Focused region comparison evidence: unavailable for the same capture blocker. Header, giant headline, query controls, paper sculpture and first-fold proportions require focused inspection once a rendered capture exists.
+
+**Required fidelity surfaces**
+
+| Surface                          | Current result                                                                                                               |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Fonts and typography             | Unverified: font rendering, weight, size, wrapping, line height and hierarchy require a rendered capture.                    |
+| Spacing and layout rhythm        | Unverified: region proportions, first-fold composition, margins, alignment and overflow have not been measured in a browser. |
+| Colors and tokens                | Unverified: rendered monochrome palette, contrast, dark theme and semantic states have not been compared.                    |
+| Image quality and asset fidelity | Unverified: actual crop, scale, masking, sharpness and paper treatment have not been compared with the source.               |
+| Copy and app content             | Unverified visually: headline, labels, clipping and state copy have not been inspected in the rendered application.          |
+
+**Code checks, separate from visual QA**
+
+- Frontend build passed, research-record check passed, and 10 selected pure test files passed as reported by the implementation task. These do not establish browser behavior or fidelity.
+- Full type checking remains blocked by the existing missing `cheerio@1.1.2` dependency and its transitive packages; the exact packages are absent from the local offline cache.
+- Final implementation checks are still pending. No production deployment, real-provider verification or current browser acceptance is claimed here.
+
+**Open Questions**
+
+- Rendered captures are required before deciding whether any source differences are intentional product adaptations or actionable design drift.
+
+**Comparison history**
+
+This change has zero completed visual comparison iterations. Browser and preview diagnostics are environment troubleshooting, not design-QA iterations. The prior workspace QA record below concerns earlier work and is not evidence for this Lite/Pro change.
+
+**Implementation Checklist**
+
+1. In an execution surface that permits browser startup and local preview, open the actual application and capture the intended viewport and state.
+2. Normalize density and crop, then put the source and implementation together in one comparison input. Compare full view and focused regions across all five required surfaces.
+3. Capture desktop/narrow, Chinese/English, light/dark and reduced-motion states; verify native input, query submission, source access, menus and assistant follow-ups.
+4. Switch Lite/Pro on the same saved run and verify that research creation and source/model call counts do not change. Inspect console errors and failure states.
+5. Record any P0/P1/P2 findings, fix them, capture again and retain the post-fix comparison evidence before marking QA passed.
+
+**Follow-up Polish**
+
+No P3 refinements are assigned before a rendered comparison.
+
+final result: blocked
+
+<details>
+<summary>Historical workspace QA record — previous work only</summary>
+
 # Workspace visual upgrade QA
 
 Date: 2026-10-03.
@@ -188,3 +249,5 @@ Screenshots: `report-1440-light.png`, `docs-guide-1440-light.png` and
 `assistant-390-dark.png` in the same directory. Production build, changed-file
 formatting and diff checks passed. No calculation, retrieval, permission or
 stored-data behavior changed; CI and production deployment were not awaited.
+
+</details>

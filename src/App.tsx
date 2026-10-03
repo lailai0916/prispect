@@ -29,6 +29,7 @@ import type {
   AccountUser,
 } from '../shared/contracts';
 import { api, setCsrfToken, RequestError, requestErrorText } from './api';
+import { companyPath } from '../shared/company-workspace';
 import { type Locale, setDisplayTimeZone } from './format';
 import { changeComposerOwner } from './start-draft';
 import { companyReadingMemory } from './company-reading-memory';
@@ -62,6 +63,7 @@ import {
 import { CompanySidebar } from './CompanySidebar';
 import { CompanyRecordsProvider } from './CompanyRecordsContext';
 import { CompanyHeaderContext } from './CompanyHeaderContext';
+import { ShowcaseNavigation } from './showcase/ShowcaseNavigation';
 import { CommandMenu } from './CommandMenu';
 import { PageLoading, ToastNotice, usePageEntrance } from './Experience';
 import './polish.css';
@@ -94,6 +96,10 @@ const Decisions = lazyPage(
 const CompanyWorkspacePage = lazyPage(
   () => import('./pages/CompanyWorkspace'),
   (module) => module.CompanyWorkspacePage
+);
+const LiteResearchPage = lazyPage(
+  () => import('./showcase/LiteResearch'),
+  (module) => module.LiteResearchPage
 );
 const CompanyQueryPage = lazyPage(
   () => import('./pages/CompanyQuery'),
@@ -149,7 +155,9 @@ function pageResource(path: string, signedIn: boolean) {
     case '/query':
       return CompanyQueryPage;
     case '/company':
-      return CompanyWorkspacePage;
+      return new URLSearchParams(path.split('?')[1]).get('experience') === 'lite'
+        ? LiteResearchPage
+        : CompanyWorkspacePage;
     case '/workspace':
       return WorkspacePage;
     case '/materials':
@@ -584,11 +592,21 @@ export function App() {
     ['/compare', t(...productTerms.compareReviews)],
   ] as const;
   const sessionAvailable = loaded && !loadError;
+  const showcaseHome =
+    page === '/' && new URLSearchParams(route.split('?')[1]).get('view') !== 'story';
+  const liteCompany =
+    page === '/company' && new URLSearchParams(route.split('?')[1]).get('experience') === 'lite';
+  const liteExperience = showcaseHome || liteCompany;
+  const experienceRun =
+    page === '/company' ? new URLSearchParams(route.split('?')[1]).get('run') : null;
+  const liteLink = experienceRun ? `${companyPath(experienceRun)}&experience=lite` : '/';
+  const proLink = experienceRun ? companyPath(experienceRun) : '/query';
   const business = Boolean(
     sessionAvailable &&
       user &&
       (!protectedPage || accountUser) &&
-      (page !== '/' || accountUser) &&
+      page !== '/' &&
+      !liteCompany &&
       !['/login', '/register', '/docs', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
@@ -687,7 +705,9 @@ export function App() {
             publish: publishAssistantCompany,
           }}
         >
-          <div className={`app-shell ${business ? 'business-shell' : 'public-shell'}`}>
+          <div
+            className={`app-shell ${business ? 'business-shell' : 'public-shell'}${liteExperience ? ' showcase-shell' : ''}`}
+          >
             <header className="site-header">
               <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
                 <Logo />
@@ -737,6 +757,19 @@ export function App() {
                   </button>
                 </Hint>
                 <ThemeControl />
+                {(liteExperience || page === '/query' || page === '/company') && (
+                  <nav
+                    className="experience-switch"
+                    aria-label={t('选择版本', 'Choose experience')}
+                  >
+                    <a href={liteLink} aria-current={liteExperience ? 'page' : undefined}>
+                      Lite
+                    </a>
+                    <a href={proLink} aria-current={!liteExperience ? 'page' : undefined}>
+                      Pro
+                    </a>
+                  </nav>
+                )}
                 {business && (
                   <button
                     className="icon-button mobile-menu"
@@ -769,6 +802,9 @@ export function App() {
                     )}
                   </>
                 ) : null}
+                {liteExperience && (
+                  <ShowcaseNavigation homeActive={showcaseHome} proLink={proLink} />
+                )}
               </div>
               {(pending > 0 || openingPage || (loaded && refreshingWorkspace)) && (
                 <div
@@ -837,6 +873,11 @@ export function App() {
                       path={page as DocumentPath}
                       section={new URLSearchParams(route.split('?')[1]).get('section')}
                     />
+                  ) : showcaseHome ? (
+                    <Home
+                      query={new URLSearchParams(route.split('?')[1])}
+                      connectionError={loadError}
+                    />
                   ) : loadError ? (
                     <div className="connection-error">
                       <CircleAlert />
@@ -853,11 +894,7 @@ export function App() {
                   ) : !loaded ? (
                     <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
                   ) : page === '/' ? (
-                    accountUser ? (
-                      <CompanyQueryPage />
-                    ) : (
-                      <Home />
-                    )
+                    <Home query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/login' ||
                     page === '/register' ||
                     !user ||
@@ -878,10 +915,17 @@ export function App() {
                   ) : page === '/query' ? (
                     <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/company' ? (
-                    <CompanyWorkspacePage
-                      key={new URLSearchParams(route.split('?')[1]).get('run') || 'query'}
-                      query={new URLSearchParams(route.split('?')[1])}
-                    />
+                    liteCompany ? (
+                      <LiteResearchPage
+                        key={experienceRun || 'query'}
+                        query={new URLSearchParams(route.split('?')[1])}
+                      />
+                    ) : (
+                      <CompanyWorkspacePage
+                        key={experienceRun || 'query'}
+                        query={new URLSearchParams(route.split('?')[1])}
+                      />
+                    )
                   ) : page === '/new' ? (
                     <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/materials' ? (

@@ -233,7 +233,8 @@ export function usePageEntrance(route: string) {
         !preference.matches &&
         child &&
         !child.classList.contains('page-loading') &&
-        !child.classList.contains('cinematic-home')
+        !child.classList.contains('cinematic-home') &&
+        !child.classList.contains('showcase-home')
       ) {
         animation = child.animate([{ opacity: 0.85 }, { opacity: 1 }], {
           duration: 120,

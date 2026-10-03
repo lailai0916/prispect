@@ -42,6 +42,8 @@ export function StartInput({
   disabled = false,
   initialText,
   onInformationGap,
+  placeholder,
+  submitLabel,
 }: {
   compact?: boolean;
   onCompanyChoice?: (identity: CompanyIdentity, text: string) => void;
@@ -50,6 +52,8 @@ export function StartInput({
   disabled?: boolean;
   initialText?: string;
   onInformationGap?: (name: string) => void;
+  placeholder?: string;
+  submitLabel?: string;
 }) {
   const { t, navigate, user, locale } = useApp();
   const composerId = useId();
@@ -423,7 +427,8 @@ export function StartInput({
         value={text}
         disabled={disabled}
         placeholder={
-          mode === 'auto'
+          placeholder ||
+          (mode === 'auto'
             ? t(
                 '输入公司，或写下你要核查的事',
                 'Enter a company or describe what you want to review'
@@ -438,7 +443,7 @@ export function StartInput({
                 : t(
                     '写下付款对象、金额或需要核对的约定',
                     'Describe the company, amount, or terms to review'
-                  )
+                  ))
         }
         aria-describedby={error ? errorId : undefined}
         aria-invalid={Boolean(error)}
@@ -574,10 +579,10 @@ export function StartInput({
         <button
           type="submit"
           className="start-submit"
-          aria-label={companyOnly ? t('开始', 'Start') : t('继续', 'Continue')}
+          aria-label={submitLabel || (companyOnly ? t('开始', 'Start') : t('继续', 'Continue'))}
           disabled={disabled || isComposing || !text.trim()}
         >
-          <span>{companyOnly ? t('开始', 'Start') : t('继续', 'Continue')}</span>
+          <span>{submitLabel || (companyOnly ? t('开始', 'Start') : t('继续', 'Continue'))}</span>
           <ArrowRight size={16} />
         </button>
       </div>
