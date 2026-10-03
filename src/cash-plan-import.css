@@ -5,6 +5,9 @@
 .cash-import-dialog .dialog-body > p {
   margin: 0;
 }
+.cash-import-dialog .inline-error {
+  scroll-margin-block: var(--dialog-body-padding, 16px);
+}
 .cash-import-actions {
   display: flex;
   align-items: center;

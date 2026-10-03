@@ -37,6 +37,7 @@ export function CashPlanImport({
     [readFailed, setReadFailed] = useState(false),
     [previewStale, setPreviewStale] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const errorDetail = useRef<HTMLParagraphElement>(null);
   const selectedFile = useRef<File | null>(null);
   const generation = useRef(0);
   const readingLock = useRef(false);
@@ -44,6 +45,13 @@ export function CashPlanImport({
   const defaults = useRef({ asOf, floor });
   const latest = useRef({ current, t });
   latest.current = { current, t };
+  useEffect(() => {
+    if (!open || !error) return;
+    const frame = requestAnimationFrame(() => {
+      errorDetail.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [open, error]);
   useEffect(
     () => () => {
       isOpen.current = false;
@@ -382,7 +390,7 @@ export function CashPlanImport({
             </p>
           </details>
           {error && (
-            <p className="inline-error" role="alert">
+            <p className="inline-error" role="alert" ref={errorDetail}>
               {error}
             </p>
           )}

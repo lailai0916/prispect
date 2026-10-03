@@ -143,7 +143,12 @@ export function WorkspacePage() {
           <p className="table-scroll-hint">
             {t('左右滑动查看全部列。', 'Scroll horizontally to see all columns.')}
           </p>
-          <div className="table-wrap">
+          <div
+            className="table-wrap"
+            tabIndex={0}
+            role="region"
+            aria-label={t('财报核查列表，可横向滚动', 'Financial review list; scroll horizontally')}
+          >
             <table className="review-table">
               <thead>
                 <tr>
