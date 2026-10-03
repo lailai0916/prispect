@@ -445,8 +445,8 @@ export const guideDocument: ProductDocument = {
           'Company lookup, financial reviews and company questions use AI automatically without a separate switch. If the model does not complete, existing review results are retained with its actual status. See the privacy policy for data-processing scope and third-party services.',
         ],
         [
-          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。外观可选择自动、浅色或深色；自动模式跟随系统设置。',
-          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Appearance offers System, Light and Dark; System follows your device preference.',
+          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。打开网页或系统主题变化时，外观自动跟随系统；随时点击顶栏图标即可切换深色与浅色。',
+          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Appearance follows your system when the page opens or the system theme changes. Click the header icon anytime to switch between light and dark.',
         ],
         [
           '点击顶栏搜索，或按 ⌘ K / Ctrl K，跳转到页面、已保存公司、核查报告和材料。键入时只筛选当前工作区，不发送模型请求；用方向键选择、Enter 打开、Esc 关闭。列表搜索可用 Esc 清除；页面动画遵循系统的减少动态效果设置。',

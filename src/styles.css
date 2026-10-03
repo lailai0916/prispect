@@ -468,8 +468,7 @@ pre {
   font-size: 13px;
 }
 .language-button:hover,
-.theme-button:hover,
-.theme-button[data-popup-open] {
+.theme-button:hover {
   border-color: var(--line);
   background: var(--hover);
   color: var(--ink);

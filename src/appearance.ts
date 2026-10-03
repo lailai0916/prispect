@@ -1,15 +1,10 @@
 import type { Locale } from './format';
 
-export type ThemePreference = 'system' | 'light' | 'dark';
-export const THEME_STORAGE_KEY = 'cashlens-theme';
+export type Theme = 'light' | 'dark';
 export const LOCALE_STORAGE_KEY = 'cashlens-locale';
 
-export function themePreference(value: string | null): ThemePreference {
-  return value === 'light' || value === 'dark' ? value : 'system';
-}
-
-export function resolveTheme(preference: ThemePreference, systemDark: boolean): 'light' | 'dark' {
-  return preference === 'system' ? (systemDark ? 'dark' : 'light') : preference;
+export function systemTheme(systemDark: boolean): Theme {
+  return systemDark ? 'dark' : 'light';
 }
 
 export function readPreference(key: string): string | null {
@@ -32,11 +27,9 @@ export function storedLocale(): Locale {
   return readPreference(LOCALE_STORAGE_KEY) === 'en' ? 'en' : 'zh-Hans';
 }
 
-export function applyTheme(preference: ThemePreference, systemDark: boolean): void {
-  const resolved = resolveTheme(preference, systemDark);
-  document.documentElement.dataset.theme = resolved;
-  document.documentElement.dataset.themePreference = preference;
+export function applyTheme(theme: Theme): void {
+  document.documentElement.dataset.theme = theme;
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', resolved === 'dark' ? '#151518' : '#ffffff');
+    ?.setAttribute('content', theme === 'dark' ? '#151518' : '#ffffff');
 }
