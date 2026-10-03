@@ -189,7 +189,12 @@ function render(element: ReactElement, locale: 'zh-Hans' | 'en') {
   return load(renderToStaticMarkup(createElement(AppContext.Provider, { value }, element)));
 }
 
-function renderBoth(t: TestContext, run: CompanyResearchRun, locale: 'zh-Hans' | 'en' = 'zh-Hans') {
+function renderBoth(
+  t: TestContext,
+  run: CompanyResearchRun,
+  locale: 'zh-Hans' | 'en' = 'zh-Hans',
+  page = 'overview'
+) {
   // The Lite reading seam is owner-checked just as its API response is; no global
   // record or production account is installed for these rendering tests.
   t.mock.method(companyRunCache, 'read', (reader: string, id: string) =>
@@ -207,7 +212,7 @@ function renderBoth(t: TestContext, run: CompanyResearchRun, locale: 'zh-Hans' |
           CompanyRecordsProvider,
           null,
           createElement(LiteResearchPage, {
-            query: new URLSearchParams({ run: run.id, experience: 'lite' }),
+            query: new URLSearchParams({ run: run.id, experience: 'lite', page, basis: 'parent' }),
           })
         ),
         locale
@@ -422,4 +427,47 @@ test('saved follow-ups retain their run, annual scope and report generation, and
   assert.equal($lite('.lite-question-list button').length, 2);
   assert.equal($lite('.lite-question-list button:disabled').length, 2);
   assert.match($lite('.lite-question-list').text(), /QUESTION_1/);
+});
+
+test('Lite has four independent reading pages while retaining the full saved report for printing', (t) => {
+  const run = fixture();
+  for (const locale of ['zh-Hans', 'en'] as const) {
+    for (const page of ['overview', 'numbers', 'sources', 'questions']) {
+      const [, lite] = renderBoth(t, run, locale, page);
+      const $ = lite[1];
+      assert.equal($('.lite-research').attr('data-reading-page'), page);
+      assert.equal($('[data-lite-page]').length, 4);
+      assert.equal($('[data-lite-page]:not([hidden])').length, 1);
+      assert.equal($('[data-lite-page]:not([hidden])').attr('data-lite-page'), page);
+      assert.equal($('[data-lite-page]:not([hidden]) [data-lite-page-title]').length, 1);
+      assert.equal($('.lite-chapter-nav a[aria-current="page"]').length, 1);
+      for (const marker of [
+        'SUMMARY_SENTINEL',
+        'DIMENSION_cash',
+        'ACTION_4',
+        'CHANGE_2',
+        'GAP_SENTINEL',
+      ])
+        assert.ok($.root().text().includes(marker), `Page ${page} discarded printable ${marker}`);
+      assert.equal($('#lite-sources .lite-report-detail').length, 1);
+      assert.equal($('#lite-judgment .lite-report-detail').length, 0);
+      assert.ok(hasSavedOriginal($));
+      for (const link of $('.lite-chapter-nav > div a').toArray()) {
+        const url = new URL($(link).attr('href')!, 'https://prispect.com');
+        assert.equal(url.searchParams.get('run'), run.id);
+        assert.equal(url.searchParams.get('basis'), 'parent');
+        assert.ok(
+          ['overview', 'numbers', 'sources', 'questions'].includes(url.searchParams.get('page')!)
+        );
+        assert.equal(url.hash, '');
+      }
+      for (const link of $('.lite-report-evidence-route').toArray()) {
+        const url = new URL($(link).attr('href')!, 'https://prispect.com');
+        assert.equal(url.searchParams.get('run'), run.id);
+        assert.equal(url.searchParams.get('page'), 'sources');
+        assert.equal(url.searchParams.get('generation'), generatedAt);
+        assert.ok(url.searchParams.get('claim'));
+      }
+    }
+  }
 });

@@ -3,15 +3,16 @@ import { ArrowRight, ArrowUpRight, FileText, Layers, MessageCircle, ScanLine } f
 import { contextFen, contextYuan } from '../../shared/company-analysis';
 import { landingExample } from '../cinematic/landing-content';
 import { useApp } from '../context';
+import { liteAmountDisplay, liteAmountScale } from './lite-amount-display';
 import './showcase-signal-stage.css';
 
 type Channel = 'finance' | 'public' | 'reputation' | 'original';
 const channels: Channel[] = ['finance', 'public', 'reputation', 'original'];
 const colors = {
-  finance: [206, 255, 112],
-  public: [147, 178, 255],
-  reputation: [255, 170, 214],
-  original: [125, 239, 228],
+  finance: [239, 199, 139],
+  public: [246, 218, 178],
+  reputation: [214, 188, 155],
+  original: [255, 221, 169],
 } as const;
 const profitFen = contextFen(landingExample.summary.profit);
 const cashFen = contextFen(landingExample.summary.cash);
@@ -21,11 +22,6 @@ const difference = contextYuan(profitFen - cashFen);
 // Floating point is used only for the length of the illustrative same-scale bars.
 const cashWidth =
   (Number(landingExample.summary.cash) / Number(landingExample.summary.profit)) * 100;
-
-function exactAmount(value: string, english: boolean) {
-  const [whole, fraction = '00'] = value.split('.');
-  return `${new Intl.NumberFormat(english ? 'en-US' : 'zh-CN').format(BigInt(whole))}.${fraction.padEnd(2, '0')}`;
-}
 
 /** Decorative local geometry, without any research or financial-data requests. */
 function SignalField({ channel }: { channel: Channel }) {
@@ -116,6 +112,7 @@ function SignalField({ channel }: { channel: Channel }) {
       frame = requestAnimationFrame(tick);
     };
     const reconcile = () => {
+      if (disposed) return;
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       previousTime = 0;
@@ -241,7 +238,13 @@ export function ShowcaseSignalStage({
   const [scene, setScene] = useState<number>(initialScene);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const id = useId();
-  const english = locale === 'en';
+  const scale = liteAmountScale(
+    [landingExample.summary.profit, landingExample.summary.cash, difference],
+    locale
+  );
+  const profitDisplay = liteAmountDisplay(landingExample.summary.profit, locale, { scale })!;
+  const cashDisplay = liteAmountDisplay(landingExample.summary.cash, locale, { scale })!;
+  const differenceDisplay = liteAmountDisplay(difference, locale, { scale })!;
   const tabs = [
     { id: 'finance' as const, label: t('财务', 'Finance'), icon: Layers },
     { id: 'public' as const, label: t('公开事项', 'Public records'), icon: ScanLine },
@@ -346,9 +349,8 @@ export function ShowcaseSignalStage({
                   <dl className="signal-finance-facts">
                     <div>
                       <dt>{t('合并净利润', 'Consolidated net profit')}</dt>
-                      <dd>
-                        <span>{exactAmount(landingExample.summary.profit, english)}</span>
-                        <small>CNY</small>
+                      <dd title={profitDisplay.exactText} aria-label={profitDisplay.exactText}>
+                        <span>{profitDisplay.text}</span>
                       </dd>
                       <span className="signal-fact-source">
                         {t('原件第 190 页', 'Original · page 190')}
@@ -356,9 +358,8 @@ export function ShowcaseSignalStage({
                     </div>
                     <div>
                       <dt>{t('经营现金净额', 'Operating cash flow')}</dt>
-                      <dd>
-                        <span>{exactAmount(landingExample.summary.cash, english)}</span>
-                        <small>CNY</small>
+                      <dd title={cashDisplay.exactText} aria-label={cashDisplay.exactText}>
+                        <span>{cashDisplay.text}</span>
                       </dd>
                       <span className="signal-fact-source">
                         {t('原件第 191 页', 'Original · page 191')}
@@ -398,7 +399,7 @@ export function ShowcaseSignalStage({
                         <div className="signal-comparison" aria-hidden="true">
                           <div className="signal-bar-ruler">
                             <span>0</span>
-                            <span>{exactAmount(landingExample.summary.profit, english)} CNY</span>
+                            <span title={profitDisplay.exactText}>{profitDisplay.text}</span>
                           </div>
                           <div className="signal-bar-row">
                             <span>{t('利润', 'Profit')}</span>
@@ -436,8 +437,12 @@ export function ShowcaseSignalStage({
                           {t('两项指标的金额差', 'Difference between the two amounts')}
                         </p>
                         <p className="signal-difference-amount">
-                          <span>{exactAmount(difference, english)}</span>
-                          <small>CNY</small>
+                          <span
+                            title={differenceDisplay.exactText}
+                            aria-label={differenceDisplay.exactText}
+                          >
+                            {differenceDisplay.text}
+                          </span>
                         </p>
                         <p className="signal-panel-note">
                           {t(
@@ -449,6 +454,33 @@ export function ShowcaseSignalStage({
                     )}
                     {scene === 2 && <OriginalPanel onOpenSource={onOpenSource} />}
                   </div>
+                  <details className="signal-exact-data">
+                    <summary>{t('核对精确金额', 'Check the exact amounts')}</summary>
+                    <dl>
+                      {[
+                        [
+                          t(
+                            '合并净利润 · 原件第 190 页',
+                            'Consolidated profit · original page 190'
+                          ),
+                          profitDisplay.exactText,
+                        ],
+                        [
+                          t('经营现金净额 · 原件第 191 页', 'Operating cash · original page 191'),
+                          cashDisplay.exactText,
+                        ],
+                        [
+                          t('上述两项相减 · 计算值', 'Difference of the two amounts · calculated'),
+                          differenceDisplay.exactText,
+                        ],
+                      ].map(([label, amount]) => (
+                        <div key={label}>
+                          <dt>{label}</dt>
+                          <dd>{amount}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </details>
                   {scene !== 2 && (
                     <button className="signal-source-action" type="button" onClick={onOpenSource}>
                       <span>{t('打开两项数字的原件', 'Open the original source')}</span>

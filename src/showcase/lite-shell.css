@@ -1,0 +1,248 @@
+.app-shell.lite-workspace-shell {
+  --site-header-height: 64px;
+  --showcase-paper: var(--lite-canvas, #100f0d);
+  --showcase-ink: var(--lite-ink, #f5efe5);
+  --showcase-muted: var(--lite-muted, #b5a795);
+  --showcase-line: var(--lite-line, #3b3227);
+  color: var(--lite-ink, #f5efe5);
+  background: var(--lite-canvas, #100f0d);
+  min-height: 100svh;
+  color-scheme: dark;
+}
+
+.app-shell.lite-workspace-shell > .site-header {
+  position: sticky;
+  top: 0;
+  z-index: 80;
+  min-height: 64px;
+  padding: 10px clamp(18px, 3vw, 48px);
+  gap: 20px;
+  color: var(--lite-ink, #f5efe5);
+  background: var(--lite-header, #100f0ded);
+  border-bottom: 1px solid var(--lite-line, #3b3227);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.app-shell.lite-workspace-shell > .site-header .brand {
+  color: var(--lite-ink, #f5efe5);
+}
+
+.app-shell.lite-workspace-shell > .site-header .brand-name > span {
+  color: var(--lite-muted, #b5a795);
+}
+
+.app-shell.lite-workspace-shell > .site-header .navigation {
+  margin-left: auto;
+  gap: 22px;
+  font-size: 13px;
+}
+
+.app-shell.lite-workspace-shell > .site-header .navigation > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--lite-muted, #b5a795);
+  text-decoration: none;
+}
+
+.app-shell.lite-workspace-shell > .site-header .navigation > a:is(:hover, [aria-current]) {
+  color: var(--lite-primary, #efc78b);
+}
+
+.app-shell.lite-workspace-shell > .site-header .header-actions {
+  min-width: 0;
+  gap: 12px;
+}
+
+.app-shell.lite-workspace-shell > .site-header :is(.language-button, .theme-button, .icon-button) {
+  color: var(--lite-muted, #b5a795);
+  background: transparent;
+  border-color: transparent;
+}
+
+.app-shell.lite-workspace-shell
+  > .site-header
+  :is(.language-button, .theme-button, .icon-button):hover {
+  color: var(--lite-ink, #f5efe5);
+  background: var(--lite-hover, #efc78b12);
+}
+
+.app-shell.lite-workspace-shell > .site-header .experience-switch {
+  padding: 3px;
+  gap: 2px;
+  border-color: var(--lite-line, #3b3227);
+  background: var(--lite-surface, #201c17);
+  border-radius: 10px;
+}
+
+.app-shell.lite-workspace-shell > .site-header .experience-switch > a {
+  border-radius: 7px;
+  padding: 6px 11px;
+  color: var(--lite-muted, #b5a795);
+  line-height: 1.4;
+}
+
+.app-shell.lite-workspace-shell > .site-header .experience-switch > a[aria-current] {
+  background: var(--lite-primary, #efc78b);
+  color: var(--lite-primary-ink, #261b0d);
+  box-shadow: 0 0 18px #efc78b1a;
+}
+
+.app-shell.lite-workspace-shell > .site-header :is(.login-link, .account-link) {
+  color: var(--lite-muted, #b5a795);
+  min-height: 44px;
+  align-items: center;
+}
+
+.app-shell.lite-workspace-shell > .site-header :is(a, button):focus-visible {
+  outline: 2px solid var(--lite-primary, #efc78b);
+  outline-offset: 3px;
+}
+
+.app-shell.lite-workspace-shell :is(.main-home, .main-app) {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  background: transparent;
+  color: var(--lite-ink, #f5efe5);
+  min-width: 0;
+}
+
+.app-shell.lite-workspace-shell > .site-footer {
+  min-width: 0;
+  width: 100%;
+  padding: 15px clamp(18px, 3vw, 48px);
+  color: var(--lite-muted, #b5a795);
+  background: var(--lite-canvas, #100f0d);
+  border-top: 1px solid var(--lite-line, #3b3227);
+  font-size: 12px;
+}
+
+.app-shell.lite-workspace-shell > .site-footer a {
+  color: var(--lite-muted, #b5a795);
+}
+
+.app-shell.lite-workspace-shell .company-assistant-trigger-label {
+  color: var(--lite-ink, #f5efe5);
+  border-color: var(--lite-line, #3b3227);
+  background: var(--lite-surface, #201c17);
+}
+
+.app-shell.lite-workspace-shell .company-assistant-panel {
+  --paper: var(--lite-panel, #191713);
+  --paper-soft: var(--lite-surface, #201c17);
+  --ink: var(--lite-ink, #f5efe5);
+  --muted: var(--lite-muted, #b5a795);
+  --line: var(--lite-line, #3b3227);
+  --line-soft: var(--lite-line, #3b3227);
+  --accent: var(--lite-primary, #efc78b);
+  --focus-ring: #efc78b33;
+  --selection: #efc78b33;
+  --selection-text: var(--lite-ink, #f5efe5);
+  border-color: var(--lite-line, #3b3227);
+  background: var(--lite-panel, #191713);
+  color: var(--lite-ink, #f5efe5);
+}
+
+body:has(.app-shell.lite-workspace-shell) :is(.action-menu, .tooltip-popup) {
+  --paper: #191713;
+  --paper-soft: #201c17;
+  --ink: #f5efe5;
+  --muted: #b5a795;
+  --line: #3b3227;
+  --line-soft: #3b3227;
+  --accent: #efc78b;
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+@media (max-width: 760px) {
+  .app-shell.lite-workspace-shell {
+    --site-header-height: 60px;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header {
+    min-height: 60px;
+    gap: 12px;
+    padding: 8px 18px;
+  }
+
+  .app-shell.lite-workspace-shell
+    > .site-header
+    :is(.navigation, .command-trigger, .registration-link) {
+    display: none;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .header-actions {
+    margin-left: auto;
+    gap: 8px;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .brand-name > span {
+    display: none;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .experience-switch > a {
+    padding: 6px 8px;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .account-link > span {
+    max-width: 85px;
+  }
+}
+
+@media (max-width: 440px) {
+  .app-shell.lite-workspace-shell > .site-header {
+    padding: 8px 14px;
+    gap: 8px;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .header-actions {
+    gap: 6px;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .theme-button {
+    display: none;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .experience-switch > a {
+    padding: 6px 7px;
+    font-size: 12px;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header .account-link > span {
+    display: none;
+  }
+
+  .app-shell.lite-workspace-shell > .site-header :is(.login-link, .account-link) {
+    font-size: 12px;
+  }
+
+  .app-shell.lite-workspace-shell .company-assistant-trigger[data-experience='lite'] {
+    border-top-color: var(--lite-line, #3b3227);
+    background: var(--lite-canvas, #100f0d);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .app-shell.lite-workspace-shell > .site-header :is(a, button) {
+    transition:
+      color 160ms ease,
+      background-color 160ms ease,
+      border-color 160ms ease;
+  }
+}
+
+@media print {
+  .app-shell.lite-workspace-shell {
+    color: #111;
+    background: #fff;
+    color-scheme: light;
+  }
+
+  .app-shell.lite-workspace-shell > :is(.site-header, .site-footer) {
+    display: none;
+  }
+}

@@ -1,4 +1,12 @@
-import { useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import {
   ArrowDown,
   ArrowLeft,
@@ -16,7 +24,11 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 import type { CompanyResearchRun } from '../../shared/contracts';
 import type { AssessmentJudgment } from '../../shared/company-assessment';
-import { contextFieldLabels, type CompanyReadingBasis } from '../../shared/company-analysis';
+import {
+  contextFen,
+  contextFieldLabels,
+  type CompanyReadingBasis,
+} from '../../shared/company-analysis';
 import {
   deriveCompanyFinancialOverview,
   companyOverviewEvidencePeriods,
@@ -48,21 +60,27 @@ import {
 } from '../company-run-cache';
 import { CompanyContextEvidence } from '../CompanyContextViews';
 import { CompanyAssessmentEvidence } from '../CompanyAssessment';
-import { date, money } from '../format';
+import { date } from '../format';
 import './showcase.css';
 import './lite-research.css';
 import { LiteMetricChips } from './LiteMetricChips';
-import { LiteEvidenceExplorer } from './LiteEvidenceExplorer';
+import { LiteEvidenceExplorer, resolveLiteEvidenceSelection } from './LiteEvidenceExplorer';
 import './lite-research-v4.css';
+import './lite-research-v5.css';
+import { liteAmountDisplay, liteAmountScale } from './lite-amount-display';
+import { liteSummaryRepeatsHeadline } from './lite-report-copy';
+import {
+  liteReportPages,
+  litePageForAnchor,
+  liteReadingBasis,
+  liteReportPageHref,
+  resolveLiteReportPage,
+  type LiteReportPage,
+} from './lite-report-pages';
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const chapters = [
-  ['lite-judgment', '核心判断', 'The judgment'],
-  ['lite-numbers', '关键数字', 'The numbers'],
-  ['lite-sources', '线索调查', 'Follow the evidence'],
-  ['lite-questions', '接下来问什么', 'The next question'],
-] as const;
+const chapters = liteReportPages.map((page) => [page.anchor, ...page.label] as const);
 const activeRun = (run: CompanyResearchRun) =>
   run.status === 'queued' ||
   run.status === 'running' ||
@@ -80,7 +98,7 @@ const stageLabels = {
 
 /** Saved, owner-scoped public reading only. GET never starts another research job. */
 export function LiteResearchPage({ query }: { query: URLSearchParams }) {
-  const { user, locale, t, historyNavigation } = useApp();
+  const { user, locale, t, historyNavigation, navigate } = useApp();
   const { isCurrentOwner, removeLocal } = useCompanyRecords();
   const { publish } = useContext(CompanyAssistantContext);
   const owner = user?.id || null;
@@ -99,8 +117,29 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
   const [verified, setVerified] = useState<string | null>(null);
   const [version, setVersion] = useState(0);
   const [pollPaused, setPollPaused] = useState<string | null>(null);
-  const [basis, setBasis] = useState<CompanyReadingBasis>('consolidated');
-  const [chapter, setChapter] = useState<string>('lite-judgment');
+  const [basis, setBasis] = useState<CompanyReadingBasis>(() => liteReadingBasis(query));
+  const [legacyHash, setLegacyHash] = useState(() =>
+    typeof window === 'undefined' ? '' : window.location.hash
+  );
+  const requestedPage = resolveLiteReportPage(query, legacyHash);
+  const [readingPage, setReadingPage] = useState<LiteReportPage>(requestedPage);
+  const pageMotion = useRef<gsap.core.Tween | null>(null);
+  const pageHasMounted = useRef(false);
+  const motionPreferenceChanged = useRef(false);
+  const pageNavigation = useRef({ requestedPage, readingPage });
+  pageNavigation.current = { requestedPage, readingPage };
+  const pageLink = (page: LiteReportPage) => liteReportPageHref(query, page, { basis });
+  const readingQuery = query.toString();
+  const changeBasis = useCallback(
+    (next: CompanyReadingBasis) => {
+      setBasis(next);
+      navigate(
+        liteReportPageHref(new URLSearchParams(readingQuery), requestedPage, { basis: next }),
+        { replace: true }
+      );
+    },
+    [navigate, readingQuery, requestedPage]
+  );
   const [inspected, setInspected] = useState<{
     scope: string;
     generatedAt: string;
@@ -110,8 +149,11 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
   const root = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    setBasis('consolidated');
-    setChapter('lite-judgment');
+    setBasis(liteReadingBasis(query));
+    setReadingPage(
+      resolveLiteReportPage(query, typeof window === 'undefined' ? '' : window.location.hash)
+    );
+    pageHasMounted.current = false;
     setInspected(null);
   }, [scope]);
 
@@ -205,37 +247,101 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
   }, [owner, id, scope]);
 
   useEffect(() => {
-    if (owner && run && isCurrentOwner()) publish({ owner, run, basis, changeBasis: setBasis });
-  }, [owner, run, basis, publish, isCurrentOwner]);
+    if (owner && run && isCurrentOwner()) publish({ owner, run, basis, changeBasis });
+  }, [owner, run, basis, publish, isCurrentOwner, changeBasis]);
 
   useEffect(() => {
-    if (!run || !root.current || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) if (entry.isIntersecting) setChapter(entry.target.id);
-      },
-      { rootMargin: '-15% 0px -55% 0px' }
-    );
-    for (const [anchor] of chapters) {
-      const section = root.current.querySelector(`#${anchor}`);
-      if (section) observer.observe(section);
+    const syncHash = () => setLegacyHash(window.location.hash);
+    window.addEventListener('hashchange', syncHash);
+    window.addEventListener('popstate', syncHash);
+    window.addEventListener('prispect:routechange', syncHash);
+    return () => {
+      window.removeEventListener('hashchange', syncHash);
+      window.removeEventListener('popstate', syncHash);
+      window.removeEventListener('prispect:routechange', syncHash);
+    };
+  }, []);
+
+  useEffect(() => {
+    const oldPage = litePageForAnchor(legacyHash);
+    if (!oldPage || query.get('page') === oldPage) return;
+    // Upgrade a chapter bookmark in place; it remains the same owning run.
+    navigate(liteReportPageHref(query, oldPage, { basis }), { replace: true });
+  }, [legacyHash, query.get('page'), scope, navigate]);
+
+  useEffect(() => {
+    setBasis(liteReadingBasis(query));
+  }, [query.get('basis'), scope]);
+
+  useEffect(() => {
+    if (requestedPage === readingPage) return;
+    pageMotion.current?.kill();
+    const current = root.current?.querySelector<HTMLElement>(`[data-lite-page="${readingPage}"]`);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const commit = () => {
+      if (current) gsap.set(current, { clearProps: 'opacity,transform' });
+      setInspected(null);
+      setReadingPage(requestedPage);
+    };
+    if (!current || reduced || historyNavigation) commit();
+    else
+      pageMotion.current = gsap.to(current, {
+        opacity: 0,
+        y: -12,
+        duration: 0.14,
+        ease: 'power2.in',
+        onComplete: commit,
+      });
+    return () => {
+      pageMotion.current?.kill();
+      if (current) gsap.set(current, { clearProps: 'opacity,transform' });
+    };
+  }, [requestedPage, readingPage, scope, historyNavigation]);
+
+  useEffect(() => {
+    if (!run) return;
+    const target = root.current?.querySelector<HTMLElement>(`[data-lite-page="${readingPage}"]`);
+    if (!target) return;
+    const first = !pageHasMounted.current;
+    pageHasMounted.current = true;
+    const heading = target.querySelector<HTMLElement>('[data-lite-page-title]');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!first || query.has('page') || litePageForAnchor(legacyHash)) {
+      heading?.focus({ preventScroll: true });
+      if (!historyNavigation && !motionPreferenceChanged.current)
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      motionPreferenceChanged.current = false;
     }
-    return () => observer.disconnect();
-  }, [run?.id]);
+    if (!reduced) {
+      pageMotion.current = gsap.fromTo(
+        target,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.34, ease: 'power3.out', clearProps: 'opacity,transform' }
+      );
+    }
+    return () => {
+      pageMotion.current?.kill();
+      gsap.set(target, { clearProps: 'opacity,transform' });
+    };
+  }, [readingPage, run?.id, scope]);
 
   useEffect(() => {
-    if (!run || historyNavigation) return;
-    const anchor = location.hash.slice(1);
-    if (!chapters.some(([id]) => id === anchor)) return;
-    const frame = requestAnimationFrame(() => {
-      const target = root.current?.querySelector<HTMLElement>(`#${anchor}`);
-      if (!target) return;
-      setChapter(anchor);
-      target.scrollIntoView({ block: 'start', behavior: 'auto' });
-      target.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [run?.id, scope, historyNavigation]);
+    const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const finish = () => {
+      if (!preference.matches) return;
+      pageMotion.current?.kill();
+      const panels = root.current?.querySelectorAll<HTMLElement>('[data-lite-page]');
+      if (panels) gsap.set(panels, { clearProps: 'opacity,transform' });
+      const pending = pageNavigation.current;
+      if (pending.requestedPage !== pending.readingPage) {
+        motionPreferenceChanged.current = true;
+        setInspected(null);
+        setReadingPage(pending.requestedPage);
+      }
+    };
+    preference.addEventListener('change', finish);
+    return () => preference.removeEventListener('change', finish);
+  }, []);
 
   useEffect(() => {
     if (!run) return;
@@ -271,64 +377,33 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
 
   useGSAP(
     () => {
-      if (!run || run.informationGap || !researchSupported(run)) return;
+      if (!root.current || !run) return;
       const media = gsap.matchMedia();
       media.add('(prefers-reduced-motion: no-preference)', () => {
-        gsap.from('.lite-title-glyph', {
-          yPercent: 118,
-          rotation: (index) => (index % 2 ? 6 : -6),
-          duration: 0.7,
-          stagger: { amount: 0.28 },
-          ease: 'power3.out',
-        });
-        gsap.from('.lite-grade-mark', {
-          opacity: 0,
-          scale: 0.72,
-          rotation: -8,
-          duration: 0.9,
-          ease: 'power3.out',
-          delay: 0.12,
-        });
-        gsap.from('.lite-dossier > div', {
-          x: 18,
-          opacity: 0,
-          duration: 0.65,
-          stagger: 0.07,
-          delay: 0.2,
-          ease: 'power3.out',
-        });
-        for (const section of gsap.utils.toArray<HTMLElement>(
-          '.lite-chapter:not(:first-of-type)'
-        )) {
-          const reveals = section.querySelectorAll<HTMLElement>('.lite-reveal');
-          gsap.from(reveals, {
-            y: 42,
-            opacity: 0,
-            duration: 0.72,
-            stagger: 0.1,
+        const active = root.current?.querySelector<HTMLElement>(
+          `[data-lite-page="${readingPage}"]`
+        );
+        if (!active) return;
+        if (readingPage === 'overview')
+          gsap.from(active.querySelectorAll('.lite-title-glyph'), {
+            yPercent: 110,
+            rotation: 4,
+            duration: 0.5,
+            stagger: 0.018,
             ease: 'power3.out',
-            scrollTrigger: { trigger: section, start: 'top 84%', once: true },
+            clearProps: 'transform',
           });
-        }
-        gsap.from('.lite-report-highlight', {
-          y: 28,
-          opacity: 0,
-          duration: 0.65,
-          stagger: 0.1,
-          scrollTrigger: { trigger: '.lite-report-highlights', start: 'top 90%', once: true },
+        gsap.from(active.querySelectorAll('.lite-reveal'), {
+          y: 12,
+          duration: 0.4,
+          stagger: 0.045,
+          ease: 'power3.out',
+          clearProps: 'transform',
         });
-        for (const number of gsap.utils.toArray<HTMLElement>('.lite-number dd strong')) {
-          gsap.from(number, {
-            clipPath: 'inset(0 100% 0 0)',
-            duration: 0.72,
-            ease: 'power3.out',
-            scrollTrigger: { trigger: number, start: 'top 92%', once: true },
-          });
-        }
       });
       return () => media.revert();
     },
-    { scope: root, dependencies: [run?.id, locale], revertOnUpdate: true }
+    { scope: root, dependencies: [run?.id, locale, readingPage], revertOnUpdate: true }
   );
 
   const overview = useMemo(
@@ -451,6 +526,38 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
   const annual = overview.annual;
   const profitField: ContextAmountField = basis === 'parent' ? 'parentProfit' : 'netProfit';
   const fields: ContextAmountField[] = ['revenue', profitField, 'ocf', 'cash'];
+  const cashComparison = (() => {
+    if (overview.state !== 'available' || !annual) return null;
+    const inputs = [profitField, 'ocf'] as const;
+    const values = inputs.map((field) => contextFen(annual.amounts[field]));
+    if (values.some((value) => value === null)) return null;
+    const amounts = values as bigint[];
+    const absolute = (value: bigint) => (value < 0n ? -value : value);
+    const maximum = amounts.reduce(
+      (max, value) => (absolute(value) > max ? absolute(value) : max),
+      0n
+    );
+    const signed = amounts.some((value) => value < 0n);
+    const scale = liteAmountScale(
+      inputs.map((field) => annual.amounts[field]),
+      locale
+    );
+    return {
+      signed,
+      rows: inputs.map((field, index) => {
+        const value = amounts[index];
+        // Only the bounded layout percentage becomes a Number; CNY never does.
+        const ratio = maximum === 0n ? 0 : Number((absolute(value) * 1000n) / maximum) / 10;
+        const width = signed ? ratio / 2 : ratio;
+        return {
+          field,
+          display: liteAmountDisplay(annual.amounts[field], locale, { compact: true, scale })!,
+          width,
+          start: signed ? (value < 0n ? 50 - width : 50) : 0,
+        };
+      }),
+    };
+  })();
   const ruleLead =
     overview.cards.find((card) => card.status === 'risk') ||
     overview.cards.find((card) => card.status === 'watch') ||
@@ -467,6 +574,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
     run.identity?.shortName ||
     run.input.securityCode;
   const summary = reportDocument.summary;
+  const repeatedHeadline = liteSummaryRepeatsHeadline(headline, summary?.text[language]);
   const hasNumbers =
     overview.state === 'available' &&
     annual !== null &&
@@ -678,6 +786,20 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
     if (report) setInspected({ scope, generatedAt: report.generatedAt, judgment, title });
   };
   const reportLinks = deriveCompanyReportLinks(reportDocument);
+  const evidenceSelection =
+    reportDocument.binding && query.get('generation') && (query.get('claim') || query.get('source'))
+      ? {
+          binding: {
+            ...reportDocument.binding,
+            reportGeneratedAt: query.get('generation'),
+          },
+          paragraphId: query.get('claim') || undefined,
+          sourceId: query.get('source') || undefined,
+        }
+      : undefined;
+  const unresolvedEvidenceLink =
+    Boolean(query.get('claim') || query.get('source')) &&
+    !resolveLiteEvidenceSelection(reportLinks, evidenceSelection);
   const printCitations = (judgment: AssessmentJudgment) => {
     const legal = new Set(reportLinks.sources.map((source) => source.id));
     const ids = [
@@ -696,7 +818,8 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
   const reportItems = (
     items: (AssessmentJudgment & { id: string })[],
     title: string,
-    className = ''
+    className = '',
+    compact = false
   ) => (
     <ol className={`lite-report-points ${className}`}>
       {items.map((item, index) => (
@@ -710,8 +833,34 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             <LiteMetricChips
               document={reportDocument}
               judgment={item}
+              maxVisible={compact ? 1 : undefined}
+              compact={compact}
+              sourcePageHref={
+                report && compact
+                  ? (source) =>
+                      liteReportPageHref(query, 'sources', {
+                        basis,
+                        claim: item.id,
+                        source,
+                        generation: report.generatedAt,
+                      })
+                  : undefined
+              }
               onInspect={report ? (judgment) => inspectJudgment(judgment, title) : undefined}
             />
+            {report && reportLinks.paragraphs.some((paragraph) => paragraph.id === item.id) && (
+              <a
+                className="lite-report-evidence lite-report-evidence-route"
+                href={liteReportPageHref(query, 'sources', {
+                  basis,
+                  claim: item.id,
+                  generation: report.generatedAt,
+                })}
+              >
+                {t('追溯这条判断', 'Trace this finding')}
+                <ArrowRight size={14} aria-hidden="true" />
+              </a>
+            )}
             {report && (item.metricIds.length > 0 || item.evidenceIds.length > 0) && (
               <button
                 type="button"
@@ -729,6 +878,19 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       ))}
     </ol>
   );
+  const overviewItems = (items: (AssessmentJudgment & { id: string })[], title: string) => (
+    <>
+      {reportItems(items.slice(0, 2), title, '', true)}
+      {items.length > 2 && (
+        <details className="lite-more-findings">
+          <summary>
+            {t(`还有 ${items.length - 2} 条，展开阅读`, `${items.length - 2} more — read all`)}
+          </summary>
+          {reportItems(items.slice(2), title, '', true)}
+        </details>
+      )}
+    </>
+  );
   const reportSections = [
     ['strengths', t('支撑判断的积极信息', 'What supports the judgment'), reportDocument.strengths],
     ['risks', t('需要注意的压力', 'Pressures to investigate'), reportDocument.risks],
@@ -743,21 +905,25 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
     .size;
   const chapterHeading = (index: number, heading: ReactNode, description: string) => (
     <header className="lite-chapter-heading lite-reveal">
+      <p className="lite-page-company">
+        {companyName} · {run.input.year}
+      </p>
       <p className="lite-kicker">
         <span>0{index + 1}</span>
         {t(chapters[index][1], chapters[index][2])}
       </p>
-      <h2>{heading}</h2>
+      <h2 data-lite-page-title tabIndex={-1}>
+        {heading}
+      </h2>
       <p>{description}</p>
     </header>
   );
   const stepLink = (index: number) => (
-    <nav className="lite-chapter-pager" aria-label={t('相邻章节', 'Adjacent chapters')}>
+    <nav className="lite-chapter-pager" aria-label={t('上一页和下一页', 'Previous and next pages')}>
       {index > 0 && (
         <a
           className="lite-next-chapter lite-previous-chapter"
-          href={`#${chapters[index - 1][0]}`}
-          onClick={() => setChapter(chapters[index - 1][0])}
+          href={pageLink(liteReportPages[index - 1].id)}
         >
           <ArrowLeft size={18} aria-hidden="true" />
           <span>
@@ -766,15 +932,11 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
         </a>
       )}
       {index < chapters.length - 1 && (
-        <a
-          className="lite-next-chapter"
-          href={`#${chapters[index + 1][0]}`}
-          onClick={() => setChapter(chapters[index + 1][0])}
-        >
+        <a className="lite-next-chapter" href={pageLink(liteReportPages[index + 1].id)}>
           <span>
             {t('接着看', 'Continue')} · {t(chapters[index + 1][1], chapters[index + 1][2])}
           </span>
-          <ArrowDown size={21} aria-hidden="true" />
+          <ArrowRight size={21} aria-hidden="true" />
         </a>
       )}
     </nav>
@@ -783,12 +945,17 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
   return (
     <article
       ref={root}
-      className="lite-research lite-research-v4"
+      className="lite-research lite-research-v4 lite-research-v5"
+      data-reading-page={readingPage}
+      data-run-id={run.id}
+      data-report-generation={report?.generatedAt || ''}
+      data-snapshot={reportDocument.snapshot}
+      data-basis={basis}
       data-locale={locale}
       data-testid="lite-research"
       key={scope}
     >
-      <nav className="lite-chapter-nav" aria-label={t('阅读章节', 'Reading chapters')}>
+      <nav className="lite-chapter-nav" aria-label={t('研究阅读页面', 'Research reading pages')}>
         <a
           className="lite-back"
           href="/#showcase-query"
@@ -801,10 +968,9 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           {chapters.map(([anchor, zh, en], index) => (
             <a
               key={anchor}
-              href={`#${anchor}`}
-              aria-label={t(`第 ${index + 1} 章：${zh}`, `Chapter ${index + 1}: ${en}`)}
-              aria-current={chapter === anchor ? 'location' : undefined}
-              onClick={() => setChapter(anchor)}
+              href={pageLink(liteReportPages[index].id)}
+              aria-label={t(`第 ${index + 1} 页：${zh}`, `Page ${index + 1}: ${en}`)}
+              aria-current={readingPage === liteReportPages[index].id ? 'page' : undefined}
             >
               <span>0{index + 1}</span>
               <span>{t(zh, en)}</span>
@@ -840,6 +1006,8 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <section
         className="lite-chapter lite-intro"
         id="lite-judgment"
+        data-lite-page="overview"
+        hidden={readingPage !== 'overview'}
         tabIndex={-1}
         aria-labelledby="lite-company-title"
       >
@@ -847,14 +1015,43 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           {run.input.year}
         </span>
         <div className="lite-intro-top">
-          <p className="lite-kicker">
-            PRISPECT / {run.input.securityCode} / {run.input.year}
-          </p>
-          <span>{t('一家公司，一次看清。', 'One company. A clearer view.')}</span>
+          <p className="lite-kicker">{t('核心判断', 'Overview')}</p>
+          {report && (
+            <aside
+              className="lite-grade"
+              aria-label={
+                provisional
+                  ? t('初步财务评级', 'Provisional financial grade')
+                  : t('财务评级', 'Financial grade')
+              }
+            >
+              <span>
+                {provisional
+                  ? t('初步财务评级', 'Provisional financial grade')
+                  : t('财务评级', 'Financial grade')}
+              </span>
+              <strong className="lite-grade-mark" data-grade={grade}>
+                {grade}
+              </strong>
+              <p>
+                {provisional
+                  ? t(
+                      `已覆盖 ${provisional.coveredDimensions} / ${provisional.totalDimensions} 个核心维度`,
+                      `${provisional.coveredDimensions} / ${provisional.totalDimensions} core dimensions covered`
+                    )
+                  : !report
+                    ? t('尚无可用财务评级', 'No financial grade is available yet')
+                    : grade === 'NR'
+                      ? t('综合评级暂未形成', 'An overall grade is not yet available')
+                      : t('所选年度 · 合并口径', 'Selected annual year · consolidated basis')}
+              </p>
+              {report && <small>{date(report.snapshotFetchedAt, locale)}</small>}
+            </aside>
+          )}
         </div>
         <div className="lite-intro-layout">
           <div className="lite-intro-copy">
-            <h1 id="lite-company-title" aria-label={companyName}>
+            <h1 id="lite-company-title" data-lite-page-title tabIndex={-1} aria-label={companyName}>
               <span className="lite-title-mask">
                 <span className="lite-title-reveal" aria-hidden="true">
                   {Array.from(companyName).map((glyph, index) => (
@@ -896,7 +1093,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 <strong>{readingStatus.label}</strong>
                 <p>{readingStatus.detail}</p>
                 {statusNumbersLink && (
-                  <a href="#lite-numbers">
+                  <a href={pageLink('numbers')}>
                     {t('先看已取得的数字', 'Check the acquired figures first')}
                     <ArrowDown size={13} aria-hidden="true" />
                   </a>
@@ -921,9 +1118,9 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 </>
               )}
             </p>
-            <h2 className="lite-headline">{headline}</h2>
+            {!repeatedHeadline && <h2 className="lite-headline">{headline}</h2>}
             {summary ? (
-              <p className="lite-summary">
+              <p className={`lite-summary${repeatedHeadline ? ' lite-summary-primary' : ''}`}>
                 {summarySegments.map((segment, index) =>
                   segment.highlight ? (
                     <strong key={index}>{segment.text}</strong>
@@ -953,6 +1150,18 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 document={reportDocument}
                 judgment={reportDocument.summary}
                 maxVisible={3}
+                compact
+                sourcePageHref={
+                  report
+                    ? (source) =>
+                        liteReportPageHref(query, 'sources', {
+                          basis,
+                          claim: reportDocument.summary!.id,
+                          source,
+                          generation: report.generatedAt,
+                        })
+                    : undefined
+                }
                 onInspect={
                   report
                     ? (judgment) =>
@@ -965,7 +1174,17 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
               />
             )}
             <div className="lite-intro-actions">
-              <a href="#lite-sources">
+              <a
+                href={
+                  summary && report
+                    ? liteReportPageHref(query, 'sources', {
+                        basis,
+                        claim: summary.id,
+                        generation: report.generatedAt,
+                      })
+                    : pageLink('sources')
+                }
+              >
                 {t('跟着问题，找到依据', 'Follow a question to its evidence')}
                 <ArrowDown size={18} aria-hidden="true" />
               </a>
@@ -982,36 +1201,6 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
               )}
             </div>
           </div>
-          <aside
-            className="lite-grade"
-            aria-label={
-              provisional
-                ? t('初步财务评级', 'Provisional financial grade')
-                : t('财务评级', 'Financial grade')
-            }
-          >
-            <span>
-              {provisional
-                ? t('初步财务评级', 'Provisional financial grade')
-                : t('财务评级', 'Financial grade')}
-            </span>
-            <strong className="lite-grade-mark" data-grade={grade}>
-              {grade}
-            </strong>
-            <p>
-              {provisional
-                ? t(
-                    `已覆盖 ${provisional.coveredDimensions} / ${provisional.totalDimensions} 个核心维度`,
-                    `${provisional.coveredDimensions} / ${provisional.totalDimensions} core dimensions covered`
-                  )
-                : !report
-                  ? t('尚无可用财务评级', 'No financial grade is available yet')
-                  : grade === 'NR'
-                    ? t('综合评级暂未形成', 'An overall grade is not yet available')
-                    : t('所选年度 · 合并口径', 'Selected annual year · consolidated basis')}
-            </p>
-            {report && <small>{date(report.snapshotFetchedAt, locale)}</small>}
-          </aside>
         </div>
         <div className="lite-report-highlights">
           <section className="lite-report-highlight" data-report-section="findings">
@@ -1020,12 +1209,15 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
               <h3>{t('已有依据的重点', 'Source-backed highlights')}</h3>
             </div>
             {reportDocument.findings.length > 0 ? (
-              reportItems(reportDocument.findings, t('已有依据的重点', 'Source-backed highlights'))
+              overviewItems(
+                reportDocument.findings,
+                t('已有依据的重点', 'Source-backed highlights')
+              )
             ) : (
               <p className="lite-report-empty">
                 {t(
-                  '尚未形成有依据的报告重点。已取得的数字可在下一节核对。',
-                  'Evidence-backed report findings are not available yet. Check acquired figures in the next chapter.'
+                  '尚未形成有依据的报告重点。已取得的数字可在数字页核对。',
+                  'Evidence-backed report findings are not available yet. Check acquired figures in the next page.'
                 )}
               </p>
             )}
@@ -1036,7 +1228,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
               <h3>{t('还待核查', 'What still needs checking')}</h3>
             </div>
             {reportDocument.unknowns.length > 0 ? (
-              reportItems(reportDocument.unknowns, t('还待核查', 'What still needs checking'))
+              overviewItems(reportDocument.unknowns, t('还待核查', 'What still needs checking'))
             ) : (
               <p className="lite-report-empty">
                 {t(
@@ -1047,135 +1239,6 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             )}
           </section>
         </div>
-        {(reportDocument.dimensions.length > 0 ||
-          reportSections.some(([, , items]) => items.length > 0)) && (
-          <details className="lite-report-detail" onToggle={() => ScrollTrigger.refresh()}>
-            <summary>
-              <span>
-                <small>{t('报告正文', 'THE FULL REPORT')}</small>
-                <strong>{t('展开完整分析', 'Read the complete analysis')}</strong>
-              </span>
-              <ChevronDown size={24} aria-hidden="true" />
-            </summary>
-            <div className="lite-report-body">
-              <div className="lite-report-version">
-                <span>
-                  {run.input.year} · {t('合并口径', 'Consolidated basis')}
-                </span>
-                {reportDocument.generatedAt && (
-                  <span>
-                    {t('报告生成', 'Report generated')} · {date(reportDocument.generatedAt, locale)}
-                  </span>
-                )}
-                {reportDocument.snapshotFetchedAt && (
-                  <span>
-                    {t('资料快照', 'Source snapshot')} ·{' '}
-                    {date(reportDocument.snapshotFetchedAt, locale)}
-                  </span>
-                )}
-              </div>
-              {reportDocument.dimensions.length > 0 && (
-                <section className="lite-report-section" data-report-section="dimensions">
-                  <h3>{t('逐个维度，理解判断', 'Understand each dimension')}</h3>
-                  <div className="lite-report-dimensions">
-                    {reportDocument.dimensions.map((dimension, index) => (
-                      <article key={dimension.id} data-status={dimension.status}>
-                        <span className="lite-report-dimension-index" aria-hidden="true">
-                          {String(index + 1).padStart(2, '0')}
-                        </span>
-                        <h4>{t(...dimension.label)}</h4>
-                        <p>{dimension.judgment.text[language]}</p>
-                        {printCitations(dimension.judgment)}
-                        <LiteMetricChips
-                          document={reportDocument}
-                          judgment={dimension.judgment}
-                          onInspect={
-                            report
-                              ? (judgment) => inspectJudgment(judgment, t(...dimension.label))
-                              : undefined
-                          }
-                        />
-                        {report &&
-                          (dimension.judgment.metricIds.length > 0 ||
-                            dimension.judgment.evidenceIds.length > 0) && (
-                            <button
-                              className="lite-report-evidence"
-                              type="button"
-                              onClick={() =>
-                                inspectJudgment(dimension.judgment, t(...dimension.label))
-                              }
-                              aria-label={t('查看依据：', 'Evidence for: ') + t(...dimension.label)}
-                            >
-                              <FileSearch size={14} aria-hidden="true" />
-                              {t('核对依据', 'Check the evidence')}
-                              <ArrowUpRight size={14} aria-hidden="true" />
-                            </button>
-                          )}
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-              {reportSections.map(
-                ([sectionId, title, items]) =>
-                  items.length > 0 && (
-                    <section
-                      className="lite-report-section"
-                      data-report-section={sectionId}
-                      key={sectionId}
-                    >
-                      <h3>{title}</h3>
-                      {reportItems(items, title)}
-                    </section>
-                  )
-              )}
-              {reportDocument.facts.length > 0 && (
-                <details
-                  className="lite-report-metrics"
-                  data-report-section="metrics"
-                  onToggle={() => ScrollTrigger.refresh()}
-                >
-                  <summary>
-                    <span>{t('核对完整指标与计算口径', 'Inspect all metrics and formulas')}</span>
-                    <ChevronDown size={18} aria-hidden="true" />
-                  </summary>
-                  <dl>
-                    {reportDocument.facts.map((metric) => (
-                      <div key={metric.id} data-status={metric.status}>
-                        <dt>{t(...metric.label)}</dt>
-                        <dd>{t(...metric.display)}</dd>
-                        {metric.unit === 'CNY' && metric.value !== null && (
-                          <p className="lite-report-exact">{metric.value} CNY</p>
-                        )}
-                        <p>{t(...metric.formula)}</p>
-                        {report && metric.status === 'available' && (
-                          <button
-                            className="lite-report-evidence"
-                            type="button"
-                            onClick={() =>
-                              inspectJudgment(
-                                {
-                                  text: { zh: metric.label[0], en: metric.label[1] },
-                                  metricIds: [metric.id],
-                                  evidenceIds: metric.evidenceIds,
-                                },
-                                t(...metric.label)
-                              )
-                            }
-                            aria-label={t('查看依据：', 'Evidence for: ') + t(...metric.label)}
-                          >
-                            <FileSearch size={14} aria-hidden="true" />
-                            {t('核对依据', 'Check the evidence')}
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </dl>
-                </details>
-              )}
-            </div>
-          </details>
-        )}
         <div className="lite-progress" aria-label={t('实际研究进度', 'Recorded research progress')}>
           <span>{t(...progress.label)}</span>
           <ol>
@@ -1204,6 +1267,8 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <section
         className="lite-chapter lite-number-chapter"
         id="lite-numbers"
+        data-lite-page="numbers"
+        hidden={readingPage !== 'numbers'}
         tabIndex={-1}
         aria-labelledby="lite-numbers-heading"
       >
@@ -1227,14 +1292,14 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             <button
               type="button"
               aria-pressed={basis === 'consolidated'}
-              onClick={() => setBasis('consolidated')}
+              onClick={() => changeBasis('consolidated')}
             >
               {t('合并净利润', 'Consolidated profit')}
             </button>
             <button
               type="button"
               aria-pressed={basis === 'parent'}
-              onClick={() => setBasis('parent')}
+              onClick={() => changeBasis('parent')}
             >
               {t('归母净利润', 'Attributable profit')}
             </button>
@@ -1243,6 +1308,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
         <dl className="lite-numbers-grid">
           {fields.map((field, index) => {
             const amount = annual?.amounts[field] ?? null;
+            const display = liteAmountDisplay(amount, locale, { compact: true });
             const original = run.context?.financials.find(
               (row) => row.annual && row.period === `${run.input.year}-12-31`
             );
@@ -1263,20 +1329,24 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                   <span>0{index + 1}</span>
                   {t(...contextFieldLabels[field])}
                 </dt>
-                <dd title={amount === null ? undefined : `${money(amount, locale, false)} CNY`}>
-                  <strong>{amount === null ? '—' : money(amount, locale)}</strong>
-                  {amount !== null && <span>{t('元', 'CNY')}</span>}
+                <dd title={display?.exactText} data-exact-yuan={display?.exactYuan}>
+                  <strong>{display?.text || '—'}</strong>
                 </dd>
-                <p>
-                  {amount === null
-                    ? conflict
+                {display ? (
+                  <details className="lite-number-precision">
+                    <summary>{t('查看精确金额', 'Read the exact amount')}</summary>
+                    <p>{display.exactText}</p>
+                  </details>
+                ) : (
+                  <p>
+                    {conflict
                       ? t('来源有差异，暂不采用', 'Source conflict; value withheld')
-                      : t('未取得或待核对', 'Unavailable or needs review')
-                    : money(amount, locale, false) + ' CNY'}
-                </p>
+                      : t('未取得或待核对', 'Unavailable or needs review')}
+                  </p>
+                )}
                 {original && overview.state === 'available' && (
                   <CompanyContextEvidence
-                    key={`${scope}:${run.context?.fetchedAt}:${field}`}
+                    key={`${scope}:${run.context?.fetchedAt}:${field}:${readingPage}`}
                     snapshot={run.context}
                     row={original}
                     fields={[field]}
@@ -1292,6 +1362,48 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             );
           })}
         </dl>
+        {cashComparison && (
+          <figure className="lite-cash-comparison lite-reveal">
+            <figcaption>
+              <h3>{t('利润与现金，放在一起看。', 'Compare profit with operating cash.')}</h3>
+              <p>
+                {run.input.year} · {t(...contextFieldLabels[profitField])} ·{' '}
+                {t('两条柱线使用同一金额刻度', 'Both bars use the same amount scale')}
+              </p>
+            </figcaption>
+            <div
+              className="lite-cash-comparison-plot"
+              role="img"
+              aria-label={cashComparison.rows
+                .map((row) => `${t(...contextFieldLabels[row.field])}: ${row.display.exactText}`)
+                .join('; ')}
+              data-signed={cashComparison.signed}
+            >
+              {cashComparison.rows.map((row) => (
+                <div className="lite-cash-comparison-row" key={row.field}>
+                  <span>{t(...contextFieldLabels[row.field])}</span>
+                  <div className="lite-cash-comparison-track">
+                    <span
+                      className="lite-cash-zero"
+                      style={{ left: cashComparison.signed ? '50%' : '0%' }}
+                    />
+                    <span
+                      className="lite-cash-bar"
+                      style={{ width: `${row.width}%`, left: `${row.start}%` }}
+                    />
+                  </div>
+                  <strong title={row.display.exactText}>{row.display.text}</strong>
+                </div>
+              ))}
+            </div>
+            <p className="lite-snapshot-note">
+              {t(
+                '精确金额与各自来源，可在上方展开核对。',
+                'Expand the cards above for exact amounts and their own sources.'
+              )}
+            </p>
+          </figure>
+        )}
         {overview.state === 'mismatch' && (
           <p className="lite-scope-notes" role="status">
             {t(
@@ -1304,7 +1416,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           <p className="lite-scope-notes" role="status">
             {t(
               `尚未取得 ${run.input.year} 年度数据；本节数值保持未知。`,
-              `${run.input.year} annual data has not been acquired; the values in this chapter remain unknown.`
+              `${run.input.year} annual data has not been acquired; the values on this page remain unknown.`
             )}
           </p>
         )}
@@ -1319,7 +1431,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 <p>{t(...card.detail)}</p>
                 {row && (
                   <CompanyContextEvidence
-                    key={`${scope}:${run.context?.fetchedAt}:${card.id}`}
+                    key={`${scope}:${run.context?.fetchedAt}:${card.id}:${readingPage}`}
                     snapshot={run.context}
                     row={row}
                     periods={rows}
@@ -1334,7 +1446,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           })}
         </div>
         <p className="lite-snapshot-note">
-          {t('本节资料快照', 'Data snapshot for this chapter')} ·{' '}
+          {t('本页资料快照', 'Data snapshot on this page')} ·{' '}
           {run.context ? date(run.context.fetchedAt, locale) : t('尚未取得', 'Not yet acquired')}
         </p>
         {stepLink(1)}
@@ -1343,10 +1455,29 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <section
         className="lite-chapter lite-evidence-chapter"
         id="lite-sources"
+        data-lite-page="sources"
+        hidden={readingPage !== 'sources'}
         tabIndex={-1}
-        aria-labelledby="lite-sources-heading"
+        aria-labelledby="lite-sources-page-title"
       >
+        <header className="lite-sources-page-heading">
+          <p className="lite-kicker">
+            03 / {run.input.year} / {companyName}
+          </p>
+          <h2 id="lite-sources-page-title" data-lite-page-title tabIndex={-1}>
+            {t('每条判断，都能往回查。', 'Trace each finding to its evidence.')}
+          </h2>
+        </header>
+        {unresolvedEvidenceLink && (
+          <p className="lite-evidence-link-notice" role="status">
+            {t(
+              '这条链接的报告版本或引用已不匹配。当前保留已保存的报告，请重新选择要追溯的判断。',
+              'The linked report version or reference no longer matches. The saved report remains available; choose a finding to trace again.'
+            )}
+          </p>
+        )}
         <LiteEvidenceExplorer
+          initialSelection={readingPage === 'sources' ? evidenceSelection : undefined}
           printJudgments={false}
           run={run}
           basis="consolidated"
@@ -1524,12 +1655,143 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             </p>
           )}
         </details>
+        {(reportDocument.dimensions.length > 0 ||
+          reportSections.some(([, , items]) => items.length > 0)) && (
+          <details className="lite-report-detail" onToggle={() => ScrollTrigger.refresh()}>
+            <summary>
+              <span>
+                <small>{t('报告正文', 'THE FULL REPORT')}</small>
+                <strong>{t('展开完整分析', 'Read the complete analysis')}</strong>
+              </span>
+              <ChevronDown size={24} aria-hidden="true" />
+            </summary>
+            <div className="lite-report-body">
+              <div className="lite-report-version">
+                <span>
+                  {run.input.year} · {t('合并口径', 'Consolidated basis')}
+                </span>
+                {reportDocument.generatedAt && (
+                  <span>
+                    {t('报告生成', 'Report generated')} · {date(reportDocument.generatedAt, locale)}
+                  </span>
+                )}
+                {reportDocument.snapshotFetchedAt && (
+                  <span>
+                    {t('资料快照', 'Source snapshot')} ·{' '}
+                    {date(reportDocument.snapshotFetchedAt, locale)}
+                  </span>
+                )}
+              </div>
+              {reportDocument.dimensions.length > 0 && (
+                <section className="lite-report-section" data-report-section="dimensions">
+                  <h3>{t('逐个维度，理解判断', 'Understand each dimension')}</h3>
+                  <div className="lite-report-dimensions">
+                    {reportDocument.dimensions.map((dimension, index) => (
+                      <article key={dimension.id} data-status={dimension.status}>
+                        <span className="lite-report-dimension-index" aria-hidden="true">
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                        <h4>{t(...dimension.label)}</h4>
+                        <p>{dimension.judgment.text[language]}</p>
+                        {printCitations(dimension.judgment)}
+                        <LiteMetricChips
+                          document={reportDocument}
+                          judgment={dimension.judgment}
+                          onInspect={
+                            report
+                              ? (judgment) => inspectJudgment(judgment, t(...dimension.label))
+                              : undefined
+                          }
+                        />
+                        {report &&
+                          (dimension.judgment.metricIds.length > 0 ||
+                            dimension.judgment.evidenceIds.length > 0) && (
+                            <button
+                              className="lite-report-evidence"
+                              type="button"
+                              onClick={() =>
+                                inspectJudgment(dimension.judgment, t(...dimension.label))
+                              }
+                              aria-label={t('查看依据：', 'Evidence for: ') + t(...dimension.label)}
+                            >
+                              <FileSearch size={14} aria-hidden="true" />
+                              {t('核对依据', 'Check the evidence')}
+                              <ArrowUpRight size={14} aria-hidden="true" />
+                            </button>
+                          )}
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+              {reportSections.map(
+                ([sectionId, title, items]) =>
+                  items.length > 0 && (
+                    <section
+                      className="lite-report-section"
+                      data-report-section={sectionId}
+                      key={sectionId}
+                    >
+                      <h3>{title}</h3>
+                      {reportItems(items, title)}
+                    </section>
+                  )
+              )}
+              {reportDocument.facts.length > 0 && (
+                <details
+                  className="lite-report-metrics"
+                  data-report-section="metrics"
+                  onToggle={() => ScrollTrigger.refresh()}
+                >
+                  <summary>
+                    <span>{t('核对完整指标与计算口径', 'Inspect all metrics and formulas')}</span>
+                    <ChevronDown size={18} aria-hidden="true" />
+                  </summary>
+                  <dl>
+                    {reportDocument.facts.map((metric) => (
+                      <div key={metric.id} data-status={metric.status}>
+                        <dt>{t(...metric.label)}</dt>
+                        <dd>{t(...metric.display)}</dd>
+                        {metric.unit === 'CNY' && metric.value !== null && (
+                          <p className="lite-report-exact">{metric.value} CNY</p>
+                        )}
+                        <p>{t(...metric.formula)}</p>
+                        {report && metric.status === 'available' && (
+                          <button
+                            className="lite-report-evidence"
+                            type="button"
+                            onClick={() =>
+                              inspectJudgment(
+                                {
+                                  text: { zh: metric.label[0], en: metric.label[1] },
+                                  metricIds: [metric.id],
+                                  evidenceIds: metric.evidenceIds,
+                                },
+                                t(...metric.label)
+                              )
+                            }
+                            aria-label={t('查看依据：', 'Evidence for: ') + t(...metric.label)}
+                          >
+                            <FileSearch size={14} aria-hidden="true" />
+                            {t('核对依据', 'Check the evidence')}
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </dl>
+                </details>
+              )}
+            </div>
+          </details>
+        )}
         {stepLink(2)}
       </section>
 
       <section
         className="lite-chapter lite-question-chapter"
         id="lite-questions"
+        data-lite-page="questions"
+        hidden={readingPage !== 'questions'}
         tabIndex={-1}
         aria-labelledby="lite-questions-heading"
       >

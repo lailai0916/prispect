@@ -9,6 +9,7 @@ import { contextFen } from '../../shared/company-analysis';
 import { assessmentSourceHref, knownSourcePage } from '../../shared/source-excerpt-focus';
 import { useApp } from '../context';
 import { money } from '../format';
+import { liteAmountDisplay, type LiteAmountScale } from './lite-amount-display';
 import './lite-metric-chips.css';
 
 export interface LiteMetricChipsProps {
@@ -18,6 +19,12 @@ export interface LiteMetricChipsProps {
   disabled?: boolean;
   /** All remaining metrics remain readable in a native disclosure and in print. */
   maxVisible?: number;
+  /** Compact approximate reading values; complete exact amounts remain in native disclosures. */
+  compact?: boolean;
+  /** Choose once when these chips share a comparison with other amount displays. */
+  amountScale?: LiteAmountScale;
+  /** The author can link to the same saved report's local source-reading page. */
+  sourcePageHref?: (sourceId: string) => string | undefined;
 }
 
 function exactValue(metric: AssessmentMetric, locale: 'zh-Hans' | 'en') {
@@ -36,6 +43,9 @@ export function LiteMetricChips({
   onInspect,
   disabled = false,
   maxVisible = 6,
+  compact = false,
+  amountScale,
+  sourcePageHref,
 }: LiteMetricChipsProps) {
   const { locale, t } = useApp();
   const descriptionId = useId();
@@ -65,7 +75,7 @@ export function LiteMetricChips({
       document.facts.filter((entry) => entry.id === id).length !== 1 ||
       metric.status !== 'available' ||
       metric.value === null ||
-      !Number.isFinite(Number(metric.value)) ||
+      (metric.unit !== 'CNY' && !Number.isFinite(Number(metric.value))) ||
       !metric.value.trim() ||
       (metric.unit === 'CNY' && contextFen(metric.value) === null) ||
       !metric.evidenceIds.length ||
@@ -93,7 +103,12 @@ export function LiteMetricChips({
   );
   const limit = Number.isFinite(maxVisible) ? Math.max(1, Math.floor(maxVisible)) : selected.length;
   const renderMetric = ({ metric, sources }: (typeof selected)[number], index: number) => {
-    const value = exactValue(metric, locale);
+    const exact = exactValue(metric, locale);
+    const amount =
+      compact && metric.unit === 'CNY'
+        ? liteAmountDisplay(metric.value, locale, { scale: amountScale })
+        : null;
+    const value = amount?.text || exact;
     const periods = [
       ...new Set(sources.flatMap((source) => (source.period ? [source.period] : []))),
     ];
@@ -106,10 +121,28 @@ export function LiteMetricChips({
       metricIds: [metric.id],
       evidenceIds: sources.map((source) => source.id),
     };
+    let readingHref: string | undefined;
+    const proposedHref = sourcePageHref?.(sources[0].id);
+    if (proposedHref && proposedHref.startsWith('/company?') && binding.reportGeneratedAt) {
+      const url = new URL(proposedHref, 'https://prispect.com');
+      if (
+        url.pathname === '/company' &&
+        url.searchParams.get('run') === binding.runId &&
+        url.searchParams.get('experience') === 'lite' &&
+        url.searchParams.get('page') === 'sources' &&
+        url.searchParams.get('source') === sources[0].id &&
+        url.searchParams.get('generation') === binding.reportGeneratedAt
+      )
+        readingHref = proposedHref;
+    }
     const content = (
       <>
         <span className="lite-metric-chip-label">{metric.label[language]}</span>
-        <strong className="lite-metric-chip-value">{value}</strong>
+        <strong
+          className={'lite-metric-chip-value' + (amount ? ' lite-metric-chip-value-approx' : '')}
+        >
+          {value}
+        </strong>
         <span className="lite-metric-chip-scope">{scope}</span>
         <span className="lite-metric-chip-action" aria-hidden="true">
           {canInspect ? <FileSearch size={13} /> : <ArrowUpRight size={13} />}
@@ -126,9 +159,9 @@ export function LiteMetricChips({
       'data-year': binding.year,
       'data-basis': binding.basis,
       'data-report-generated-at': binding.reportGeneratedAt || undefined,
-      'aria-label': `${metric.label[language]} · ${value} · ${scope} · ${t('查看此项依据', 'View this metric’s sources')}`,
+      'aria-label': `${metric.label[language]} · ${value}${amount ? ` · ${t('精确金额', 'Exact amount')}: ${exact}` : ''} · ${scope} · ${t('查看此项依据', 'View this metric’s sources')}`,
       'aria-describedby': formula ? `${descriptionId}-formula-${index}` : undefined,
-      title: [metric.label[language], value, scope, formula].filter(Boolean).join(' · '),
+      title: [metric.label[language], exact, scope, formula].filter(Boolean).join(' · '),
       style: { '--metric-index': Math.min(index, 6) } as CSSProperties,
     };
     const sourceLink = (source: (typeof sources)[number]) => (
@@ -147,9 +180,33 @@ export function LiteMetricChips({
         </span>
       </a>
     );
+    const supportingDetails = (
+      <>
+        <span id={`${descriptionId}-formula-${index}`} className="lite-metric-chip-formula">
+          {formula}
+        </span>
+        <div className="lite-metric-chip-source-links">
+          {sources.slice(0, 2).map(sourceLink)}
+          {sources.length > 2 && (
+            <details className="lite-metric-chip-more-sources">
+              <summary>
+                {t('展开其余 ', 'Show the remaining ')}
+                {sources.length - 2}
+                {t(' 条来源', ' sources')}
+              </summary>
+              <div>{sources.slice(2).map(sourceLink)}</div>
+            </details>
+          )}
+        </div>
+      </>
+    );
     return (
       <div className="lite-metric-chip-entry" key={metric.id}>
-        {canInspect ? (
+        {readingHref ? (
+          <a {...props} href={readingHref}>
+            {content}
+          </a>
+        ) : canInspect ? (
           <button
             {...props}
             type="button"
@@ -168,22 +225,21 @@ export function LiteMetricChips({
             {content}
           </a>
         )}
-        <span id={`${descriptionId}-formula-${index}`} className="lite-metric-chip-formula">
-          {formula}
-        </span>
-        <div className="lite-metric-chip-source-links">
-          {sources.slice(0, 2).map(sourceLink)}
-          {sources.length > 2 && (
-            <details className="lite-metric-chip-more-sources">
-              <summary>
-                {t('展开其余 ', 'Show the remaining ')}
-                {sources.length - 2}
-                {t(' 条来源', ' sources')}
-              </summary>
-              <div>{sources.slice(2).map(sourceLink)}</div>
-            </details>
-          )}
-        </div>
+        {compact ? (
+          <details className="lite-metric-chip-exact">
+            <summary>
+              {amount ? t('精确金额', 'Exact amount') : t('计算口径', 'Calculation basis')}
+            </summary>
+            {amount && (
+              <span className="lite-metric-chip-exact-value" data-exact-yuan={amount.exactYuan}>
+                {amount.exactText}
+              </span>
+            )}
+            {supportingDetails}
+          </details>
+        ) : (
+          supportingDetails
+        )}
       </div>
     );
   };

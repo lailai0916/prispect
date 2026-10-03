@@ -1,38 +1,27 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import {
-  ArrowDown,
-  ArrowRight,
-  ArrowUpRight,
-  FileSearch,
-  Layers,
-  MessageCircle,
-  TrendingUp,
-} from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, FileSearch, Search, Workflow } from 'lucide-react';
 import { productTagline } from '../../shared/product-terms';
 import { Dialog } from '../components';
 import { useApp } from '../context';
 import { landingExample } from '../cinematic/landing-content';
-import { useShowcaseMotion } from './useShowcaseMotion';
-import { HeroField } from './HeroField';
 import { ShowcaseSearch } from './ShowcaseSearch';
-import { FlowPreview } from './FlowPreview';
 import { ShowcaseSignalStage } from './ShowcaseSignalStage';
-import './showcase.css';
-import './showcase-v2.css';
-import './showcase-v3.css';
-import './showcase-v4.css';
+import { ShowcaseWorkspaceField } from './ShowcaseWorkspaceField';
+import { useShowcaseMotion } from './useShowcaseMotion';
+import './lite-hermes-theme.css';
+import './showcase-workspace.css';
 
-function displayAmount(value: string, english: boolean) {
-  return new Intl.NumberFormat(english ? 'en-US' : 'zh-CN', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Number(value));
+type HomeMode = 'search' | 'example' | 'guide';
+
+function exactAmount(value: string, english: boolean) {
+  const [whole, fraction = '00'] = value.split('.');
+  return `${new Intl.NumberFormat(english ? 'en-US' : 'zh-CN').format(BigInt(whole))}.${fraction.padEnd(2, '0')}`;
 }
 
 function EvidenceOriginals() {
   const { t, locale } = useApp();
   return (
-    <div className="showcase-originals">
+    <div className="showcase-originals lite-search-originals">
       <p>
         {t(...landingExample.notices.sample)} · {t(...landingExample.notices.scope)}
       </p>
@@ -43,7 +32,7 @@ function EvidenceOriginals() {
         ].map(([label, value]) => (
           <div key={label}>
             <dt>{label}</dt>
-            <dd>{displayAmount(value, locale === 'en')} CNY</dd>
+            <dd>{exactAmount(value, locale === 'en')} CNY</dd>
           </div>
         ))}
       </dl>
@@ -54,12 +43,7 @@ function EvidenceOriginals() {
         </figure>
       ))}
       <p>{t(...landingExample.notices.interpretation)}</p>
-      <a
-        href={landingExample.source.url}
-        target="_blank"
-        rel="noreferrer"
-        className="showcase-text-link"
-      >
+      <a href={landingExample.source.url} target="_blank" rel="noreferrer">
         {t('打开完整年报', 'Open the annual report')}
         <ArrowUpRight size={16} aria-hidden="true" />
       </a>
@@ -74,27 +58,52 @@ export function ShowcaseLanding({
   query?: URLSearchParams;
   connectionError?: string;
 }) {
-  const { t, locale, historyNavigation } = useApp();
+  const { t, locale, navigate, historyNavigation } = useApp();
   const root = useRef<HTMLDivElement>(null);
+  const exampleHeading = useRef<HTMLHeadingElement>(null);
+  const guideHeading = useRef<HTMLHeadingElement>(null);
   const [sourceOpen, setSourceOpen] = useState(false);
-  const [activePreview, setActivePreview] = useState(0);
   const [scanPosition, setScanPosition] = useState(52);
-  const [reading, setReading] = useState<{
-    channel: 'finance' | 'public' | 'reputation' | 'original';
-    scene: 0 | 1 | 2;
-    revision: number;
-  }>({ channel: 'finance', scene: 0, revision: 0 });
-  useShowcaseMotion(root, locale);
+  const requestedView = query?.get('view');
+  const mode: HomeMode =
+    requestedView === 'example' ? 'example' : requestedView === 'guide' ? 'guide' : 'search';
+  const requestedChannel = query?.get('channel');
+  const channel =
+    requestedChannel === 'public' ||
+    requestedChannel === 'reputation' ||
+    requestedChannel === 'original'
+      ? requestedChannel
+      : 'finance';
+  const initialScene = requestedChannel === 'risk' ? 1 : 0;
+  const pageHref = (view: HomeMode, nextChannel?: string) => {
+    const parameters = new URLSearchParams(query);
+    parameters.delete('view');
+    parameters.delete('channel');
+    if (view !== 'search') parameters.set('view', view);
+    if (nextChannel) parameters.set('channel', nextChannel);
+    return `/${parameters.size ? `?${parameters}` : ''}`;
+  };
+  useShowcaseMotion(root, locale, mode);
   useEffect(() => {
     let frame = 0;
     const followAnchor = () => {
       if (historyNavigation) return;
-      const anchor = location.hash.slice(1);
+      const anchor = window.location.hash.slice(1);
       if (!['showcase-query', 'showcase-evidence'].includes(anchor)) return;
+      if (anchor === 'showcase-evidence' && mode !== 'example') {
+        navigate(pageHref('example', 'finance'));
+        return;
+      }
+      if (anchor === 'showcase-query' && mode !== 'search') {
+        navigate(`${pageHref('search')}#showcase-query`);
+        return;
+      }
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
-        const target = root.current?.querySelector<HTMLElement>(`#${anchor}`);
-        target?.scrollIntoView({ block: 'start', behavior: 'instant' });
+        const target =
+          anchor === 'showcase-query'
+            ? root.current?.querySelector<HTMLTextAreaElement>('.showcase-search textarea')
+            : exampleHeading.current;
         target?.focus({ preventScroll: true });
       });
     };
@@ -104,335 +113,255 @@ export function ShowcaseLanding({
       cancelAnimationFrame(frame);
       window.removeEventListener('hashchange', followAnchor);
     };
-  }, [historyNavigation]);
-  const english = locale === 'en';
-  const titleLines = english
-    ? ['Make company', 'judgments traceable.']
-    : [productTagline[0].slice(0, 6), productTagline[0].slice(6)];
-  const chapters = [
+  }, [historyNavigation, mode, navigate]);
+  useEffect(() => {
+    setSourceOpen(false);
+    if (historyNavigation || mode === 'search') return;
+    const frame = requestAnimationFrame(() => {
+      (mode === 'example' ? exampleHeading.current : guideHeading.current)?.focus({
+        preventScroll: true,
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [mode, historyNavigation]);
+
+  const modes = [
+    { id: 'search' as const, label: t('查公司', 'Company search'), icon: Search },
+    { id: 'example' as const, label: t('读样例', 'Evidence example'), icon: FileSearch },
+    { id: 'guide' as const, label: t('阅读路径', 'Reading guide'), icon: Workflow },
+  ];
+  const guide = [
     {
-      title: t('查公司', 'Find a company'),
-      detail: t(
-        '输入名称或代码，确认你要看的主体。',
-        'Enter a name or code and confirm the company.'
+      title: t('确认你要看的公司', 'Confirm the company'),
+      text: t(
+        '输入公司名称或股票代码，从候选主体中选择，再指定年报年度。',
+        'Enter a company name or security code, choose the matched entity and select an annual year.'
       ),
+      label: t('主体与年度', 'ENTITY / YEAR'),
     },
     {
-      title: t('看数字', 'Read the numbers'),
-      detail: t(
-        '对照利润、经营现金和同年度财务记录。',
-        'Compare profit, operating cash and same-year financial records.'
+      title: t('先看结论，再追数字', 'Read the findings, then the figures'),
+      text: t(
+        '打开同一份研究记录，查看已取得的财务数据、财务观察和已保存报告；资料不足的部分保持待核查。',
+        'Open the same research record to read acquired financial data, observations and a saved report. Missing information remains unresolved.'
       ),
+      label: t('研究报告', 'RESEARCH REPORT'),
     },
     {
-      title: t('读懂档案', 'Read the dossier'),
-      detail: t(
-        '判断、数字和原文连在一起，再问下一步。',
-        'Connect findings, figures and sources, then ask what comes next.'
+      title: t('点开依据，继续问', 'Open the evidence and ask next'),
+      text: t(
+        '从具体判断或金额打开它自己的来源，核对主体、年度与口径，再带着这份报告继续提问。',
+        'Open the source attached to a claim or amount, check entity, year and basis, then ask with this report as context.'
       ),
+      label: t('来源与后续问题', 'SOURCES / NEXT QUESTIONS'),
     },
   ];
+
   return (
-    <div ref={root} className="showcase-home showcase-home-v4" data-locale={locale}>
-      <section className="showcase-hero" aria-labelledby="showcase-title">
-        <HeroField artwork={false} />
-        <div className="showcase-constellation" aria-hidden="true">
-          <span className="showcase-constellation-note">FINANCIALS</span>
-          <span className="showcase-constellation-note">PUBLIC RECORDS</span>
-          <span className="showcase-constellation-note">FOLLOW THE SOURCE</span>
-          <span className="showcase-constellation-note">ASK THE NEXT QUESTION</span>
-        </div>
-        <div className="showcase-hero-copy">
-          <p className="showcase-hero-kicker">
-            <span>PRISPECT / LITE</span>
-            <span>{t('看清一家公司的入口', 'YOUR WAY INTO A COMPANY')}</span>
-          </p>
-          <h1 id="showcase-title" className="showcase-title" aria-label={t(...productTagline)}>
-            {titleLines.map((line, index) => (
-              <span className="showcase-title-mask" key={line}>
-                <span className="showcase-title-line" data-title-line={index} aria-hidden="true">
-                  {Array.from(line).map((character, characterIndex) => (
-                    <span className="showcase-letter" key={`${character}-${characterIndex}`}>
-                      {character === ' ' ? '\u00a0' : character}
+    <div
+      ref={root}
+      className="showcase-home showcase-hermes"
+      data-locale={locale}
+      data-home-mode={mode}
+    >
+      <ShowcaseWorkspaceField />
+      <div className="lite-search-atmosphere" aria-hidden="true" />
+      <div className="lite-search-main">
+        <div className="lite-search-introduction" hidden={mode !== 'search'}>
+          <p className="lite-search-eyebrow">LITE / COMPANY RESEARCH</p>
+          <h1 id="showcase-title" className="lite-search-title" aria-label={t(...productTagline)}>
+            <span aria-hidden="true">
+              {(locale === 'en'
+                ? productTagline[1].split(/(\s+)/)
+                : ['让企业判断，', '有据可查。']
+              ).map((word, wordIndex) => (
+                <span className="lite-search-word" key={`${word}-${wordIndex}`}>
+                  {Array.from(word).map((letter, index) => (
+                    <span className="lite-search-letter" key={`${letter}-${index}`}>
+                      {letter === ' ' ? '\u00a0' : letter}
                     </span>
                   ))}
                 </span>
-              </span>
-            ))}
+              ))}
+            </span>
           </h1>
-          <p className="showcase-description">
+          <p className="lite-search-description">
             {t(
-              '在交付金钱与信任之前，先看清那家公司。',
-              'Before committing money and trust, understand the company.'
+              '找到公司，对齐年度，从数字追到原文。',
+              'Find a company, align the year, and follow the numbers to their sources.'
             )}
           </p>
-          <ShowcaseSearch query={query} connectionError={connectionError} />
-          <div
-            className="showcase-reading-rail"
-            aria-label={t('你可以从这些问题开始阅读', 'Questions to start your reading')}
-          >
-            {[
-              [
-                TrendingUp,
-                t('财务', 'FINANCIALS'),
-                t('钱真的回来了吗？', 'Does profit become cash?'),
-              ],
-              [
-                Layers,
-                t('信用线索', 'PUBLIC RECORDS'),
-                t('公开记录说了什么？', 'What do public records say?'),
-              ],
-              [FileSearch, t('风险', 'RISK'), t('什么仍需要核对？', 'What still needs checking?')],
-              [
-                MessageCircle,
-                t('口碑', 'REPUTATION'),
-                t('谁在说，依据在哪？', 'Who says so, and why?'),
-              ],
-            ].map(([Icon, label, question], index) => {
-              const Symbol = Icon as typeof TrendingUp;
-              return (
-                <a
-                  href="#showcase-evidence"
-                  className="showcase-reading-card"
-                  key={String(label)}
-                  onClick={() =>
-                    setReading((previous) => ({
-                      channel: (['finance', 'public', 'finance', 'reputation'] as const)[index],
-                      scene: index === 2 ? 1 : 0,
-                      revision: previous.revision + 1,
-                    }))
-                  }
-                >
-                  <span>
-                    <Symbol size={17} aria-hidden="true" />
-                    {String(label)}
-                  </span>
-                  <strong>{String(question)}</strong>
-                  <ArrowUpRight size={16} aria-hidden="true" />
-                </a>
-              );
-            })}
-          </div>
         </div>
-        <a className="showcase-scroll-link" href="#showcase-evidence">
-          <ArrowDown size={23} aria-hidden="true" />
-          <span>{t('向下探索', 'Scroll to explore')}</span>
-        </a>
-        <span className="showcase-hero-edition" aria-hidden="true">
-          FOLLOW THE EVIDENCE ↗
-        </span>
-      </section>
-      <div className="showcase-marquee" aria-hidden="true">
-        <div className="showcase-marquee-track">
-          {[0, 1, 2, 3].map((index) => (
-            <span key={index}>
-              {t('看见数字背后的故事', 'SEE THE STORY BEHIND THE NUMBERS')}
-              <ArrowUpRight size={48} />
-              <span>FOLLOW THE EVIDENCE</span>
-              <ArrowUpRight size={48} />
-            </span>
+        <nav className="lite-search-modes" aria-label={t('Lite 入口', 'Lite destinations')}>
+          {modes.map(({ id, label, icon: Icon }) => (
+            <a key={id} href={pageHref(id)} aria-current={mode === id ? 'page' : undefined}>
+              <Icon size={16} aria-hidden="true" />
+              <span>{label}</span>
+            </a>
           ))}
-        </div>
-      </div>
-      <section
-        id="showcase-evidence"
-        className="showcase-evidence"
-        tabIndex={-1}
-        aria-labelledby="showcase-evidence-title"
-      >
-        <div className="showcase-evidence-heading">
-          <span className="showcase-eyebrow">01 / {t('从原文开始', 'BEGIN WITH THE SOURCE')}</span>
-          <h2 id="showcase-evidence-title" className="showcase-reveal">
-            {t('线索散落各处。', 'The clues are scattered.')}
-            <br />
-            {t('把它们连起来。', 'Connect them.')}
-          </h2>
-          <p>
-            {t(
-              '从财务、公开记录到口碑，换一个问题，就多看见一层。',
-              'From financials to public records and reputation, a different question reveals another layer.'
-            )}
-          </p>
-        </div>
-        <div className="showcase-evidence-stage">
-          <ShowcaseSignalStage
-            key={reading.revision}
-            initialChannel={reading.channel}
-            initialScene={reading.scene}
-            onOpenSource={() => setSourceOpen(true)}
-          />
-        </div>
-      </section>
-      <section className="showcase-original-lab" aria-labelledby="showcase-original-lab-title">
-        <div className="showcase-original-lab-copy">
-          <span className="showcase-eyebrow">
-            {t('把原文拿在手里', 'PUT THE ORIGINAL IN YOUR HANDS')}
-          </span>
-          <h2 id="showcase-original-lab-title" className="showcase-reveal">
-            {t('一滑，透过纸面。', 'Slide through the page.')}
-          </h2>
-          <p>
-            {t(
-              '这两页真实年报，记录了同一家公司的利润与经营现金。拖动查看，再回到完整原文核对。',
-              'These two actual report pages record the same company’s profit and operating cash. Slide to explore, then check the full original.'
-            )}
-          </p>
-          <p className="showcase-original-scope">
-            {t(...landingExample.notices.sample)} · {t(...landingExample.notices.scope)}
-          </p>
-        </div>
-        <div className="showcase-original-lab-stage showcase-evidence-stage">
-          <div
-            className="showcase-source-scanner"
-            style={{ '--scan-position': `${scanPosition}%` } as CSSProperties}
-          >
-            <button
-              className="showcase-source-sheet"
-              type="button"
-              onClick={() => setSourceOpen(true)}
-              aria-label={t('查看松原安全 2025 年报原件', 'View Songyuan’s original 2025 report')}
-            >
-              <img
-                src={landingExample.source.crops[0].src}
-                width={landingExample.source.crops[0].width}
-                height={landingExample.source.crops[0].height}
-                alt={t(...landingExample.source.crops[0].alt)}
-                loading="lazy"
-              />
-              <span className="showcase-source-xray" aria-hidden="true">
-                <img
-                  src={landingExample.source.crops[1].src}
-                  width={landingExample.source.crops[1].width}
-                  height={landingExample.source.crops[1].height}
-                  alt=""
-                  loading="lazy"
-                />
-                <span>
-                  {t('现金流量补充资料（续）· p.191', 'CASH FLOW RECONCILIATION · p.191')}
-                </span>
-              </span>
-              <span className="showcase-source-scan-line" aria-hidden="true" />
-              <span>
-                {t('年报原文 · p.190–191', 'Annual report · p.190–191')}
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </span>
-            </button>
-            <label className="showcase-scan-control">
-              <span>{t('拖动，透视两页年报原文', 'SLIDE TO LOOK THROUGH TWO REPORT PAGES')}</span>
-              <input
-                type="range"
-                min="8"
-                max="92"
-                value={scanPosition}
-                aria-describedby="showcase-scan-note"
-                onChange={(event) => setScanPosition(Number(event.target.value))}
-                aria-label={t(
-                  '调整年报第 190 页与第 191 页的展示分界',
-                  'Adjust the reveal between annual-report pages 190 and 191'
-                )}
-              />
-              <span className="showcase-scan-pages">p.190 ↔ p.191</span>
-            </label>
-            <p id="showcase-scan-note" className="showcase-scan-note">
-              {t('两页独立原文，行位置不对应。', 'Separate original pages; rows do not align.')}
-            </p>
-          </div>
-        </div>
-      </section>
-      <section className="showcase-process" aria-labelledby="showcase-process-title">
-        <span className="showcase-process-word" aria-hidden="true">
-          LOOK CLOSER.
-        </span>
-        <div className="showcase-process-heading">
-          <span className="showcase-eyebrow">
-            02 / {t('看懂一家公司的路径', 'A PATH TO UNDERSTANDING A COMPANY')}
-          </span>
-          <h2 id="showcase-process-title" className="showcase-reveal">
-            {t('从名字，', 'From a name,')}
-            <br />
-            {t('看到依据。', 'to the evidence.')}
-          </h2>
-        </div>
-        <div className="showcase-process-layout">
-          <div className="showcase-chapters">
-            {chapters.map((chapter, index) => (
-              <button
-                type="button"
-                key={chapter.title}
-                className={activePreview === index ? 'is-active' : ''}
-                aria-pressed={activePreview === index}
-                onPointerEnter={() => setActivePreview(index)}
-                onFocus={() => setActivePreview(index)}
-                onClick={() => setActivePreview(index)}
-              >
-                <span className="showcase-chapter-number">0{index + 1}</span>
-                <span>
-                  <strong>{chapter.title}</strong>
-                  <span>{chapter.detail}</span>
-                  {activePreview === index && (
-                    <span className="showcase-chapter-inline-preview">
-                      <FlowPreview step={index} />
-                    </span>
-                  )}
-                </span>
-                <ArrowUpRight size={25} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-          <div className="showcase-chapter-preview" aria-hidden="true">
-            <span className="showcase-preview-caption">
-              0{activePreview + 1} / {chapters[activePreview].title}
-            </span>
-            <FlowPreview key={activePreview} step={activePreview} />
-          </div>
-        </div>
-      </section>
-      <section className="showcase-ending" aria-labelledby="showcase-ending-title">
-        <span className="showcase-ending-word" aria-hidden="true">
-          YOUR NEXT QUESTION.
-        </span>
-        <span className="showcase-eyebrow">
-          03 / {t('好问题，从这里开始', 'A GOOD QUESTION STARTS HERE')}
-        </span>
-        <h2 id="showcase-ending-title" className="showcase-reveal">
-          {t('从你关心的', 'Start with a company')}
-          <br />
-          {t('那家公司开始。', 'you care about.')}
-        </h2>
-        <button
-          type="button"
-          className="showcase-ending-action"
-          data-magnetic
-          onClick={() => {
-            const input = root.current?.querySelector<HTMLTextAreaElement>(
-              '.showcase-search textarea'
-            );
-            input?.focus({ preventScroll: true });
-            document.getElementById('showcase-query')?.scrollIntoView({
-              behavior: matchMedia('(prefers-reduced-motion: reduce)').matches
-                ? 'instant'
-                : 'smooth',
-              block: 'center',
-            });
-          }}
+        </nav>
+        <section
+          className="lite-search-view"
+          hidden={mode !== 'search'}
+          aria-labelledby="showcase-title"
         >
-          {t('查询一家企业', 'Find a company')}
-          <ArrowRight size={24} aria-hidden="true" />
-        </button>
-      </section>
-      <footer className="showcase-footer">
+          <ShowcaseSearch query={query} connectionError={connectionError} />
+          <p className="lite-search-coverage">
+            {t(
+              '支持 A 股上市主体 · 财务、公开线索与来源一起读',
+              'A-share issuers · financials, public leads and their sources'
+            )}
+          </p>
+        </section>
+        {mode === 'example' && (
+          <section
+            id="showcase-evidence"
+            className="lite-search-detail lite-search-example"
+            aria-labelledby="lite-example-title"
+          >
+            <header className="lite-search-detail-heading">
+              <a className="lite-search-back" href={pageHref('search')}>
+                <ArrowLeft size={16} aria-hidden="true" />
+                {t('返回查询', 'Back to search')}
+              </a>
+              <p className="lite-search-eyebrow">HISTORICAL EXAMPLE / 2025</p>
+              <h1 id="lite-example-title" ref={exampleHeading} tabIndex={-1}>
+                {t('数字，能追到哪一页？', 'Which page supports the number?')}
+              </h1>
+              <p>
+                {t(
+                  '松原安全的历史年报样例。换个问题，查看相同数字、金额差与真实原文。',
+                  'A historical Songyuan annual-report example. Explore the same figures, their difference and the original pages.'
+                )}
+              </p>
+            </header>
+            <ShowcaseSignalStage
+              key={`${channel}-${initialScene}`}
+              initialChannel={channel}
+              initialScene={initialScene}
+              onOpenSource={() => setSourceOpen(true)}
+            />
+            <details className="lite-search-scanner-panel">
+              <summary>
+                {t('对照第 190 页与第 191 页', 'Compare original pages 190 and 191')}
+                <ArrowUpRight size={17} aria-hidden="true" />
+              </summary>
+              <p>
+                {t(...landingExample.notices.sample)} · {t(...landingExample.notices.scope)}
+              </p>
+              <div
+                className="showcase-source-scanner lite-search-scanner"
+                style={{ '--scan-position': `${scanPosition}%` } as CSSProperties}
+              >
+                <button
+                  type="button"
+                  className="showcase-source-sheet"
+                  onClick={() => setSourceOpen(true)}
+                  aria-label={t(
+                    '查看松原安全 2025 年报原件',
+                    'View Songyuan’s original 2025 report'
+                  )}
+                >
+                  <img
+                    src={landingExample.source.crops[0].src}
+                    width={landingExample.source.crops[0].width}
+                    height={landingExample.source.crops[0].height}
+                    alt={t(...landingExample.source.crops[0].alt)}
+                    loading="lazy"
+                  />
+                  <img
+                    className="lite-search-scanner-overlay"
+                    src={landingExample.source.crops[1].src}
+                    width={landingExample.source.crops[1].width}
+                    height={landingExample.source.crops[1].height}
+                    alt={t(...landingExample.source.crops[1].alt)}
+                    loading="lazy"
+                  />
+                  <span className="lite-search-scan-line" aria-hidden="true" />
+                </button>
+                <label className="showcase-scan-control">
+                  <span>{t('拖动展示分界', 'Slide the reveal boundary')}</span>
+                  <input
+                    type="range"
+                    min="8"
+                    max="92"
+                    value={scanPosition}
+                    onChange={(event) => setScanPosition(Number(event.target.value))}
+                    aria-label={t(
+                      '调整年报第 190 页与第 191 页的展示分界',
+                      'Adjust the reveal between annual-report pages 190 and 191'
+                    )}
+                    aria-describedby="showcase-scan-note"
+                  />
+                  <span>p.190 ↔ p.191</span>
+                </label>
+                <p id="showcase-scan-note">
+                  {t('两页独立原文，行位置不对应。', 'Separate original pages; rows do not align.')}
+                </p>
+              </div>
+            </details>
+          </section>
+        )}
+        {mode === 'guide' && (
+          <section
+            className="lite-search-detail lite-search-guide"
+            aria-labelledby="lite-guide-title"
+          >
+            <header className="lite-search-detail-heading">
+              <a className="lite-search-back" href={pageHref('search')}>
+                <ArrowLeft size={16} aria-hidden="true" />
+                {t('返回查询', 'Back to search')}
+              </a>
+              <p className="lite-search-eyebrow">READING PATH / FOLLOW THE EVIDENCE</p>
+              <h1 id="lite-guide-title" ref={guideHeading} tabIndex={-1}>
+                {t('一家公司，三步读懂。', 'Three steps into a company.')}
+              </h1>
+              <p>
+                {t(
+                  '从你关心的公司开始，把判断与依据连起来。',
+                  'Start with the company you care about and connect the findings to their evidence.'
+                )}
+              </p>
+            </header>
+            <ol className="lite-search-guide-cards">
+              {guide.map((item, index) => (
+                <li key={item.title} data-lite-card>
+                  <span className="lite-search-step">0{index + 1}</span>
+                  <div>
+                    <small>{item.label}</small>
+                    <h2>{item.title}</h2>
+                    <p>{item.text}</p>
+                  </div>
+                  <ArrowUpRight size={20} aria-hidden="true" />
+                </li>
+              ))}
+            </ol>
+            <div className="lite-search-guide-actions">
+              <a href={`${pageHref('search')}#showcase-query`}>
+                {t('查一家公司', 'Find a company')}
+                <ArrowRight size={18} aria-hidden="true" />
+              </a>
+              <a href="/docs/methodology">
+                {t('阅读研究方法', 'Read the methodology')}
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </a>
+            </div>
+          </section>
+        )}
+      </div>
+      <footer className="showcase-footer lite-search-footer">
         <span>© 2026 析光 / Prispect Lite</span>
         <div>
-          <a href="/query">Pro</a>
-          <a href="/docs/privacy">{t('隐私政策', 'Privacy')}</a>
-          <a href="/docs/terms">{t('服务条款', 'Terms')}</a>
+          <a href="/docs/guide">{t('使用指南', 'Guide')}</a>
+          <a href="/docs/privacy">{t('隐私', 'Privacy')}</a>
+          <a href="/docs/terms">{t('条款', 'Terms')}</a>
         </div>
       </footer>
       {sourceOpen && (
         <Dialog
           wide
           title={t('松原安全 · 2025 年报原件', 'Songyuan · original 2025 annual report')}
-          className="showcase-source-dialog"
+          className="showcase-source-dialog lite-hermes-dialog"
           onClose={() => setSourceOpen(false)}
         >
           <EvidenceOriginals />

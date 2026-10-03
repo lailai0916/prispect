@@ -170,6 +170,84 @@ test('negative values beyond floating-point integer precision and zero remain ex
   );
 });
 
+test('compact values keep exact fen amounts in native disclosures, hover and accessible labels', () => {
+  const { document, judgment } = fixture();
+  document.facts[0]!.value = '-9007199254740993.01';
+  document.facts[1]!.value = '0.00';
+  const before = structuredClone(document);
+  const $ = render(document, judgment, { compact: true }, 'zh-Hans');
+  assert.deepEqual(
+    $('.lite-metric-chip-value')
+      .map((_, node) => $(node).text())
+      .get(),
+    ['约-9007.20万亿元', '约0.00元']
+  );
+  const exact = $('.lite-metric-chip-exact').first();
+  assert.equal(exact.attr('open'), undefined);
+  assert.equal(exact.find('[data-exact-yuan]').attr('data-exact-yuan'), '-9007199254740993.01');
+  assert.equal(exact.find('.lite-metric-chip-exact-value').text(), '-9,007,199,254,740,993.01 元');
+  assert.ok(
+    $('.lite-metric-chip').first().attr('title')!.includes('-9,007,199,254,740,993.01 CNY')
+  );
+  assert.ok(
+    $('.lite-metric-chip').first().attr('aria-label')!.includes('-9,007,199,254,740,993.01 CNY')
+  );
+  assert.deepEqual(document, before);
+});
+
+test('native source-reading links preserve the same run, exact source ID and saved generation', () => {
+  const { document, judgment } = fixture(1);
+  const href = `/company?run=${document.binding!.runId}&experience=lite&page=sources&claim=${judgment.id}&source=${document.references[0]!.id}&generation=${encodeURIComponent(generated)}`;
+  const $ = render(document, judgment, { compact: true, sourcePageHref: () => href });
+  assert.equal($('.lite-metric-chip').prop('tagName'), 'A');
+  assert.equal($('.lite-metric-chip').attr('href'), href);
+  assert.equal($('.lite-metric-chip').attr('target'), undefined);
+  const wrong = render(document, judgment, {
+    sourcePageHref: () => href.replace(document.binding!.runId, 'other-run'),
+  });
+  assert.equal(wrong('.lite-metric-chip').prop('tagName'), 'BUTTON');
+});
+
+test('compact cards disclose all formulas and exact source relations without crowding the default view', () => {
+  const { document, judgment } = fixture();
+  document.facts[1]!.unit = 'percent';
+  document.facts[1]!.value = '7.15';
+  document.facts[1]!.formula = ['经营现金 ÷ 合并净利润', 'Operating cash ÷ consolidated profit'];
+  const $ = render(document, judgment, { compact: true }, 'zh-Hans');
+  assert.equal(
+    $(
+      '.lite-metric-chip-entry > .lite-metric-chip-formula, .lite-metric-chip-entry > .lite-metric-chip-source-links'
+    ).length,
+    0
+  );
+  assert.equal($('.lite-metric-chip-exact[open]').length, 0);
+  assert.deepEqual(
+    $('.lite-metric-chip-exact > summary')
+      .map((_, node) => $(node).text())
+      .get(),
+    ['精确金额', '计算口径']
+  );
+  assert.equal($('.lite-metric-chip-value').last().text(), '7.15%');
+  assert.equal(
+    $('.lite-metric-chip-exact .lite-metric-chip-formula').last().text(),
+    '经营现金 ÷ 合并净利润'
+  );
+  assert.deepEqual(
+    $('.lite-metric-chip-exact [data-source-id]')
+      .map((_, node) => $(node).attr('data-source-id'))
+      .get(),
+    document.references.map((source) => source.id)
+  );
+  assert.equal(
+    $('.lite-metric-chip-exact [data-exact-yuan]').attr('data-exact-yuan'),
+    '12345678.90'
+  );
+  const ordinary = render(document, judgment);
+  assert.equal(ordinary('.lite-metric-chip-exact').length, 0);
+  assert.equal(ordinary('.lite-metric-chip-entry > .lite-metric-chip-formula').length, 2);
+  assert.equal(ordinary('.lite-metric-chip-entry > .lite-metric-chip-source-links').length, 2);
+});
+
 test('a large real-source relationship stays progressively readable without losing citations', () => {
   const { document, judgment } = fixture(1);
   document.references = Array.from({ length: 123 }, (_, index) => ({

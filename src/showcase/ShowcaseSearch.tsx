@@ -44,7 +44,7 @@ export function ShowcaseSearch({
   } | null>(null);
   const [historyOpen, setHistoryOpen] = useState<{ owner: string | null; open: boolean }>({
     owner,
-    open: false,
+    open: true,
   });
   const activeExample = exampleDraft?.scope === scope ? exampleDraft : null;
   const recentOpen = historyOpen.owner === owner && historyOpen.open;
@@ -52,7 +52,7 @@ export function ShowcaseSearch({
   const disabled = !user || creating;
   useEffect(() => {
     setExampleDraft(null);
-    setHistoryOpen({ owner, open: false });
+    setHistoryOpen({ owner, open: true });
   }, [owner]);
   const fillExample = (name: string) => {
     if (disabled || currentOwner.current !== owner) return;

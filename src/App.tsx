@@ -69,6 +69,8 @@ import { PageLoading, ToastNotice, usePageEntrance } from './Experience';
 import './polish.css';
 import './company-workspace.css';
 import './research-shell.css';
+import './showcase/lite-hermes-theme.css';
+import './showcase/lite-shell.css';
 import { CompanyAssistantContext, type AssistantCompany } from './company-assistant-context';
 const CompanyAssistant = lazyPage(
   () => import('./CompanyAssistant'),
@@ -706,7 +708,7 @@ export function App() {
           }}
         >
           <div
-            className={`app-shell ${business ? 'business-shell' : 'public-shell'}${liteExperience ? ' showcase-shell' : ''}${showcaseHome ? ' showcase-home-shell' : liteExperience ? ' showcase-research-shell' : ''}`}
+            className={`app-shell ${business ? 'business-shell' : 'public-shell'}${liteExperience ? ' showcase-shell lite-workspace-shell' : ''}${showcaseHome ? ' showcase-home-shell' : liteExperience ? ' showcase-research-shell' : ''}`}
           >
             <header className="site-header">
               <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
@@ -714,8 +716,27 @@ export function App() {
               </a>
               {business && <CompanyHeaderContext route={route} label={currentSection} />}
               {!business && !documentationRoute && (
-                <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
-                  <a href="/docs">{t(...documentationTitle)}</a>
+                <nav
+                  className={`navigation${liteExperience ? ' lite-header-navigation' : ''}`}
+                  aria-label={t('主导航', 'Main navigation')}
+                >
+                  {liteExperience ? (
+                    <>
+                      <a
+                        href="/"
+                        aria-current={
+                          showcaseHome && !new URLSearchParams(route.split('?')[1]).has('view')
+                            ? 'page'
+                            : undefined
+                        }
+                      >
+                        {t('查公司', 'Find a company')}
+                      </a>
+                      <a href="/?view=guide">{t('如何阅读', 'How to read')}</a>
+                    </>
+                  ) : (
+                    <a href="/docs">{t(...documentationTitle)}</a>
+                  )}
                 </nav>
               )}
               <div className="header-actions">
@@ -756,7 +777,7 @@ export function App() {
                     {locale === 'en' ? 'EN' : '中'}
                   </button>
                 </Hint>
-                <ThemeControl />
+                {!liteExperience && <ThemeControl />}
                 {(liteExperience || page === '/query' || page === '/company') && (
                   <nav
                     className="experience-switch"

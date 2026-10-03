@@ -1,12 +1,15 @@
 import type { RefObject } from 'react';
 import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 
-gsap.registerPlugin(ScrollTrigger, useGSAP);
+gsap.registerPlugin(useGSAP);
 
-/** Motion owns presentation only; native scrolling, exact amounts and research stay untouched. */
-export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale: string) {
+/** Short workspace feedback only: no scroll hijacking, staged progress or numeric animation. */
+export function useShowcaseMotion(
+  root: RefObject<HTMLDivElement | null>,
+  locale: string,
+  mode = 'search'
+) {
   useGSAP(
     () => {
       const container = root.current;
@@ -19,18 +22,17 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
         removeEventListener(event: 'matchMediaInit' | 'matchMedia', callback: () => void): void;
       };
       const recordMotionScroll = () => {
-        const reducedMotion = motionPreference.matches;
-        if (reducedMotion === priorReducedMotion) return;
-        priorReducedMotion = reducedMotion;
+        const reduced = motionPreference.matches;
+        if (reduced === priorReducedMotion) return;
+        priorReducedMotion = reduced;
         motionScroll = container.isConnected
-          ? { x: window.scrollX, y: window.scrollY, href: window.location.href }
+          ? { x: scrollX, y: scrollY, href: location.href }
           : null;
       };
       const restoreMotionScroll = () => {
         const position = motionScroll;
         motionScroll = null;
-        if (!position || !container.isConnected || position.href !== window.location.href) return;
-        // This listener follows ScrollTrigger's refresh, within the same media-change event.
+        if (!position || !container.isConnected || position.href !== location.href) return;
         window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
       };
       mediaEvents.addEventListener('matchMediaInit', recordMotionScroll);
@@ -39,444 +41,95 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
       media.add(
         {
           motion: '(prefers-reduced-motion: no-preference)',
-          desktop: '(min-width: 900px)',
+          pointer: '(hover: hover) and (pointer: fine)',
         },
         (context) => {
           if (!context.conditions?.motion) return;
-          const desktop = context.conditions.desktop;
-          const one = (selector: string) => container.querySelector<HTMLElement>(selector);
           const all = (selector: string) =>
             Array.from(container.querySelectorAll<HTMLElement>(selector));
-          const hero = one('.showcase-hero');
-          const scene = one('.showcase-paper-scene');
-          const entrance = gsap.timeline({ defaults: { ease: 'power4.out' } });
-
-          // Every letter settles at its native position before scroll choreography begins.
-          entrance.from(all('[data-title-line="0"] .showcase-letter'), {
-            yPercent: 145,
-            rotationX: -80,
-            transformOrigin: '50% 100%',
-            duration: 1.12,
-            stagger: { each: locale === 'en' ? 0.016 : 0.035, from: 'start' },
-          });
-          // The second line arrives laterally, alternating direction rather than repeating the hinge.
-          entrance.from(
-            all('[data-title-line="1"] .showcase-letter'),
-            {
-              x: (index) => (index % 2 ? 1 : -1) * 34,
-              yPercent: (index) => (index % 2 ? -1 : 1) * 115,
-              rotation: (index) => (index % 2 ? 1 : -1) * 9,
-              opacity: 0,
-              duration: 0.85,
-              stagger: { each: locale === 'en' ? 0.012 : 0.045, from: 'center' },
-            },
-            0.2
-          );
-          if (scene) {
-            entrance.from(
-              scene,
+          const enter = gsap.timeline({ defaults: { ease: 'power3.out' } });
+          if (mode === 'search') {
+            enter.from(all('.lite-search-eyebrow'), { opacity: 0, y: 8, duration: 0.45 });
+            enter.from(
+              all('.lite-search-letter'),
               {
-                xPercent: desktop ? 20 : 8,
-                yPercent: 12,
-                rotation: -24,
-                scale: 0.58,
                 opacity: 0,
-                duration: 1.65,
-                ease: 'expo.out',
+                y: 14,
+                duration: 0.55,
+                stagger: locale === 'en' ? 0.009 : 0.022,
+                clearProps: 'opacity,transform',
               },
+              0.07
+            );
+            enter.from(all('.lite-search-description'), { opacity: 0, y: 10, duration: 0.5 }, 0.25);
+            enter.from(
+              all('.lite-search-modes, .showcase-search'),
+              { opacity: 0, y: 12, duration: 0.55, stagger: 0.08, clearProps: 'opacity,transform' },
+              0.32
+            );
+          } else {
+            enter.from(all('.lite-search-detail-heading'), {
+              opacity: 0,
+              y: 12,
+              duration: 0.5,
+              clearProps: 'opacity,transform',
+            });
+            enter.from(
+              all('[data-lite-card]'),
+              { opacity: 0, y: 16, duration: 0.5, stagger: 0.08, clearProps: 'opacity,transform' },
               0.08
             );
           }
-          entrance.from(all('.showcase-description'), { y: 28, opacity: 0, duration: 0.75 }, 0.42);
-          const readingCards = all('.showcase-reading-card');
-          if (readingCards.length)
-            entrance.from(
-              readingCards,
-              {
-                y: (index) => 24 + index * 6,
-                rotationY: -18,
-                opacity: 0,
-                duration: 0.75,
-                stagger: 0.08,
-                clearProps: 'transform',
-              },
-              0.8
-            );
-          const orbitLabels = all('.showcase-constellation > *, .showcase-orbit-labels > *');
-          if (orbitLabels.length) {
-            entrance.from(orbitLabels, { y: 24, opacity: 0, duration: 0.8, stagger: 0.12 }, 0.7);
-          }
-
-          if (hero) {
-            if (scene) {
-              gsap.to(scene, {
-                yPercent: desktop ? 34 : 16,
-                xPercent: desktop ? -17 : -5,
-                rotation: desktop ? 21 : 9,
-                scale: desktop ? 1.18 : 1.08,
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: hero,
-                  start: 'top top',
-                  end: 'bottom top',
-                  scrub: 0.9,
-                },
-              });
-            }
-            const copy = one('.showcase-hero-copy');
-            if (copy) {
-              gsap.to(copy, {
-                y: desktop ? -76 : -24,
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: hero,
-                  start: 'top top',
-                  end: 'bottom top',
-                  scrub: 0.7,
-                },
-              });
-            }
-            all('.showcase-title-line').forEach((line, index) => {
-              gsap.to(line, {
-                xPercent: (index ? 1 : -1) * (desktop ? 11 : 3),
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: hero,
-                  start: 'top top',
-                  end: 'bottom top',
-                  scrub: 0.75,
-                },
-              });
-            });
-            orbitLabels.forEach((label, index) => {
-              gsap.to(label, {
-                y: (index % 2 ? -1 : 1) * (desktop ? 95 : 32),
-                rotation: index % 2 ? 8 : -8,
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: hero,
-                  start: 'top top',
-                  end: 'bottom top',
-                  scrub: 1.15,
-                },
-              });
-            });
-          }
-
-          all('.showcase-reveal').forEach((heading) => {
-            gsap.from(heading, {
-              y: desktop ? 90 : 42,
-              rotation: desktop ? -3 : -1,
-              opacity: 0,
-              duration: 1.05,
-              ease: 'power4.out',
-              scrollTrigger: {
-                trigger: heading,
-                start: 'top 94%',
-                toggleActions: 'play none none reverse',
-              },
-            });
-          });
-
-          // The document peels into view, then drifts past the exact figures beside it.
-          const sourceSheet = one('.showcase-source-sheet');
-          const evidenceStage =
-            one('.showcase-original-lab-stage') || one('.showcase-evidence-stage');
-          if (sourceSheet && evidenceStage) {
-            gsap.fromTo(
-              sourceSheet,
-              {
-                y: desktop ? 160 : 65,
-                rotation: desktop ? 17 : 8,
-                rotationY: desktop ? -28 : -10,
-                scale: 0.82,
-                opacity: 0,
-                transformOrigin: '8% 80%',
-              },
-              {
-                y: desktop ? -28 : 0,
-                rotation: -3,
-                rotationY: 0,
-                scale: 1,
-                opacity: 1,
-                ease: 'power2.out',
-                scrollTrigger: {
-                  trigger: evidenceStage,
-                  start: 'top 94%',
-                  end: 'top 22%',
-                  scrub: 0.8,
-                },
-              }
-            );
-          }
-          // The interactive stage owns its channel motion; avoid a second nested amount mask.
-          const values = one('.showcase-evidence-values:not(.showcase-signal-stage)');
-          if (values) {
-            gsap.from(all('.showcase-evidence-values:not(.showcase-signal-stage) > *'), {
-              y: 38,
-              clipPath: 'inset(100% 0% 0% 0%)',
-              opacity: 0,
-              stagger: 0.14,
-              duration: 0.95,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: values,
-                start: 'top 92%',
-                toggleActions: 'play none none reverse',
-              },
-            });
-          }
-
-          const chapters = one('.showcase-chapters');
-          if (chapters) {
-            gsap.from(all('.showcase-chapters > button'), {
-              x: desktop ? -115 : -28,
-              y: desktop ? 16 : 22,
-              opacity: 0,
-              stagger: 0.14,
-              duration: 1.05,
-              ease: 'power4.out',
-              scrollTrigger: {
-                trigger: chapters,
-                start: 'top 92%',
-                toggleActions: 'play none none reverse',
-              },
-            });
-          }
-
-          const driftingType = (
-            selector: string,
-            sectionSelector: string,
-            desktopDistance: number,
-            mobileDistance: number
-          ) => {
-            const word = one(selector);
-            const section = one(sectionSelector);
-            if (!word || !section) return;
-            gsap.fromTo(
-              word,
-              { xPercent: desktop ? 5 : 2 },
-              {
-                xPercent: desktop ? desktopDistance : mobileDistance,
-                ease: 'none',
-                scrollTrigger: {
-                  trigger: section,
-                  start: 'top bottom',
-                  end: 'bottom top',
-                  scrub: 0.65,
-                },
-              }
-            );
-          };
-          driftingType('.showcase-process-word', '.showcase-process', -20, -8);
-          driftingType('.showcase-ending-word', '.showcase-ending', -17, -7);
-          all('.showcase-marquee').forEach((marquee) => {
-            gsap.from(marquee, {
-              y: 35,
-              opacity: 0,
-              duration: 0.8,
-              ease: 'power3.out',
-              scrollTrigger: {
-                trigger: marquee,
-                start: 'top 96%',
-                toggleActions: 'play none none reverse',
-              },
-            });
-          });
-
           const visibility = () => {
-            if (document.hidden) entrance.pause();
-            else {
-              entrance.resume();
-              ScrollTrigger.refresh();
-            }
+            if (document.hidden) enter.pause();
+            else enter.resume();
           };
-          if (document.hidden) entrance.pause();
           document.addEventListener('visibilitychange', visibility);
-          return () => document.removeEventListener('visibilitychange', visibility);
-        }
-      );
-      media.add(
-        '(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)',
-        () => {
-          const hero = container.querySelector<HTMLElement>('.showcase-hero');
-          const paper = container.querySelector<HTMLElement>('.showcase-paper-follow');
-          const paperMoves = paper
-            ? {
-                x: gsap.quickTo(paper, 'x', { duration: 0.8, ease: 'power3.out' }),
-                y: gsap.quickTo(paper, 'y', { duration: 0.8, ease: 'power3.out' }),
-                rotationY: gsap.quickTo(paper, 'rotationY', {
-                  duration: 0.9,
-                  ease: 'power3.out',
-                }),
-                rotationX: gsap.quickTo(paper, 'rotationX', {
-                  duration: 0.9,
-                  ease: 'power3.out',
-                }),
-              }
-            : null;
-          let pointerFrame = 0;
-          const shine = (horizontal: number, vertical: number) => {
-            hero?.style.setProperty('--showcase-pointer-x', `${horizontal * 100}%`);
-            hero?.style.setProperty('--showcase-pointer-y', `${vertical * 100}%`);
-          };
-          const reset = () => {
-            cancelAnimationFrame(pointerFrame);
-            shine(0.5, 0.5);
-            if (!paperMoves) return;
-            paperMoves.x(0);
-            paperMoves.y(0);
-            paperMoves.rotationY(0);
-            paperMoves.rotationX(0);
-          };
-          const follow = (event: PointerEvent) => {
-            if (
-              !hero ||
-              document.hidden ||
-              container.querySelector('.showcase-search')?.contains(document.activeElement)
-            )
-              return;
-            const bounds = hero.getBoundingClientRect();
-            const horizontal = gsap.utils.clamp(0, 1, (event.clientX - bounds.left) / bounds.width);
-            const vertical = gsap.utils.clamp(0, 1, (event.clientY - bounds.top) / bounds.height);
-            cancelAnimationFrame(pointerFrame);
-            pointerFrame = requestAnimationFrame(() => shine(horizontal, vertical));
-            paperMoves?.x((horizontal - 0.5) * 60);
-            paperMoves?.y((vertical - 0.5) * 42);
-            paperMoves?.rotationY((horizontal - 0.5) * 24);
-            paperMoves?.rotationX((vertical - 0.5) * -18);
-          };
-          const onFocus = (event: FocusEvent) => {
-            if (container.querySelector('.showcase-search')?.contains(event.target as Node))
-              reset();
-          };
-          const onVisibility = () => {
-            if (document.hidden) reset();
-          };
-          hero?.addEventListener('pointermove', follow);
-          hero?.addEventListener('pointerleave', reset);
-          hero?.addEventListener('focusin', onFocus);
-          document.addEventListener('visibilitychange', onVisibility);
-
-          const magneticSelector = '[data-magnetic], .showcase-search .start-submit';
-          const magnetic = new Map<HTMLElement, { x: gsap.QuickToFunc; y: gsap.QuickToFunc }>();
-          const magneticButton = (target: EventTarget | null) => {
-            const button =
-              target instanceof Element ? target.closest<HTMLElement>(magneticSelector) : null;
-            return button && container.contains(button) ? button : null;
-          };
-          const magneticMove = (event: PointerEvent) => {
-            if (document.hidden) return;
-            const button = magneticButton(event.target);
-            if (!button || button.matches(':disabled')) return;
-            for (const [previous, moves] of magnetic) {
-              if (previous.isConnected) continue;
-              moves.x.tween.kill();
-              moves.y.tween.kill();
-              magnetic.delete(previous);
-            }
-            let moves = magnetic.get(button);
-            if (!moves) {
-              moves = {
-                x: gsap.quickTo(button, 'x', { duration: 0.3, ease: 'power2.out' }),
-                y: gsap.quickTo(button, 'y', { duration: 0.3, ease: 'power2.out' }),
-              };
-              magnetic.set(button, moves);
-            }
-            const bounds = button.getBoundingClientRect();
-            moves.x((event.clientX - bounds.left - bounds.width / 2) * 0.12);
-            moves.y((event.clientY - bounds.top - bounds.height / 2) * 0.12);
-          };
-          const magneticOut = (event: PointerEvent) => {
-            const button = magneticButton(event.target);
-            if (!button || magneticButton(event.relatedTarget) === button) return;
-            magnetic.get(button)?.x(0);
-            magnetic.get(button)?.y(0);
-          };
-          const magneticFocus = (event: FocusEvent) => {
-            const button = magneticButton(event.target);
-            if (!button) return;
-            magnetic.get(button)?.x(0);
-            magnetic.get(button)?.y(0);
-          };
-          // Delegation also covers the input's submit button after a sample fills a new draft.
-          container.addEventListener('pointermove', magneticMove);
-          container.addEventListener('pointerout', magneticOut);
-          container.addEventListener('focusin', magneticFocus);
+          visibility();
+          const cards = context.conditions.pointer ? all('[data-lite-card]') : [];
+          const handlers = cards.map((card) => {
+            const tiltX = gsap.quickTo(card, 'rotationX', { duration: 0.35, ease: 'power2.out' });
+            const tiltY = gsap.quickTo(card, 'rotationY', { duration: 0.35, ease: 'power2.out' });
+            const move = (event: PointerEvent) => {
+              if (document.hidden || card.contains(document.activeElement)) return;
+              const bounds = card.getBoundingClientRect();
+              const x = (event.clientX - bounds.left) / bounds.width;
+              const y = (event.clientY - bounds.top) / bounds.height;
+              card.style.setProperty('--lite-shine-x', `${x * 100}%`);
+              card.style.setProperty('--lite-shine-y', `${y * 100}%`);
+              tiltX((0.5 - y) * 2);
+              tiltY((x - 0.5) * 2);
+            };
+            const leave = () => {
+              tiltX(0);
+              tiltY(0);
+            };
+            card.addEventListener('pointermove', move, { passive: true });
+            card.addEventListener('pointerleave', leave);
+            card.addEventListener('focusin', leave);
+            return () => {
+              card.removeEventListener('pointermove', move);
+              card.removeEventListener('pointerleave', leave);
+              card.removeEventListener('focusin', leave);
+              tiltX.tween.kill();
+              tiltY.tween.kill();
+              card.style.removeProperty('--lite-shine-x');
+              card.style.removeProperty('--lite-shine-y');
+            };
+          });
           return () => {
-            cancelAnimationFrame(pointerFrame);
-            hero?.removeEventListener('pointermove', follow);
-            hero?.removeEventListener('pointerleave', reset);
-            hero?.removeEventListener('focusin', onFocus);
-            hero?.style.removeProperty('--showcase-pointer-x');
-            hero?.style.removeProperty('--showcase-pointer-y');
-            document.removeEventListener('visibilitychange', onVisibility);
-            container.removeEventListener('pointermove', magneticMove);
-            container.removeEventListener('pointerout', magneticOut);
-            container.removeEventListener('focusin', magneticFocus);
-            if (paperMoves) Object.values(paperMoves).forEach((move) => move.tween.kill());
-            magnetic.forEach((moves, button) => {
-              moves.x.tween.kill();
-              moves.y.tween.kill();
-              gsap.set(button, { clearProps: 'transform' });
-            });
+            document.removeEventListener('visibilitychange', visibility);
+            handlers.forEach((dispose) => dispose());
           };
         }
       );
-      // CSS has its own animation clock; the GSAP entrance pause does not stop it.
-      const marquee = container.querySelector<HTMLElement>('.showcase-marquee-track');
-      const priorMarqueeState = marquee?.style.getPropertyValue('animation-play-state') || '';
-      const priorMarqueePriority = marquee?.style.getPropertyPriority('animation-play-state') || '';
-      let marqueeInView = false;
-      let marqueeDisposed = false;
-      const reconcileMarquee = () => {
-        if (marqueeDisposed) return;
-        marquee?.style.setProperty(
-          'animation-play-state',
-          document.hidden || !marqueeInView ? 'paused' : priorMarqueeState || 'running',
-          priorMarqueePriority
-        );
-      };
-      const marqueeObserver = marquee
-        ? new IntersectionObserver(([entry]) => {
-            marqueeInView = entry.isIntersecting;
-            reconcileMarquee();
-          })
-        : null;
-      if (marquee) {
-        reconcileMarquee();
-        marqueeObserver?.observe(marquee.closest('.showcase-marquee') || marquee);
-        document.addEventListener('visibilitychange', reconcileMarquee);
-      }
-      let frame = 0;
-      const resize = new ResizeObserver(() => {
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          if (!document.hidden) ScrollTrigger.refresh();
-        });
-      });
-      resize.observe(container);
       return () => {
-        marqueeDisposed = true;
         motionScroll = null;
         mediaEvents.removeEventListener('matchMediaInit', recordMotionScroll);
         mediaEvents.removeEventListener('matchMedia', restoreMotionScroll);
-        cancelAnimationFrame(frame);
-        resize.disconnect();
-        marqueeObserver?.disconnect();
-        document.removeEventListener('visibilitychange', reconcileMarquee);
-        if (marquee) {
-          if (priorMarqueeState)
-            marquee.style.setProperty(
-              'animation-play-state',
-              priorMarqueeState,
-              priorMarqueePriority
-            );
-          else marquee.style.removeProperty('animation-play-state');
-        }
         media.revert();
       };
     },
-    { scope: root, dependencies: [locale], revertOnUpdate: true }
+    { scope: root, dependencies: [locale, mode], revertOnUpdate: true }
   );
 }

@@ -64,16 +64,16 @@ export const guideDocument: ProductDocument = {
       title: ['Lite 与 Pro', 'Lite and Pro'],
       paragraphs: [
         [
-          'Lite 从首页搜索开始。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。结果分为摘要、数字、线索调查和下一问：先读已取得资料支持的判断，再展开完整分析。首页的历史示例用于说明阅读方法，保留原公司、年度与出处。',
-          'Lite starts with search on the home page. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Results follow Summary, Figures, Evidence questions and Next questions: begin with judgments supported by acquired sources, then expand the complete analysis. Historical examples on the home page explain the reading method and retain their original company, year and sources.',
+          'Lite 从集中搜索页开始。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。公司结果分为概览、数字、线索调查和下一问四个独立页面，点击导航或前后页切换；每页围绕一个阅读任务展示同一份研究资料。历史样例和阅读路径也各有自己的页面，样例保留原公司、年度与出处。',
+          'Lite starts with a focused search page. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Company results have four separate pages: Overview, Figures, Evidence questions and Next questions. Use the navigation or previous/next links to switch pages; each presents one reading task from the same research record. Historical examples and the reading guide also have separate pages, and examples retain their original company, year and sources.',
         ],
         [
           '在线索调查中选择一个问题，沿着判断、金额与原文查看依据；带“追到依据”的金额可打开对应来源。来源保留已有的期间、页码与节选，也可回看引用它的判断。类型筛选与翻页只整理已取得材料；展开完整档案或打印时，正文和全部来源仍保留。推荐问题承接当前企业、年度和显示口径，资料缺失或报告未完成时会明确说明。',
           'Select an evidence question and follow its judgment, figures and original excerpts. Figures marked Trace the source open their own references. Sources retain recorded periods, pages and excerpts, with links back to the judgments citing them. Type filters and pages organize acquired materials only. The complete dossier and print view retain the full narrative and source list. Recommended questions keep the current company, year and displayed basis; missing materials and unfinished reports are labeled.',
         ],
         [
-          'Pro 从独立公司研究入口进入，使用侧边栏查看研究报告、财务走势、行业对比等专业页面。企业页的 Lite／Pro 切换沿用同一份研究记录，不新建查询或重新采集；已经开始的后台分析按原状态继续。未生成 AI 报告时，仍可核对已取得的金额和规则观察；生成失败保留已有报告及其原生成日期。',
-          'Pro has a separate research entry and sidebar for Research report, Financial trends, Industry comparison and other detailed pages. Switching Lite/Pro on a company page retains the same research record without creating a query or acquiring sources again; existing background analysis continues in its current state. Before an AI report is available, acquired amounts and rule observations remain readable. A failed generation retains any saved report and its original generation date.',
+          'Pro 从独立公司研究入口进入，使用侧边栏查看研究报告、财务走势、行业对比等专业页面。两版使用相同的数据源、研究记录和分析结果，分别组织展示与操作。企业页切换 Lite／Pro 或在 Lite 翻页，不新建查询或重新采集；已经开始的后台分析按原状态继续。未生成 AI 报告时，仍可核对已取得的金额和规则观察；生成失败保留已有报告及其原生成日期。',
+          'Pro has a separate research entry and sidebar for Research report, Financial trends, Industry comparison and other detailed pages. Both experiences use the same data sources, research record and analysis results, with distinct presentation and interactions. Switching Lite/Pro or turning a Lite page does not create a query or acquire sources again; existing background analysis continues in its current state. Before an AI report is available, acquired amounts and rule observations remain readable. A failed generation retains any saved report and its original generation date.',
         ],
       ],
       links: [

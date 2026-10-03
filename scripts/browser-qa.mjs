@@ -1,7 +1,7 @@
 /** Browser acceptance of real entry flows; no financial/model requests or fixtures. */
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -19,10 +19,16 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 4,
+  version: 5,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: false,
+  buildAssets: Array.from(
+    (await readFile(path.join(root, 'dist/index.html'), 'utf8')).matchAll(
+      /(?:src|href)="(\/assets\/[^\"]+)"/g
+    ),
+    (match) => match[1]
+  ),
   checks: [],
   screenshots: [],
   pageErrors: [],
@@ -35,11 +41,14 @@ const receipt = {
   excludedTelemetryScripts: [],
   researchWrites: [],
   opticalInteraction: [],
+  injectedReadFailures: [],
+  metadataProtocolFixtures: [],
   limits: [
     'No company research is submitted; live company-result, financial acquisition, same-run switching and model/assistant answers are outside this entry-flow check.',
     'Screenshots require a separate visual comparison with the selected source; successful assertions are not a fidelity verdict.',
     'Guest storage is fresh and temporary; no production records or synthetic financial responses are used.',
     'The existing analytics.lailai.one/script.js telemetry script receives empty JavaScript locally; analytics behavior is outside this check.',
+    'Three exactly scoped synthetic company metadata GET controls exercise empty results, HTTP failure and cancellation; real bundled public-catalog candidates are verified separately. They do not replace financial or model responses.',
   ],
 };
 globalThis.fetch = async (input, init) => {
@@ -82,19 +91,26 @@ async function headerControlsFit(page, name) {
   check(`${name}: visible header controls remain inside the viewport`);
 }
 async function headlineFits(page, name) {
-  const lines = await page.locator('.showcase-title-line').evaluateAll((elements) =>
-    elements.map((element) => {
-      const line = element.getBoundingClientRect();
-      const mask = element.parentElement.getBoundingClientRect();
-      return { text: element.textContent, lineWidth: line.width, maskWidth: mask.width };
-    })
-  );
-  for (const line of lines)
+  const measured = await page.locator('#showcase-title').evaluate((heading) => {
+    const box = heading.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(heading);
+    return {
+      left: box.left,
+      right: box.right,
+      ranges: Array.from(range.getClientRects(), (line) => ({
+        left: line.left,
+        right: line.right,
+      })),
+    };
+  });
+  assert.ok(measured.ranges.length > 0, `${name} has no headline text`);
+  for (const line of measured.ranges)
     assert.ok(
-      line.lineWidth <= line.maskWidth + 2,
+      line.left >= measured.left - 2 && line.right <= measured.right + 2,
       `${name} clips its headline: ${JSON.stringify(line)}`
     );
-  check(`${name}: complete headline fits its animation masks`);
+  check(`${name}: complete headline text fits its actual content area`);
 }
 async function submitLabelFits(page, name) {
   const measured = await page.locator('.showcase-search .start-submit > span').evaluate((label) => {
@@ -105,11 +121,64 @@ async function submitLabelFits(page, name) {
   assert.equal(measured.lines, 1, `${name} wraps its submit label: ${JSON.stringify(measured)}`);
   check(`${name}: company query submit label remains on one line`);
 }
+async function readableComposer(page, name) {
+  const input = page.locator('.showcase-search textarea');
+  const area = await input.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return {
+      width:
+        element.clientWidth -
+        Number.parseFloat(style.paddingLeft) -
+        Number.parseFloat(style.paddingRight),
+      fontSize: Number.parseFloat(style.fontSize),
+    };
+  });
+  assert.ok(area.width >= 96, `${name} hides its editable company text: ${JSON.stringify(area)}`);
+  assert.ok(area.fontSize >= 16, `${name} uses a zoom-triggering mobile input size`);
+  assert.equal(await page.locator('.showcase-search .start-mode').isVisible(), false);
+  assert.equal(await page.locator('.showcase-search .start-key-hint').isVisible(), false);
+  check(
+    `${name}: company text has usable visible space without a redundant mode badge or inner submit hint`
+  );
+}
+async function readableDialogHeader(dialog, name) {
+  const colors = await dialog.locator('.dialog-header h2').evaluate((element) => {
+    const rgb = (value) => {
+      const numbers = value.match(/[\d.]+/g)?.map(Number) || [];
+      return [numbers[0] || 0, numbers[1] || 0, numbers[2] || 0, numbers[3] ?? 1];
+    };
+    const layers = [];
+    for (let node = element; node; node = node.parentElement)
+      layers.push(rgb(getComputedStyle(node).backgroundColor));
+    let background = [255, 255, 255];
+    for (const layer of layers.reverse())
+      background = background.map(
+        (value, index) => layer[index] * layer[3] + value * (1 - layer[3])
+      );
+    const foreground = rgb(getComputedStyle(element).color);
+    return { foreground: foreground.slice(0, 3), background, text: element.textContent };
+  });
+  const luminance = (color) =>
+    color
+      .map((value) => {
+        const c = value / 255;
+        return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      })
+      .reduce((value, channel, index) => value + channel * [0.2126, 0.7152, 0.0722][index], 0);
+  const fg = luminance(colors.foreground),
+    bg = luminance(colors.background);
+  const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+  assert.ok(
+    ratio >= 4.5,
+    `${name} unreadable dialog heading: ${JSON.stringify({ ...colors, ratio })}`
+  );
+  check(`${name}: native dialog title has at least 4.5:1 text contrast`);
+}
 async function canvasStamp(page) {
-  return page.locator('.hero-field-canvas').evaluate((canvas) => canvas.toDataURL());
+  return page.locator('.lite-search-ambient').evaluate((canvas) => canvas.toDataURL());
 }
 async function staticOptics(page, name) {
-  await page.locator('[data-hero-ready="true"]').waitFor();
+  await page.locator('.showcase-hermes[data-ambient-ready="true"]').waitFor();
   const before = await canvasStamp(page);
   await page.mouse.move(24, 200);
   await page.mouse.move(page.viewportSize().width - 24, 300);
@@ -119,8 +188,8 @@ async function staticOptics(page, name) {
   check(`${name}: ambient hero remains static under reduced motion`);
 }
 async function pointerOptics(page) {
-  const scene = page.locator('[data-hero-ready="true"]');
-  assert.equal(await scene.getAttribute('data-hero-rendering'), 'canvas');
+  const scene = page.locator('.showcase-hermes[data-ambient-ready="true"]');
+  assert.equal(await scene.getAttribute('data-ambient-rendering'), 'canvas');
   assert.equal(await page.locator('.showcase-home img[src$="optical-prism.webp"]').count(), 0);
   await page.mouse.move(110, 290, { steps: 10 });
   await page.waitForTimeout(950);
@@ -167,6 +236,11 @@ async function scrollScene(page, selector, inset = 80) {
 async function emptyRecentReports(page, name) {
   const trigger = page.locator('.showcase-history-toggle');
   const writesBefore = receipt.researchWrites.length;
+  if ((await trigger.getAttribute('aria-expanded')) === 'true') {
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    await page.locator('.showcase-search-history').waitFor({ state: 'hidden' });
+  }
   await trigger.focus();
   await page.keyboard.press('Enter');
   const history = page.locator('.showcase-search-history');
@@ -214,10 +288,111 @@ async function companyCandidates(page, name) {
   await list.waitFor({ state: 'hidden' });
   assert.equal(await input.inputValue(), '松原安全');
   assert.equal(await input.evaluate((element) => document.activeElement === element), true);
+  const scrollBefore = await page.evaluate(() => scrollY);
+  await input.press('Home');
+  assert.equal(await input.evaluate((element) => element.selectionStart), 0);
+  await input.press('End');
+  assert.equal(await input.evaluate((element) => element.selectionStart), 4);
+  assert.equal(await page.evaluate(() => scrollY), scrollBefore);
   assert.equal(receipt.researchWrites.length, writesBefore);
   check(
     `${name}: real public-catalog company candidates support ArrowDown/Escape while retaining the draft without research submission`
   );
+}
+async function matchingReadStates(page) {
+  const input = page.locator('.showcase-search textarea');
+  const emptyQuery = 'CI空结果验证样本';
+  const errorQuery = 'CI读取失败验证样本';
+  const cancelledQuery = 'CI取消读取验证样本';
+  let retry = false;
+  let releaseCancelled;
+  const pendingCancelled = new Promise((resolve) => {
+    releaseCancelled = resolve;
+  });
+  const metadata = (query) => ({
+    query,
+    candidates: [],
+    limitedToListed: true,
+    source: 'cninfo',
+    truncated: false,
+  });
+  const routeHandler = async (route) => {
+    const query = new URL(route.request().url()).searchParams.get('q');
+    if (![emptyQuery, errorQuery, cancelledQuery].includes(query)) return route.fallback();
+    assert.equal(route.request().method(), 'GET');
+    receipt.metadataProtocolFixtures.push({ query, method: 'GET', fixture: true });
+    if (query === cancelledQuery) {
+      await pendingCancelled;
+      return route
+        .fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(metadata(query)),
+        })
+        .catch(() => {});
+    }
+    if (query === errorQuery && !retry) {
+      return route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          error: '公开主体资料读取暂时不可用，请重试。',
+          code: 'COMPANY_SEARCH_UNAVAILABLE',
+        }),
+      });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(metadata(query)),
+    });
+  };
+  await page.route('**/api/companies/search**', routeHandler);
+  try {
+    await input.fill(emptyQuery);
+    await page
+      .locator('.company-completions-state')
+      .filter({ hasText: /未匹配到支持的上市主体|No supported listed entity matched/ })
+      .waitFor();
+    assert.equal(await page.locator('.start-input-error [role="alert"]').count(), 0);
+    await input.fill(errorQuery);
+    const alert = page.locator('.start-input-error [role="alert"]');
+    await alert.waitFor();
+    assert.equal(await input.inputValue(), errorQuery);
+    assert.equal(
+      await page
+        .locator('.company-completions-state')
+        .filter({ hasText: /未匹配到|No supported/ })
+        .count(),
+      0
+    );
+    await capture(page, 'lite-search-read-error');
+    retry = true;
+    await page.locator('.start-input-error button').click();
+    await alert.waitFor({ state: 'hidden' });
+    await page
+      .locator('.company-completions-state')
+      .filter({ hasText: /未匹配到支持的上市主体|No supported listed entity matched/ })
+      .waitFor();
+    assert.equal(await input.inputValue(), errorQuery);
+    const pending = page.waitForRequest(
+      (request) => new URL(request.url()).searchParams.get('q') === cancelledQuery
+    );
+    await input.fill(cancelledQuery);
+    await pending;
+    await input.fill('');
+    releaseCancelled();
+    await page.waitForTimeout(80);
+    assert.equal(await page.locator('.company-completions').count(), 0);
+    assert.equal(await page.locator('.start-input-error [role="alert"]').count(), 0);
+    assert.equal(await input.inputValue(), '');
+    check(
+      'Local metadata-only GET fixtures distinguish empty results from HTTP failure; retry keeps the draft and cancellation prevents stale results'
+    );
+  } finally {
+    releaseCancelled();
+    await page.unroute('**/api/companies/search**', routeHandler);
+  }
 }
 async function signalChannels(page, name) {
   await scrollScene(page, '.showcase-signal-stage', 110);
@@ -257,10 +432,7 @@ async function signalChannels(page, name) {
     await stage.locator('.signal-scope').innerText(),
     /不是当前查询结果|Not a current query result/
   );
-  assert.deepEqual(await stage.locator('.signal-finance-facts dd > span').allTextContents(), [
-    '366,373,098.93',
-    '26,197,123.70',
-  ]);
+  await historicalCompactAmounts(stage, name);
   await financeAmountsFit(page, name);
   const amounts = await stage.locator('.signal-finance-facts').innerText();
   const scenes = stage.locator('.signal-scene-controls button');
@@ -282,10 +454,9 @@ async function signalChannels(page, name) {
         /同一金额刻度|same monetary scale/
       );
     } else if (view === 'difference') {
-      assert.equal(
-        await stage.locator('.signal-difference-amount > span').innerText(),
-        '340,175,975.23'
-      );
+      const difference = stage.locator('.signal-difference-amount > span');
+      assert.match(await difference.innerText(), /约|approx/i);
+      assert.match(await difference.getAttribute('aria-label'), /340,175,975\.23/);
       assert.match(
         await stage.locator('.signal-panel-note').innerText(),
         /不证明经营原因|does not establish a business cause/
@@ -348,6 +519,12 @@ async function signalChannels(page, name) {
     )
   );
   assert.equal(await dialog.locator('img').count(), 2);
+  await readableDialogHeader(dialog, `${name} original-source dialog`);
+  assert.deepEqual(await dialog.locator('.showcase-originals dl dd').allTextContents(), [
+    '366,373,098.93 CNY',
+    '26,197,123.70 CNY',
+  ]);
+  assert.match(await dialog.innerText(), /固定历史示例|Fixed historical example/);
   await capture(page, `${name}-signal-original-dialog`);
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'hidden' });
@@ -361,7 +538,31 @@ async function signalChannels(page, name) {
   await page.keyboard.press('Enter');
   assert.equal(receipt.researchWrites.length, writesBefore);
   check(
-    `${name}: channel tabs support arrow/Home/End focus, absent-source states and real original-page dialog without research writes`
+    `${name}: tabs support arrow/Home/End focus, absent-source states and a genuine original-page dialog preserving full-precision amounts without research writes`
+  );
+}
+async function historicalCompactAmounts(stage, name) {
+  const cards = stage.locator('.signal-finance-facts dd');
+  assert.equal(await cards.count(), 2);
+  for (const [index, amount] of ['366,373,098.93', '26,197,123.70'].entries()) {
+    const card = cards.nth(index);
+    assert.ok((await card.getAttribute('aria-label')).includes(amount));
+    assert.ok((await card.getAttribute('title')).includes(amount));
+    assert.match(await card.innerText(), /约|approx/i);
+    assert.match(await card.innerText(), /亿元|CNY\s*[\d.,]+M/);
+  }
+  const exact = stage.locator('.signal-exact-data');
+  await exact.locator('summary').focus();
+  await stage.page().keyboard.press('Enter');
+  const figures = await exact.locator('dl dd').allTextContents();
+  assert.equal(figures.length, 3);
+  for (const [index, amount] of ['366,373,098.93', '26,197,123.70', '340,175,975.23'].entries())
+    assert.ok(figures[index].includes(amount));
+  assert.match(await exact.locator('dt').nth(2).innerText(), /计算值|calculated/);
+  await exact.locator('summary').focus();
+  await stage.page().keyboard.press('Enter');
+  check(
+    `${name}: short approximate amounts share a clear unit and native expansion retains all original precision, with the difference labeled as calculated`
   );
 }
 async function financeAmountsFit(page, name) {
@@ -382,34 +583,26 @@ async function financeAmountsFit(page, name) {
   for (const amount of measured) {
     assert.ok(
       amount.left >= amount.cellLeft - 1 && amount.right <= amount.cellRight + 1,
-      `${name} clips an exact financial amount: ${JSON.stringify(amount)}`
+      `${name} clips a financial amount: ${JSON.stringify(amount)}`
     );
   }
-  check(`${name}: exact financial amounts fit their containing cells without clipping`);
+  check(`${name}: compact financial amounts fit their containing cells without clipping`);
 }
-async function readingCardRoutes(page) {
-  const cards = page.locator('.showcase-reading-card');
-  assert.equal(await cards.count(), 4);
-  const writesBefore = receipt.researchWrites.length;
-  for (const [index, channel] of [
-    [1, 'public'],
-    [3, 'reputation'],
-    [2, 'finance'],
-    [0, 'finance'],
-  ]) {
-    assert.equal(await cards.nth(index).getAttribute('href'), '#showcase-evidence');
-    await cards.nth(index).focus();
-    await page.keyboard.press('Enter');
-    await page.waitForFunction(
-      (channel) =>
-        document.querySelector('.showcase-signal-stage')?.getAttribute('data-channel') === channel,
-      channel
-    );
-    assert.equal(new URL(page.url()).hash, '#showcase-evidence');
-  }
-  assert.equal(receipt.researchWrites.length, writesBefore);
+async function dynamicReducedMotion(page, name) {
+  const position = await page.evaluate(() => ({ x: scrollX, y: scrollY }));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(() => ({ x: scrollX, y: scrollY })), position);
+  const surface = await canvasStamp(page);
+  await page.mouse.move(30, 200);
+  await page.mouse.move(page.viewportSize().width - 30, 200);
+  await page.waitForTimeout(120);
+  assert.equal(await canvasStamp(page), surface);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.waitForTimeout(100);
+  assert.deepEqual(await page.evaluate(() => ({ x: scrollX, y: scrollY })), position);
   check(
-    'Keyboard reading-card links select their financial, public-record or reputation channel without research writes'
+    `${name}: changing reduced motion preserves native reading position and pauses decorative canvas`
   );
 }
 async function staticSignalStage(page, name) {
@@ -423,22 +616,28 @@ async function staticSignalStage(page, name) {
   await page.mouse.move(page.viewportSize().width - 24, 300);
   await page.waitForTimeout(180);
   assert.equal(await surface.evaluate((canvas) => canvas.toDataURL()), before);
-  assert.deepEqual(await stage.locator('.signal-finance-facts dd > span').allTextContents(), [
-    '366,373,098.93',
-    '26,197,123.70',
-  ]);
+  await historicalCompactAmounts(stage, name);
   await noOverflow(page, `${name} reduced-motion signal stage`);
   await capture(page, `${name}-signal-reduced`);
   check(
-    `${name}: reduced-motion company-information stage remains static with exact labeled historical amounts`
+    `${name}: reduced-motion information stage stays static with compact historical amounts and full-precision native detail`
   );
 }
-async function evidenceAndProcess(page, name) {
-  await scrollScene(page, '.showcase-evidence');
-  await noOverflow(page, `${name} evidence heading`);
-  await capture(page, `${name}-evidence-heading`);
+async function evidenceExample(page, name) {
+  const trigger = page.locator('.lite-search-modes a[href*="view=example"]');
+  const writesBefore = receipt.researchWrites.length;
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((url) => url.searchParams.get('view') === 'example');
+  await page.locator('.lite-search-example').waitFor();
+  assert.equal(await page.locator('.lite-search-view').isVisible(), false);
+  assert.equal(await page.locator('.lite-search-guide').count(), 0);
+  assert.equal(await trigger.getAttribute('aria-current'), 'page');
   await signalChannels(page, name);
-  await scrollScene(page, '.showcase-original-lab-stage', 120);
+  const scannerDetails = page.locator('.lite-search-scanner-panel');
+  await scannerDetails.locator('summary').focus();
+  await page.keyboard.press('Enter');
+  await page.locator('.showcase-scan-control input[type="range"]').waitFor();
   await page.waitForFunction(() =>
     Array.from(document.querySelectorAll('.showcase-source-sheet img')).every(
       (image) => image.complete && image.naturalWidth > 0
@@ -450,95 +649,62 @@ async function evidenceAndProcess(page, name) {
       images.map((image) => ({ src: image.getAttribute('src'), alt: image.getAttribute('alt') }))
     );
   assert.ok(originals[0].src.includes('page-190'));
-  assert.ok(originals[0].alt?.length);
   assert.ok(originals[1].src.includes('page-191'));
-  assert.equal(await page.locator('.showcase-source-xray').getAttribute('aria-hidden'), 'true');
+  assert.ok(originals.every((image) => image.alt?.length));
+  assert.match(await scannerDetails.innerText(), /固定历史示例|Fixed historical example/);
+  assert.match(await scannerDetails.innerText(), /合并口径.*人民币|consolidated.*CNY/);
   const scanner = page.locator('.showcase-source-scanner');
-  const range = page.locator('.showcase-scan-control input[type="range"]');
-  const exactAmountsBefore = await page.locator('.showcase-evidence-values dl').innerText();
-  const before = await range.inputValue();
-  const clipBefore = await page
-    .locator('.showcase-source-xray')
-    .evaluate((element) => getComputedStyle(element).clipPath);
+  const range = scanner.locator('input[type="range"]');
+  const overlay = scanner.locator('.lite-search-scanner-overlay');
+  const exactAmounts = await page.locator('.signal-finance-facts').innerText();
+  const before = Number(await range.inputValue());
+  const clipBefore = await overlay.evaluate((element) => getComputedStyle(element).clipPath);
   await range.focus();
   await page.keyboard.press('ArrowRight');
-  const after = await range.inputValue();
-  assert.equal(Number(after), Number(before) + 1);
+  assert.equal(Number(await range.inputValue()), before + 1);
   assert.equal(
     (await scanner.evaluate((element) => element.style.getPropertyValue('--scan-position'))).trim(),
-    `${after}%`
+    `${before + 1}%`
   );
-  const clipAfter = await page
-    .locator('.showcase-source-xray')
-    .evaluate((element) => getComputedStyle(element).clipPath);
-  assert.notEqual(clipAfter, clipBefore);
+  assert.notEqual(
+    await overlay.evaluate((element) => getComputedStyle(element).clipPath),
+    clipBefore
+  );
   await page.keyboard.press('Home');
   assert.equal(await range.inputValue(), '8');
-  await capture(page, `${name}-evidence-reveal-left`);
+  await capture(page, `${name}-historical-reveal-left`);
   await page.keyboard.press('End');
   assert.equal(await range.inputValue(), '92');
-  await capture(page, `${name}-evidence-reveal-right`);
-  assert.equal(await page.locator('.showcase-evidence-values dl').innerText(), exactAmountsBefore);
-  check(
-    `${name}: keyboard reveal changes CSS/clipping of real p190/p191 crops and preserves exact amounts`
+  await capture(page, `${name}-historical-reveal-right`);
+  assert.equal(await page.locator('.signal-finance-facts').innerText(), exactAmounts);
+  assert.match(
+    await scanner.locator('#showcase-scan-note').innerText(),
+    /两页独立原文|Separate original pages/
   );
-  await noOverflow(page, `${name} evidence scanner`);
-  await scrollScene(page, '.showcase-process');
-  await capture(page, `${name}-process-heading`);
-  await scrollScene(page, '.showcase-process-layout', 110);
-  const chapters = page.locator('.showcase-chapters > button');
-  for (let index = 0; index < 3; index++) {
-    await chapters.nth(index).focus();
-    await page.keyboard.press('Enter');
-    await page.waitForFunction((step) => {
-      const active = document.querySelector('.showcase-chapters > button[aria-pressed="true"]');
-      const inline = active?.querySelector(
-        '.showcase-chapter-inline-preview .showcase-flow-device'
-      );
-      const preview =
-        matchMedia('(max-width: 600px)').matches && inline
-          ? inline
-          : document.querySelector('.showcase-chapter-preview .showcase-flow-device');
-      if (preview?.getAttribute('data-preview-step') !== String(step)) return false;
-      const image = preview.querySelector('img');
-      return !image || (image.complete && image.naturalWidth > 0);
-    }, index);
-    assert.equal(await chapters.nth(index).getAttribute('aria-pressed'), 'true');
-    const preview = page.locator(
-      page.viewportSize().width <= 600
-        ? '.showcase-chapters > button[aria-pressed="true"] .showcase-flow-device'
-        : '.showcase-chapter-preview .showcase-flow-device'
-    );
-    assert.match(
-      await preview.locator('.showcase-flow-scope').innerText(),
-      /固定历史示例|Fixed historical example/
-    );
-    assert.equal(await preview.locator('img[src$="optical-prism.webp"]').count(), 0);
-    if (index === 0) {
-      assert.match(await preview.locator('.showcase-flow-match').innerText(), /300893/);
-      assert.match(await preview.innerText(), /先确认主体|Confirm the company/);
-    } else if (index === 1) {
-      const values = await preview.locator('.showcase-flow-value strong').allTextContents();
-      assert.deepEqual(values, ['366,373,098.93', '26,197,123.70']);
-      const widths = await preview
-        .locator('.showcase-flow-bar')
-        .evaluateAll((elements) =>
-          elements.map((element) => Number.parseFloat(element.style.width))
-        );
-      assert.equal(widths[0], 100);
-      // CSSOM serializes percentages with fewer digits than the underlying
-      // exact displayed amounts; keep the visual-ratio tolerance below 0.0001pp.
-      assert.ok(Math.abs(widths[1] / widths[0] - 26197123.7 / 366373098.93) < 1e-6);
-      assert.match(await preview.innerText(), /2025.*CNY/s);
-    } else {
-      assert.ok((await preview.locator('img').getAttribute('src')).includes('page-190'));
-      assert.match(await preview.innerText(), /p\.190–191/);
-    }
-  }
-  await noOverflow(page, `${name} process`);
-  await capture(page, `${name}-process-evidence-preview`);
+  await noOverflow(page, `${name} historical scanner`);
+  if (page.viewportSize().width <= 440) await dynamicReducedMotion(page, name);
   check(
-    `${name}: selected process chapters show labeled historical identity, exact same-scale figures and loaded originals`
+    `${name}: native historical example is a separate destination; keyboard scanner reveals loaded original pages without changing exact amounts`
+  );
+  await page.locator('.lite-search-modes a[href*="view=guide"]').focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((url) => url.searchParams.get('view') === 'guide');
+  const guide = page.locator('.lite-search-guide');
+  await guide.waitFor();
+  assert.equal(await page.locator('.lite-search-example').count(), 0);
+  assert.equal(await page.locator('.lite-search-view').isVisible(), false);
+  assert.equal(await guide.locator('.lite-search-guide-cards > li').count(), 3);
+  await noOverflow(page, `${name} independent reading guide`);
+  await capture(page, `${name}-reading-guide`);
+  await guide.locator('.lite-search-guide-actions a[href*="#showcase-query"]').focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((url) => !url.searchParams.has('view') && url.hash === '#showcase-query');
+  await page.waitForFunction(
+    () => document.activeElement === document.querySelector('.showcase-search textarea')
+  );
+  assert.equal(receipt.researchWrites.length, writesBefore);
+  check(
+    `${name}: native reading-guide link returns to and focuses the genuine search composer without research submission`
   );
 }
 async function capture(page, name) {
@@ -551,7 +717,7 @@ async function capture(page, name) {
     file: filename,
     viewport: page.viewportSize(),
     deviceScaleFactor: 1,
-    url: new URL(page.url()).pathname,
+    url: new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash,
     theme: await page.locator('html').getAttribute('data-theme'),
     locale: await page.locator('.showcase-home, .company-query-page').getAttribute('data-locale'),
     reducedMotion: await page.evaluate(
@@ -595,12 +761,15 @@ async function openContext({
     } else {
       if (
         request.method() !== 'GET' &&
-        /^\/api\/(company-runs|company-gaps)(?:\/|$)/.test(url.pathname)
-      )
+        /^\/api\/(company-runs|company-gaps|assistant)(?:\/|$)/.test(url.pathname)
+      ) {
         receipt.researchWrites.push({
           pathname: url.pathname,
           method: request.method(),
         });
+        await route.abort('blockedbyclient');
+        return;
+      }
       await route.continue();
     }
   });
@@ -608,10 +777,34 @@ async function openContext({
   currentPage = page;
   page.on('pageerror', (error) => receipt.pageErrors.push(error.message));
   page.on('console', (message) => {
-    if (message.type() === 'error') receipt.consoleErrors.push(message.text());
+    if (message.type() === 'error') {
+      const url = new URL(message.location().url || base, base);
+      if (
+        url.pathname === '/api/companies/search' &&
+        url.searchParams.get('q') === 'CI读取失败验证样本' &&
+        /503/.test(message.text())
+      )
+        receipt.injectedReadFailures.push({
+          kind: 'expected-console',
+          message: message.text(),
+          pathname: url.pathname,
+        });
+      else receipt.consoleErrors.push(message.text());
+    }
   });
   page.on('response', (response) => {
-    if (response.status() >= 400)
+    const url = new URL(response.url());
+    if (
+      response.status() === 503 &&
+      url.pathname === '/api/companies/search' &&
+      url.searchParams.get('q') === 'CI读取失败验证样本'
+    )
+      receipt.injectedReadFailures.push({
+        kind: 'expected-response',
+        status: 503,
+        pathname: url.pathname,
+      });
+    else if (response.status() >= 400)
       receipt.failedResponses.push({
         status: response.status(),
         pathname: new URL(response.url()).pathname,
@@ -639,9 +832,9 @@ async function openContext({
     return input && !input.disabled;
   });
   await page.waitForFunction(() => {
-    const scene = document.querySelector('[data-hero-ready="true"]');
+    const scene = document.querySelector('.showcase-hermes[data-ambient-ready="true"]');
     const surface = scene?.querySelector('canvas');
-    const description = document.querySelector('.showcase-description');
+    const description = document.querySelector('.lite-search-description');
     return (
       scene &&
       surface &&
@@ -653,7 +846,7 @@ async function openContext({
   });
   await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() =>
-    Array.from(document.querySelectorAll('.showcase-letter')).every((letter) => {
+    Array.from(document.querySelectorAll('.lite-search-letter')).every((letter) => {
       const matrix = new DOMMatrixReadOnly(getComputedStyle(letter).transform);
       return Math.abs(matrix.m42) < 0.01 && matrix.m22 > 0.9999;
     })
@@ -684,6 +877,7 @@ try {
   await headerControlsFit(page, 'desktop Lite');
   await headlineFits(page, 'desktop Lite');
   await submitLabelFits(page, 'desktop Lite');
+  await readableComposer(page, 'desktop Lite');
   await capture(page, 'lite-desktop-zh-light');
   await pointerOptics(page);
   const input = page.locator('.showcase-search textarea');
@@ -692,12 +886,15 @@ try {
   );
   await input.fill('松原安全');
   assert.equal(await input.inputValue(), '松原安全');
+  await input.press('Enter');
+  assert.equal(new URL(page.url()).pathname, '/');
+  assert.equal(receipt.researchWrites.length, 0);
   await input.fill('');
   await input.evaluate((element) =>
     element.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true, data: '' }))
   );
   await input.blur();
-  check('Native editable company input retains composition text without submitting research');
+  check('Native company input retains composition text; IME Enter cannot submit research');
   // These labels are present in the real bundled public catalog. Clear immediately;
   // clicking a sample only drafts its name and never submits company research.
   await page.locator('.showcase-examples button').filter({ hasText: '松原安全' }).click();
@@ -708,6 +905,7 @@ try {
   await companyCandidates(page, 'lite-desktop-zh');
   await input.fill('');
   check('Sample company button fills and focuses the editable draft without submission');
+  await matchingReadStates(page);
   const year = page.locator('.showcase-search-meta .select-trigger');
   const before = await year.innerText();
   await year.click();
@@ -725,33 +923,27 @@ try {
   await menu.waitFor();
   const menuPro = menu.locator('nav a').filter({ hasText: 'Pro' });
   await menuPro.focus();
-  await page.waitForFunction(
-    () =>
-      document.querySelector('.showcase-menu-route.is-active')?.getAttribute('data-route') === 'pro'
-  );
-  const routePreview = menu.locator('.showcase-menu-route.is-active');
-  assert.match(await routePreview.innerText(), /研究报告|Research report/);
+  assert.equal(await menuPro.getAttribute('href'), '/query');
+  assert.match(await menuPro.innerText(), /研究工作区|Research workspace/);
+  assert.equal(await menu.locator('.lite-search-navigation-links > a').count(), 3);
+  assert.equal(await menu.locator('.lite-search-navigation-secondary > a').count(), 3);
   assert.equal(await menu.locator('img[src$="optical-prism.webp"]').count(), 0);
   await noOverflow(page, 'desktop full-screen menu');
+  await readableDialogHeader(menu, 'Desktop navigation');
   await capture(page, 'lite-menu-zh-light');
   await page.keyboard.press('Escape');
   await menu.waitFor({ state: 'hidden' });
   assert.equal(await trigger.evaluate((element) => document.activeElement === element), true);
-  check('Full-screen menu keyboard open, focus preview, Escape and focus restoration');
-  await readingCardRoutes(page);
-  await evidenceAndProcess(page, 'lite-desktop-zh');
-  await page.locator('.showcase-source-sheet').click();
-  const source = page.locator('.showcase-source-dialog');
-  await source.waitFor();
-  await page.waitForFunction(() =>
-    Array.from(document.querySelectorAll('.showcase-source-dialog img')).every(
-      (image) => image.complete && image.naturalWidth > 0
-    )
+  check(
+    'Native navigation dialog keyboard open, real destination links, Escape and focus restoration'
   );
-  await capture(page, 'lite-historical-source-dialog');
-  await page.keyboard.press('Escape');
-  await source.waitFor({ state: 'hidden' });
-  check('Real retained historical report crops open and load locally');
+  await evidenceExample(page, 'lite-desktop-zh');
+  await page.goto(`${base}/#showcase-evidence`, { waitUntil: 'networkidle' });
+  await page.waitForURL((url) => url.searchParams.get('view') === 'example');
+  await page.locator('#showcase-evidence').waitFor();
+  await page.locator('.lite-search-back').click();
+  await page.locator('#showcase-query textarea').waitFor();
+  check('Legacy historical-example anchor opens the correct independent Lite destination');
   await page.locator('.experience-switch a').filter({ hasText: 'Pro' }).click();
   await page.waitForURL(`${base}/query`);
   await page.waitForFunction(() => {
@@ -783,13 +975,14 @@ try {
   await headerControlsFit(mobile.page, 'mobile English dark');
   await headlineFits(mobile.page, 'mobile English dark');
   await submitLabelFits(mobile.page, 'mobile English dark');
+  await readableComposer(mobile.page, 'mobile English dark');
   await capture(mobile.page, 'lite-mobile-en-dark');
   await mobile.page.locator('.showcase-menu-trigger').click();
   await mobile.page.getByRole('dialog', { name: 'Explore Prispect', exact: true }).waitFor();
   await noOverflow(mobile.page, 'mobile menu');
   await mobile.page.keyboard.press('Escape');
   check('390px English dark entry and mobile menu');
-  await evidenceAndProcess(mobile.page, 'lite-mobile-en-dark');
+  await evidenceExample(mobile.page, 'lite-mobile-en-dark');
   await mobile.context.close();
   const reduced = await openContext({
     width: 375,
@@ -805,6 +998,7 @@ try {
   await submitLabelFits(reduced.page, 'reduced-motion mobile');
   await capture(reduced.page, 'lite-mobile-zh-reduced-motion');
   await staticOptics(reduced.page, '375px reduced motion');
+  await reduced.page.locator('.lite-search-modes a[href*="view=example"]').click();
   await staticSignalStage(reduced.page, '375px reduced motion');
   check('375px reduced-motion entry remains visible and editable');
   await reduced.context.close();
@@ -820,6 +1014,7 @@ try {
   await noOverflow(medium.page, '900px English Lite');
   await headerControlsFit(medium.page, '900px English Lite');
   await headlineFits(medium.page, '900px English Lite');
+  await medium.page.locator('.lite-search-modes a[href*="view=example"]').click();
   await scrollScene(medium.page, '.showcase-signal-stage', 110);
   await financeAmountsFit(medium.page, '900px English signal stage');
   await capture(medium.page, 'lite-900-en-signal-finance');
@@ -839,12 +1034,14 @@ try {
   await headerControlsFit(narrow.page, '320px English Lite');
   await headlineFits(narrow.page, '320px English Lite');
   await submitLabelFits(narrow.page, '320px English Lite');
+  await readableComposer(narrow.page, '320px English Lite');
   await capture(narrow.page, 'lite-320-en-light');
   await staticOptics(narrow.page, '320px reduced motion');
   await narrow.page.locator('.showcase-examples button').filter({ hasText: '松原安全' }).click();
   await companyCandidates(narrow.page, 'lite-320-en-light');
   await narrow.page.locator('.showcase-search textarea').fill('');
   await emptyRecentReports(narrow.page, 'lite-320-en-light');
+  await narrow.page.setViewportSize({ width: 320, height: 520 });
   const narrowTrigger = narrow.page.locator('.showcase-menu-trigger');
   await narrowTrigger.focus();
   await narrow.page.keyboard.press('Enter');
@@ -857,6 +1054,9 @@ try {
     );
   }
   await noOverflow(narrow.page, '320px English full-screen menu');
+  await readableDialogHeader(narrowMenu, '320px short navigation');
+  const dialogBounds = await narrowMenu.boundingBox();
+  assert.ok(dialogBounds && dialogBounds.y >= 0 && dialogBounds.y + dialogBounds.height <= 522);
   await capture(narrow.page, 'lite-menu-320-en-light');
   await narrow.page.keyboard.press('Escape');
   await narrowMenu.waitFor({ state: 'hidden' });
@@ -873,7 +1073,9 @@ try {
     'researchWrites',
   ])
     assert.equal(receipt[name].length, 0, `${name}: ${JSON.stringify(receipt[name])}`);
-  check('Zero console/page/network errors, public source/model attempts or research writes');
+  check(
+    'Zero unexpected console/page/network errors, external source/model attempts or research writes; deliberate metadata failure remains recorded'
+  );
   receipt.status = 'passed';
 } catch (error) {
   receipt.status = 'failed';

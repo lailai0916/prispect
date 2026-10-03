@@ -16,10 +16,14 @@ import type {
   AssessmentStatus,
 } from '../../shared/company-assessment';
 import type { CompanyReadingBasis } from '../../shared/company-analysis';
-import { deriveCompanyReportDocument } from '../../shared/company-report-document';
+import {
+  deriveCompanyReportDocument,
+  type CompanyReportDocumentBinding,
+} from '../../shared/company-report-document';
 import {
   deriveCompanyReportLinks,
   filterCompanyReportSources,
+  type CompanyReportLinks,
 } from '../../shared/company-report-links';
 import { assessmentSourceHref, knownSourcePage } from '../../shared/source-excerpt-focus';
 import { useApp } from '../context';
@@ -34,6 +38,62 @@ export interface LiteEvidenceExplorerProps {
   basis?: CompanyReadingBasis;
   /** The containing dossier can print judgments once and use this component for its source appendix. */
   printJudgments?: boolean;
+  /** A local deep link; every scope field must match this saved document. */
+  initialSelection?: LiteEvidenceInitialSelection;
+}
+
+export interface LiteEvidenceInitialSelection {
+  binding: CompanyReportDocumentBinding;
+  paragraphId?: string;
+  sourceId?: string;
+}
+
+/** Resolve recorded IDs only; an unrelated source never becomes support for a finding. */
+export function resolveLiteEvidenceSelection(
+  links: CompanyReportLinks,
+  selection: LiteEvidenceInitialSelection | undefined
+): {
+  paragraphId: string | null;
+  sourceId: string | null;
+  archiveSourceId: string | null;
+  page: number;
+} | null {
+  const own = links.binding;
+  const requested = selection?.binding;
+  if (!own || !requested || !selection || (!selection.paragraphId && !selection.sourceId))
+    return null;
+  if (
+    own.runId !== requested.runId ||
+    own.securityCode !== requested.securityCode ||
+    own.orgId !== requested.orgId ||
+    own.year !== requested.year ||
+    own.basis !== requested.basis ||
+    own.snapshotFetchedAt !== requested.snapshotFetchedAt ||
+    own.reportGeneratedAt !== requested.reportGeneratedAt
+  )
+    return null;
+  const source = selection.sourceId
+    ? links.sources.find((entry) => entry.id === selection.sourceId)
+    : undefined;
+  if (selection.sourceId && !source) return null;
+  const paragraph = selection.paragraphId
+    ? links.paragraphs.find((entry) => entry.id === selection.paragraphId)
+    : source &&
+      links.paragraphs.find(
+        (entry) => source.paragraphIds.includes(entry.id) && entry.sourceIds.includes(source.id)
+      );
+  if (selection.paragraphId && !paragraph) return null;
+  if (paragraph && source && !paragraph.sourceIds.includes(source.id)) return null;
+  const ownSource =
+    source || (paragraph && links.sources.find((entry) => paragraph.sourceIds.includes(entry.id)));
+  return {
+    paragraphId: paragraph?.id || null,
+    sourceId: paragraph ? ownSource?.id || null : null,
+    archiveSourceId: ownSource?.id || null,
+    page: ownSource
+      ? Math.floor(links.sources.findIndex((entry) => entry.id === ownSource.id) / 6) + 1
+      : 1,
+  };
 }
 
 const kindNames: Record<AssessmentEvidence['kind'], readonly [string, string]> = {
@@ -68,6 +128,7 @@ export function LiteEvidenceExplorer({
   disabled = false,
   basis = 'consolidated',
   printJudgments = true,
+  initialSelection,
 }: LiteEvidenceExplorerProps) {
   const { t, locale, user } = useApp();
   const language = locale === 'en' ? 'en' : 'zh';
@@ -75,22 +136,49 @@ export function LiteEvidenceExplorer({
   const prefix = useId().replace(/:/g, '');
   const document = useMemo(() => deriveCompanyReportDocument(run, basis), [run, basis]);
   const links = useMemo(() => deriveCompanyReportLinks(document), [document]);
-  const generation = document.binding
-    ? `${document.binding.runId}:${document.binding.snapshotFetchedAt}:${document.binding.reportGeneratedAt || 'observations'}`
-    : `${run.id}:withheld`;
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [selectedSourceId, setSelectedSourceId] = useState<string | null>(null);
-  const [kind, setKind] = useState<AssessmentEvidence['kind'] | 'all'>('all');
-  const [page, setPage] = useState(1);
+  const generation = JSON.stringify(document.binding || { runId: run.id, withheld: true });
+  const scope = `${user?.id || 'anonymous'}:${generation}`;
+  const initial = resolveLiteEvidenceSelection(links, initialSelection);
+  const requestKey = JSON.stringify([initialSelection || null, initial]);
+  const defaults = {
+    scope,
+    requestKey,
+    paragraphId: initial?.paragraphId || null,
+    sourceId: initial?.sourceId || null,
+    archiveSourceId: initial?.archiveSourceId || null,
+    kind: 'all' as AssessmentEvidence['kind'] | 'all',
+    page: initial?.page || 1,
+  };
+  const [localSelection, setLocalSelection] = useState(defaults);
+  // Scope fencing applies during render, before an effect can expose an old selection.
+  const selection =
+    localSelection.scope === scope && localSelection.requestKey === requestKey
+      ? localSelection
+      : defaults;
+  const { paragraphId: selectedId, sourceId: selectedSourceId, kind, page } = selection;
+  const setSelectedSourceId = (sourceId: string | null) =>
+    setLocalSelection({ ...selection, sourceId });
+  const setKind = (kind: AssessmentEvidence['kind'] | 'all') =>
+    setLocalSelection({ ...selection, kind, page: 1, archiveSourceId: null });
+  const setPage = (page: number) =>
+    setLocalSelection({ ...selection, page, archiveSourceId: null });
   const stageRef = useRef<HTMLDivElement>(null);
+  const archiveRef = useRef<HTMLElement>(null);
 
   // Reading choices have no meaning after an owner/run/generation change.
   useEffect(() => {
-    setSelectedId(null);
-    setSelectedSourceId(null);
-    setKind('all');
-    setPage(1);
-  }, [generation, user?.id]);
+    if (!initial) return;
+    const frame = requestAnimationFrame(() => {
+      const target = initial.paragraphId
+        ? stageRef.current?.querySelector<HTMLElement>('h3')
+        : [...(archiveRef.current?.querySelectorAll<HTMLElement>('details[data-source-id]') || [])]
+            .find((element) => element.dataset.sourceId === initial.archiveSourceId)
+            ?.querySelector<HTMLElement>('summary');
+      target?.scrollIntoView({ block: 'center', behavior: 'auto' });
+      target?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [scope, requestKey]);
 
   const dimensionMap = new Map(document.dimensions.map((value) => [value.judgment.id, value]));
   const unknownIds = new Set(document.unknowns.map((value) => value.id));
@@ -117,7 +205,7 @@ export function LiteEvidenceExplorer({
               : 3;
       return priority(left.groups) - priority(right.groups);
     });
-  const active = deck.find((value) => value.id === selectedId) || deck[0];
+  const active = links.paragraphs.find((value) => value.id === selectedId) || deck[0];
   const activeDimension = active ? dimensionMap.get(active.id) : undefined;
   const activeSources = active
     ? links.sources.filter((source) => active.sourceIds.includes(source.id))
@@ -143,11 +231,16 @@ export function LiteEvidenceExplorer({
       return t('这条风险信号从哪里来？', 'What supports this risk signal?');
     if (paragraph.groups.includes('strength'))
       return t('这条积极信号从哪里来？', 'What supports this positive signal?');
+    if (paragraph.groups.includes('unknown'))
+      return t('哪里还需要核实？', 'What still needs verification?');
+    if (paragraph.groups.includes('action'))
+      return t('下一步如何核查？', 'What should be checked next?');
+    if (paragraph.groups.includes('condition'))
+      return t('什么会改变判断？', 'What would change the judgment?');
     return t('这条判断有哪些依据？', 'What supports this finding?');
   };
   const selectParagraph = (id: string) => {
-    setSelectedId(id);
-    setSelectedSourceId(null);
+    setLocalSelection({ ...selection, paragraphId: id, sourceId: null, archiveSourceId: null });
   };
   const sourceScope = (source: AssessmentEvidence) => {
     if (source.sourceQuality === 'opinion')
@@ -216,7 +309,7 @@ export function LiteEvidenceExplorer({
                 {citedParagraphs.map((paragraph) => (
                   <li key={paragraph.id} data-paragraph-id={paragraph.id}>
                     <p>{paragraph.judgment.text[language]}</p>
-                    {deck.some((value) => value.id === paragraph.id) && (
+                    {
                       <button
                         type="button"
                         onClick={() => {
@@ -237,7 +330,7 @@ export function LiteEvidenceExplorer({
                         {t('回到这条线索', 'Return to this finding')}
                         <ArrowRight size={13} aria-hidden="true" />
                       </button>
-                    )}
+                    }
                   </li>
                 ))}
               </ul>
@@ -297,6 +390,7 @@ export function LiteEvidenceExplorer({
       data-state={document.mode === 'none' ? 'withheld' : document.mode}
       data-run-id={document.binding?.runId || run.id}
       data-report-generation={document.binding?.reportGeneratedAt || ''}
+      data-selection-applied={Boolean(initial)}
     >
       <header className="lite-evidence-heading">
         <div>
@@ -321,6 +415,14 @@ export function LiteEvidenceExplorer({
           {document.generatedAt && <span>{date(document.generatedAt, locale)}</span>}
         </p>
       </header>
+      {initialSelection && !initial && document.mode !== 'none' && (
+        <p className="lite-evidence-selection-note" role="status">
+          {t(
+            '链接的报告版本或来源未匹配，正在显示当前报告资料。',
+            'The linked report version or source did not match. Current report materials are shown.'
+          )}
+        </p>
+      )}
 
       {document.mode === 'none' ? (
         <div className="lite-evidence-withheld" role="note">
@@ -377,6 +479,9 @@ export function LiteEvidenceExplorer({
                       {statusNames[activeDimension.status][index]}
                     </span>
                   )}
+                  {!activeDimension && active.groups.includes('unknown') && (
+                    <span data-status="unknown">{statusNames.unknown[index]}</span>
+                  )}
                   {!saved && <span>{t('资料观察', 'Data observation')}</span>}
                 </div>
                 <h3 tabIndex={-1}>{questionTitle(active)}</h3>
@@ -391,6 +496,7 @@ export function LiteEvidenceExplorer({
                       judgment={active.judgment}
                       onInspect={safeInspect}
                       disabled={disabled}
+                      compact
                     />
                   ) : (
                     <p className="lite-evidence-muted">
@@ -531,7 +637,11 @@ export function LiteEvidenceExplorer({
             </div>
           )}
 
-          <section className="lite-evidence-archive" aria-labelledby={`${prefix}-archive-title`}>
+          <section
+            ref={archiveRef}
+            className="lite-evidence-archive"
+            aria-labelledby={`${prefix}-archive-title`}
+          >
             <div className="lite-evidence-archive-heading">
               <div>
                 <p className="lite-evidence-eyebrow">
@@ -560,7 +670,6 @@ export function LiteEvidenceExplorer({
                     aria-pressed={kind === sourceKind}
                     onClick={() => {
                       setKind(sourceKind);
-                      setPage(1);
                     }}
                   >
                     {sourceKind === 'all' ? t('全部', 'All') : kindNames[sourceKind][index]}
@@ -583,6 +692,11 @@ export function LiteEvidenceExplorer({
                   className="lite-evidence-source-card"
                   key={sourceLink.id}
                   data-source-id={sourceLink.id}
+                  open={selection.archiveSourceId === sourceLink.id || undefined}
+                  onToggle={(event) => {
+                    if (!event.currentTarget.open && selection.archiveSourceId === sourceLink.id)
+                      setLocalSelection({ ...selection, archiveSourceId: null });
+                  }}
                 >
                   <summary>
                     <span>{kindNames[sourceLink.source.kind][index]}</span>
