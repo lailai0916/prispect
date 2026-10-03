@@ -1,6 +1,6 @@
 .company-workspace.company-workspace-report {
-  max-width: 1280px;
-  padding: 12px 0 48px;
+  max-width: var(--workspace-content-width);
+  padding: 0;
 }
 
 .company-research-status {
@@ -45,12 +45,13 @@
   }
 }
 .company-workspace-report .context-page-heading {
-  margin-bottom: 28px;
+  margin-bottom: var(--workspace-section-gap);
 }
 .company-workspace-report .context-page-heading h1 {
-  font-size: 26px;
-  letter-spacing: -0.025em;
-  line-height: 1.4;
+  font-size: var(--workspace-heading-size);
+  font-weight: var(--workspace-heading-weight);
+  letter-spacing: var(--workspace-heading-letter-spacing);
+  line-height: 1.35;
 }
 .company-workspace-report .context-page-heading .context-data-note {
   margin-bottom: 0;
@@ -345,9 +346,6 @@
     flex-wrap: wrap;
     gap: 14px;
   }
-  .company-workspace-report .context-page-heading h1 {
-    font-size: 22px;
-  }
   .company-review-metrics {
     margin-top: 22px;
   }
@@ -417,7 +415,7 @@
 
 /* The public report shares its reading rhythm with the original-evidence report. */
 .company-workspace.company-workspace-report {
-  max-width: 1080px;
+  max-width: var(--workspace-content-width);
 }
 .company-review-evidence {
   margin-top: 22px;

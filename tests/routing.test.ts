@@ -7,23 +7,102 @@ import {
   loginDestination,
   resolveCompanySection,
 } from '../src/routing.js';
+import {
+  companyPath,
+  resolveCompanyFocus,
+  resolveCompanyLocation,
+} from '../shared/company-workspace.js';
 
 const origin = 'https://prispect.com';
 
 test('company navigation and content resolve missing, invalid and legacy sections consistently', () => {
   for (const section of [null, undefined, '', 'unknown', 'qa', 'Overview'])
     assert.equal(resolveCompanySection(section), 'overview');
-  for (const section of [
-    'overview',
-    'trends',
-    'industry',
-    'disclosures',
-    'profile',
-    'coverage',
-    'sources',
-    'evidence',
-  ])
+  for (const section of ['overview', 'financial', 'sources', 'evidence'])
     assert.equal(resolveCompanySection(section), section);
+  for (const [oldSection, section] of [
+    ['trends', 'financial'],
+    ['industry', 'financial'],
+    ['disclosures', 'sources'],
+    ['profile', 'sources'],
+    ['coverage', 'sources'],
+  ])
+    assert.equal(resolveCompanySection(oldSection), section);
+});
+
+test('saved company links reach their merged content through navigation and login returns', () => {
+  for (const [oldSection, newSection, focus] of [
+    ['trends', 'financial', 'history'],
+    ['industry', 'financial', 'industry'],
+    ['disclosures', 'sources', 'announcements'],
+    ['profile', 'sources', 'profile'],
+    ['coverage', 'sources', 'coverage'],
+  ]) {
+    const oldPath = `/company?run=record%2Fwith%20spaces&section=${oldSection}&from=saved`;
+    const canonical = `/company?run=record%2Fwith+spaces&section=${newSection}&from=saved&focus=${focus}`;
+    assert.equal(appPath(oldPath, origin), canonical);
+    assert.equal(appLinkPath(oldPath, origin), canonical);
+    assert.equal(legacyRoute('#' + oldPath, origin), canonical);
+    assert.equal(loginDestination(oldPath, origin), canonical);
+    assert.equal(appPath(canonical, origin), canonical);
+  }
+  for (const section of ['overview', 'financial', 'sources', 'evidence'] as const) {
+    const path = companyPath('record/with spaces', section);
+    assert.equal(new URL(path, origin).searchParams.get('run'), 'record/with spaces');
+    assert.equal(appPath(path, origin), path);
+  }
+});
+
+test('report data and news links reveal their new page while retaining native source fragments', () => {
+  assert.equal(
+    appPath('/company?run=record&focus=data', origin),
+    '/company?run=record&focus=data&section=financial'
+  );
+  assert.equal(
+    appPath('/company?run=record&focus=news', origin),
+    '/company?run=record&focus=news&section=sources'
+  );
+  assert.equal(
+    appPath('/company?run=record#company-public-data', origin),
+    '/company?run=record&section=financial&focus=data#company-financial-data'
+  );
+  assert.equal(
+    appPath('/company?run=record#company-public-signals', origin),
+    '/company?run=record&section=sources&focus=news#company-public-signals'
+  );
+  assert.equal(
+    appPath('/company?run=record&section=evidence#page=12', origin),
+    '/company?run=record&section=evidence#page=12'
+  );
+  assert.equal(appLinkPath('/company?run=record#company-public-data', origin), null);
+});
+
+test('source and financial links retain exact focus without permitting arbitrary disclosure targets', () => {
+  assert.equal(
+    companyPath('record', 'coverage'),
+    '/company?run=record&section=sources&focus=coverage'
+  );
+  assert.equal(
+    companyPath('record', 'industry'),
+    '/company?run=record&section=financial&focus=industry'
+  );
+  assert.equal(
+    companyPath('record', 'sources', 'source-comparison'),
+    '/company?run=record&section=sources&focus=source-comparison'
+  );
+  assert.equal(resolveCompanyFocus('sources', 'coverage'), 'company-data-coverage');
+  assert.equal(resolveCompanyFocus('financial', 'industry'), 'company-industry');
+  assert.equal(resolveCompanyFocus('overview', 'lab'), 'company-evidence-lab');
+  assert.equal(resolveCompanyFocus('financial', 'coverage'), null);
+  assert.equal(resolveCompanyFocus('sources', '__proto__'), null);
+  assert.deepEqual(resolveCompanyLocation('trends', 'goal'), {
+    section: 'financial',
+    focus: 'history',
+  });
+  assert.deepEqual(resolveCompanyLocation('__proto__', 'constructor'), {
+    section: 'overview',
+    focus: null,
+  });
 });
 
 test('legacy links retain encoded task IDs, query values and document sections', () => {

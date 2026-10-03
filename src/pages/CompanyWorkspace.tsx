@@ -11,7 +11,12 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { CompanyResearchRun } from '../../shared/contracts';
-import { companyPath, companySections } from '../../shared/company-workspace';
+import {
+  companyPath,
+  companySections,
+  resolveCompanyFocus,
+  resolveCompanyLocation,
+} from '../../shared/company-workspace';
 import type { CompanyReadingBasis } from '../../shared/company-analysis';
 import { useApp } from '../context';
 import { api, requestErrorText } from '../api';
@@ -31,7 +36,6 @@ import { CompanyAssistantContext } from '../company-assistant-context';
 import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
-import { resolveCompanySection } from '../routing';
 import { CompanyAssessment } from '../CompanyAssessment';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
@@ -47,12 +51,35 @@ const OriginalReview = lazyPage(
 const researchSupported = (run: CompanyResearchRun) =>
   /^\d{6}$/.test(run.input.securityCode) && run.identity?.exchange !== 'us';
 
+function CompanyIndustrySection({ run }: { run: CompanyResearchRun }) {
+  const { t } = useApp();
+  const [revealed, setRevealed] = useState(false);
+  return (
+    <details
+      id="company-industry"
+      className="company-review-details"
+      onToggle={(event) => {
+        if (event.currentTarget.open) setRevealed(true);
+      }}
+    >
+      <summary>
+        <ChevronDown size={14} />
+        {t('行业对比', 'Industry comparison')}
+      </summary>
+      {revealed && <CompanyIndustryView run={run} />}
+    </details>
+  );
+}
+
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const { t, locale, navigate, confirm, user } = useApp();
   const { removeLocal, isCurrentOwner } = useCompanyRecords();
   const { publish } = useContext(CompanyAssistantContext);
   const id = query.get('run');
-  const section = resolveCompanySection(query.get('section'));
+  const { section, focus: reportFocus } = resolveCompanyLocation(
+    query.get('section'),
+    query.get('focus')
+  );
   const [run, setRun] = useState<CompanyResearchRun | null>(null);
   const [error, setError] = useState('');
   const [version, setVersion] = useState(0);
@@ -76,6 +103,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         setRun(next);
         setError('');
         if (
+          section === 'overview' &&
           !contextRequested &&
           researchSupported(next) &&
           !next.informationGap &&
@@ -93,6 +121,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         if (controller.signal.aborted) return;
         const assessmentKey = next.context ? `${id}:${next.context.fetchedAt}` : '';
         if (
+          section === 'overview' &&
           assessmentKey &&
           researchSupported(next) &&
           !next.informationGap &&
@@ -144,28 +173,45 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   useEffect(() => {
     if (run?.id === id && user) publish({ owner: user.id, run, basis, changeBasis: setBasis });
   }, [run, id, basis, user?.id, publish]);
-  const reportFocus = query.get('focus');
   useEffect(() => {
-    if (run?.id !== id || section !== 'overview') return;
-    const targets: Record<string, string> = {
-      report: 'company-full-report',
-      research: 'company-research-process',
-      goal: 'company-research-goal',
-      lab: 'company-evidence-lab',
-      checklist: 'company-review-requests',
-      data: 'company-public-data',
-      news: 'company-public-signals',
-    };
+    if (run?.id !== id) return;
+    const targets: string[] =
+      section === 'overview'
+        ? [
+            'research-summary-heading',
+            'company-full-report',
+            'company-research-process',
+            'company-research-goal',
+            'company-evidence-lab',
+            'company-review-requests',
+          ]
+        : section === 'financial'
+          ? [
+              'company-financial-history',
+              'company-financial-data',
+              'company-financial-findings',
+              'company-industry',
+              'company-original-comparison',
+            ]
+          : section === 'sources'
+            ? [
+                'company-public-signals',
+                'company-disclosures',
+                'company-profile',
+                'company-data-coverage',
+                'company-source-comparison',
+              ]
+            : [];
     const reveal = () => {
       const hashId = location.hash.slice(1);
       const target =
-        targets[reportFocus || ''] || (Object.values(targets).includes(hashId) ? hashId : '');
+        resolveCompanyFocus(section, reportFocus) || (targets.includes(hashId) ? hashId : '');
       if (target) openCompanyReportSection(target, target === 'company-research-goal');
     };
     reveal();
     window.addEventListener('hashchange', reveal);
     return () => window.removeEventListener('hashchange', reveal);
-  }, [run?.id, id, section, reportFocus]);
+  }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus]);
   const refresh = async () => {
     if (!run || !researchSupported(run) || updating) return;
     const signal = request.current?.signal;
@@ -266,10 +312,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       : undefined;
   const active = run.status === 'queued' || run.status === 'running';
   const pausedMarket = !run.informationGap && !researchSupported(run);
-  const title =
-    section === 'evidence'
-      ? t('年报原件核查', 'Original-report review')
-      : t(...(companySections.find(([key]) => key === section)!.slice(1) as [string, string]));
+  const title = t(
+    ...(companySections.find(([key]) => key === section)!.slice(1) as [string, string])
+  );
   const originalPage = (page: number | null) => {
     const document = run.announcements.find(
       (item) => item.reportYear === run.input.year && item.category === 'annual'
@@ -296,6 +341,29 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       </label>
     </div>
   );
+  const pageAnchors: readonly (readonly [string, string, string])[] =
+    section === 'overview'
+      ? [
+          ['research-summary-heading', '研究摘要', 'Summary'],
+          ['company-research-process', '研究过程', 'Research process'],
+          ['company-evidence-lab', '检验解释', 'Test an explanation'],
+          ['company-full-report', '六维分析', 'Dimensions'],
+        ]
+      : section === 'financial'
+        ? [
+            ['company-financial-history', '历史走势', 'History'],
+            ['company-financial-data', '关键指标', 'Key metrics'],
+            ['company-industry', '行业对比', 'Industry comparison'],
+          ]
+        : section === 'sources'
+          ? [
+              ['company-public-signals', '新闻与讨论', 'News and discussions'],
+              ['company-disclosures', '公告', 'Announcements'],
+              ['company-profile', '公司资料', 'Company profile'],
+              ['company-data-coverage', '数据覆盖', 'Data coverage'],
+              ['company-source-comparison', '来源比对', 'Source comparison'],
+            ]
+          : [];
   return (
     <div
       className={'company-workspace' + (section === 'overview' ? ' company-workspace-report' : '')}
@@ -369,6 +437,15 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </button>
         </div>
       </header>
+      {pageAnchors.length > 0 && !pausedMarket && (snapshot || section === 'overview') && (
+        <nav className="company-page-index" aria-label={t('本页内容', 'On this page')}>
+          {pageAnchors.map(([target, zh, en]) => (
+            <button type="button" key={target} onClick={() => openCompanyReportSection(target)}>
+              {t(zh, en)}
+            </button>
+          ))}
+        </nav>
+      )}
       {error && (
         <p role="alert" className="field-error">
           {error}
@@ -377,7 +454,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </button>
         </p>
       )}
-      {!run.informationGap && section !== 'overview' && (
+      {!run.informationGap && section === 'evidence' && (
         <div className="context-original-status">
           {active && <LoaderCircle size={14} className="spinner" />}
           <span>
@@ -392,16 +469,11 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                     )
                   : t('原件核查有信息缺口', 'Original review has evidence gaps')}
           </span>
-          <a className="text-link" href={companyPath(run.id, 'evidence')}>
-            <FileSearch size={13} />
-            {t('查看原件与核查过程', 'Originals and review process')}
-            <ArrowUpRight size={12} />
-          </a>
         </div>
       )}
       {section === 'evidence' ? (
         <Suspense fallback={<LoaderCircle className="spinner" />}>
-          <OriginalReview key={run.id} query={new URLSearchParams({ run: run.id })} />
+          <OriginalReview key={run.id} query={new URLSearchParams({ run: run.id })} embedded />
         </Suspense>
       ) : pausedMarket ? (
         <section className="company-review-section">
@@ -468,81 +540,20 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               refreshing={assessmentUpdating}
             />
           </details>
-          <details id="company-public-signals" className="company-review-details">
-            <summary>
-              <ChevronDown size={14} />
-              {t('新闻与公开讨论', 'News and public discussions')}
-              {snapshot && (
-                <span> · {snapshot.news.length + (snapshot.discussions?.length || 0)}</span>
-              )}
-            </summary>
-            <CompanyPublicInformation run={run} />
-          </details>
-          <section className="research-deep-links" aria-labelledby="research-deep-heading">
-            <h2 className="research-deep-heading" id="research-deep-heading">
-              {t('深入查看', 'Explore the evidence')}
-            </h2>
-            <nav aria-label={t('详细分析入口', 'Detailed analysis')}>
-              {companySections
-                .filter(([key]) => key !== 'overview')
-                .map(([key, zh, en]) => (
-                  <a key={key} href={companyPath(run.id, key)}>
-                    {t(zh, en)}
-                    <ArrowUpRight size={13} />
-                  </a>
-                ))}
-              <a href={companyPath(run.id, 'evidence')}>
-                {t('年报原件与核查过程', 'Originals and review process')}
-                <ArrowUpRight size={13} />
-              </a>
-            </nav>
-          </section>
-          <details id="company-public-data" className="company-review-details">
-            <summary>
-              <ChevronDown size={14} />
-              {t('完整财务数据与核查清单', 'Financial data and review checklist')}
-            </summary>
-            {snapshot ? (
-              <>
-                {readingControls}
-                <p className="context-data-note">
-                  {t('公开数据获取于', 'Public data retrieved at')}{' '}
-                  {date(snapshot.fetchedAt, locale)}
-                  {run.contextStatus === 'loading'
-                    ? ' · ' + t('更新进行中', 'Refresh in progress')
-                    : ''}
-                </p>
-                {snapshot.warnings.length > 0 && (
-                  <details className="context-warnings">
-                    <summary>
-                      {t('数据范围与缺口', 'Scope and gaps')} · {snapshot.warnings.length}
-                    </summary>
-                    {snapshot.warnings.map((warning, index) => (
-                      <p key={index}>{warning}</p>
-                    ))}
-                  </details>
-                )}
-                <CompanyContextOverview
-                  snapshot={snapshot}
-                  run={run}
-                  basis={basis}
-                  view="manager"
-                />
-                <CompanyFinancialFindings run={run} onPage={originalPage} />
-              </>
-            ) : (
-              <p className="context-data-note">
-                {t(
-                  '尚未取得公开数据；原件核查记录和材料入口仍可查看。',
-                  'Public data is not available; original-review records and evidence tools remain accessible.'
-                )}
-              </p>
-            )}
-          </details>
+          <nav className="company-next-sections" aria-label={t('继续研究', 'Continue research')}>
+            {companySections
+              .filter(([key]) => key !== 'overview')
+              .map(([key, zh, en]) => (
+                <a key={key} href={companyPath(run.id, key)}>
+                  {t(zh, en)}
+                  <ArrowUpRight size={13} />
+                </a>
+              ))}
+          </nav>
         </>
       ) : (
         <>
-          {section === 'trends' && readingControls}
+          {section === 'financial' && readingControls}
           <p className="context-data-note">
             {snapshot
               ? `${t('公开数据获取于', 'Public data retrieved at')} ${date(snapshot.fetchedAt, locale)}`
@@ -572,6 +583,10 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                   'Open the original review or retry public sources.'
                 )}
               </p>
+              <a className="text-link" href={companyPath(run.id, 'evidence')}>
+                {t('查看原件核查', 'Open original review')}
+                <ArrowUpRight size={12} />
+              </a>
             </div>
           ) : (
             <>
@@ -585,32 +600,72 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                   ))}
                 </details>
               )}
-              {section === 'trends' && (
+              {section === 'financial' && (
                 <>
-                  <CompanyContextHistory snapshot={snapshot} basis={basis} />
+                  <section id="company-financial-history" className="company-workspace-section">
+                    <h2 className="company-workspace-section-title">
+                      {t('历史财务走势', 'Financial history')}
+                    </h2>
+                    <CompanyContextHistory snapshot={snapshot} basis={basis} />
+                  </section>
+                  <details id="company-financial-data" className="company-review-details">
+                    <summary>
+                      <ChevronDown size={14} />
+                      {t('关键指标与核查清单', 'Key metrics and checks')}
+                    </summary>
+                    <CompanyContextOverview
+                      snapshot={snapshot}
+                      run={run}
+                      basis={basis}
+                      view="manager"
+                    />
+                    <section id="company-financial-findings">
+                      <CompanyFinancialFindings run={run} onPage={originalPage} />
+                    </section>
+                  </details>
                   {run.agent?.financialContext && (
-                    <details className="context-original-trends">
+                    <details id="company-original-comparison" className="company-review-details">
                       <summary>
-                        {t(
-                          '合并口径与原件字段对照',
-                          'Consolidated amounts and original comparison'
-                        )}
+                        <ChevronDown size={14} />
+                        {t('原件字段对照', 'Original-field comparison')}
                       </summary>
                       <CompanyFinancialTrends run={run} onPage={originalPage} />
                     </details>
                   )}
+                  <CompanyIndustrySection key={run.id} run={run} />
                 </>
               )}
-              {section === 'industry' && <CompanyIndustryView run={run} />}
-              {section === 'disclosures' && (
+              {section === 'sources' && (
                 <>
-                  <CompanyPublicInformation run={run} />
-                  <CompanyDisclosuresView snapshot={snapshot} />
+                  <section id="company-public-signals" className="company-workspace-section">
+                    <CompanyPublicInformation run={run} />
+                  </section>
+                  <section id="company-disclosures" className="company-workspace-section">
+                    <CompanyDisclosuresView snapshot={snapshot} />
+                  </section>
+                  <details id="company-profile" className="company-review-details">
+                    <summary>
+                      <ChevronDown size={14} />
+                      {t('公司资料与股东', 'Company profile and shareholders')}
+                    </summary>
+                    <CompanyProfileView snapshot={snapshot} includeNews={false} />
+                  </details>
+                  <details id="company-data-coverage" className="company-review-details">
+                    <summary>
+                      <ChevronDown size={14} />
+                      {t('数据覆盖', 'Data coverage')}
+                    </summary>
+                    <CompanyCoverageView snapshot={snapshot} run={run} />
+                  </details>
+                  <details id="company-source-comparison" className="company-review-details">
+                    <summary>
+                      <ChevronDown size={14} />
+                      {t('来源比对', 'Source comparison')}
+                    </summary>
+                    <CompanySourcesView snapshot={snapshot} />
+                  </details>
                 </>
               )}
-              {section === 'profile' && <CompanyProfileView snapshot={snapshot} />}
-              {section === 'coverage' && <CompanyCoverageView snapshot={snapshot} run={run} />}
-              {section === 'sources' && <CompanySourcesView snapshot={snapshot} />}
             </>
           )}
         </>

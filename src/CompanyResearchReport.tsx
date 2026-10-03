@@ -18,15 +18,13 @@ import {
   type CompanyResearchViewState,
 } from '../shared/company-research-view';
 import { companyReviewSummary } from '../shared/company-review';
-import { companyPath, companySections } from '../shared/company-workspace';
+import { companyPath } from '../shared/company-workspace';
 import { CompanyAssessmentEvidence } from './CompanyAssessment';
 import { CompanyContextEvidence } from './CompanyContextViews';
 import { CompanyReview } from './CompanyReview';
 import { useApp } from './context';
 import { date, money } from './format';
 import './research-report.css';
-
-const [, coverageZh, coverageEn] = companySections.find(([key]) => key === 'coverage')!;
 
 const stateLabels: Record<CompanyResearchViewState, AssessmentText> = {
   'not-started': ['尚无记录', 'Not recorded'],
@@ -462,8 +460,8 @@ export function CompanyResearchReport({
             {coverage.peers > 0 && (
               <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
             )}
-            <a className="text-link" href={companyPath(run.id, 'coverage')}>
-              {t(coverageZh, coverageEn)}
+            <a className="text-link" href={companyPath(run.id, 'sources', 'coverage')}>
+              {t('数据覆盖', 'Data coverage')}
               <ArrowRight size={12} />
             </a>
           </div>

@@ -28,7 +28,7 @@ export const documentMetadata = {
       '公司研究、材料管理与核查记录。',
       'Company research, materials and review records.',
     ],
-    version: '1.3',
+    version: '1.4',
     updatedAt: '2026-10-03',
   },
   '/docs/methodology': {

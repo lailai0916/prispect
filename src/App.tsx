@@ -33,7 +33,14 @@ import { AssistantErrorBoundary } from './AssistantErrorBoundary';
 import { lazyPage, resetFailedLazyPages } from './lazy-page';
 import { ThemeControl } from './ThemeControl';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
-import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
+import {
+  appLinkPath,
+  readBrowserRoute,
+  writeBrowserRoute,
+  resolveCompanySection,
+  ROUTE_CHANGE_EVENT,
+} from './routing';
+import { companySections } from '../shared/company-workspace';
 import {
   documentPaths,
   documentationTitle,
@@ -140,6 +147,7 @@ export function App() {
   } | null>(null);
   const [evidence, setEvidence] = useState<{ refs: EvidenceRef[]; report?: Report } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [toolsExpanded, setToolsExpanded] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
   const [assistantCompany, setAssistantCompany] = useState<AssistantCompany | null>(null);
   const refreshGeneration = useRef(0);
@@ -329,7 +337,13 @@ export function App() {
     const titles: Record<string, string> = {
       '/query': t(...productTerms.newResearch),
       '/research': t(...productTerms.researchLibrary),
-      '/company': t(...productTerms.companyResearch),
+      '/company': (() => {
+        const section = resolveCompanySection(
+          new URLSearchParams(route.split('?')[1]).get('section')
+        );
+        const entry = companySections.find(([id]) => id === section)!;
+        return t(entry[1], entry[2]);
+      })(),
       '/workspace': t(...productTerms.financialReviews),
       '/materials': t(...productTerms.materials),
       '/account': t(...productTerms.accountSettings),
@@ -385,16 +399,24 @@ export function App() {
     showEvidence: (refs, report) => setEvidence({ refs, report }),
     busy: pending > 0,
   };
-  const primaryNavigation = [
-    ['/research', t(...productTerms.researchLibrary), Building2],
-    ['/materials', t(...productTerms.materials), FolderOpen],
-    ['/decisions', t(...productTerms.paymentsAndHandovers), ListChecks],
-  ] as const;
+  const primaryNavigation = [['/research', t(...productTerms.researchLibrary), Building2]] as const;
   const secondaryNavigation = [
     ['/workspace', t(...productTerms.financialReviews), Activity],
+    ['/materials', t(...productTerms.materials), FolderOpen],
+    ['/decisions', t(...productTerms.paymentsAndHandovers), ListChecks],
     ['/compare', t(...productTerms.compareReviews), Columns3],
   ] as const;
   const navigation = [...primaryNavigation, ...secondaryNavigation];
+  const activeNavigation = (path: string) =>
+    page === path || (path === '/workspace' && (page === '/new' || page.startsWith('/tasks/')));
+  const toolsPage = secondaryNavigation.some(([path]) => activeNavigation(path));
+  useEffect(() => {
+    if (toolsPage) setToolsExpanded(true);
+  }, [toolsPage, page]);
+  const companySection = resolveCompanySection(
+    new URLSearchParams(route.split('?')[1]).get('section')
+  );
+  const companySectionName = companySections.find(([id]) => id === companySection)!;
   const sessionAvailable = loaded && !loadError;
   const business = Boolean(
     sessionAvailable && user && !['/login', '/register', '/docs', ...documentPaths].includes(page)
@@ -408,7 +430,7 @@ export function App() {
         : documentationRoute
           ? t(...documentationTitle)
           : page === '/company'
-            ? t(...productTerms.companyResearch)
+            ? t(companySectionName[1], companySectionName[2])
             : page === '/' || page === '/query'
               ? t(...productTerms.newResearch)
               : navigation.find(([path]) => path === page)?.[1];
@@ -455,8 +477,8 @@ export function App() {
           <a
             key={path}
             href={path}
-            className={page === path ? 'active' : ''}
-            aria-current={page === path ? 'page' : undefined}
+            className={activeNavigation(path) ? 'active' : ''}
+            aria-current={activeNavigation(path) ? 'page' : undefined}
             onClick={() => setMenuOpen(false)}
           >
             <Icon size={16} />
@@ -468,27 +490,31 @@ export function App() {
         route={route}
         onClose={() => setMenuOpen(false)}
         tools={
-          <ActionMenu
-            label={t(...productTerms.reviewTools)}
-            className="sidebar-tools"
-            align="start"
-            items={[
-              {
-                label: t(...productTerms.financialReviews),
-                icon: <Activity size={16} />,
-                onSelect: () => navigate('/workspace'),
-              },
-              {
-                label: t(...productTerms.compareReviews),
-                icon: <Columns3 size={16} />,
-                onSelect: () => navigate('/compare'),
-              },
-            ]}
+          <details
+            className="sidebar-tools-group"
+            open={toolsExpanded}
+            onToggle={(event) => setToolsExpanded(event.currentTarget.open)}
           >
-            <ListChecks size={16} />
-            <span>{t(...productTerms.reviewTools)}</span>
-            <ChevronDown size={13} />
-          </ActionMenu>
+            <summary className="sidebar-tools">
+              <ListChecks size={16} />
+              <span>{t(...productTerms.reviewTools)}</span>
+              <ChevronDown size={13} />
+            </summary>
+            <nav className="sidebar-navigation" aria-label={t(...productTerms.reviewTools)}>
+              {secondaryNavigation.map(([path, label, Icon]) => (
+                <a
+                  key={path}
+                  href={path}
+                  className={activeNavigation(path) ? 'active' : ''}
+                  aria-current={activeNavigation(path) ? 'page' : undefined}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                </a>
+              ))}
+            </nav>
+          </details>
         }
       />
       <div className="sidebar-bottom">

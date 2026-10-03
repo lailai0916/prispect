@@ -469,8 +469,8 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
       <PageHeading
         title={t(...productTerms.materials)}
         description={t(
-          '查看来源、原文件与已确认的指标。',
-          'Inspect sources, original files and confirmed metrics.'
+          '上传文件、已采用原件与已确认指标。',
+          'Uploaded files, adopted originals and confirmed metrics.'
         )}
         action={
           <button className="button button-primary" onClick={() => materialImport.setOpen(true)}>

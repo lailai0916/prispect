@@ -1,5 +1,6 @@
 .decisions-page {
-  max-width: 1120px;
+  width: 100%;
+  max-width: var(--workspace-content-width);
   margin-inline: auto;
 }
 .decisions-page [hidden] {

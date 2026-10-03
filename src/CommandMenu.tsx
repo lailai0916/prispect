@@ -44,6 +44,8 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
   }, []);
   const results = useMemo(() => {
     const group = t('页面', 'Pages');
+    const researchGroup = t('研究', 'Research');
+    const toolsGroup = t(...productTerms.reviewTools);
     const pages: Destination[] = user
       ? [
           {
@@ -51,7 +53,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
             label: t(...productTerms.newResearch),
             path: '/query',
             icon: Plus,
-            group,
+            group: researchGroup,
             keywords: '公司 company lookup 查询',
           },
           {
@@ -59,7 +61,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
             label: t(...productTerms.researchLibrary),
             path: '/research',
             icon: Building2,
-            group,
+            group: researchGroup,
             keywords: '研究 公司 查询 history records research',
           },
           {
@@ -67,28 +69,28 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
             label: t(...productTerms.financialReviews),
             path: '/workspace',
             icon: FileText,
-            group,
+            group: toolsGroup,
           },
           {
             id: 'materials',
             label: t(...productTerms.materials),
             path: '/materials',
             icon: FolderOpen,
-            group,
+            group: toolsGroup,
           },
           {
             id: 'decisions',
             label: t(...productTerms.paymentsAndHandovers),
             path: '/decisions',
             icon: ListChecks,
-            group,
+            group: toolsGroup,
           },
           {
             id: 'compare',
             label: t(...productTerms.compareReviews),
             path: '/compare',
             icon: Columns3,
-            group,
+            group: toolsGroup,
           },
           {
             id: 'account',

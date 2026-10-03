@@ -25,6 +25,7 @@ import type {
 import { api, post, RequestError, requestErrorText } from '../api';
 import { identityClient, identityResult } from '../auth-client';
 import { useApp } from '../context';
+import { PageHeading } from '../components';
 import { date } from '../format';
 import { ROUTE_CHANGE_EVENT } from '../routing';
 import { PasswordMeter } from './Auth';
@@ -713,21 +714,19 @@ export function AccountPage() {
     );
   return (
     <div className="account-page">
-      <header className="account-page-header">
-        <div>
-          <h1>{t(...productTerms.accountSettings)}</h1>
-          <p className="account-muted">
-            {t(
-              '管理个人信息、登录方式与私人工作区。',
-              'Manage your profile, sign-in methods and private workspace.'
-            )}
-          </p>
-        </div>
-        <button className="account-secondary" onClick={logout} disabled={pending}>
-          <LogOut size={16} />
-          {t('退出登录', 'Log out')}
-        </button>
-      </header>
+      <PageHeading
+        title={t(...productTerms.accountSettings)}
+        description={t(
+          '管理个人信息、登录方式与私人工作区。',
+          'Manage your profile, sign-in methods and private workspace.'
+        )}
+        action={
+          <button className="button button-secondary" onClick={logout} disabled={pending}>
+            <LogOut size={16} />
+            {t('退出登录', 'Log out')}
+          </button>
+        }
+      />
       <div
         className="account-tabs"
         role="tablist"

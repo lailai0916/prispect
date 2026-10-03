@@ -156,7 +156,7 @@ kbd {
   }
 }
 .page-loading {
-  max-width: 980px;
+  max-width: var(--workspace-content-width);
   padding-block: 24px;
   margin-inline: auto;
 }

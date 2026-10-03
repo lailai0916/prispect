@@ -33,17 +33,23 @@ export const guideDocument: ProductDocument = {
               '核对合同责任、收款与预付款条件',
               'Review responsibility, receipt and prepayment conditions',
             ],
-            ['付款与交接 → 付款前核对', 'Payments and handovers → Before payment'],
+            [
+              '核查工具 → 付款与交接 → 付款前核对',
+              'Review tools → Payments and handovers → Before payment',
+            ],
           ],
           [
             ['接手前问清财务问题或安排收付款', 'Review handover questions or cash arrangements'],
-            ['付款与交接 → 接手核查', 'Payments and handovers → Company handover'],
+            [
+              '核查工具 → 付款与交接 → 接手核查',
+              'Review tools → Payments and handovers → Company handover',
+            ],
           ],
           [
             ['已有年报或结构化财务数据', 'You already have reports or structured financial data'],
             [
-              '材料 → 导入；财报核查 → 新建财报核查',
-              'Materials → Import; Financial reviews → New financial review',
+              '核查工具 → 材料 → 导入；财报核查 → 新建财报核查',
+              'Review tools → Materials → Import; Financial reviews → New financial review',
             ],
           ],
         ],
@@ -64,12 +70,12 @@ export const guideDocument: ProductDocument = {
           'Enter a company name or security code from the home page or New research and confirm the matched issuer. Research starts when public data is available. The first screen leads with a concise judgment, grade and explanation, followed by key amounts, source coverage and four recorded research stages. Evidence and calculations opens the sources; Test an explanation or Challenge an explanation opens the existing evidence lab without automatically starting retrieval. The entry retains your draft while original reports continue in the background.',
         ],
         [
-          '主导航提供“研究库”“材料”和“付款与交接”。研究库保留本账号的研究记录、已保存摘要、财务评级与资料时点，可按公司、代码、年度和状态筛选；筛选不会重新研究。打开一家企业后，侧边栏才显示公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个专题。财报核查和核查比较继续在“核查工具”中。',
-          'The main navigation opens Research library, Materials, and Payments and handovers. The library retains your research records, saved summaries, financial grades and source timestamps, with local company, code, year and state filters. Filtering does not restart research. A selected company opens seven sidebar topics: Company overview, Financial history, Industry comparison, Announcements, Further checks, Data coverage and Source comparison. Financial reviews and Compare reviews remain in Review tools.',
+          '主导航保留“新建研究”和“研究库”，材料、付款与交接、财报核查及核查比较统一放在“核查工具”。研究库可按公司、代码、年度和状态筛选已有记录，筛选不会重新研究。打开企业后只有四个入口：研究报告、财务分析、资料与来源、原件核查。先读研究报告中的判断与下一步，再按需要核对财务、来源或原件。',
+          'The main navigation keeps New research and Research library. Materials, Payments and handovers, Financial reviews and Compare reviews share Review tools. Filter existing records by company, code, year or state without restarting research. Each company has four destinations: Research report, Financial analysis, Sources and references and Original-document review. Start with the report’s judgment and next checks, then inspect financials, sources or originals as needed.',
         ],
         [
-          '继续展开“检验解释”“六维分析与计算依据”“新闻与公开讨论”和“完整财务数据与核查清单”，或打开“年报原件与核查过程”。无需选择阅读模式。财务专题保留归母与合并两种利润口径；外部付款与内部交接仍是独立核查目的。原件现金桥使用同年度合并净利润。行业均值剔除本企业，只比较同年度且至少五家有效同行。',
-          'Expand Test an explanation, Dimensions and calculation evidence, News and public discussions, or Financial data and review checklist; originals remain in Originals and review process. No reading-mode choice is needed. Financial topics retain attributable and consolidated profit controls; external payment and internal handover remain separate review purposes. The original cash bridge uses same-year consolidated profit. Industry averages exclude the target and require at least five valid same-year peers.',
+          '研究报告保留“检验解释”“六维分析与计算依据”和下一步核查；“财务分析”汇集历史走势、完整财务数据、行业对比与原件字段对照；“资料与来源”汇集新闻讨论、公告、公司与股东资料、数据覆盖和来源比对；“原件核查”确认和采用年报候选。旧专题链接会定位到合并页面的对应内容。财务分析保留归母与合并利润切换，行业均值剔除本企业并要求同年度至少五家有效同行；原件现金桥使用同年度合并净利润。',
+          'The report contains Test an explanation, Dimensions and calculation evidence and next checks. Financial analysis brings together history, complete financial data, industry comparison and web-to-original fields. Sources and references contains news, discussions, announcements, company/shareholder facts, coverage and source comparison. Original-document review confirms and adopts annual-report candidates. Legacy topic links focus the corresponding merged content. Financial analysis retains attributable and consolidated profit controls; industry averages exclude the target and require at least five valid same-year peers. Original cash bridges use same-year consolidated profit.',
         ],
         [
           '侧边栏“已载入企业”记录右侧的 × 可删除本次研究记录和问答，已采用材料保留；研究、分析或解释补查进行中暂不可删除。新建公司研究与保存需要账号。',
@@ -92,8 +98,8 @@ export const guideDocument: ProductDocument = {
           'During execution, inspect task tracks and actual activity. Completion, failure, cancellation and recoverability have distinct states. Cancellation retains obtained content; resume is offered only for recoverable runs. Returning to an existing run does not require creating it again.',
         ],
         [
-          '阅读分析摘要、重点发现与下一步，点击“依据”核对对应指标、公式和来源。“六维分析与计算依据”展开更完整的判断。公开研究不会自动采用年报候选；进入“年报原件与核查过程”，核对金额、年度、单位和合并范围后，才点击“采用并核查”。析光保存材料、建立规则报告，并进行 AI 解读；缺失或冲突时暂停依赖相应字段的解释。',
-          'Read the summary, key findings and next checks, then select Evidence to inspect their metrics, formulas and sources. Dimensions and calculation evidence expands the full judgments. Public research never automatically adopts annual-report candidates. Open Originals and review process and check amounts, years, units and consolidated scope before selecting Adopt and review. Prispect saves the material, creates a rules-based report and requests AI interpretation. Missing or conflicting inputs pause dependent explanations.',
+          '阅读判断、重点发现与下一步，点击“依据”核对对应指标、公式和来源，或展开“六维分析与计算依据”。需要采用年报时进入“原件核查”，核对金额、年度、单位和合并范围后，点击“采用并核查”。析光保存材料、建立规则报告并进行 AI 解读；公开研究不会自动采用候选，缺失或冲突会暂停依赖相应字段的解释。',
+          'Read the judgment, findings and next checks, then select Evidence to inspect metrics, formulas and sources or expand Dimensions and calculation evidence. To adopt an annual report, open Original-document review, check amounts, years, units and consolidated scope, then select Adopt and review. Prispect saves the material, creates a rules-based report and requests AI interpretation. Public research never automatically adopts candidates; missing or conflicting inputs pause dependent explanations.',
         ],
         [
           '历史财务图表并行读取东方财富公开网页的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',

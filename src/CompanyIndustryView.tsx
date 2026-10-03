@@ -22,7 +22,7 @@ const labels: Record<IndustryMetricKey, readonly [string, string]> = {
 };
 const value = (number: number | null) => (number === null ? '—' : `${number.toFixed(2)}%`);
 export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
-  const { t, locale } = useApp(),
+  const { t, locale, user } = useApp(),
     years = [
       ...new Set(run.context?.financials.filter((row) => row.annual).map((row) => row.period)),
     ]
@@ -30,49 +30,68 @@ export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
       .reverse();
   const [requestedPeriod, setPeriod] = useState(years[0] || `${run.input.year}-12-31`);
   const period = years.length && !years.includes(requestedPeriod) ? years[0]! : requestedPeriod;
-  const [loadedSnapshot, setSnapshot] = useState<CompanyIndustrySnapshot | null>(
-      run.industry?.[period] || null
-    ),
-    [loading, setLoading] = useState(false),
-    [error, setError] = useState(''),
-    [stale, setStale] = useState(false),
-    [evidence, setEvidence] = useState<IndustryMetricKey | null>(null),
-    [retry, setRetry] = useState(0);
+  const scope = `${user?.id || ''}:${run.id}:${period}`;
+  const [result, setResult] = useState<{
+      scope: string;
+      snapshot: CompanyIndustrySnapshot | null;
+      stale: boolean;
+      error: string;
+    } | null>(null),
+    [loadingScope, setLoadingScope] = useState<string | null>(null),
+    [evidence, setEvidence] = useState<IndustryMetricKey | null>(null);
   const generation = useRef(0),
-    forced = useRef(false);
+    request = useRef<AbortController | null>(null);
+  const currentResult = result?.scope === scope ? result : null;
+  const loadedSnapshot = currentResult?.snapshot || run.industry?.[period] || null;
   const snapshot =
     loadedSnapshot?.period === period && loadedSnapshot.securityCode === run.input.securityCode
       ? loadedSnapshot
       : null;
+  const loading = loadingScope === scope;
+  const error = currentResult?.error || '';
+  const stale = currentResult?.stale || false;
   useEffect(() => {
+    setResult((previous) => (previous?.scope === scope ? { ...previous, error: '' } : null));
+    setLoadingScope(null);
+    setEvidence(null);
+    return () => {
+      generation.current += 1;
+      request.current?.abort();
+      request.current = null;
+    };
+  }, [scope, locale]);
+  function loadIndustry(refresh = false) {
+    request.current?.abort();
     const controller = new AbortController(),
       current = ++generation.current;
-    setLoading(true);
-    setError('');
-    setStale(false);
-    setSnapshot(run.industry?.[period] || null);
-    const refresh = forced.current;
-    forced.current = false;
+    request.current = controller;
+    setLoadingScope(scope);
+    setResult({ scope, snapshot, stale, error: '' });
     void api<{ snapshot: CompanyIndustrySnapshot; stale: boolean; warning?: string }>(
       `/company-runs/${run.id}/industry`,
       { method: 'POST', body: JSON.stringify({ period, refresh }), signal: controller.signal }
     )
       .then((response) => {
         if (!controller.signal.aborted && current === generation.current) {
-          setSnapshot(response.snapshot);
-          setStale(response.stale);
-          setError(response.warning || '');
+          setResult({
+            scope,
+            snapshot: response.snapshot,
+            stale: response.stale,
+            error: response.warning || '',
+          });
         }
       })
       .catch((cause) => {
         if (!controller.signal.aborted && current === generation.current)
-          setError(requestErrorText(cause, locale));
+          setResult({ scope, snapshot, stale, error: requestErrorText(cause, locale) });
       })
       .finally(() => {
-        if (!controller.signal.aborted && current === generation.current) setLoading(false);
+        if (!controller.signal.aborted && current === generation.current) {
+          setLoadingScope(null);
+          request.current = null;
+        }
       });
-    return () => controller.abort();
-  }, [run.id, period, retry, locale]);
+  }
   return (
     <>
       <div className="context-section-title">
@@ -97,18 +116,17 @@ export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
               ))}
             </Select>
           </label>
-          <button
-            className="icon-button"
-            type="button"
-            aria-label={t('更新行业数据', 'Refresh industry data')}
-            disabled={loading}
-            onClick={() => {
-              forced.current = true;
-              setRetry((value) => value + 1);
-            }}
-          >
-            {loading ? <LoaderCircle size={16} className="spinner" /> : <RefreshCw size={16} />}
-          </button>
+          {snapshot && (
+            <button
+              className="icon-button"
+              type="button"
+              aria-label={t('更新行业数据', 'Refresh industry data')}
+              disabled={loading}
+              onClick={() => loadIndustry(true)}
+            >
+              {loading ? <LoaderCircle size={16} className="spinner" /> : <RefreshCw size={16} />}
+            </button>
+          )}
         </div>
       </div>
       {error && (
@@ -121,6 +139,11 @@ export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
           <LoaderCircle size={18} className="spinner" />
           {t('正在获取同年度行业样本…', 'Retrieving same-year industry samples…')}
         </p>
+      )}
+      {!snapshot && !loading && (
+        <button className="button secondary" type="button" onClick={() => loadIndustry()}>
+          {t('查看行业对比', 'View industry comparison')}
+        </button>
       )}
       {snapshot && (
         <>

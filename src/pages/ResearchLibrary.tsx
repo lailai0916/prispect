@@ -1,9 +1,10 @@
 import { productTerms } from '../../shared/product-terms';
 import { useMemo, useState } from 'react';
-import { ArrowRight, Building2, Plus, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowRight, Building2, Plus, RefreshCw } from 'lucide-react';
 import type { CompanyRecordSummary } from '../../shared/company-workspace';
 import { companyPath } from '../../shared/company-workspace';
 import { PageHeading, Tag } from '../components';
+import { SearchField } from '../Experience';
 import { Select } from '../Select';
 import { useCompanyRecords } from '../CompanyRecordsContext';
 import { useApp } from '../context';
@@ -55,8 +56,8 @@ export function ResearchLibraryPage() {
       <PageHeading
         title={t(...productTerms.researchLibrary)}
         description={t(
-          '已保存的研究报告、公开资料与研究记录。',
-          'Saved research reports, public sources and research records.'
+          '已保存的研究报告与研究记录。',
+          'Saved research reports and research records.'
         )}
         action={
           <button className="button button-primary" onClick={() => navigate('/query')}>
@@ -65,25 +66,12 @@ export function ResearchLibraryPage() {
         }
       />
       <div className="research-library-toolbar">
-        <label className="research-library-search">
-          <Search size={16} aria-hidden="true" />
-          <input
-            aria-label={t('搜索研究记录', 'Search research records')}
-            placeholder={t('公司、代码或年度', 'Company, code or year')}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            type="search"
-          />
-          {query && (
-            <button
-              className="icon-button"
-              aria-label={t('清除搜索', 'Clear search')}
-              onClick={() => setQuery('')}
-            >
-              <X size={14} />
-            </button>
-          )}
-        </label>
+        <SearchField
+          label={t('搜索研究记录', 'Search research records')}
+          placeholder={t('公司、代码或年度', 'Company, code or year')}
+          value={query}
+          onChange={setQuery}
+        />
         <label className="research-library-filter">
           <span className="sr-only">{t('筛选记录', 'Filter records')}</span>
           <Select

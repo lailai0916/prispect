@@ -55,7 +55,13 @@ const normalizeIdentityName = (value: string) =>
 const activeRun = (run: CompanyResearchRun | null) =>
   run?.status === 'queued' || run?.status === 'running';
 
-export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
+export function CompanyAgentPage({
+  query,
+  embedded = false,
+}: {
+  query: URLSearchParams;
+  embedded?: boolean;
+}) {
   const { t, locale, workspace, navigate, execute, busy, confirm } = useApp();
   const initialQuery = query.get('query') || '';
   const yearQuery = query.get('year');
@@ -437,20 +443,22 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
 
   return (
     <div className="company-agent">
-      <PageHeading
-        title={t('年报原件核查', 'Original-report review')}
-        action={
-          run ? (
-            <button className="button button-secondary" onClick={() => navigate('/company')}>
-              {t(...productTerms.newResearch)}
-            </button>
-          ) : undefined
-        }
-        description={t(
-          '检索公开材料，交叉核对财务字段与经营线索。',
-          'Retrieve public documents and cross-check financial fields and operating evidence.'
-        )}
-      />
+      {!embedded && (
+        <PageHeading
+          title={t('年报原件核查', 'Original-report review')}
+          action={
+            run ? (
+              <button className="button button-secondary" onClick={() => navigate('/company')}>
+                {t(...productTerms.newResearch)}
+              </button>
+            ) : undefined
+          }
+          description={t(
+            '检索公开材料，交叉核对财务字段与经营线索。',
+            'Retrieve public documents and cross-check financial fields and operating evidence.'
+          )}
+        />
+      )}
       {!run && (
         <form className="company-search-form" onSubmit={submitSearch}>
           <label className="form-field">

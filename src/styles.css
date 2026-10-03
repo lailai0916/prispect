@@ -13,6 +13,14 @@
   --paper: #ffffff;
   --site-header-height: 52px;
   --site-header-padding: 24px;
+  --workspace-content-width: 1200px;
+  --workspace-padding-inline: 40px;
+  --workspace-padding-top: 32px;
+  --workspace-padding-bottom: 56px;
+  --workspace-section-gap: 24px;
+  --workspace-heading-size: 25px;
+  --workspace-heading-weight: 600;
+  --workspace-heading-letter-spacing: -0.025em;
   --sidebar-surface: #f7f7f8;
   --ink: #25262b;
   --muted: #63656f;
@@ -509,10 +517,15 @@ pre {
 .main-app {
   width: 100%;
   min-width: 0;
-  max-width: 1360px;
+  max-width: calc(var(--workspace-content-width) + 2 * var(--workspace-padding-inline));
   margin: 0 auto;
-  padding: 32px 40px 56px;
+  padding: var(--workspace-padding-top) var(--workspace-padding-inline)
+    var(--workspace-padding-bottom);
   flex: 1;
+}
+.main-app:has(.query-create-page),
+.main-app.business-home {
+  max-width: 1360px;
 }
 .site-footer {
   display: flex;
@@ -851,7 +864,12 @@ pre {
   gap: 24px;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: var(--workspace-section-gap);
+}
+.page-heading h1 {
+  font-size: var(--workspace-heading-size);
+  font-weight: var(--workspace-heading-weight);
+  letter-spacing: var(--workspace-heading-letter-spacing);
 }
 .page-heading p {
   color: var(--muted);
@@ -1516,8 +1534,10 @@ thead th {
 
 /* Global responsive behavior; business visuals keep their own local scrolling. */
 @media (max-width: 1160px) {
-  .main-app {
-    padding: 28px 28px 48px;
+  :root {
+    --workspace-padding-inline: 28px;
+    --workspace-padding-top: 28px;
+    --workspace-padding-bottom: 48px;
   }
 }
 @media (max-width: 1050px) {
@@ -1583,15 +1603,18 @@ thead th {
   }
 }
 @media (max-width: 760px) {
-  .main-app {
-    padding: 24px 18px 40px;
+  :root {
+    --workspace-padding-inline: 18px;
+    --workspace-padding-top: 24px;
+    --workspace-padding-bottom: 40px;
+    --workspace-section-gap: 22px;
+    --workspace-heading-size: 23px;
   }
   h1 {
     font-size: 23px;
   }
   .page-heading {
     gap: 14px;
-    margin-bottom: 22px;
   }
   .page-heading p {
     font-size: 13px;
