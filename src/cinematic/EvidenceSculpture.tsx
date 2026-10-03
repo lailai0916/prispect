@@ -339,7 +339,8 @@ export function EvidenceSculpture() {
         const opening = 1 - close;
         const retire = smooth(between(p, 0.875, 0.9));
         const chartOpacity = (1 - smooth(between(p, 0.615, 0.68))) * opening;
-        const size = mix(narrow ? 0.9 : 0.7, 1, revealSource);
+        const compact = !narrow && height < 750;
+        const size = mix(narrow ? 0.9 : compact ? 0.6 : 0.7, 1, revealSource);
         sculpture.visible = p < 0.9;
         sculpture.scale.setScalar(mix(size, 0.36, close) * (1 - retire));
         sculpture.position.set(
