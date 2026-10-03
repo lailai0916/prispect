@@ -54,6 +54,7 @@ import '../report-enhancements.css';
 import '../company-review.css';
 import '../risk-perspective.css';
 import { RiskOverview } from '../RiskOverview';
+import { RiskOverviewRing } from '../RiskOverviewRing';
 import { RiskDetail } from '../RiskDetail';
 import { useViewMode } from '../ViewModeContext';
 import { EvidenceLab } from '../EvidenceLab';
@@ -385,7 +386,7 @@ export function ReportView({
     <div className="report-content report-content-summary">
       {viewMode === 'simple' && (
         <section className="risk-perspective-hero" aria-label={t('四维风险总览', 'Risk overview')}>
-          <RiskOverview report={report} />
+          <RiskOverviewRing report={report} />
           <RiskDetail report={report} />
         </section>
       )}
