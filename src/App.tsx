@@ -532,15 +532,9 @@ export function App() {
                 <Logo />
               </a>
               {business && <span className="header-context">{currentSection}</span>}
-              {!business && (
+              {!business && page !== '/docs' && (
                 <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
-                  <a
-                    href="/docs"
-                    className={page === '/docs' ? 'active' : ''}
-                    aria-current={page === '/docs' ? 'page' : undefined}
-                  >
-                    {t('文档', 'Docs')}
-                  </a>
+                  <a href="/docs">{t('文档', 'Docs')}</a>
                 </nav>
               )}
               <div className="header-actions">
