@@ -489,7 +489,12 @@ export function IndustryPairChart({
         ))}
         {([company, peer] as const).map((value, index) => (
           <g key={index}>
-            <text x={left - 8} y={30 + index * 34} textAnchor="end">
+            <text
+              x={left - 8}
+              y={30 + index * 34}
+              textAnchor="end"
+              className={`financial-chart-${index ? 'peer' : 'company'}-text`}
+            >
               {index ? t('同行', 'Peers') : t('企业', 'Company')}
             </text>
             {present(value) ? (

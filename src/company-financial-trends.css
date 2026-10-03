@@ -190,14 +190,14 @@
 
 .company-history-bar.series-0,
 .company-history-legend i.series-0 {
-  fill: var(--chart-total);
-  background: var(--chart-total);
+  fill: var(--chart-company);
+  background: var(--chart-company);
 }
 
 .company-history-bar.series-1,
 .company-history-legend i.series-1 {
-  fill: var(--accent);
-  background: var(--accent);
+  fill: var(--chart-peer);
+  background: var(--chart-peer);
 }
 
 .company-history-value-line {
@@ -205,11 +205,11 @@
 }
 
 .company-history-value-line.series-0 {
-  stroke: var(--chart-total);
+  stroke: var(--chart-company);
 }
 
 .company-history-value-line.series-1 {
-  stroke: var(--accent);
+  stroke: var(--chart-peer);
 }
 
 .company-history-missing {
@@ -234,7 +234,7 @@
 }
 
 .company-history-bar-group:focus-visible .company-history-bar-target {
-  stroke: var(--accent);
+  stroke: var(--chart-company);
 }
 
 .company-history-bar-group:hover .company-history-bar {

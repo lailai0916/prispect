@@ -50,6 +50,12 @@
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
+.financial-chart-values > div:first-child dd {
+  color: var(--chart-company);
+}
+.financial-chart-values > div:last-child dd {
+  color: var(--chart-peer);
+}
 .financial-chart-meta {
   display: flex;
   justify-content: space-between;
@@ -197,38 +203,38 @@
 }
 .financial-chart-company-bar,
 .financial-chart-company-key {
-  fill: var(--accent);
-  background: var(--accent);
+  fill: var(--chart-company);
+  background: var(--chart-company);
 }
 .financial-chart-peer-soft {
-  fill: var(--surface);
+  fill: var(--chart-peer-soft);
 }
 .financial-chart-peer-stroke {
-  stroke: var(--chart-total);
+  stroke: var(--chart-peer);
   stroke-width: 1;
 }
 .financial-chart-peer-bar {
-  stroke: var(--chart-total);
+  stroke: var(--chart-peer);
   stroke-width: 0.8;
 }
 .financial-chart-company-line,
 .financial-chart-peer-line {
   fill: none;
   stroke-width: 2;
-  stroke: var(--accent);
+  stroke: var(--chart-company);
 }
 .financial-chart-peer-line {
-  stroke: var(--chart-total);
+  stroke: var(--chart-peer);
   stroke-dasharray: 5 4;
 }
 .financial-chart-company-dot {
-  fill: var(--accent);
+  fill: var(--chart-company);
   stroke: var(--paper);
   stroke-width: 1.5;
 }
 .financial-chart-peer-dot {
   fill: var(--paper);
-  stroke: var(--chart-total);
+  stroke: var(--chart-peer);
   stroke-width: 2;
 }
 .financial-chart-connector {
@@ -247,7 +253,7 @@
   outline: none;
 }
 .financial-chart-scroll g[role='button']:focus-visible .financial-chart-year-hit {
-  stroke: var(--accent);
+  stroke: var(--chart-company);
   stroke-width: 1.5;
 }
 .financial-chart-legend {
@@ -268,12 +274,23 @@
   border-radius: 2px;
 }
 .financial-chart-peer-key {
-  border: 1px solid var(--chart-total);
-  background: repeating-linear-gradient(135deg, transparent 0 2px, var(--chart-total) 2px 3px);
+  border: 1px solid var(--chart-peer);
+  background: repeating-linear-gradient(
+    135deg,
+    var(--chart-peer-soft) 0 2px,
+    var(--chart-peer) 2px 3px
+  );
 }
 .financial-chart-histogram-bar {
-  fill: var(--chart-total);
-  opacity: 0.6;
+  fill: var(--chart-peer-soft);
+  stroke: var(--chart-peer);
+  stroke-width: 1;
+}
+.financial-chart-scroll svg .financial-chart-company-text {
+  fill: var(--chart-company);
+}
+.financial-chart-scroll svg .financial-chart-peer-text {
+  fill: var(--chart-peer);
 }
 .financial-chart-distribution {
   margin-top: var(--card-gap);

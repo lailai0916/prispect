@@ -70,6 +70,9 @@
   --chart-zero: #acb2c0;
   --chart-connector: #b7bdca;
   --chart-value: #373d4b;
+  --chart-company: #4263db;
+  --chart-peer: #b76816;
+  --chart-peer-soft: #fff3e5;
   --progress: #9297a4;
   --scrim: #171a2340;
   --shadow-button: #16182008;
@@ -132,6 +135,9 @@
   --chart-zero: #697487;
   --chart-connector: #606b80;
   --chart-value: #dbe0ed;
+  --chart-company: #94adff;
+  --chart-peer: #efb36e;
+  --chart-peer-soft: #382c20;
   --progress: #808da5;
   --scrim: #080a0f99;
   --shadow-button: #00000025;
@@ -1894,6 +1900,9 @@ thead th {
     --chart-zero: #acb2c0;
     --chart-connector: #b7bdca;
     --chart-value: #373d4b;
+    --chart-company: #4263db;
+    --chart-peer: #b76816;
+    --chart-peer-soft: #fff3e5;
     --progress: #9297a4;
     --scrim: #171a2340;
     --shadow-button: #16182008;
