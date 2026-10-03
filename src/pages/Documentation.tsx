@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 import { ArrowUpRight, ChevronRight, Mail, Printer } from 'lucide-react';
 import { useApp } from '../context';
 import { DocumentLayout } from '../DocumentLayout';
-import { DOCUMENT_DATE, type ProductDocument } from '../content/document';
+import type { ProductDocument } from '../content/document';
 import {
   documentationTitle,
   documentNavigation,
-  documentTitles,
+  documentMetadata,
   type DocumentPath,
 } from '../content/document-navigation';
 import { MethodContent, methodSections } from './Method';
@@ -21,12 +21,7 @@ const documents: Record<DocumentPath, ProductDocument> = {
   '/docs/about': aboutDocument,
   '/docs/guide': guideDocument,
   '/docs/methodology': {
-    title: documentTitles['/docs/methodology'],
-    description: [
-      '计算口径、材料要求与数据使用。',
-      'Calculations, source requirements and data use.',
-    ],
-    updatedAt: DOCUMENT_DATE,
+    ...documentMetadata['/docs/methodology'],
     sections: [],
   },
   '/docs/privacy': privacyDocument,
@@ -76,11 +71,9 @@ export function DocumentationPage({
             {t('更新日期', 'Updated')}{' '}
             <time dateTime={documentContent.updatedAt}>{documentContent.updatedAt}</time>
           </span>
-          {documentContent.version && (
-            <span>
-              {t('版本', 'Version')} {documentContent.version}
-            </span>
-          )}
+          <span>
+            {t('版本', 'Version')} {documentContent.version}
+          </span>
           <button type="button" className="text-link" onClick={() => window.print()}>
             <Printer size={14} />
             {t('打印或保存', 'Print or save')}

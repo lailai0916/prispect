@@ -1,14 +1,8 @@
-import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
-import { documentTitles } from './document-navigation';
+import type { ProductDocument } from './document';
+import { documentMetadata, documentTitles } from './document-navigation';
 
 export const termsDocument: ProductDocument = {
-  title: documentTitles['/docs/terms'],
-  description: [
-    '析光的服务范围、账号使用、材料权利与双方责任。重要责任条款单独标注。',
-    'The scope of Prispect, account use, rights in materials, and responsibilities. Important liability provisions are highlighted.',
-  ],
-  version: DOCUMENT_VERSION,
-  updatedAt: DOCUMENT_DATE,
+  ...documentMetadata['/docs/terms'],
   sections: [
     {
       id: 'scope',

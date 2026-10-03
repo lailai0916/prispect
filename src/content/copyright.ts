@@ -1,14 +1,8 @@
-import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
-import { documentTitles } from './document-navigation';
+import type { ProductDocument } from './document';
+import { documentMetadata } from './document-navigation';
 
 export const copyrightDocument: ProductDocument = {
-  title: documentTitles['/docs/copyright'],
-  description: [
-    '区分析光代码许可、第三方内容与你提供的材料，保留来源和许可条件。',
-    'Distinguishing the Prispect code license, third-party content and your materials, while retaining sources and license conditions.',
-  ],
-  version: DOCUMENT_VERSION,
-  updatedAt: DOCUMENT_DATE,
+  ...documentMetadata['/docs/copyright'],
   sections: [
     {
       id: 'product-names',

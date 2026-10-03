@@ -1,14 +1,8 @@
-import { DOCUMENT_VERSION, type ProductDocument } from './document';
-import { documentTitles } from './document-navigation';
+import type { ProductDocument } from './document';
+import { documentMetadata } from './document-navigation';
 
 export const privacyDocument: ProductDocument = {
-  title: documentTitles['/docs/privacy'],
-  description: [
-    '说明析光处理哪些信息、为什么处理，以及你可以怎样查看、更正和删除。',
-    'What Prispect processes, why it is needed, and how to access, correct or delete it.',
-  ],
-  version: DOCUMENT_VERSION,
-  updatedAt: '2026-10-03',
+  ...documentMetadata['/docs/privacy'],
   sections: [
     {
       id: 'scope',

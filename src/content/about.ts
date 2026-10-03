@@ -1,14 +1,8 @@
-import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
-import { documentTitles } from './document-navigation';
+import type { ProductDocument } from './document';
+import { documentMetadata, documentTitles } from './document-navigation';
 
 export const aboutDocument: ProductDocument = {
-  title: documentTitles['/docs/about'],
-  description: [
-    '企业资料核查与条件计算：从公开财报到具体安排。',
-    'Company-evidence review and conditional calculations, from public financials to specific arrangements.',
-  ],
-  version: DOCUMENT_VERSION,
-  updatedAt: DOCUMENT_DATE,
+  ...documentMetadata['/docs/about'],
   sections: [
     {
       id: 'product',

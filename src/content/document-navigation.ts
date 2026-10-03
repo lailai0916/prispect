@@ -1,4 +1,9 @@
-import type { BilingualText } from './document';
+import {
+  DOCUMENT_DATE,
+  DOCUMENT_VERSION,
+  type BilingualText,
+  type ProductDocument,
+} from './document';
 
 // Page names are shared by navigation, document headings and browser titles.
 // Keep this separate from document bodies so the app shell stays lightweight.
@@ -15,49 +20,64 @@ export const documentationTitle = ['文档', 'Documentation'] as const;
 export type DocumentPath = keyof typeof documentTitles;
 export const documentPaths = Object.keys(documentTitles) as DocumentPath[];
 
-export const documentNavigation = [
-  {
-    path: '/docs/about',
-    label: documentTitles['/docs/about'],
+export const documentMetadata = {
+  '/docs/about': {
+    title: documentTitles['/docs/about'],
     description: ['产品用途、功能与适用范围。', 'Product purpose, features and scope.'],
+    version: DOCUMENT_VERSION,
+    updatedAt: DOCUMENT_DATE,
   },
-  {
-    path: '/docs/guide',
-    label: documentTitles['/docs/guide'],
+  '/docs/guide': {
+    title: documentTitles['/docs/guide'],
     description: [
       '公司研究、材料管理与核查记录。',
       'Company research, materials and review records.',
     ],
+    version: DOCUMENT_VERSION,
+    updatedAt: '2026-10-03',
   },
-  {
-    path: '/docs/methodology',
-    label: documentTitles['/docs/methodology'],
+  '/docs/methodology': {
+    title: documentTitles['/docs/methodology'],
     description: [
       '计算口径、证据要求与分析边界。',
       'Calculations, evidence requirements and analysis limits.',
     ],
+    version: DOCUMENT_VERSION,
+    updatedAt: DOCUMENT_DATE,
   },
-  {
-    path: '/docs/privacy',
-    label: documentTitles['/docs/privacy'],
+  '/docs/privacy': {
+    title: documentTitles['/docs/privacy'],
     description: ['数据处理、AI 使用与保存规则。', 'Data processing, AI use and retention.'],
+    version: DOCUMENT_VERSION,
+    updatedAt: '2026-10-03',
   },
-  {
-    path: '/docs/terms',
-    label: documentTitles['/docs/terms'],
+  '/docs/terms': {
+    title: documentTitles['/docs/terms'],
     description: [
       '服务范围、账号使用与双方责任。',
       'Service scope, account use and responsibilities.',
     ],
+    version: DOCUMENT_VERSION,
+    updatedAt: DOCUMENT_DATE,
   },
-  {
-    path: '/docs/copyright',
-    label: documentTitles['/docs/copyright'],
+  '/docs/copyright': {
+    title: documentTitles['/docs/copyright'],
     description: [
       '代码许可、第三方内容与材料权利。',
       'Code licensing, third-party content and material rights.',
     ],
+    version: DOCUMENT_VERSION,
+    updatedAt: DOCUMENT_DATE,
   },
-] as const;
+} as const satisfies Record<
+  DocumentPath,
+  Pick<ProductDocument, 'title' | 'description' | 'version' | 'updatedAt'>
+>;
+
+export const documentNavigation = documentPaths.map((path) => ({
+  path,
+  label: documentMetadata[path].title,
+  description: documentMetadata[path].description,
+}));
 
 export type DocumentRoute = DocumentPath | '/docs';

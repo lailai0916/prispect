@@ -160,31 +160,33 @@ export function DocumentLayout({
 
   return (
     <div className={`document-layout${home ? ' document-layout-home' : ''}`}>
-      <aside className="document-sidebar">{documents}</aside>
+      {!home && <aside className="document-sidebar">{documents}</aside>}
       <div className="document-reading-column">
-        <div className="document-mobile-navigation">
-          <details ref={mobileDocuments} className="document-mobile-documents">
-            <summary>
-              {t('浏览文档', 'Browse documents')}
-              <ChevronDown size={16} aria-hidden="true" />
-            </summary>
-            {documents}
-          </details>
-          {hasContents && (
-            <details ref={mobileContents} className="document-mobile-contents">
+        {!home && (
+          <div className="document-mobile-navigation">
+            <details ref={mobileDocuments} className="document-mobile-documents">
               <summary>
-                {t('本页目录', 'On this page')}
+                {t('浏览文档', 'Browse documents')}
                 <ChevronDown size={16} aria-hidden="true" />
               </summary>
-              {contents}
+              {documents}
             </details>
-          )}
-        </div>
+            {hasContents && (
+              <details ref={mobileContents} className="document-mobile-contents">
+                <summary>
+                  {t('本页目录', 'On this page')}
+                  <ChevronDown size={16} aria-hidden="true" />
+                </summary>
+                {contents}
+              </details>
+            )}
+          </div>
+        )}
         <article ref={article} className="document-page">
           {children}
         </article>
       </div>
-      {hasContents && (
+      {!home && hasContents && (
         <aside className="document-outline">
           <p className="document-navigation-title">{t('本页目录', 'On this page')}</p>
           {contents}
