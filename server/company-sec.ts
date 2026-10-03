@@ -116,6 +116,79 @@ export function isSecTicker(value: string): boolean {
   return /^[A-Za-z]{1,6}$/.test(value);
 }
 
+/**
+ * Common US-listed companies by Chinese / full-English name → ticker.
+ * The mapping only resolves a familiar name to the SEC ticker row; the
+ * identity still comes from the official company_tickers.json, never invented.
+ */
+const US_TICKER_ALIASES: Record<string, string> = {
+  英伟达: 'NVDA',
+  Nvidia: 'NVDA',
+  NVIDIA: 'NVDA',
+  苹果: 'AAPL',
+  Apple: 'AAPL',
+  微软: 'MSFT',
+  Microsoft: 'MSFT',
+  谷歌: 'GOOGL',
+  Alphabet: 'GOOGL',
+  亚马逊: 'AMZN',
+  Amazon: 'AMZN',
+  特斯拉: 'TSLA',
+  Tesla: 'TSLA',
+  Meta: 'META',
+  脸书: 'META',
+  英特尔: 'INTC',
+  Intel: 'INTC',
+  超威半导体: 'AMD',
+  高通: 'QCOM',
+  Qualcomm: 'QCOM',
+  博通: 'AVGO',
+  Broadcom: 'AVGO',
+  奈飞: 'NFLX',
+  Netflix: 'NFLX',
+  迪士尼: 'DIS',
+  Disney: 'DIS',
+  可口可乐: 'KO',
+  Coca: 'KO',
+  百事: 'PEP',
+  Pepsi: 'PEP',
+  麦当劳: 'MCD',
+  McDonald: 'MCD',
+  星巴克: 'SBUX',
+  Starbucks: 'SBUX',
+  摩根大通: 'JPM',
+  JPMorgan: 'JPM',
+  高盛: 'GS',
+  Goldman: 'GS',
+  摩根士丹利: 'MS',
+  花旗: 'C',
+  Citigroup: 'C',
+  美国银行: 'BAC',
+  波音: 'BA',
+  Boeing: 'BA',
+  通用汽车: 'GM',
+  Ford: 'F',
+  福特: 'F',
+  通用电气: 'GE',
+  甲骨文: 'ORCL',
+  Oracle: 'ORCL',
+  思科: 'CSCO',
+  Cisco: 'CSCO',
+  IBM: 'IBM',
+  惠普: 'HPQ',
+  戴尔: 'DELL',
+  Dell: 'DELL',
+  优步: 'UBER',
+  Uber: 'UBER',
+  爱彼迎: 'ABNB',
+  Airbnb: 'ABNB',
+  赛富时: 'CRM',
+  Salesforce: 'CRM',
+  贝宝: 'PYPL',
+  PayPal: 'PYPL',
+  英伟达公司: 'NVDA',
+};
+
 export async function secSearchCompanies(
   query: string,
   directory?: string
@@ -132,7 +205,8 @@ export async function secSearchCompanies(
     exchange: 'us',
     sourceUrl: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${row.cik}&type=10-K`,
   });
-  const exact = rows.get(key);
+  const aliasTicker = US_TICKER_ALIASES[query.trim()] || US_TICKER_ALIASES[key];
+  const exact = aliasTicker ? rows.get(aliasTicker.toLowerCase()) : rows.get(key);
   const candidates: CompanyIdentity[] = [];
   if (exact) {
     candidates.push(identityOf(exact));
@@ -142,6 +216,17 @@ export async function secSearchCompanies(
       if (ticker.startsWith(key) && matched < 20) {
         candidates.push(identityOf(row));
         matched++;
+      }
+    }
+    // Fall back to a fuzzy name match so full company names also resolve.
+    if (!candidates.length) {
+      for (const [, row] of rows) {
+        if (matched >= 20) break;
+        const title = row.title.toLowerCase();
+        if (title.includes(key)) {
+          candidates.push(identityOf(row));
+          matched++;
+        }
       }
     }
   }

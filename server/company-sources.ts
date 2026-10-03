@@ -226,6 +226,8 @@ export async function searchCompanies(
       sourceUrl: `https://www.cninfo.com.cn/new/snapshot/companyDetailCn?code=${row.code}`,
     });
   }
+  // 巨潮无匹配（如"英伟达"等美股中文名）时，回落到 SEC EDGAR 的别名与名称检索。
+  if (!candidates.length) return secSearchCompanies(query);
   return {
     query,
     candidates,

@@ -65,7 +65,9 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
       .filter((observation) => !excluded.has(observation.key))
       .map((observation) => ({ observation, material }))
   );
-  const subjectMismatch = materials.some((material) => material.company !== input.company);
+  const subjectMismatch = materials.some(
+    (material) => material.company.trim().toLowerCase() !== input.company.trim().toLowerCase()
+  );
   checks.push({
     id: 'subject',
     label: '主体一致性',
