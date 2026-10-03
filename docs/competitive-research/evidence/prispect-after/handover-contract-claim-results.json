@@ -1,0 +1,1700 @@
+{
+  "recordedAt": "2026-10-03T06:18:38.895Z",
+  "kind": "actual-private-source-located-optional-claim",
+  "checks": [
+    "explicit-contract-target-adds-separate-gate",
+    "unknown-to-matched-source-located",
+    "withdrawn-does-not-change-cash",
+    "restore-does-not-change-cash",
+    "original-words-remain-unjudged"
+  ],
+  "cashUnchanged": true,
+  "matched": {
+    "decision": {
+      "id": "1e0360ba-d11f-4fb7-a5fb-523718cff9b0",
+      "title": "合成交接 · 自选签约主体核对独立于现金",
+      "purpose": "handover",
+      "transactionEntity": "合成演练供应商（非真实企业）",
+      "currentRevision": 2,
+      "createdAt": "2026-10-03T06:18:37.718Z",
+      "updatedAt": "2026-10-03T06:18:37.748Z"
+    },
+    "version": {
+      "revision": 2,
+      "createdAt": "2026-10-03T06:18:37.748Z",
+      "reason": "evidence-added",
+      "input": {
+        "title": "合成交接 · 自选签约主体核对独立于现金",
+        "purpose": "handover",
+        "transactionEntity": "合成演练供应商（非真实企业）",
+        "reportTaskId": null,
+        "promise": "合成演练；定位主体字段不证明集团关系或承诺真假。",
+        "claims": [
+          {
+            "id": "optional-contract-role",
+            "text": "集团上市（合成待核原话）",
+            "target": "contract-entity"
+          }
+        ],
+        "external": null,
+        "datedCash": {
+          "asOf": "2026-10-03",
+          "openingCash": "1000",
+          "cashFloor": "300",
+          "proposedAmount": "100",
+          "proposedDay": 2,
+          "alternativeDay": 3,
+          "flows": []
+        }
+      },
+      "evidence": [
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "contract"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原件",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "85c09e1d-fe2c-4014-8c85-5f44ca727bc3",
+          "state": "active",
+          "createdAt": "2026-10-03T06:18:37.749Z"
+        }
+      ]
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:18:37.765Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "identity-contract",
+          "label": "签约主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "85c09e1d-fe2c-4014-8c85-5f44ca727bc3",
+              "label": "合成责任角色原件",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "opening-cash",
+          "label": "起点可用余额记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash"
+          ]
+        },
+        {
+          "id": "cash-floor",
+          "label": "新增付款后的自设现金底线",
+          "status": "unknown",
+          "summary": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash",
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "alternative-terms",
+          "label": "延期方案的可行条件",
+          "status": "unknown",
+          "summary": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "unknown",
+          "summary": "集团或其他主体的年报只作历史背景，不能证明本次交易主体的资金能力。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "reportTaskId",
+              "path": "reportTaskId",
+              "label": "未取得可采用历史任务",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-opening-cash",
+          "title": "补充起点可用余额记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "与起点日期一致的银行账户对账、受限资金和可用余额记录；不能以年报金额代替。",
+          "gateIds": [
+            "opening-cash"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-cash-floor",
+          "title": "补充新增付款后的自设现金底线",
+          "reason": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "cash-floor"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-alternative-terms",
+          "title": "补充延期方案的可行条件",
+          "reason": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "requestedEvidence": "明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。",
+          "gateIds": [
+            "alternative-terms"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ]
+        }
+      ],
+      "external": null,
+      "cash": {
+        "primary": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 2,
+              "date": "2026-10-05",
+              "openingBalance": "1000.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "900.00",
+              "outflowFirstBalance": "900.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "900.00"
+            },
+            {
+              "day": 60,
+              "balance": "900.00"
+            },
+            {
+              "day": 90,
+              "balance": "900.00"
+            }
+          ],
+          "minimumBalance": "900.00",
+          "conservativeMinimumBalance": "900.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "0.00",
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": "700.00",
+          "thresholdStatus": "known",
+          "minimumCollectionPercent": 0,
+          "minimumCollectionStatus": "known"
+        },
+        "alternative": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 3,
+              "date": "2026-10-06",
+              "openingBalance": "1000.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "900.00",
+              "outflowFirstBalance": "900.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "900.00"
+            },
+            {
+              "day": 60,
+              "balance": "900.00"
+            },
+            {
+              "day": 90,
+              "balance": "900.00"
+            }
+          ],
+          "minimumBalance": "900.00",
+          "conservativeMinimumBalance": "900.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "0.00",
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": "700.00",
+          "thresholdStatus": "known",
+          "minimumCollectionPercent": 0,
+          "minimumCollectionStatus": "known"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "recordedCash": {
+        "primary": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "alternative": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "withheld",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "withheld",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 1,
+      "toRevision": 2,
+      "changes": [
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:state",
+          "label": [
+            "材料采用状态 · 合成责任角色原件",
+            "Evidence adoption state · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "active",
+          "unit": "state"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:slot",
+          "label": [
+            "材料核验目标 · 合成责任角色原件",
+            "Evidence target · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "identity",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:kind",
+          "label": [
+            "材料性质 · 合成责任角色原件",
+            "Evidence kind · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "source-record",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:entity",
+          "label": [
+            "材料适用主体 · 合成责任角色原件",
+            "Evidence entity · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "合成演练供应商（非真实企业）",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:asOf",
+          "label": [
+            "材料适用日 · 合成责任角色原件",
+            "Evidence date · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "2026-10-03",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:sourceLabel",
+          "label": [
+            "材料来源名称 · 合成责任角色原件",
+            "Evidence source label · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "合成责任角色原件",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:quote",
+          "label": [
+            "保存摘录 · 合成责任角色原件",
+            "Saved quote · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:materialId",
+          "label": [
+            "绑定材料 · 合成责任角色原件",
+            "Linked material · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:page",
+          "label": [
+            "原件页码 · 合成责任角色原件",
+            "Original page · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "1",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:valueEntity",
+          "label": [
+            "记录主体字段 · 合成责任角色原件",
+            "Recorded entity field · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "合成演练供应商（非真实企业）",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:role",
+          "label": [
+            "记录主体角色 · 合成责任角色原件",
+            "Recorded entity role · 合成责任角色原件"
+          ],
+          "before": null,
+          "after": "contract",
+          "unit": "text"
+        },
+        {
+          "kind": "gate",
+          "key": "identity-contract",
+          "label": [
+            "签约主体",
+            "签约主体"
+          ],
+          "before": "unknown",
+          "after": "matched",
+          "unit": "state"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:18:37.718Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:18:37.748Z",
+        "reason": "evidence-added"
+      }
+    ]
+  },
+  "withdrawn": {
+    "decision": {
+      "id": "1e0360ba-d11f-4fb7-a5fb-523718cff9b0",
+      "title": "合成交接 · 自选签约主体核对独立于现金",
+      "purpose": "handover",
+      "transactionEntity": "合成演练供应商（非真实企业）",
+      "currentRevision": 3,
+      "createdAt": "2026-10-03T06:18:37.718Z",
+      "updatedAt": "2026-10-03T06:18:37.775Z"
+    },
+    "version": {
+      "revision": 3,
+      "createdAt": "2026-10-03T06:18:37.775Z",
+      "reason": "evidence-withdrawn",
+      "input": {
+        "title": "合成交接 · 自选签约主体核对独立于现金",
+        "purpose": "handover",
+        "transactionEntity": "合成演练供应商（非真实企业）",
+        "reportTaskId": null,
+        "promise": "合成演练；定位主体字段不证明集团关系或承诺真假。",
+        "claims": [
+          {
+            "id": "optional-contract-role",
+            "text": "集团上市（合成待核原话）",
+            "target": "contract-entity"
+          }
+        ],
+        "external": null,
+        "datedCash": {
+          "asOf": "2026-10-03",
+          "openingCash": "1000",
+          "cashFloor": "300",
+          "proposedAmount": "100",
+          "proposedDay": 2,
+          "alternativeDay": 3,
+          "flows": []
+        }
+      },
+      "evidence": [
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "contract"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原件",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "85c09e1d-fe2c-4014-8c85-5f44ca727bc3",
+          "state": "withdrawn",
+          "createdAt": "2026-10-03T06:18:37.749Z"
+        }
+      ]
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:18:37.782Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "identity-contract",
+          "label": "签约主体",
+          "status": "withdrawn",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "85c09e1d-fe2c-4014-8c85-5f44ca727bc3",
+              "label": "合成责任角色原件",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "opening-cash",
+          "label": "起点可用余额记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash"
+          ]
+        },
+        {
+          "id": "cash-floor",
+          "label": "新增付款后的自设现金底线",
+          "status": "unknown",
+          "summary": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash",
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "alternative-terms",
+          "label": "延期方案的可行条件",
+          "status": "unknown",
+          "summary": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "unknown",
+          "summary": "集团或其他主体的年报只作历史背景，不能证明本次交易主体的资金能力。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "reportTaskId",
+              "path": "reportTaskId",
+              "label": "未取得可采用历史任务",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-identity-contract",
+          "title": "补充签约主体",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "签约、收款和退款责任主体的原件；如主体不同，提供授权书、合同付款指引及责任说明。",
+          "gateIds": [
+            "identity-contract"
+          ],
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "85c09e1d-fe2c-4014-8c85-5f44ca727bc3",
+              "label": "合成责任角色原件",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ]
+        },
+        {
+          "id": "request-opening-cash",
+          "title": "补充起点可用余额记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "与起点日期一致的银行账户对账、受限资金和可用余额记录；不能以年报金额代替。",
+          "gateIds": [
+            "opening-cash"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-cash-floor",
+          "title": "补充新增付款后的自设现金底线",
+          "reason": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "cash-floor"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-alternative-terms",
+          "title": "补充延期方案的可行条件",
+          "reason": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "requestedEvidence": "明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。",
+          "gateIds": [
+            "alternative-terms"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ]
+        }
+      ],
+      "external": null,
+      "cash": {
+        "primary": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 2,
+              "date": "2026-10-05",
+              "openingBalance": "1000.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "900.00",
+              "outflowFirstBalance": "900.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "900.00"
+            },
+            {
+              "day": 60,
+              "balance": "900.00"
+            },
+            {
+              "day": 90,
+              "balance": "900.00"
+            }
+          ],
+          "minimumBalance": "900.00",
+          "conservativeMinimumBalance": "900.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "0.00",
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": "700.00",
+          "thresholdStatus": "known",
+          "minimumCollectionPercent": 0,
+          "minimumCollectionStatus": "known"
+        },
+        "alternative": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 3,
+              "date": "2026-10-06",
+              "openingBalance": "1000.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "900.00",
+              "outflowFirstBalance": "900.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "900.00"
+            },
+            {
+              "day": 60,
+              "balance": "900.00"
+            },
+            {
+              "day": 90,
+              "balance": "900.00"
+            }
+          ],
+          "minimumBalance": "900.00",
+          "conservativeMinimumBalance": "900.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "0.00",
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": "700.00",
+          "thresholdStatus": "known",
+          "minimumCollectionPercent": 0,
+          "minimumCollectionStatus": "known"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "recordedCash": {
+        "primary": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "alternative": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "withheld",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "withheld",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 2,
+      "toRevision": 3,
+      "changes": [
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:state",
+          "label": [
+            "材料采用状态 · 合成责任角色原件",
+            "Evidence adoption state · 合成责任角色原件"
+          ],
+          "before": "active",
+          "after": "withdrawn",
+          "unit": "state"
+        },
+        {
+          "kind": "gate",
+          "key": "identity-contract",
+          "label": [
+            "签约主体",
+            "签约主体"
+          ],
+          "before": "matched",
+          "after": "withdrawn",
+          "unit": "state"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:18:37.718Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:18:37.748Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 3,
+        "createdAt": "2026-10-03T06:18:37.775Z",
+        "reason": "evidence-withdrawn"
+      }
+    ]
+  },
+  "restored": {
+    "decision": {
+      "id": "1e0360ba-d11f-4fb7-a5fb-523718cff9b0",
+      "title": "合成交接 · 自选签约主体核对独立于现金",
+      "purpose": "handover",
+      "transactionEntity": "合成演练供应商（非真实企业）",
+      "currentRevision": 4,
+      "createdAt": "2026-10-03T06:18:37.718Z",
+      "updatedAt": "2026-10-03T06:18:37.790Z"
+    },
+    "version": {
+      "revision": 4,
+      "createdAt": "2026-10-03T06:18:37.790Z",
+      "reason": "evidence-restored",
+      "input": {
+        "title": "合成交接 · 自选签约主体核对独立于现金",
+        "purpose": "handover",
+        "transactionEntity": "合成演练供应商（非真实企业）",
+        "reportTaskId": null,
+        "promise": "合成演练；定位主体字段不证明集团关系或承诺真假。",
+        "claims": [
+          {
+            "id": "optional-contract-role",
+            "text": "集团上市（合成待核原话）",
+            "target": "contract-entity"
+          }
+        ],
+        "external": null,
+        "datedCash": {
+          "asOf": "2026-10-03",
+          "openingCash": "1000",
+          "cashFloor": "300",
+          "proposedAmount": "100",
+          "proposedDay": 2,
+          "alternativeDay": 3,
+          "flows": []
+        }
+      },
+      "evidence": [
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "contract"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原件",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "85c09e1d-fe2c-4014-8c85-5f44ca727bc3",
+          "state": "active",
+          "createdAt": "2026-10-03T06:18:37.749Z"
+        }
+      ]
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:18:37.800Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "identity-contract",
+          "label": "签约主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "85c09e1d-fe2c-4014-8c85-5f44ca727bc3",
+              "label": "合成责任角色原件",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "opening-cash",
+          "label": "起点可用余额记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash"
+          ]
+        },
+        {
+          "id": "cash-floor",
+          "label": "新增付款后的自设现金底线",
+          "status": "unknown",
+          "summary": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash",
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "alternative-terms",
+          "label": "延期方案的可行条件",
+          "status": "unknown",
+          "summary": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "unknown",
+          "summary": "集团或其他主体的年报只作历史背景，不能证明本次交易主体的资金能力。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "reportTaskId",
+              "path": "reportTaskId",
+              "label": "未取得可采用历史任务",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-opening-cash",
+          "title": "补充起点可用余额记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "与起点日期一致的银行账户对账、受限资金和可用余额记录；不能以年报金额代替。",
+          "gateIds": [
+            "opening-cash"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-cash-floor",
+          "title": "补充新增付款后的自设现金底线",
+          "reason": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "cash-floor"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-alternative-terms",
+          "title": "补充延期方案的可行条件",
+          "reason": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "requestedEvidence": "明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。",
+          "gateIds": [
+            "alternative-terms"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ]
+        }
+      ],
+      "external": null,
+      "cash": {
+        "primary": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 2,
+              "date": "2026-10-05",
+              "openingBalance": "1000.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "900.00",
+              "outflowFirstBalance": "900.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "900.00"
+            },
+            {
+              "day": 60,
+              "balance": "900.00"
+            },
+            {
+              "day": 90,
+              "balance": "900.00"
+            }
+          ],
+          "minimumBalance": "900.00",
+          "conservativeMinimumBalance": "900.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "0.00",
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": "700.00",
+          "thresholdStatus": "known",
+          "minimumCollectionPercent": 0,
+          "minimumCollectionStatus": "known"
+        },
+        "alternative": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 3,
+              "date": "2026-10-06",
+              "openingBalance": "1000.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "900.00",
+              "outflowFirstBalance": "900.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "900.00"
+            },
+            {
+              "day": 60,
+              "balance": "900.00"
+            },
+            {
+              "day": 90,
+              "balance": "900.00"
+            }
+          ],
+          "minimumBalance": "900.00",
+          "conservativeMinimumBalance": "900.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "0.00",
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": "700.00",
+          "thresholdStatus": "known",
+          "minimumCollectionPercent": 0,
+          "minimumCollectionStatus": "known"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "recordedCash": {
+        "primary": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "alternative": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "withheld",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "withheld",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 3,
+      "toRevision": 4,
+      "changes": [
+        {
+          "kind": "evidence",
+          "key": "evidence:85c09e1d-fe2c-4014-8c85-5f44ca727bc3:state",
+          "label": [
+            "材料采用状态 · 合成责任角色原件",
+            "Evidence adoption state · 合成责任角色原件"
+          ],
+          "before": "withdrawn",
+          "after": "active",
+          "unit": "state"
+        },
+        {
+          "kind": "gate",
+          "key": "identity-contract",
+          "label": [
+            "签约主体",
+            "签约主体"
+          ],
+          "before": "withdrawn",
+          "after": "matched",
+          "unit": "state"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:18:37.718Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:18:37.748Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 3,
+        "createdAt": "2026-10-03T06:18:37.775Z",
+        "reason": "evidence-withdrawn"
+      },
+      {
+        "revision": 4,
+        "createdAt": "2026-10-03T06:18:37.790Z",
+        "reason": "evidence-restored"
+      }
+    ]
+  }
+}

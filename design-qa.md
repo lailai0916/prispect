@@ -1,241 +1,190 @@
-# Documentation layout QA
+# Workspace visual upgrade QA
 
-final result: passed
+Date: 2026-10-03.
 
-## Reference and evidence
+## Visual target and scope
 
-The user's Linear Docs screenshot is the layout reference: article navigation on the left,
-readable content in the middle, and a section outline on the right. This is a layout adaptation;
-Prispect retains its brand, existing typography, document text and public header.
+Source visual: the user's attached tokenflux dashboard screenshot in this chat
+(3244 × 2198 original, displayed at 1920 × 1301). The reference establishes an
+equal-width card grid, rounded surfaces, outlined icons, clear metric hierarchy,
+readable charts and a visible theme color. This is a redesign of Prispect's real
+application, not a reproduction of the reference's billing dashboard. Preserve
+Prispect's geometric logo, financial content and existing controls. The user's
+subsequent direction takes precedence over the reference's extensive color:
+restore a primarily white and neutral-gray Linear-style interface with only
+small, subdued theme accents. The density refinement keeps content substantial
+and readable while removing large repeated wrappers, icon backgrounds and unused
+space. The latest typography correction restores normal navigation, body and
+heading sizes across the application, while raising the smallest screen text to
+a 12px floor. The sidebar is one example of the shared correction, not its scope.
 
-- Source visual truth: `output/playwright/docs-linear-reference-light.png`, captured from
-  <https://linear.app/docs/start-guide> after selecting the light theme.
-- Implementation: `output/playwright/docs-final-about.png` and `docs-final-docs.png` in the same
-  directory; additional captures cover `/method`, `/privacy`, `/terms`, and `/copyright`.
-- Comparison viewport: 1760 × 1058 CSS pixels. Both full-view images are 1760 × 1058 pixels at
-  device scale factor 1. The fresh source capture excludes the browser frame in the supplied
-  screenshot; no image-density conversion was needed.
-- State: anonymous, light theme, page top. Source text is English; implementation text is Chinese.
-  English and dark states were verified separately.
-- Full-view comparison: source and implementation were opened together in one comparison input.
-- Focused comparisons: `docs-reference-focus-heading.png` (640 × 110) with
-  `docs-focus-heading.png` (740 × 186), and `docs-reference-focus-outline.png` (250 × 150) with
-  `docs-focus-outline.png` (220 × 488). These native browser crops were viewed together to check
-  typography, section spacing, rail alignment and active states. Different heights reflect the
-  preserved product text and the longer real outline, rather than density differences.
-- Responsive evidence: `docs-final-mobile.png`, `docs-final-mobile-dark-en.png`,
-  `docs-final-mobile-navigation.png`, and `docs-final-tablet-contents.png`.
-- Navigation regression evidence: `docs-final-history-back.png`.
+Source browser chrome and outer black framing are excluded from the comparison.
+Rendered evidence uses 1440 × 960 desktop, 390 × 960 mobile and 320px English
+layouts at device scale factor 1. Comparison concerns app layout and visual
+hierarchy, rather than pixel identity between two different products.
 
-Screenshots and local browser-check scripts are workspace evidence and are excluded from Git.
+## Rendered evidence
 
-## Findings and comparison history
+Actual local React application: `http://127.0.0.1:4364`.
 
-- The first visual comparison found no substantive composition mismatch: the article is centered
-  between equal desktop navigation tracks, with a restrained sidebar, narrow section outline,
-  and readable prose width. Retaining Prispect's header, Chinese type and six actual articles is
-  intentional; Linear's branding and unrelated navigation categories are not product content.
-- [P2, resolved] Browser history could restore the page top after a section link had aligned the
-  target. Section scrolling now runs on the next animation frame, after browser restoration and
-  mobile-menu collapse. The revised browser run verifies back, forward, repeated links, legacy
-  anchors and `/method?section=privacy`; `docs-final-history-back.png` shows the calculation
-  heading below the header with both sticky navigation columns and its outline item active.
-- The final full-view and focused comparison found no remaining actionable P0/P1/P2 issues.
+Screenshots and measurements are stored under
+`output/playwright/readable-type/` as local QA artifacts:
 
-## Fidelity surfaces
+- `design-report-light-1440.png`: full desktop composition and first-fold density.
+- `design-report-cards-light-1440.png`: focused summary, metric cards and stages.
+- `design-report-dark-390.png`: narrow dark report and control wrapping.
+- `design-desktop-light-library.png` and `design-desktop-light-materials.png`:
+  aligned workspaces, real-record counts and card grids.
+- `design-mobile-dark-financial.png`: chart grouping and narrow-page structure.
+- `design-mobile-dark-assistant.png`: conversation, sources and composer.
+- `design-mobile-dark-guide.png`: document reading hierarchy.
+- `design-desktop-financial-chart.png`: saved-year chart selection and theme.
+- `design-desktop-dark-docs.png`: six equal document cards in the dark theme.
+- `design-sources-320-en.png`: corrected narrow English source tabs.
+- `design-summary.json`: final acceptance and resolved findings.
+- `design-results.json`: initial browser checks and the preserved narrow-layout
+  failure; `design-narrow-results.json` records its subsequent successful recheck.
 
-- Typography: the existing system-font stack, 28–40 px page headings, 19 px section headings,
-  14 px prose and quieter navigation remain consistent with Prispect. Both languages wrap without
-  truncation. Native heading captures confirm hierarchy and readable spacing.
-- Layout rhythm: desktop tracks are 220 px / up to 740 px / 220 px with balanced gutters.
-  Tablet widths retain article navigation and collapse the outline; mobile collapses both.
-  Sticky columns stay below the header. Tables scroll inside their own region.
-- Colors: existing light/dark tokens provide neutral backgrounds, subtle dividers and visible
-  current-page/current-section states. No decorative gradients or new palette were added.
-- Asset fidelity: Prispect's original logo and existing Lucide controls are preserved. This
-  reference supplies a reading layout, so Linear's logo and unrelated assets are not copied.
-- Copy: the six existing document bodies, bilingual disclosures, links and contact information
-  are preserved. New navigation labels describe actual product pages and sections.
+Fixtures use a synthetic local account and saved public-company snapshots.
+API requests are intercepted, external requests and unexpected writes blocked.
+These checks do not use production records or a live model.
 
-## Validation
+## Required visual surfaces
 
-- 288 combinations: six routes × two languages × two themes × twelve viewport sizes, including
-  both responsive breakpoints, 320 px phones, short landscape screens and 2560 px desktops.
-  No whole-page horizontal overflow; desktop articles remain centered and at most 740 px wide.
-- All article links, section links, scroll highlighting, deep refresh, history navigation,
-  repeated section clicks and real/legacy hash links work. The method privacy link still expands
-  its disclosure. Mobile menus close after navigation and support keyboard activation.
-- Signed-in users receive the same document layout and can return to their workspace. All six
-  public documents also remain readable when workspace API requests fail.
-- Print controls invoke printing; print layout removes both navigation columns and site chrome.
-- Mobile controls have at least 44 px targets and visible keyboard focus. Reduced motion is
-  respected. Doubling document text size at 390 px produced no whole-page overflow.
-- Browser checks recorded no console exceptions or failed HTTP responses in normal operation.
-- `npm run check` passed, including types, tests, production build and formatting. The pinned
-  repository checker also passed, including read-only GitHub metadata validation.
-- Production publication is handled separately by the existing CI-gated deployment workflow.
+- Typography: native system/PingFang fallbacks, restrained weights, 14px body,
+  13px navigation and ordinary controls, 13px explanations, and at least 12px
+  screen metadata and captions. Workspace titles return to 25px/23px. Preserve
+  the original larger main judgments and grades, with amounts at 26px/22px.
+  Native mobile inputs and the main research composer remain 16px. Source titles
+  wrap and full originals remain accessible. Earlier screenshots below reflect
+  the preceding typography and are historical evidence.
+- Layout: one workspace width, equal metric tracks, 12px card radii, shared
+  20px/18px padding and 16px gaps. Related summary, grade, amounts and actual
+  stages share one report section; detailed execution and coverage expand in
+  place. Findings follow immediately. Research library and materials share
+  compact statistics, directly accessible controls and aligned divided rows.
+  Document cards size to their content. Narrow layouts stack content; tables and
+  large charts retain local scrolling. Header heights remain 52px/56px.
+- Colors: pure white light-theme canvas, neutral paper cards, gray/black
+  navigation, actions, icons and grade panels. Subdued purple appears only in
+  small focus/hover details and a chart comparison series. Light and dark
+  tokens remain distinct; numeric amounts stay readable and semantic errors
+  keep explicit labels.
+- Assets: preserve the supplied Prispect logo and installed Lucide outline
+  icons. Financial charts render recorded data. Reference-site avatars and
+  provider logos are outside the intended product scope; no decorative raster
+  assets or replacement brand illustrations are required.
+- Content: canonical product wording remains unchanged. Judgments, grades,
+  provenance and failures are retained. Library/material summaries derive from
+  existing records and introduce no extra retrieval requests.
 
-## Implementation checklist
+## Comparison history
 
-- [x] Shared three-column layout for all six requested documents.
-- [x] Responsive article navigation and section outline.
-- [x] Preserve content, bilingual themes, privacy disclosures and print behavior.
-- [x] Resolve the history-navigation regression and compare the revised screenshots.
-- [x] Complete browser, project and repository checks.
+1. [P2] Important amounts fell below the first desktop viewport. The identity
+   card appeared before the report, while the grade column created approximately
+   100px of empty space before actions. Move company details after the report
+   and place scope/actions/warnings in the summary's text column. Revised
+   desktop capture shows all three amount cards within the first viewport,
+   approximately y650–841. Mobile cards retain equal widths and readable text.
+2. [P2] At 320px in English, the public-discussion tab extended to x346 after
+   adding card padding. Allow the tab group to wrap and buttons to shrink;
+   retain both tabs and their keyboard selection. Revised 320px/390px English
+   and 390px Chinese captures and mouse/keyboard checks show no page overflow.
 
-# Company review refinement QA — 2026-10-03
+## Earlier validation and limits
 
-final result: passed
+The subsequent palette refinement was checked at 1440px on the report,
+research library and document home, and at 390px on the dark assistant.
+The light canvas measured `rgb(255, 255, 255)`; grade/icon surfaces and buttons
+were neutral. Report geometry and all three first-fold amounts were unchanged.
+The source drawer and document navigation remained usable. No page overflow,
+browser errors, unexpected requests or missing endpoints were observed.
+Final palette captures and measurements are in
+`output/playwright/linear-restraint/`: `light-report-1440.png`,
+`light-library-1440.png`, `light-docs-1440.png`, `dark-assistant-390.png` and
+`results.json`. The earlier visual-upgrade screenshots remain as before evidence.
 
-## Scope and reference
+Type checking, production build and changed-file formatting checks passed.
+Final Chromium checks cover report, library, materials, sources, charts,
+documents, account and the unified assistant. All three metric cards appear
+in the first desktop viewport. Six saved financial years support click/Enter
+selection, ArrowRight/Home tab switching and source drawers showing the selected
+field and year. Document cards retain six canonical destinations. Library and
+material counts match the fixture records. Page errors, external requests,
+unexpected writes and missing mock endpoints are all zero.
 
-The user selected the dark report direction and explicitly requested the existing sidebar,
-top navigation and documentation design. This report change does not modify those components or their global tokens.
-The implementation adapts the report content, retaining the current product typography rather
-than enlarging the navigation to the generated mockup's proportions.
+Production deployment, live research execution, other browser engines and every
+hidden legacy modal are outside this visual verification. The local preview
+and screenshots remain available for review.
 
-- Refined visual reference: `/workspace/generated_images/exec-fca28a0f-2681-4f0b-a3d4-eef8906f8e3c.png`.
-- Reference image: 1487 × 1058 pixels; normalized to 1440 × 1024 for the comparison.
-  This generated reference has no intrinsic CSS density. Browser captures use 1440 × 1024 CSS
-  pixels at device scale factor 1. Normalization changes the reference scale by approximately 3%.
-- State: signed in, Songyuan Safety, annual 2025, consolidated amounts, originals awaiting
-  confirmation, Chinese, dark, collapsed detail section, page top.
-- Full-frame paired review: `output/playwright/report-refinement/comparison-final.png`.
-  Both source and implementation were inspected together. The content comparison is stored
-  as `comparison-content-final.png` in the same directory.
-- The deterministic UI replay uses verified repository example amounts and is explicitly
-  separate from the actual live query. `live-report.png` and `live-adopted-report.png` record
-  the real retrieval and subsequent adoption flow using isolated local account storage.
-- Existing docs are captured in `docs-preserved.png`; no documentation component or stylesheet
-  was modified. Screenshots, browser scripts, local account state and original PDFs are excluded
-  from Git.
+## Earlier density refinement
 
-## Comparison and repairs
+Local before evidence is in `output/playwright/density-flow/`, including
+`before-report-1440.png`, `before-library-1440.png`,
+`before-materials-1440.png`, `before-docs-1440.png` and `baseline.json`.
+The structural baseline already includes the reduced shared card tokens; it
+still has the previous standalone metrics and large process card. On that
+baseline, key findings start at y1052 and next steps at y1275. The research
+library list starts at y406; materials at y375. Six document cards are each
+170px high. Compare the rendered final layout with these same fixture records
+and viewport sizes, without introducing extra data or shrinking text.
 
-- Initial comparison: flat report sections, three amount columns, direct evidence links and a
-  collapsed detailed-analysis section establish the intended hierarchy. The original navigation,
-  neutral palette, system fonts, logo and assistant remain in place. Copy describes amounts,
-  evidence and follow-up records without slogans or a corporate risk score.
-- [P2, resolved] The saved-original report's existing card CSS overrode the shared refinement
-  after lazy stylesheet loading. Scoped selectors now preserve flat summary and metric sections
-  regardless of stylesheet order; the live adopted report was recaptured and inspected.
-- [P2, resolved] Saved report evidence buttons needed the same mobile grid placement as source
-  links. All finding actions now wrap below their text. New mobile report actions have 44 px
-  targets, and print excludes interactive controls.
-- [P2, resolved] Duplicate annual rows with one missing value behaved differently by row order.
-  Missing values now consistently withhold the field; only differing known values constitute a
-  conflict. A financial test verifies both orders.
-- The final paired comparison, mobile English capture and light-theme capture show no remaining
-  actionable P0/P1/P2 issue within the selected scope. Differences in navigation size, button
-  color and report typography are intentional use of the preserved product design.
+Final density evidence uses `after-report-1440.png`,
+`after-library-1440.png`, `after-materials-1440.png`,
+`after-docs-1440.png`, three `after-*-320-en-dark.png` captures,
+`after-assistant-empty-390-dark.png`, `after-assistant-filled-390-dark.png`
+and `after-account-390-dark.png`. `results.json` records 12 successful
+layout/interaction groups using the same local fixtures.
 
-## Validation and limits
+The findings heading now starts at y834, 218px earlier; the first finding text
+is visible in the 960px desktop viewport. Library rows start at y316, 90px
+earlier; material rows at y287, 88px earlier. Document cards are approximately
+106px high with the original descriptions, replacing the fixed 170px height.
+The report retains four recorded stages and expands full process/coverage
+details through its existing navigation. Sources, grade details, saved-record
+navigation and the material original drawer remain usable.
 
-- Default query opens the selected annual review. Exact amount/source drawer, checklist toggle,
-  detail disclosure, independent expert profit basis, financial-history navigation, browser back,
-  deep refresh, original-candidate entry and public-data refresh work.
-- Six adverse source states were exercised in the browser: missing cash, conflicting cash,
-  nonpositive profit, previous-year-only data, loading and retrieval failure. Unsupported ratios
-  remain absent. Loading and failure states preserve usable paths to original evidence.
-- Six added financial tests verify selected-year and consolidated scope, zero versus unknown cash,
-  nonpositive denominators, field-specific source conflicts, duplicate rows and rejection of a
-  different issuer or unconfirmed original candidates.
-- Sixteen language/theme/viewport combinations cover Chinese and English, light and dark, and
-  320, 390, 768 and 1440 px widths without whole-page horizontal overflow. Saved original reports
-  were also inspected in mobile and English states and with insufficient/conflicting evidence.
-- Saved original summary, evidence drawer, cash bridge and evidence-request tabs work. Summary
-  printing produces a local PDF with controls hidden. The final normal browser run recorded no
-  page exceptions or failed HTTP responses.
-- Live Songyuan retrieval returned the 2025 consolidated amounts 366,373,098.93 and
-  26,197,123.70 yuan. The original hash matched the source manifest and all twelve retained annual
-  observations matched the verified example, including scope, units and currency. With no model configured in the isolated local server, confirmation
-  and adoption created a saved report retaining rules results showing 7.15%; its link works from the public summary.
-- `npm run check` passed: strict types, 211 tests, production build and formatting. The latest main branch control and automatic-model changes were retained; report basis controls
-  use the shared Select component. Deployment is verified separately through the existing CI-gated workflow. This verification does not claim
-  that the platform covers every issuer or authenticates future payment arrangements.
+An initial 320px English report check exposed a nonwrapping page-action group.
+Its failure and element probe remain in `initial-results-320-overflow.json`
+and `report-320-probe.json`. Allow the actions to wrap; the final report,
+library and materials checks show no horizontal page overflow at 320px.
+Assistant empty and filled layouts both keep the composer inside the panel;
+account fields remain at least 16px on mobile. No browser errors, external
+requests, unexpected writes or missing mock endpoints were observed.
+The assistant answer uses one explicit intercepted request.
 
-## Implementation checklist
+Type checking, production build, changed-file formatting and diff checks passed.
+Production deployment and CI completion were not awaited.
 
-- [x] Preserve original sidebar, top navigation, documentation and expert tools.
-- [x] Default to concise annual report with source and follow-up paths.
-- [x] Retain detailed financial context, original confirmation and saved-report expert tabs.
-- [x] Resolve comparison findings and recapture desktop, mobile and language/theme states.
-- [x] Verify live retrieval/adoption and run project checks.
+Current density browser acceptance: passed.
 
-# Platform finishing QA — 2026-10-02
+## Current typography floor correction
 
-final result: passed
+Restore the ordinary role hierarchy throughout the application, not just in the
+sidebar. Shared body/navigation/metadata sizes are 14px/13px/12px. Workspace
+headings return to 25px desktop and 23px mobile. Compare original declarations
+at `1c16e73` with the broad enlargement at `32b4e42`: restore 44 remaining
+ordinary section, record and tool headings that had been enlarged or flattened.
+This covers materials, company analysis, original review, the evidence lab,
+payment tools, research library, source drawers, documents and account surfaces.
+Library grades return to their original 18px. Original prominent judgments,
+report grades, larger amounts and mobile/native input roles keep their hierarchy.
+Former 9–11px screen text, including the newly integrated research modules, has a
+12px minimum; the 10px print-only document URL suffix is outside screen scope.
 
-## Scope, baseline and paired inspection
+`output/playwright/type-floor/results.json` records six successful targeted
+Chromium groups at the actual local application, using synthetic saved research
+and intercepted API responses. Desktop report measurements are body 14px,
+navigation 13px, title 25px, metadata 12px, main judgment 34px, grade 52px and
+amounts 26px. Document article text is 14px; home-card titles/descriptions are
+15px/13px and version metadata is 12px. Research-library metadata is 12px.
+Visible text in ResearchPlan, SourceTrust and ReportEvidenceControls has a 12px
+minimum. At 390px in the dark theme, the report title is 23px, judgment 26px,
+grade 36px and amounts 22px. Assistant and new-research inputs remain 16px.
+No page overflow, browser errors, unexpected writes or external requests were
+observed. The assistant reply uses one explicit mocked request.
 
-Audited steps: anonymous home, query entry, company report, financial workbench, material
-list, payment/handover list, new financial review, account profile, documentation and login.
-The user's selected Linear-style direction and the existing sidebar, header and document
-layout are retained. This iteration polishes the existing application rather than selecting
-a new layout. The ten original browser captures (`01-query-before.png` through
-`10-login-before.png`) in `output/playwright/platform-polish/` are the visual baseline.
-
-The report, materials and decision-list full-frame before/after comparisons were inspected
-side by side in the same image input. Files: `02-report-comparison.png`,
-`04-materials-comparison.png` and `05-decisions-comparison.png`. Both sides use
-1440 × 1000 CSS pixels at device scale factor 1, with an added 44-pixel label strip; no
-scale or density correction is required. States match: same local owner, fixture records,
-Chinese, dark theme, page top, collapsed report details. The workbench pair is saved as
-`03-reviews-comparison.png`. Separate captures cover 390 × 844 mobile layouts and
-English/light variants. `live-report-polished.png` and `polish-motion.webm` use the separately
-queried, hash-verified and adopted Songyuan original in an isolated local account; they are
-not production account captures or a new live-source validation.
-
-## Findings and repairs
-
-- Materials: selected filters previously lacked a visible selected style. Buttons now expose
-  their pressed state and source counts; empty filtered results can restore the list. Search
-  clearing preserves input focus, including Escape. Command results select the matching
-  material without placing private text in the URL.
-- Workbench: status counts, actual sort choices and a reveal-on-focus link arrow improve
-  scanning and keyboard use. Sorting changes only the displayed order.
-- Feedback: notices previously shared the assistant launcher's corner. They now avoid the
-  trigger, move when its panel is open, pause successful-message expiry on hover, focus or
-  hidden tabs, and retain errors until dismissal. Download feedback says initiation; the
-  preview's exact bytes are still used for download.
-- Entry and forms: restrained empty-state file illustrations, real loading placeholders,
-  selected-evidence step feedback, a submit-key hint and Caps Lock notice explain current
-  state without slogans, simulated completion percentages or animated financial amounts.
-- Navigation: header search and Control/Meta+K operate on account-local metadata. Arrows,
-  Enter and Escape work; closing restores focus, selecting a result focuses the destination.
-  Long report/document pages provide a return-to-top action.
-- Motion: shared press/hover responses, brief page/dialog/assistant transitions, detail
-  reveals and actual-operation feedback follow the system reduced-motion preference.
-- QA caught and repaired a sibling React-key collision that duplicated the main page on
-  closing command search. The command key is now distinct from the owner-keyed main;
-  repeated closing/navigation retains exactly one main. Portal popup styling and initial
-  search focus were also corrected before final acceptance.
-
-## Validation and limits
-
-- `npm run check` passed after fast-forward integration of deployment-retention changes:
-  strict types, all **226** tests, production build and formatting. Final stylesheet changes
-  were subsequently built, type-checked, formatted and inspected again.
-- Eight combinations (1440/390 width × dark/light × Chinese/English) cover eight signed-in
-  pages plus command search and assistant: 80 captures, no body overflow or browser
-  exceptions. All eight overlay states were recaptured after portal-style repair. A separate 320-pixel
-  check covers query, materials, reviews, account and command; the compact header hides
-  only its English brand subtitle at the narrowest width, preserving every control.
-- Browser checks pass for keyboard/local-only command filtering, empty/reset/search-focus
-  states, material targeting, sort selection, export byte identity, hover-paused success,
-  persistent errors, return to top, reduced motion, anonymous navigation and Caps Lock.
-  Reduced-motion checks allow the existing 0.01 ms transition-completion events while
-  rejecting nontrivial running animations.
-- A separate two-account browser check changes owner while search is open: the menu closes,
-  previous metadata disappears, the new owner has no previous records, and the prior run
-  returns 404. Only isolated local accounts were created.
-- Loading captures use a deliberately delayed real local session response. Error checks use
-  one deliberately rejected local profile request. Neither represents an observed production
-  outage. Runtime/a11y checks are scoped evidence, not a full WCAG or capacity certification.
-- Motion recording is actual local browser output. Financial computations, adoption rules,
-  model payload boundaries and existing seven company pages remain covered by the tests;
-  this iteration does not claim new provider coverage or accounting validation.
-
-No unresolved P0/P1/P2 findings in the changed flows. Screenshots, recordings and browser
-scripts are local workspace evidence excluded from Git. Source financial documents and
-browser profiles remain excluded.
+Screenshots: `report-1440-light.png`, `docs-guide-1440-light.png` and
+`assistant-390-dark.png` in the same directory. Production build, changed-file
+formatting and diff checks passed. No calculation, retrieval, permission or
+stored-data behavior changed; CI and production deployment were not awaited.

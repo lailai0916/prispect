@@ -1,9 +1,10 @@
 import { productTerms } from '../../shared/product-terms';
 import { useMemo, useState } from 'react';
-import { ArrowRight, Building2, Plus, RefreshCw, Search, X } from 'lucide-react';
+import { ArrowRight, Building2, FileText, LoaderCircle, Plus, RefreshCw } from 'lucide-react';
 import type { CompanyRecordSummary } from '../../shared/company-workspace';
 import { companyPath } from '../../shared/company-workspace';
 import { PageHeading, Tag } from '../components';
+import { SearchField } from '../Experience';
 import { Select } from '../Select';
 import { useCompanyRecords } from '../CompanyRecordsContext';
 import { useApp } from '../context';
@@ -31,6 +32,8 @@ export function ResearchLibraryPage() {
   const { records, loading, refreshing, error, reload } = useCompanyRecords();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const savedCount = records.filter((record) => Boolean(record.result)).length;
+  const activeCount = records.filter((record) => record.deletionBlocked).length;
   const visible = useMemo(() => {
     const text = query.trim().toLocaleLowerCase();
     return [...records]
@@ -55,8 +58,8 @@ export function ResearchLibraryPage() {
       <PageHeading
         title={t(...productTerms.researchLibrary)}
         description={t(
-          '已保存的研究报告、公开资料与研究记录。',
-          'Saved research reports, public sources and research records.'
+          '已保存的研究报告与研究记录。',
+          'Saved research reports and research records.'
         )}
         action={
           <button className="button button-primary" onClick={() => navigate('/query')}>
@@ -64,26 +67,44 @@ export function ResearchLibraryPage() {
           </button>
         }
       />
+      {!loading && !error && (
+        <div className="research-library-overview" aria-label={t('研究概览', 'Research overview')}>
+          <div className="research-library-stat">
+            <span className="research-library-stat-icon" aria-hidden="true">
+              <Building2 size={19} />
+            </span>
+            <div>
+              <span>{t('研究记录', 'Research records')}</span>
+              <strong>{records.length}</strong>
+            </div>
+          </div>
+          <div className="research-library-stat">
+            <span className="research-library-stat-icon" aria-hidden="true">
+              <FileText size={19} />
+            </span>
+            <div>
+              <span>{t('已保存分析', 'Saved analyses')}</span>
+              <strong>{savedCount}</strong>
+            </div>
+          </div>
+          <div className="research-library-stat">
+            <span className="research-library-stat-icon" aria-hidden="true">
+              <LoaderCircle size={19} />
+            </span>
+            <div>
+              <span>{t('处理中', 'Processing')}</span>
+              <strong>{activeCount}</strong>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="research-library-toolbar">
-        <label className="research-library-search">
-          <Search size={16} aria-hidden="true" />
-          <input
-            aria-label={t('搜索研究记录', 'Search research records')}
-            placeholder={t('公司、代码或年度', 'Company, code or year')}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            type="search"
-          />
-          {query && (
-            <button
-              className="icon-button"
-              aria-label={t('清除搜索', 'Clear search')}
-              onClick={() => setQuery('')}
-            >
-              <X size={14} />
-            </button>
-          )}
-        </label>
+        <SearchField
+          label={t('搜索研究记录', 'Search research records')}
+          placeholder={t('公司、代码或年度', 'Company, code or year')}
+          value={query}
+          onChange={setQuery}
+        />
         <label className="research-library-filter">
           <span className="sr-only">{t('筛选记录', 'Filter records')}</span>
           <Select

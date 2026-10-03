@@ -1,0 +1,24 @@
+
+> check
+> npm run typecheck && npm test && npm run build && npm run format:check
+
+
+> typecheck
+> tsc --noEmit
+
+server/assistant-research.ts(1,22): error TS2307: Cannot find module 'cheerio' or its corresponding type declarations.
+server/company-context-sources.ts(2,22): error TS2307: Cannot find module 'cheerio' or its corresponding type declarations.
+server/company-context-sources.ts(694,29): error TS7006: Parameter '_index' implicitly has an 'any' type.
+server/company-context-sources.ts(694,37): error TS7006: Parameter 'row' implicitly has an 'any' type.
+server/company-context-sources.ts(860,31): error TS7006: Parameter '_index' implicitly has an 'any' type.
+server/company-context-sources.ts(860,39): error TS7006: Parameter 'element' implicitly has an 'any' type.
+server/company-public-signals.ts(2,22): error TS2307: Cannot find module 'cheerio' or its corresponding type declarations.
+server/company-public-signals.ts(602,29): error TS7006: Parameter '_index' implicitly has an 'any' type.
+server/company-public-signals.ts(602,37): error TS7006: Parameter 'element' implicitly has an 'any' type.
+server/company-research-agent.ts(1,22): error TS2307: Cannot find module 'cheerio' or its corresponding type declarations.
+tests/company-display.test.ts(5,22): error TS2307: Cannot find module 'cheerio' or its corresponding type declarations.
+tests/company-display.test.ts(130,15): error TS7006: Parameter '_index' implicitly has an 'any' type.
+tests/company-display.test.ts(130,23): error TS7006: Parameter 'element' implicitly has an 'any' type.
+tests/company-display.test.ts(134,35): error TS7006: Parameter 'label' implicitly has an 'any' type.
+tests/company-display.test.ts(136,32): error TS7006: Parameter 'value' implicitly has an 'any' type.
+tests/company-display.test.ts(136,39): error TS7006: Parameter 'index' implicitly has an 'any' type.

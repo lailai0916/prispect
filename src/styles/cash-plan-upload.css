@@ -55,7 +55,7 @@
 }
 
 .cash-import-dialog .cash-plan-upload-target strong {
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 500;
   overflow-wrap: anywhere;
 }
@@ -63,7 +63,7 @@
 .cash-import-dialog .cash-plan-upload-target > span,
 .cash-import-dialog .cash-plan-upload-status {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.6;
 }
 
@@ -75,7 +75,7 @@
 }
 
 .cash-import-dialog .cash-plan-upload-filename {
-  font-size: 13px;
+  font-size: var(--text-secondary);
 }
 
 .cash-import-dialog .cash-plan-upload-defaults > :first-child {

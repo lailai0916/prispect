@@ -1,10 +1,11 @@
 .cash-stress-lab {
   margin-top: 28px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 24px;
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
   min-width: 0;
-  background: var(--surface-subtle);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .cash-stress-lab * {
   min-width: 0;
@@ -21,7 +22,7 @@
   gap: 6px;
   margin-bottom: 8px;
   color: var(--accent);
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 600;
   letter-spacing: 0.04em;
 }
@@ -33,18 +34,18 @@
 }
 .cash-stress-session-label {
   color: var(--subtle);
-  font-size: 11px;
+  font-size: var(--text-meta);
   white-space: nowrap;
   padding-top: 4px;
 }
 .cash-stress-intro {
   margin: 12px 0 8px;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--text-body);
 }
 .cash-stress-basis {
   margin: 0 0 24px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--subtle);
 }
 .cash-stress-layout {
@@ -62,7 +63,7 @@
 .cash-stress-control > label,
 .cash-stress-control-title label,
 .cash-stress-delay > span:first-child {
-  font-size: 12px;
+  font-size: var(--text-ui);
   font-weight: 600;
 }
 .cash-stress-control-title {
@@ -80,13 +81,13 @@
   color: var(--accent);
 }
 .cash-stress-control-title output small {
-  font-size: 13px;
+  font-size: var(--text-ui);
   margin-left: 2px;
 }
 .cash-stress-control p {
   margin: 8px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
   line-height: 1.6;
 }
 .cash-stress-range {
@@ -141,7 +142,7 @@
   display: flex;
   justify-content: space-between;
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-variant-numeric: tabular-nums;
 }
 .cash-stress-delay {
@@ -204,7 +205,7 @@
   border-radius: 6px;
   color: var(--ink);
   background: var(--paper);
-  font-size: 14px;
+  font-size: var(--text-body);
   font-variant-numeric: tabular-nums;
 }
 .cash-stress-extra[aria-invalid='true'] {
@@ -225,7 +226,7 @@
   min-height: 36px;
   color: var(--muted);
   background: var(--paper);
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .cash-stress-reset:not(:disabled):hover {
   color: var(--ink);
@@ -247,7 +248,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 12px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
   margin-bottom: 16px;
 }
@@ -258,7 +259,7 @@
 .cash-stress-plot {
   position: relative;
   height: 210px;
-  margin-left: 64px;
+  margin-left: 72px;
 }
 .cash-stress-plot svg {
   display: block;
@@ -269,11 +270,11 @@
 .cash-stress-axis {
   position: absolute;
   top: 0;
-  left: -64px;
-  width: 56px;
+  left: -72px;
+  width: 64px;
   height: 100%;
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-caption);
   text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -307,10 +308,10 @@
 .cash-stress-period-labels {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 12px 0 0 64px;
+  margin: 12px 0 0 72px;
   text-align: center;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-caption);
 }
 .cash-stress-legend {
   display: flex;
@@ -319,7 +320,7 @@
   justify-content: flex-end;
   margin-top: 18px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-meta);
 }
 .cash-stress-legend > span {
   display: inline-flex;
@@ -344,7 +345,7 @@
 }
 .cash-stress-chart-note {
   margin: 12px 0 0;
-  font-size: 10px;
+  font-size: var(--text-secondary);
   color: var(--subtle);
 }
 .cash-stress-summary {
@@ -357,7 +358,7 @@
 }
 .cash-stress-summary dt {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-meta);
   line-height: 1.6;
 }
 .cash-stress-summary dd {
@@ -374,7 +375,7 @@
 }
 .cash-stress-threshold-note {
   margin: 12px 0 0;
-  font-size: 10px;
+  font-size: var(--text-secondary);
   color: var(--subtle);
 }
 .cash-stress-table-wrap {
@@ -392,29 +393,29 @@
 }
 .cash-stress-table {
   width: 100%;
-  min-width: 400px;
+  min-width: 520px;
   border-collapse: collapse;
   text-align: right;
-  font-size: 12px;
+  font-size: var(--text-body);
   font-variant-numeric: tabular-nums;
 }
 .cash-stress-table caption {
   padding: 10px 14px;
   text-align: left;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-meta);
   border-bottom: 1px solid var(--line);
 }
 .cash-stress-table th,
 .cash-stress-table td {
-  padding: 9px 14px;
+  padding: 12px 14px;
   border-bottom: 1px solid var(--line);
   font-weight: 400;
   white-space: nowrap;
 }
 .cash-stress-table thead {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
   background: var(--surface-subtle);
 }
 .cash-stress-table th:first-child {
@@ -435,7 +436,7 @@
 }
 .cash-stress-flow-note p {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -449,7 +450,7 @@
   padding-top: 16px;
   border-top: 1px solid var(--line);
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
 }
 .cash-stress-empty,
@@ -470,14 +471,14 @@
 }
 .cash-stress-empty strong,
 .cash-stress-unavailable strong {
-  font-size: 13px;
+  font-size: var(--text-ui);
   color: var(--ink);
   font-weight: 500;
 }
 .cash-stress-empty p,
 .cash-stress-unavailable p {
   margin: 8px 0 0;
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 @media (max-width: 1050px) {
   .cash-stress-layout {
@@ -500,7 +501,7 @@
     display: block;
     margin: 20px 0 -12px;
     color: var(--subtle);
-    font-size: 11px;
+    font-size: var(--text-secondary);
   }
   .cash-stress-lab {
     padding: 18px;
@@ -525,52 +526,55 @@
   .cash-stress-control > label,
   .cash-stress-control-title label,
   .cash-stress-delay > span:first-child {
-    font-size: 13px;
+    font-size: var(--text-ui);
   }
   .cash-stress-extra,
   .cash-stress-reset {
     min-height: 44px;
-    font-size: 13px;
+    font-size: var(--text-ui);
+  }
+  .cash-stress-extra {
+    font-size: var(--text-body);
   }
   .cash-stress-control p {
-    font-size: 12px;
+    font-size: var(--text-secondary);
   }
   .cash-stress-plot {
     height: 200px;
-    margin-left: 52px;
+    margin-left: 64px;
   }
   .cash-stress-axis {
-    left: -52px;
-    width: 44px;
-    font-size: 9px;
+    left: -64px;
+    width: 56px;
+    font-size: var(--text-caption);
   }
   .cash-stress-period-labels {
-    margin-left: 52px;
-    font-size: 9px;
+    margin-left: 64px;
+    font-size: var(--text-caption);
   }
   .cash-stress-chart-meta,
   .cash-stress-chart-note,
   .cash-stress-threshold-note {
-    font-size: 11px;
+    font-size: var(--text-meta);
   }
   .cash-stress-heading h3 {
     font-size: 19px;
   }
   .cash-stress-session-label {
-    font-size: 10px;
+    font-size: var(--text-meta);
   }
   .cash-stress-summary dd {
     font-size: 16px;
   }
   .cash-stress-summary dt {
-    font-size: 11px;
+    font-size: var(--text-meta);
   }
   .cash-stress-legend {
     justify-content: flex-start;
-    font-size: 11px;
+    font-size: var(--text-meta);
   }
   .cash-stress-disclaimer {
-    font-size: 11px;
+    font-size: var(--text-secondary);
   }
   .cash-stress-unavailable {
     min-height: 180px;

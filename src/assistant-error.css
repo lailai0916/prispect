@@ -9,21 +9,23 @@
   max-width: calc(100vw - 32px);
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--card-radius);
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 0 8px 24px var(--shadow-drawer);
+  box-shadow:
+    var(--shadow-card),
+    0 8px 24px var(--shadow-drawer);
 }
 .assistant-load-error p {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.5;
 }
 .assistant-load-error .button {
   flex-shrink: 0;
   min-height: 32px;
   padding: 5px 9px;
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 @media (max-width: 640px) {
   .assistant-load-error {

@@ -1,0 +1,2 @@
+GitHub About and default branch were not verified (use --github).
+Applicable repository checks passed; semantic and runtime acceptance remain separate.

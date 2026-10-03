@@ -1,0 +1,16 @@
+{
+  "recordedAt": "2026-10-03T06:18:37.725Z",
+  "kind": "actual-private-saved-synthetic-handover",
+  "checks": [
+    {
+      "name": "saved-input-known-day-end400-payments-first-600-gap900-and-events-exported",
+      "pass": true
+    },
+    {
+      "name": "missing-required-event-date-pauses-conservative-calculation-and-diff",
+      "pass": true
+    }
+  ],
+  "pageErrors": [],
+  "finishedAt": "2026-10-03T06:18:40.476Z"
+}

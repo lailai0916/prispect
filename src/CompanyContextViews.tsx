@@ -1,7 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowUpRight, FileSearch, Info } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
-import { companySections } from '../shared/company-workspace';
 import type {
   CompanyContextSnapshot,
   CompanyContextPeriod,
@@ -21,8 +20,6 @@ import {
 import { Dialog, Tag } from './components';
 import { useApp, type Translate } from './context';
 import { date, money } from './format';
-
-const [, disclosuresZh, disclosuresEn] = companySections.find(([key]) => key === 'disclosures')!;
 
 export function CompanyContextEvidence({
   row,
@@ -489,7 +486,13 @@ export function CompanyContextOverview({
   );
 }
 
-export function CompanyProfileView({ snapshot }: { snapshot: CompanyContextSnapshot }) {
+export function CompanyProfileView({
+  snapshot,
+  includeNews = true,
+}: {
+  snapshot: CompanyContextSnapshot;
+  includeNews?: boolean;
+}) {
   const { t, locale } = useApp();
   const labels: Record<string, readonly [string, string]> = {
     orgName: ['企业全称', 'Company name'],
@@ -558,32 +561,34 @@ export function CompanyProfileView({ snapshot }: { snapshot: CompanyContextSnaps
           <p className="muted">{t('本次未取得股东明细。', 'No shareholder details retrieved.')}</p>
         )}
       </section>
-      <section className="context-section">
-        <h2>{t('近期新闻线索', 'Recent news leads')}</h2>
-        {snapshot.news.length ? (
-          <div className="context-news-list">
-            {snapshot.news.map((row) => (
-              <article key={row.url}>
-                <span>
-                  {row.date} · {row.media} · {row.provider}
-                </span>
-                <a href={row.url} target="_blank" rel="noreferrer">
-                  {row.title}
-                  <ArrowUpRight size={13} />
-                </a>
-                {row.digest && <p>{row.digest}</p>}
-              </article>
-            ))}
-          </div>
-        ) : (
-          <p className="muted">
-            {t(
-              '本次未取得匹配新闻，请查看来源状态。',
-              'No matched news retrieved; check source status.'
-            )}
-          </p>
-        )}
-      </section>
+      {includeNews && (
+        <section className="context-section">
+          <h2>{t('近期新闻线索', 'Recent news leads')}</h2>
+          {snapshot.news.length ? (
+            <div className="context-news-list">
+              {snapshot.news.map((row) => (
+                <article key={row.url}>
+                  <span>
+                    {row.date} · {row.media} · {row.provider}
+                  </span>
+                  <a href={row.url} target="_blank" rel="noreferrer">
+                    {row.title}
+                    <ArrowUpRight size={13} />
+                  </a>
+                  {row.digest && <p>{row.digest}</p>}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">
+              {t(
+                '本次未取得匹配新闻，请查看来源状态。',
+                'No matched news retrieved; check source status.'
+              )}
+            </p>
+          )}
+        </section>
+      )}
       <section className="context-section">
         <h2>{t('官方与授权核查入口', 'Official and authorised checks')}</h2>
         <div className="context-verification-grid">
@@ -755,7 +760,7 @@ export function CompanyCoverageView({
       ),
     ],
     [
-      t(disclosuresZh, disclosuresEn),
+      t('公告线索', 'Announcements'),
       sourceStateLabel(
         snapshot.sources.find((source) => source.id === 'cninfo-disclosures')?.status || 'unknown',
         t

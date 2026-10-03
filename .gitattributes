@@ -22,3 +22,7 @@
 *.pptx binary
 *.zip binary
 *.gz binary
+
+# Research receipts retain captured bytes, including terminal CRLF and spacing.
+docs/competitive-research/evidence/** -text -whitespace
+docs/competitive-research/validation/*.txt -text -whitespace

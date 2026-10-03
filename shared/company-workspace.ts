@@ -3,19 +3,94 @@ import type { CompanyChallengeState } from './company-challenge.js';
 
 /** Public company context stays separate from adopted original-report evidence. */
 export const companySections = [
-  ['overview', '公司概览', 'Company overview'],
-  ['trends', '历史财务走势', 'Financial history'],
-  ['industry', '行业对比', 'Industry comparison'],
-  ['disclosures', '公告线索', 'Announcements'],
-  ['profile', '扩展核查', 'Further checks'],
-  ['coverage', '数据覆盖', 'Data coverage'],
-  ['sources', '来源比对', 'Source comparison'],
+  ['overview', '研究报告', 'Research report'],
+  ['financial', '财务分析', 'Financial analysis'],
+  ['sources', '资料与来源', 'Sources and references'],
+  ['evidence', '原件核查', 'Original-document review'],
 ] as const;
-export type CompanySection = (typeof companySections)[number][0] | 'evidence' | 'qa';
+export type CompanySection = (typeof companySections)[number][0];
+export type LegacyCompanySection =
+  | 'trends'
+  | 'industry'
+  | 'disclosures'
+  | 'profile'
+  | 'coverage'
+  | 'qa';
 
-export function companyPath(runId: string, section: CompanySection = 'overview'): string {
+const legacyCompanySections: Record<
+  LegacyCompanySection,
+  { section: CompanySection; focus: string | null }
+> = {
+  trends: { section: 'financial', focus: 'history' },
+  industry: { section: 'financial', focus: 'industry' },
+  disclosures: { section: 'sources', focus: 'announcements' },
+  profile: { section: 'sources', focus: 'profile' },
+  coverage: { section: 'sources', focus: 'coverage' },
+  qa: { section: 'overview', focus: null },
+};
+
+const companyFocusTargets: Record<CompanySection, Record<string, string>> = {
+  overview: {
+    report: 'company-full-report',
+    research: 'company-research-process',
+    goal: 'company-research-goal',
+    lab: 'company-evidence-lab',
+    checklist: 'company-review-requests',
+    plan: 'company-research-framework',
+    trust: 'company-source-trust',
+  },
+  financial: {
+    history: 'company-financial-history',
+    data: 'company-financial-data',
+    industry: 'company-industry',
+    findings: 'company-financial-findings',
+  },
+  sources: {
+    news: 'company-public-signals',
+    announcements: 'company-disclosures',
+    profile: 'company-profile',
+    coverage: 'company-data-coverage',
+    trust: 'company-source-trust',
+    'source-comparison': 'company-source-comparison',
+  },
+  evidence: {},
+};
+
+/** Resolve saved links to their merged page while retaining the requested content. */
+export function resolveCompanyLocation(
+  sectionValue: string | null | undefined,
+  focusValue?: string | null
+): { section: CompanySection; focus: string | null } {
+  const legacy = Object.hasOwn(legacyCompanySections, sectionValue || '')
+    ? legacyCompanySections[sectionValue as LegacyCompanySection]
+    : undefined;
+  let section =
+    legacy?.section || companySections.find(([id]) => id === sectionValue)?.[0] || 'overview';
+  let focus = focusValue || legacy?.focus || null;
+  if (section === 'overview' && focus === 'data') section = 'financial';
+  else if (section === 'overview' && focus === 'news') section = 'sources';
+  if (focus && !Object.hasOwn(companyFocusTargets[section], focus)) focus = legacy?.focus || null;
+  return { section, focus };
+}
+
+export function resolveCompanyFocus(
+  section: CompanySection,
+  focus: string | null | undefined
+): string | null {
+  return focus && Object.hasOwn(companyFocusTargets[section], focus)
+    ? companyFocusTargets[section][focus]!
+    : null;
+}
+
+export function companyPath(
+  runId: string,
+  sectionValue: CompanySection | LegacyCompanySection = 'overview',
+  focusValue?: string
+): string {
+  const { section, focus } = resolveCompanyLocation(sectionValue, focusValue);
   const query = new URLSearchParams({ run: runId });
   if (section !== 'overview') query.set('section', section);
+  if (focus) query.set('focus', focus);
   return `/company?${query}`;
 }
 

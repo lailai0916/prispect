@@ -1,0 +1,84 @@
+import json
+from pathlib import Path
+base = Path(__file__).resolve().parents[2]
+p = base / "values/hermes.json"
+values = json.loads(p.read_text())
+# The research generator intentionally preserves discovery; this file records final, inspectable outcomes.
+implemented = {
+1: ("shared/research-plan.ts:10; src/ResearchPlan.tsx:17; shared/decision-contracts.ts", "新增付款前公开核查目标，区分上市/签约/收款主体；具体金额与条款继续通过私有条件演算。", "tests/research-plan.test.ts; tests/decision-engine.test.ts"),
+6: ("server/company-search.ts; shared/company-directory.ts; src/SourceTrust.tsx", "保留已有受支持A股边界与官方重核，不以代码格式认证当前上市或工商状态；来源记录提供真实日期，未知状态不填充。", "tests/company-search.test.ts; tests/company-us-paused.test.ts"),
+8: ("shared/decision-claims.ts; src/DecisionClaims.tsx; server/decision-engine.ts", "说法逐项绑定已定义核验目标与材料依赖，缺失/冲突/撤回分别反馈，历史信号和承诺不成为真实金额。", "tests/decision-claims.test.ts"),
+9: ("shared/decision-contracts.ts; server/decision-engine.ts; src/pages/Decisions.tsx", "保留用户假设、历史事实和条件演算分离；新增说法核验不从健康分推算收益或履约概率。", "tests/decision-engine.test.ts; tests/decision-claims.test.ts"),
+11: ("shared/source-trust.ts; src/SourceTrust.tsx; server/company-assessment.ts", "已实现：有界来源响应/读取层级分布与已知关联；原有匹配/线索意义保持，不提供独立源数。", "tests/source-trust.test.ts; evidence/hermes/source-trust-browser.json"),
+12: ("server/company-search.ts; src/company-search-client.ts", "已有严格source failure与successful empty语义保留；来源视图继续区分error/empty，不以无匹配说明无风险。", "tests/company-search.test.ts; tests/source-trust.test.ts"),
+13: ("src/CompanyResearchReport.tsx; src/CompanyAssessment.tsx; shared/company-assessment.ts", "保留judgment的metricIds/evidenceIds定位；SourceTrust新增就地来源范围，避免所有维度误指同一最高风险。", "tests/company-assessment-model.test.ts; evidence/prispect-before/desktop-light-source-drawer.png"),
+14: ("shared/company-research-view.ts; shared/source-trust.ts; src/SourceTrust.tsx", "无资料、来源失败、历史快照与新快照区别可见，缺失或零命中不被解释为安全。", "tests/company-research-view.test.ts; tests/source-trust.test.ts; evidence/hermes/source-trust-scope-withheld.png"),
+16: ("shared/company-assessment.ts:196", "复用未舍入金融比较和弱项等级上限的已实现方法，阈值只解释透明筛选，不采用游戏风险层数或违约预测。", "tests/company-assessment.test.ts"),
+18: ("src/CompanyResearchReport.tsx; src/SourceTrust.tsx; src/ResearchPlan.tsx", "沿用一个可展开报告；新增范围/核查框架可深入查看，不复制Lite/Pro模式。SourceTrust深度内容保持print全部。", "tests/source-trust.test.ts; evidence/hermes/source-trust-browser.json; tests/research-plan.test.ts"),
+19: ("src/CompanyResearchReport.tsx:40; src/pages/CompanyWorkspace.tsx; src/SourceTrust.tsx", "沿用显式section打开/focus；新增trust直达company-source-trust锚点。", "evidence/hermes/source-trust-browser.json; tests/company-research-view.test.ts"),
+20: ("shared/company-assessment.ts; shared/company-analysis.ts; src/CompanyFinancialTrends.tsx", "已有annual period和exact fraction计算保留；不复用Hermes倒序表的同比算法。", "tests/company-assessment.test.ts; tests/company-workspace.test.ts"),
+21: ("src/CompanyFinancialTrends.tsx:390; shared/company-analysis.ts", "已有年度点值和金额/表格保留；不采用平滑游戏图暗示未来现金，零和负值不变成缺失。", "tests/company-workspace.test.ts; tests/company-display.test.ts"),
+23: ("shared/company-assessment.ts; shared/source-trust.ts; src/SourceTrust.tsx", "新增来源视图沿统一reader和scope约束，缺失正文退回摘要或标题而不虚报已读。", "tests/source-trust.test.ts; tests/company-assessment-model.test.ts"),
+24: ("server/decision-engine.ts; shared/decision-contracts.ts", "保留同输入付款方案条件暴露比较；未知与0区别，条款和限额不产生公司胜负。", "tests/decision-engine.test.ts; tests/decision-cash.test.ts"),
+25: ("shared/company-assessment.ts; shared/company-analysis.ts", "沿用精确amount与percentage-points指标契约；不以现金绝对大小给安全胜负。", "tests/company-assessment.test.ts"),
+28: ("shared/company-research-view.ts; server/company-assessment.ts; src/CompanyResearchReport.tsx", "已有模型故障保留规则与金额、旧快照明示；新增来源视图不触发模型也不清旧报告。", "tests/company-assessment-model.test.ts; tests/company-research-view.test.ts; tests/source-trust.test.ts"),
+29: ("shared/source-trust.ts; server/company-assessment.ts; shared/company-research-view.ts", "来源关系只读派生，未改任何原记录或缓存；当前来源与前次report snapshot明确分别。原有inputHash/revision逻辑保留。", "tests/source-trust.test.ts; tests/company-research-view.test.ts"),
+31: ("server/company-assessment.ts; shared/company-assessment.ts; shared/source-trust.ts", "既有metric/evidence引用约束保留；新sourceFamilies来自程序公开白名单，区分已读/标题/同组及独立性未知。", "tests/source-trust.test.ts; tests/company-assessment-model.test.ts"),
+33: ("server/company-context-sources.ts:77; shared/research-plan.ts; src/ResearchPlan.tsx", "保留50请求/90秒等hard budgets与已有工具范围；新增核查框架明确不是Agent执行计划，不编造call。", "tests/assistant-research.test.ts; tests/research-plan.test.ts"),
+34: ("shared/company-research-view.ts; shared/research-plan.ts; src/ResearchPlan.tsx", "保留实际事件四阶段和未知执行计数，不用Hermes定时扫描；框架/trace分开，失败不显示完成核验。", "tests/company-research-view.test.ts; tests/research-plan.test.ts"),
+36: ("shared/company-research-view.ts; shared/source-trust.ts; src/SourceTrust.tsx", "资料更新不重写历史assessment；统一view显示前次报告和当前资料的不同snapshot，失败保留已取得记录。", "tests/source-trust.test.ts; tests/company-research-view.test.ts"),
+38: ("shared/source-trust.ts; src/SourceTrust.tsx; src/source-trust.css; server/company-assessment.ts", "新增统一只读来源范围/响应状态/日期/已知关系用于中央报告和coverage；每条可打开来源，120上限明确omitted，独立性未知且不改grade。", "tests/source-trust.test.ts; evidence/hermes/source-trust-browser.json; evidence/hermes/source-trust-print.pdf"),
+40: ("docs/competitive-research/projects/hermes.md; docs/competitive-research/values/hermes.json; docs/competitive-research/evidence/hermes", "完成46项带版本证据的发现与状态矩阵，分别记录runtime/fixture/注入/source/document/blocked；未继承竞品Skill。", "evidence/hermes/browser-log.json; evidence/hermes/supplement-log.json; evidence/hermes/version.json"),
+42: ("server/assistant.ts; server/assistant-research.ts; src/CompanyAssistant.tsx", "保留原有owner-scope/public whitelist与实际工具资料；SourceTrust模型payload只含public元数据，不带private runID/plan或历史tool文字。", "tests/source-trust.test.ts; tests/assistant.test.ts; tests/assistant-research.test.ts"),
+45: ("shared/company-research-view.ts; shared/source-trust.ts; src/SourceTrust.tsx", "报告生成、来源取得与刊发日期保留分离；旧快照不伪装新报告。date-only来源日期不补时刻。", "tests/source-trust.test.ts; tests/company-research-view.test.ts"),
+46: ("src/CompanyRecordsContext.tsx; src/pages/ResearchLibrary.tsx; src/CommandMenu.tsx", "保留账号研究库与明确状态；不新建匿名localStorage搜索存档，也不把task完成当研究完成。", "tests/company-research-catalog.test.ts; evidence/prispect-before/narrow-dark-research-library.png"),
+}
+deferred = {
+2: ("模糊主体/意图入口需要真实初用任务验证", "对/query和统一assistant做相同输入的任务走查，验证不代选主体；再决定是否增加入口说明。"),
+3: ("已有official re-resolve；新增名称/品牌/登记关系说明需官方字段和小屏信息设计", "保持现有消歧门槛，补来源限定的主体确认原型，再测同名和母子品牌。"),
+4: ("信用代码不在当前A股lookup主任务，需合法工商来源契约", "实现独立格式校验提示并绑定原件/官方登记字段；错校验位、旧名称与日期全部测试。"),
+5: ("当前只支持listed entity；非上市品牌/经营关系的独立原件字段尚未统一", "设计legal-entity关系输入与冲突保留，不以同名或来源族合并主体。"),
+7: ("尚无匿名public locator共享需求；私有保存必须owner隔离", "先验证只读公开链接需求，再设计签名/白名单locator，不把URL包装成身份认证。"),
+10: ("已有输入hash/revision；尚未新增筛选或所有付款输入即时失效文案", "在统一私有演算输入走查慢响应/取消/owner切换，补准确“待重算”提示及明确保存状态。"),
+15: ("公开source打开已实现，所有既有drawer的Esc/焦点归还需要跨页面无障碍验收", "复用Dialog逐入口做keyboard和缺URL测试；不要以新增来源表代表所有抽屉已验。"),
+17: ("跨首图/详情自动优先级需要用户任务验证；当前稳定次序更易复核", "以同输入测试按待核任务排序是否减少错指来源，再增typed priority read model；保留全部内容。"),
+22: ("来源error/empty/read scope与grade隔离已经SourceTrust实现；完整实时/缓存/预置/虚构来源标记需扩展明确origin契约", "给各实际入口记录origin和time，仅在已有数据确定时显示；历史记录缺origin保持未知，不推断。"),
+26: ("已有年度历史图，跨公司趋势不是本轮核心同类任务且需同口径完整字段", "先满足同币种/范围/period contract，用period union保留null再验证断线；不按数组index对齐。"),
+27: ("没有真实用户行内spark需求；需表/图可访问相同语义", "需求确认后用period-key的SVG迷你图与文本替代，保留null/0/negative，统一比较scale。"),
+30: ("当前已有模型状态/Abort；新逐字段SSE需服务端持久化与客户端局部失败合同", "先设计snapshot-bound segment事件和内容hash缓存，再跑取消/owner变更/summary成功notes失败；不做字符动画。"),
+32: ("已有实际server执行事件；新伪tool标签攻击组合回归尚未作为本轮功能实现", "为用户history、模型stream分片和伪completed字段设计攻击fixture，确保计数只读server trace。"),
+35: ("已有并行与Abort/receipt；真实上游所有timeout分片取消未本轮成功联网验证", "注入单源timeout、忽略Abort transport和cancel，检查其他片保留与停止原因，再以可用服务做真实延迟预算。"),
+37: ("现有public search合并测试可用；全体news每页失败不negativecache需要精确cache policy合同", "限定只共享public key，补失败即重试/owner不串/上游只一次的并发夹具后再扩大覆盖。"),
+39: ("当前固定来源reader已有限制；尚无任意发现URL工具需求", "任何新adapter先补DNS/redirect/私网/robots/deadline边界验收再开放；公开链接不能直接进入server fetch。"),
+41: ("析光账号checkpoint和private revision已存在；新增assistant持久对话不是本轮授权设计选项", "若需求确认，再设计owner-keyed revision、失败显式本地draft、过期响应拒绝；绝不用匿名UUID作权限。"),
+43: ("SourceTrust只本地查看不需submit/delete；其他composer既有同步锁并未新增统一copy失败反馈", "做全站clipboard拒绝和双Enter检查后统一feedback组件，沿用实际destructive确认规则。"),
+44: ("已有预置原件案例；新所有分享/离线演练导出origin标记需统一导出设计", "在真实失败入口保留error并单列演练，逐标题/原件reader/导出核对预置标签；不偷偷替換公司。"),
+}
+verified_owned = {11,14,23,29,31,36,38,40,45}
+for item in values:
+ n=int(item['id'].split('-')[1])
+ if n in implemented:
+  code,outcome,checks=implemented[n]
+  item['implementation']='verified' if n in verified_owned else 'implemented'
+  item['implementation_evidence']=[code,checks]
+  item['outcome']=outcome
+  item['validation_boundary']='新来源view的13项测试、61项相关assessment/model/public-source测试和浏览器合成fixture已通过；其他底座/并行改动验收以项目总验收为准，未声称真实用户效果或全部实时上游通过。'
+  item['next_step']='保持金融与权限边界，在总验收核对相同任务与实际入口；真人理解效果仍待受试任务验证。'
+ else:
+  prereq,nextstep=deferred[n]
+  item['implementation']='deferred'
+  item['disposition']='defer'
+  item['prerequisites']=prereq
+  item['next_step']=nextstep
+  item['outcome']='保留可用机制及明确待办，不把未落地增强写成已实现；已有对应能力按prispect_application保留。'
+ # Necessary distinctions to avoid broad comparison claims.
+ if n==6:
+  item['acceptance']='目录仅lookup hint；所选代码/orgId重新官方核对；不对未知上市或工商状态补结论。'
+ if n==11:
+  item['acceptance']='120条有界范围与omitted正确；error/empty不同；同URL不同正文只同地点关系，不计独立数。'
+ if n==15:
+  item['completed_part']='SourceTrust每条安全URL可直接打开，缺URL明确；全drawer键盘验收仍按next_step推进。'
+ if n==22:
+  item['completed_part']='已实现来源scope/state/date/known-family和不改grade；未补造历史origin类型。'
+p.write_text(json.dumps(values,ensure_ascii=False,indent=2)+'\n')
+print('final values',len(values),{s:sum(v['implementation']==s for v in values) for s in set(v['implementation'] for v in values)})

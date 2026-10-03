@@ -3,14 +3,12 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Building2,
   ChartNoAxesCombined,
-  Table2,
-  ListChecks,
-  FolderSearch,
+  FolderOpen,
   ScanSearch,
-  GitCompareArrows,
   LoaderCircle,
   RefreshCw,
   X,
+  type LucideIcon,
 } from 'lucide-react';
 import type { CompanyRecordSummary } from '../shared/company-workspace';
 import { companySections, companyPath } from '../shared/company-workspace';
@@ -22,15 +20,12 @@ import { resolveCompanySection } from './routing';
 import { Hint } from './components';
 
 export { COMPANY_RECORDS_EVENT } from './company-record-events';
-const icons = [
-  Building2,
-  ChartNoAxesCombined,
-  Table2,
-  ListChecks,
-  FolderSearch,
-  ScanSearch,
-  GitCompareArrows,
-];
+const icons: Record<'overview' | 'financial' | 'sources' | 'evidence', LucideIcon> = {
+  overview: Building2,
+  financial: ChartNoAxesCombined,
+  sources: FolderOpen,
+  evidence: ScanSearch,
+};
 
 const sameCompany = (first: CompanyRecordSummary, second: CompanyRecordSummary) =>
   first.input.securityCode === second.input.securityCode &&
@@ -146,8 +141,8 @@ export function CompanySidebar({
             className="sidebar-navigation company-sidebar-navigation"
             aria-label={t('企业功能', 'Company pages')}
           >
-            {companySections.map(([id, zh, en], index) => {
-              const Icon = icons[index]!;
+            {companySections.map(([id, zh, en]) => {
+              const Icon = icons[id];
               const href = current ? companyPath(current.id, id) : `/query?section=${id}`;
               const active = route.startsWith('/company?') && section === id;
               return (

@@ -1,0 +1,59 @@
+{
+  "sha": "a3274e5ddafbeecf0f5cc8e35093c6d1fe1c4e53",
+  "captured_at": "2026-10-03T05:40:40.283Z",
+  "mode": "isolated_local_database_offline_model_no_map_key",
+  "records": [
+    {
+      "name": "home",
+      "width": 1366,
+      "path": "/",
+      "overflow": false
+    },
+    {
+      "name": "consumer",
+      "width": 1366,
+      "path": "/?view=consumer",
+      "overflow": false
+    },
+    {
+      "name": "history",
+      "width": 1366,
+      "path": "/?view=history",
+      "overflow": false
+    },
+    {
+      "name": "trade",
+      "width": 1366,
+      "path": "/?view=trade",
+      "overflow": false
+    },
+    {
+      "name": "math-escape",
+      "closed": true
+    },
+    {
+      "name": "home",
+      "width": 390,
+      "path": "/",
+      "overflow": false
+    },
+    {
+      "name": "consumer",
+      "width": 390,
+      "path": "/?view=consumer",
+      "overflow": false
+    },
+    {
+      "name": "history",
+      "width": 390,
+      "path": "/?view=history",
+      "overflow": false
+    },
+    {
+      "name": "trade",
+      "width": 390,
+      "path": "/?view=trade",
+      "overflow": false
+    }
+  ]
+}

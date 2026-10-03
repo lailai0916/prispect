@@ -1,0 +1,121 @@
+{
+  "classification": "fixture interaction verification of actual production components; fictional input and simulated gates, not real evidence or user outcomes",
+  "checks": [
+    {
+      "width": 1366,
+      "action": "view-payee",
+      "result": "identity-payee"
+    },
+    {
+      "width": 1366,
+      "action": "add-payee",
+      "result": "identity:payee"
+    },
+    {
+      "width": 1366,
+      "state": "missing",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n条件或依据不齐 · 上限未知\n\n实际已收到退款\n\n按定位记录与输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 1366,
+      "state": "above",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n当前暴露已超自设上限\n\n超出金额：80.00 CNY\n\n在这些条件下，没有满足上限的非负新增付款金额。先核对已付、交付、实退款及上限条件。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n-80.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n当前暴露已超自设上限\n\n超出金额：80.00 CNY\n\n在这些条件下，没有满足上限的非负新增付款金额。先核对已付、交付、实退款及上限条件。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n-80.00 CNY\n交易剩余额\n700.00 CNY\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 1366,
+      "state": "withdrawn",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n条件或依据不齐 · 上限未知\n\n实际已收到退款、实际退款记录\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 1366,
+      "state": "conflict",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n条件或依据不齐 · 上限未知\n\n已付金额、已付记录\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 1366,
+      "state": "mismatch",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n另一个未核对主体丙\n主体或范围待核对\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n条件或依据不齐 · 上限未知\n\n收款主体依据\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 1366,
+      "state": "readonly",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 1366,
+      "action": "readonly-add-count",
+      "count": 0
+    },
+    {
+      "width": 1366,
+      "state": "en-dark-expanded",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\nWho is involved in this payment\n\nReview the store name and responsible entities separately. These are roles; equal names do not establish an operating relationship.\n\nTrading or store name\n样例门店乙\nName only · relationship unconfirmed\n\nCheck the business licence, contract heading and payment receipt to establish the relationship.\n\nContract-responsible entity\n样例合同企业甲\nRole field located\nView role evidence 1\nAdd evidence for this role\nReceiving entity\n样例合同企业甲\nRole field located\nView role evidence 1\nAdd evidence for this role\nRefund-responsible entity\n样例合同企业甲\nRole field located\nView role evidence 1\nAdd evidence for this role\n\nLocating role fields in saved material confirms a record match. It does not authenticate store ownership, original documents or future performance.\n\nidentity:payee\n\nHow much room your conditions leave\nConstraint calculation\n\nSolve the mathematical ceiling without entering a proposed payment. Both the remaining transaction amount and your undelivered-exposure limit constrain it.\n\nUsing all entered conditions\nMathematical ceiling for this payment\n70.00 CNY\n\nYour undelivered-exposure headroom is the tighter constraint.\n\nUndelivered exposure before another payment\n180.00 CNY\nHeadroom under your exposure limit\n70.00 CNY\nRemaining transaction amount\n700.00 CNY\nUsing located records and input conditions\nMathematical ceiling for this payment\n70.00 CNY\n\nYour undelivered-exposure headroom is the tighter constraint.\n\nUndelivered exposure before another payment\n180.00 CNY\nHeadroom under your exposure limit\n70.00 CNY\nRemaining transaction amount\n700.00 CNY\n\nThe record path uses paid, delivered and actual-refund fields located in saved material text. It pauses while entity or terms checks are incomplete. The transaction total and your limit remain entered conditions.\n\nCheck the formula and amounts used\n\nExposure headroom = limit + delivered value + refunds actually received − amounts already paid.\n\nRemaining transaction amount = transaction total − amounts already paid.\n\nWhen current exposure is within the limit and the amount scope is consistent, the mathematical ceiling is the smaller of these two values.\n\nAmount field\tEntered condition\tRecord path\nTotal transaction amount\t1,000 CNY\tEntered condition retained\nAlready paid\t300 CNY\t300.00 CNY\nDelivered value\t100 CNY\t100.00 CNY\nRefund actually received\t20 CNY\t20.00 CNY\nYour undelivered-exposure limit\t250 CNY\tEntered condition retained\nPayment record · 受控模拟材料\nMaterial link currently unavailable\nDelivery record · 受控模拟材料\nMaterial link currently unavailable\nActual-refund record · 受控模拟材料\nMaterial link currently unavailable\n\nPromised, expected or pending refunds do not reduce actual exposure. The mathematical ceiling is not a payment recommendation, payment approval or safety guarantee for the transaction.",
+      "errors": []
+    },
+    {
+      "width": 390,
+      "action": "view-payee",
+      "result": "identity-payee"
+    },
+    {
+      "width": 390,
+      "action": "add-payee",
+      "result": "identity:payee"
+    },
+    {
+      "width": 390,
+      "state": "missing",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n条件或依据不齐 · 上限未知\n\n实际已收到退款\n\n按定位记录与输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 390,
+      "state": "above",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n当前暴露已超自设上限\n\n超出金额：80.00 CNY\n\n在这些条件下，没有满足上限的非负新增付款金额。先核对已付、交付、实退款及上限条件。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n-80.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n当前暴露已超自设上限\n\n超出金额：80.00 CNY\n\n在这些条件下，没有满足上限的非负新增付款金额。先核对已付、交付、实退款及上限条件。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n-80.00 CNY\n交易剩余额\n700.00 CNY\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 390,
+      "state": "withdrawn",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n条件或依据不齐 · 上限未知\n\n实际已收到退款、实际退款记录\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 390,
+      "state": "conflict",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n条件或依据不齐 · 上限未知\n\n已付金额、已付记录\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 390,
+      "state": "mismatch",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n实际收款主体\n另一个未核对主体丙\n主体或范围待核对\n查看角色依据 1\n补充该角色依据\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n补充该角色依据\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n条件或依据不齐 · 上限未知\n\n收款主体依据\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 390,
+      "state": "readonly",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\n这笔付款涉及谁\n\n门店名称与承担责任的企业分别核对。下面按角色排列；名称相同也不自动证明经营关系。\n\n经营名义／门店名\n样例门店乙\n仅名称 · 关系未核对\n\n需结合营业执照、合同抬头和收款凭证确认关系。\n\n合同责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n实际收款主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n退款责任主体\n样例合同企业甲\n角色字段已定位\n查看角色依据 1\n\n角色字段在保存材料中定位，只说明记录匹配；不能认证门店归属、原件真实性或未来履约。\n\nidentity:payee\n\n自设条件留下多少付款空间\n约束演算\n\n反求本次拟付款的数学上限，不需要先填拟付金额。上限同时受交易剩余额与自设未交付暴露约束。\n\n按全部输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n按定位记录与输入条件\n本次拟付款金额的数学上限\n70.00 CNY\n\n自设未交付暴露空间构成较紧的约束。\n\n新增付款前的未交付暴露\n180.00 CNY\n自设暴露空间\n70.00 CNY\n交易剩余额\n700.00 CNY\n\n记录路径只采用已定位材料文本的已付、实际交付和实退款字段；主体或条款核对未完成时暂停。交易总金额与自设上限仍是输入条件。\n\n核对公式与采用的金额\n\n承诺、预计或尚未到账的退款不抵减实际暴露。数学上限不是付款建议、付款批准或整笔交易的安全保证。"
+    },
+    {
+      "width": 390,
+      "action": "readonly-add-count",
+      "count": 0
+    },
+    {
+      "width": 390,
+      "state": "en-dark-expanded",
+      "overflow": false,
+      "text": "受控组件验收：虚构输入与模拟门槛；不是真实资料、付款或用户效果研究。\n\n状态 \nknown\nmissing\nabove\nwithdrawn\nconflict\nmismatch\nreadonly\n语言 \n中文\nEnglish\n主题 \nlight\ndark\nWho is involved in this payment\n\nReview the store name and responsible entities separately. These are roles; equal names do not establish an operating relationship.\n\nTrading or store name\n样例门店乙\nName only · relationship unconfirmed\n\nCheck the business licence, contract heading and payment receipt to establish the relationship.\n\nContract-responsible entity\n样例合同企业甲\nRole field located\nView role evidence 1\nAdd evidence for this role\nReceiving entity\n样例合同企业甲\nRole field located\nView role evidence 1\nAdd evidence for this role\nRefund-responsible entity\n样例合同企业甲\nRole field located\nView role evidence 1\nAdd evidence for this role\n\nLocating role fields in saved material confirms a record match. It does not authenticate store ownership, original documents or future performance.\n\nidentity:payee\n\nHow much room your conditions leave\nConstraint calculation\n\nSolve the mathematical ceiling without entering a proposed payment. Both the remaining transaction amount and your undelivered-exposure limit constrain it.\n\nUsing all entered conditions\nMathematical ceiling for this payment\n70.00 CNY\n\nYour undelivered-exposure headroom is the tighter constraint.\n\nUndelivered exposure before another payment\n180.00 CNY\nHeadroom under your exposure limit\n70.00 CNY\nRemaining transaction amount\n700.00 CNY\nUsing located records and input conditions\nMathematical ceiling for this payment\n70.00 CNY\n\nYour undelivered-exposure headroom is the tighter constraint.\n\nUndelivered exposure before another payment\n180.00 CNY\nHeadroom under your exposure limit\n70.00 CNY\nRemaining transaction amount\n700.00 CNY\n\nThe record path uses paid, delivered and actual-refund fields located in saved material text. It pauses while entity or terms checks are incomplete. The transaction total and your limit remain entered conditions.\n\nCheck the formula and amounts used\n\nExposure headroom = limit + delivered value + refunds actually received − amounts already paid.\n\nRemaining transaction amount = transaction total − amounts already paid.\n\nWhen current exposure is within the limit and the amount scope is consistent, the mathematical ceiling is the smaller of these two values.\n\nAmount field\tEntered condition\tRecord path\nTotal transaction amount\t1,000 CNY\tEntered condition retained\nAlready paid\t300 CNY\t300.00 CNY\nDelivered value\t100 CNY\t100.00 CNY\nRefund actually received\t20 CNY\t20.00 CNY\nYour undelivered-exposure limit\t250 CNY\tEntered condition retained\nPayment record · 受控模拟材料\nMaterial link currently unavailable\nDelivery record · 受控模拟材料\nMaterial link currently unavailable\nActual-refund record · 受控模拟材料\nMaterial link currently unavailable\n\nPromised, expected or pending refunds do not reduce actual exposure. The mathematical ceiling is not a payment recommendation, payment approval or safety guarantee for the transaction.",
+      "errors": []
+    }
+  ]
+}

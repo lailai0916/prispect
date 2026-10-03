@@ -1,0 +1,190 @@
+.evidence-learning {
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.8;
+}
+.evidence-learning > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 0;
+  cursor: pointer;
+  list-style: none;
+  color: var(--accent);
+}
+.evidence-learning > summary::-webkit-details-marker {
+  display: none;
+}
+.evidence-learning[open] > summary svg {
+  transform: rotate(180deg);
+}
+.learning-body {
+  padding-bottom: 20px;
+}
+.learning-body p {
+  margin: 8px 0;
+  overflow-wrap: anywhere;
+}
+.learning-notice,
+.learning-scope {
+  color: var(--muted);
+}
+.learning-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 16px;
+}
+.learning-field select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: min(100%, 460px);
+}
+.learning-prediction {
+  border: 0;
+  margin: 18px 0;
+  padding: 0;
+  min-width: 0;
+}
+.learning-prediction legend {
+  font-weight: 550;
+  padding: 0;
+}
+.learning-prediction > p {
+  color: var(--muted);
+}
+.learning-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+}
+.learning-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 7px 0;
+  cursor: pointer;
+  min-width: 0;
+}
+.learning-options input {
+  margin: 5px 0 0;
+  accent-color: var(--accent);
+  flex-shrink: 0;
+}
+.learning-options span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.learning-options small {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+.learning-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  margin-top: 14px;
+}
+.learning-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+.learning-button:hover {
+  background: var(--accent-selected);
+}
+.evidence-learning :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.learning-feedback h3 {
+  font-size: 13px;
+  font-weight: 550;
+  margin: 20px 0 7px;
+}
+.learning-feedback h4 {
+  font-size: 12px;
+  font-weight: 550;
+  margin: 16px 0 8px;
+}
+.learning-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
+  margin-top: 12px;
+}
+.learning-comparison article {
+  min-width: 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--line-soft);
+}
+.learning-comparison article > strong {
+  font-weight: 550;
+}
+.learning-comparison dl {
+  margin: 8px 0;
+}
+.learning-comparison dl > div {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 8px;
+}
+.learning-comparison dt {
+  color: var(--muted);
+}
+.learning-comparison dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.learning-comparison article > p {
+  color: var(--muted);
+  font-size: var(--text-secondary);
+}
+.learning-comparison article > .learning-formula {
+  color: var(--ink);
+}
+.learning-retained {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px 18px;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+.learning-recap {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.learning-recap > summary {
+  cursor: pointer;
+}
+.learning-recap ol {
+  padding-left: 20px;
+}
+@container (max-width: 620px) {
+  .evidence-learning {
+    padding-inline: 14px;
+  }
+  .learning-options,
+  .learning-comparison,
+  .learning-retained {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

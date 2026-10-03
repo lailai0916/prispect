@@ -4,6 +4,7 @@ import { productTerms } from '../../shared/product-terms';
 
 export const guideDocument: ProductDocument = {
   ...documentMetadata['/docs/guide'],
+  version: '1.1',
   sections: [
     {
       id: 'start',
@@ -33,17 +34,23 @@ export const guideDocument: ProductDocument = {
               '核对合同责任、收款与预付款条件',
               'Review responsibility, receipt and prepayment conditions',
             ],
-            ['付款与交接 → 付款前核对', 'Payments and handovers → Before payment'],
+            [
+              '核查工具 → 付款与交接 → 付款前核对',
+              'Review tools → Payments and handovers → Before payment',
+            ],
           ],
           [
             ['接手前问清财务问题或安排收付款', 'Review handover questions or cash arrangements'],
-            ['付款与交接 → 接手核查', 'Payments and handovers → Company handover'],
+            [
+              '核查工具 → 付款与交接 → 接手核查',
+              'Review tools → Payments and handovers → Company handover',
+            ],
           ],
           [
             ['已有年报或结构化财务数据', 'You already have reports or structured financial data'],
             [
-              '材料 → 导入；财报核查 → 新建财报核查',
-              'Materials → Import; Financial reviews → New financial review',
+              '核查工具 → 材料 → 导入；财报核查 → 新建财报核查',
+              'Review tools → Materials → Import; Financial reviews → New financial review',
             ],
           ],
         ],
@@ -64,12 +71,12 @@ export const guideDocument: ProductDocument = {
           'Enter a company name or security code from the home page or New research and confirm the matched issuer. Research starts when public data is available. The first screen leads with a concise judgment, grade and explanation, followed by key amounts, source coverage and four recorded research stages. Evidence and calculations opens the sources; Test an explanation or Challenge an explanation opens the existing evidence lab without automatically starting retrieval. The entry retains your draft while original reports continue in the background.',
         ],
         [
-          '主导航提供“研究库”“材料”和“付款与交接”。研究库保留本账号的研究记录、已保存摘要、财务评级与资料时点，可按公司、代码、年度和状态筛选；筛选不会重新研究。打开一家企业后，侧边栏才显示公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个专题。财报核查和核查比较继续在“核查工具”中。',
-          'The main navigation opens Research library, Materials, and Payments and handovers. The library retains your research records, saved summaries, financial grades and source timestamps, with local company, code, year and state filters. Filtering does not restart research. A selected company opens seven sidebar topics: Company overview, Financial history, Industry comparison, Announcements, Further checks, Data coverage and Source comparison. Financial reviews and Compare reviews remain in Review tools.',
+          '主导航保留“新建研究”和“研究库”，材料、付款与交接、财报核查及核查比较统一放在“核查工具”。研究库可按公司、代码、年度和状态筛选已有记录，筛选不会重新研究。打开企业后只有四个入口：研究报告、财务分析、资料与来源、原件核查。先读研究报告中的判断与下一步，再按需要核对财务、来源或原件。',
+          'The main navigation keeps New research and Research library. Materials, Payments and handovers, Financial reviews and Compare reviews share Review tools. Filter existing records by company, code, year or state without restarting research. Each company has four destinations: Research report, Financial analysis, Sources and references and Original-document review. Start with the report’s judgment and next checks, then inspect financials, sources or originals as needed.',
         ],
         [
-          '继续展开“检验解释”“六维分析与计算依据”“新闻与公开讨论”和“完整财务数据与核查清单”，或打开“年报原件与核查过程”。无需选择阅读模式。财务专题保留归母与合并两种利润口径；外部付款与内部交接仍是独立核查目的。原件现金桥使用同年度合并净利润。行业均值剔除本企业，只比较同年度且至少五家有效同行。',
-          'Expand Test an explanation, Dimensions and calculation evidence, News and public discussions, or Financial data and review checklist; originals remain in Originals and review process. No reading-mode choice is needed. Financial topics retain attributable and consolidated profit controls; external payment and internal handover remain separate review purposes. The original cash bridge uses same-year consolidated profit. Industry averages exclude the target and require at least five valid same-year peers.',
+          '研究报告保留“检验解释”“六维分析与计算依据”和下一步核查；“财务分析”汇集历史走势、完整财务数据、行业对比与原件字段对照；“资料与来源”汇集新闻讨论、公告、公司与股东资料、数据覆盖和来源比对；“原件核查”确认和采用年报候选。旧专题链接会定位到合并页面的对应内容。财务分析保留归母与合并利润切换，行业均值剔除本企业并要求同年度至少五家有效同行；原件现金桥使用同年度合并净利润。',
+          'The report contains Test an explanation, Dimensions and calculation evidence and next checks. Financial analysis brings together history, complete financial data, industry comparison and web-to-original fields. Sources and references contains news, discussions, announcements, company/shareholder facts, coverage and source comparison. Original-document review confirms and adopts annual-report candidates. Legacy topic links focus the corresponding merged content. Financial analysis retains attributable and consolidated profit controls; industry averages exclude the target and require at least five valid same-year peers. Original cash bridges use same-year consolidated profit.',
         ],
         [
           '侧边栏“已载入企业”记录右侧的 × 可删除本次研究记录和问答，已采用材料保留；研究、分析或解释补查进行中暂不可删除。新建公司研究与保存需要账号。',
@@ -92,8 +99,8 @@ export const guideDocument: ProductDocument = {
           'During execution, inspect task tracks and actual activity. Completion, failure, cancellation and recoverability have distinct states. Cancellation retains obtained content; resume is offered only for recoverable runs. Returning to an existing run does not require creating it again.',
         ],
         [
-          '阅读分析摘要、重点发现与下一步，点击“依据”核对对应指标、公式和来源。“六维分析与计算依据”展开更完整的判断。公开研究不会自动采用年报候选；进入“年报原件与核查过程”，核对金额、年度、单位和合并范围后，才点击“采用并核查”。析光保存材料、建立规则报告，并进行 AI 解读；缺失或冲突时暂停依赖相应字段的解释。',
-          'Read the summary, key findings and next checks, then select Evidence to inspect their metrics, formulas and sources. Dimensions and calculation evidence expands the full judgments. Public research never automatically adopts annual-report candidates. Open Originals and review process and check amounts, years, units and consolidated scope before selecting Adopt and review. Prispect saves the material, creates a rules-based report and requests AI interpretation. Missing or conflicting inputs pause dependent explanations.',
+          '阅读判断、重点发现与下一步，点击“依据”核对对应指标、公式和来源，或展开“六维分析与计算依据”。需要采用年报时进入“原件核查”，核对金额、年度、单位和合并范围后，点击“采用并核查”。析光保存材料、建立规则报告并进行 AI 解读；公开研究不会自动采用候选，缺失或冲突会暂停依赖相应字段的解释。',
+          'Read the judgment, findings and next checks, then select Evidence to inspect metrics, formulas and sources or expand Dimensions and calculation evidence. To adopt an annual report, open Original-document review, check amounts, years, units and consolidated scope, then select Adopt and review. Prispect saves the material, creates a rules-based report and requests AI interpretation. Public research never automatically adopts candidates; missing or conflicting inputs pause dependent explanations.',
         ],
         [
           '历史财务图表并行读取东方财富公开网页的年度字段，无需配置东方财富账户或密钥。切换利润与经营现金、收入与利润、年末货币资金与两项负债，选择年份可查看精确金额、字段名和响应来源。网页字段与年报候选分开保存；金额相同仅表示对照一致，仍需核对原件范围。缺项不填零，货币资金不代表当前可用余额，短期借款与一年内到期非流动负债也不包含全部付款义务。',
@@ -119,6 +126,10 @@ export const guideDocument: ProductDocument = {
         ],
       ],
       bullets: [
+        [
+          '“核查框架”列出本次主体、年度、目标、实际资料范围和仍缺的直接材料；它不是自动生成并已执行的任务清单。目标示例只填写输入，不立即发起研究。“来源关系与读取范围”显示有限已检查条目的同链接、同采集组或相同节选关系；来源独立性仍未知，条数不表示确信度。',
+          'The review framework records the entity, year, goal, actual source scope and missing direct evidence; it is not an automatically executed task plan. Goal examples fill the input without starting research. Source relationships and read scope show bounded same-location, collection-group or identical-excerpt relationships. Independence stays unknown; counts are not confidence.',
+        ],
         [
           '点击“查看研究过程”，展开取得资料、定向补查、形成判断和反向复核四阶段。阶段状态、调用记录和时间来自实际执行；没有记录时会说明，缓存命中也不会伪装成新调用。研究未完成时，上一份分析与当前资料分别标明时点。',
           'Select View research process to inspect Gather sources, Targeted research, Form judgments and Review contrary evidence. Stage states, call records and times come from actual execution. Missing records are stated, and cache reuse is not presented as a new call. During unfinished research, the previous analysis and current sources retain separate timestamps.',
@@ -176,6 +187,10 @@ export const guideDocument: ProductDocument = {
       id: 'evidence-lab',
       title: ['企业证据实验室', 'Company evidence lab'],
       bullets: [
+        [
+          '可选练习先预测撤回一项事实会暂停哪些路径，再查看实际依赖反馈并恢复。练习使用单独本地图，不改变已保存报告、采用材料或财务评级；复盘只保留在本会话，切换账号或资料范围会清除。评价的是依赖预测，不是公司安全性。',
+          'Optional practice asks you to predict which paths pause when a fact is withdrawn, then shows actual dependency feedback and restoration. It uses a separate local graph without changing saved reports, adopted evidence or grades. Reviews stay in the session and clear when the owner or source scope changes. It assesses dependencies, not company safety.',
+        ],
         [
           '选择一条事实，查看对应来源、页码或网页字段，再沿连线检查计算与待检验解释。点击“在试验中撤回”只在本地暂停依赖它的路径；点击“在试验中恢复”重新计算，不修改已保存报告或财务评级，也不发送模型请求。',
           'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or financial grades or sending a model request.',
@@ -248,6 +263,14 @@ export const guideDocument: ProductDocument = {
       id: 'external',
       title: ['付款前核对：责任与敞口', 'Before payment: responsibility and exposure'],
       bullets: [
+        [
+          '经营名义可以另填品牌或门店名称，不能替代合同、收款和退款责任主体。可摘录待核验说法并选择对应字段，逐项查看依据状态、原文及下一步材料请求；“字段可核对”不代表原话真实、已经同意或已经履行。',
+          'Record a brand or store name separately as a trading name. It does not substitute for contract, payee or refund responsibility. Quote statements and select their fields to inspect evidence states, originals and next requests. Fields available for review do not establish truth, consent or performance.',
+        ],
+        [
+          '条件演算可反求本次拟付金额的数学上限，无需先填写拟付金额。它同时受交易剩余额与自设未交付暴露约束；记录路径还需主体、条款及实际金额的定位依据。总额与上限仍是输入条件。当前已经超出自设上限时显示无非负解，不给可付零元结论。',
+          'Conditional calculations can solve the mathematical ceiling without a proposed amount. Both the remaining transaction and your undelivered-exposure limit constrain it; the record path also requires located entity, terms and amount evidence. Total and limit remain entered conditions. An already-exceeded limit has no nonnegative solution, rather than permission to pay zero.',
+        ],
         [
           '先填公司或商家名称和拟付金额；不知道金额时可留空。名称暂按你的输入保存，尚未确认合同责任主体。补充条件中分别核对合同、收款与退款主体，以及授权和责任关系。',
           'Start with the company or seller and proposed amount; an unknown amount can stay blank. The name is saved as supplied and does not confirm the contractual entity. In additional conditions, check contract, payee and refund entities separately, including authority and responsibility.',
@@ -383,6 +406,10 @@ export const guideDocument: ProductDocument = {
       title: ['保存版本与比较结果', 'Save versions and compare results'],
       bullets: [
         [
+          '“本版改变了什么”比较相邻保存版本的输入、材料状态、门槛和演算，包括记录撤回后暂停的路径及保留的假设结果。两版按当前规则核算，没有重新取证，不把输入差异说成企业经济变化。',
+          'What changed in this version compares adjacent saved inputs, evidence states, gates and calculations, including paused record paths and retained assumptions after withdrawal. Both versions use current rules, without new retrieval; input differences are not business changes.',
+        ],
+        [
           '私人事项保存完整输入和证据变化。历史版本为只读；恢复历史输入另存新版本，并保留当前已知冲突。恢复前重新核对日期与当前条件。',
           'Private reviews retain full inputs and evidence changes. Historical versions are read-only; restoring older inputs creates a new version while retaining current known conflicts. Recheck dates and current conditions before restoring.',
         ],
@@ -405,6 +432,10 @@ export const guideDocument: ProductDocument = {
       id: 'exports',
       title: ['原件与导出底稿', 'Originals and exported working papers'],
       paragraphs: [
+        [
+          '私人事项的静态 HTML 保留所看版本的说法、依据状态、条件演算、材料摘录与版本差异，可离线阅读和打印。原件文件未打包；恢复联网后仍需在本账号核对原件。离线记录不认证资料、不批准付款，也不保证旧输入仍适用于今天。',
+          'A private review’s static HTML retains the viewed version’s statements, evidence states, calculations, excerpts and changes for offline reading and printing. Original files are not bundled; inspect them in the owning account when online. The offline record does not authenticate documents, approve payment or establish that old inputs apply today.',
+        ],
         [
           '材料页和来源窗口区分公开原件、保留的原始上传文件与确认后的字段。PDF 可按页查看；CSV 与 JSON 原文件可下载核对。仅手工结构化输入而没有上传文件时，不会提供虚构原件下载。',
           'Materials and source windows distinguish public originals, retained uploads and confirmed fields. PDFs can be viewed by page; original CSV and JSON files can be downloaded. Manual structured inputs without an uploaded file do not receive a fabricated original download.',

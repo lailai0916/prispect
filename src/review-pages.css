@@ -1,20 +1,22 @@
 .financial-create-page {
-  max-width: 1120px;
+  width: 100%;
+  max-width: var(--workspace-content-width);
   margin-inline: auto;
 }
 .financial-create-layout {
   display: grid;
   grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-  gap: 28px;
+  gap: var(--card-gap);
   align-items: start;
 }
 .financial-source-step,
 .financial-create-form {
   min-width: 0;
-  padding: 26px;
+  padding: var(--card-padding);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--card-radius);
   background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .financial-source-step .form-section-heading,
 .financial-create-form .form-section-heading {
@@ -46,11 +48,11 @@
   background: var(--accent-soft);
 }
 .financial-create-page .material-check strong {
-  font-size: 13px;
+  font-size: var(--text-ui);
   overflow-wrap: anywhere;
 }
 .financial-create-page .material-check small {
-  font-size: 11px;
+  font-size: var(--text-meta);
   line-height: 1.6;
   margin-top: 6px;
 }
@@ -66,7 +68,7 @@
   color: var(--ink);
 }
 .financial-no-source p {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.8;
   max-width: 340px;
   margin-inline: auto;
@@ -81,7 +83,7 @@
   padding-top: 14px;
 }
 .financial-create-options > summary {
-  font-size: 13px;
+  font-size: var(--text-ui);
   cursor: pointer;
   padding: 6px 0;
 }
@@ -107,7 +109,7 @@
 }
 .report-local-nav > button {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-ui);
   white-space: nowrap;
   min-height: 44px;
   padding: 12px 16px;
@@ -164,7 +166,7 @@
   align-items: center;
   gap: 8px;
   margin-top: 16px;
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .cross-signals-section {
   scroll-margin-top: 96px;
@@ -186,7 +188,7 @@
   gap: 8px 18px;
   min-height: 48px;
   padding: 14px 18px;
-  font-size: 12px;
+  font-size: var(--text-ui);
   list-style: none;
 }
 .cross-signal-checks > summary::-webkit-details-marker {
@@ -203,7 +205,7 @@
 }
 .cross-signal-check-summary {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .cross-signal-check-list > article {
   padding: 20px 18px;
@@ -236,7 +238,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 8px 0;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.6;
 }
 .cross-signal-conditions li > span:last-child {
@@ -250,20 +252,20 @@
   padding-left: 12px;
   border-left: 2px solid var(--line);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.75;
 }
 .cross-signal-blockers .text-link {
   display: inline-flex;
   margin-left: 8px;
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .cross-signal-requirements {
   margin-top: 16px;
 }
 .cross-signal-requirements > summary {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
   min-height: 32px;
 }
 .cross-signal-requirements li + li {
@@ -286,7 +288,7 @@
 .cross-signal-checks-unavailable {
   margin: 0 0 18px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.75;
 }
 .cross-signal-card {
@@ -305,7 +307,7 @@
   display: block;
   margin-bottom: 10px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-caption);
   font-weight: 600;
   letter-spacing: 0.03em;
 }
@@ -320,7 +322,7 @@
   max-width: 78ch;
   margin: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .cross-signal-facts {
@@ -348,19 +350,19 @@
   display: block;
   margin-bottom: 7px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .cross-signal-facts strong {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 570;
 }
 .cross-signal-facts small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 400;
 }
 .cross-signal-facts svg {
@@ -385,12 +387,12 @@
   padding: 16px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .cross-signal-explanations b {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-weight: 500;
 }
 .cross-signal-next {
@@ -418,17 +420,17 @@
   margin-top: 12px;
 }
 .cross-signal-copy .text-link {
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .cross-signal-copy .field-note {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .cross-signal-copy textarea {
   flex-basis: 100%;
   width: 100%;
   padding: 10px 12px;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
   resize: vertical;
 }
@@ -441,11 +443,11 @@
   border-top: 1px solid var(--line);
 }
 .cross-signal-test .text-link {
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .cross-signal-test > span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
   line-height: 1.65;
 }
 .cross-signal-empty {
@@ -454,7 +456,7 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .compare-signal-change {
@@ -467,23 +469,23 @@
   display: block;
   margin-bottom: 5px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 400;
 }
 .compare-rule-check strong {
-  font-size: 12px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .compare-rule-check p {
   margin: 9px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
   line-height: 1.75;
 }
 .compare-rule-check .text-link {
   display: inline-flex;
   margin-left: 7px;
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .compare-rule-changes p {
   display: flex;
@@ -493,7 +495,7 @@
   margin: 0 0 8px;
 }
 .compare-rule-changes strong {
-  font-size: 12px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .compare-rule-changes p > span {
@@ -501,11 +503,11 @@
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
 }
 .compare-rule-changes small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
   line-height: 1.75;
 }
 .method-layout {
@@ -521,8 +523,8 @@
   letter-spacing: -0.02em;
 }
 .method-content section > p {
-  font-size: 14px;
-  line-height: 1.85;
+  font-size: var(--text-body);
+  line-height: 1.7;
 }
 .method-content details {
   border: 1px solid var(--line);
@@ -533,12 +535,12 @@
 }
 .method-content details > summary {
   min-height: 24px;
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 .method-content details p,
 .method-content details li {
-  font-size: 13px;
-  line-height: 1.9;
+  font-size: var(--text-body);
+  line-height: 1.7;
 }
 .compare-selectors {
   padding: 24px;
@@ -604,7 +606,7 @@
   }
   .financial-source-step,
   .financial-create-form {
-    padding: 20px 16px;
+    padding: var(--card-padding);
   }
   .financial-create-page input,
   .financial-create-page .select-trigger {
@@ -659,7 +661,7 @@
 }
 .report-context-details > summary {
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--text-ui);
   color: var(--muted);
   min-height: 32px;
 }

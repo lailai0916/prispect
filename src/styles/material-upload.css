@@ -1,5 +1,8 @@
 .material-drop-page {
   position: relative;
+  width: 100%;
+  max-width: var(--workspace-content-width);
+  margin-inline: auto;
   min-width: 0;
   min-height: 260px;
 }
@@ -14,19 +17,19 @@
   gap: 12px;
   padding: 24px;
   border: 2px dashed var(--accent);
-  border-radius: 12px;
+  border-radius: var(--card-radius);
   background: var(--paper);
   color: var(--ink);
   pointer-events: none;
 }
 
 .material-page-drop-feedback svg {
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .material-page-drop-feedback span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-secondary);
 }
 
 .material-import-dialog[data-closed],
@@ -47,9 +50,9 @@
   width: 100%;
   min-height: 184px;
   margin: 16px 0;
-  padding: 24px;
-  border: 1px dashed var(--control-border);
-  border-radius: 8px;
+  padding: var(--card-padding);
+  border: 1px dashed var(--accent-border);
+  border-radius: var(--card-radius);
   background: var(--surface-subtle);
   color: var(--ink);
   transition:
@@ -59,8 +62,8 @@
 
 .material-importer .upload-zone:hover:not(:disabled),
 .material-importer .upload-zone.is-file-dragging {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--muted);
+  background: var(--surface);
 }
 
 .material-importer .upload-zone:active:not(:disabled) {
@@ -68,13 +71,13 @@
 }
 
 .material-importer .upload-zone strong {
-  font-size: 15px;
+  font-size: var(--text-body);
   font-weight: 550;
 }
 
 .material-importer .upload-zone span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   text-align: center;
 }
 
@@ -110,7 +113,7 @@
   flex-wrap: wrap;
   padding: 10px 0 16px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 
 .material-upload-progress > span,
@@ -189,5 +192,190 @@
 @media (prefers-reduced-motion: reduce) {
   .material-importer .upload-zone {
     transition: none;
+  }
+}
+
+.materials-overview {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 28px;
+  margin-bottom: 24px;
+}
+.materials-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.materials-stat-icon {
+  display: flex;
+  flex: none;
+  color: var(--muted);
+}
+.materials-stat-icon svg {
+  width: 16px;
+  height: 16px;
+}
+.materials-stat > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.materials-stat > div > span {
+  color: var(--muted);
+  font-size: var(--text-secondary);
+  line-height: 1.5;
+}
+.materials-stat strong {
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.material-drop-page .materials-toolbar {
+  gap: 12px;
+  margin-bottom: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.material-drop-page .materials-toolbar .segmented-control {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.material-drop-page .materials-toolbar .search-field {
+  max-width: 420px;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+.material-drop-page .materials-list {
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+}
+.app-shell .material-drop-page .material-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.app-shell .material-drop-page .material-row:last-child {
+  border-bottom: 0;
+}
+.app-shell .material-drop-page .material-row:hover,
+.app-shell .material-drop-page .material-row:focus-within {
+  background: var(--surface-subtle);
+}
+.app-shell .material-drop-page .material-row.material-located {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.app-shell .material-drop-page .material-row-icon {
+  display: flex;
+  width: 36px;
+  min-width: 36px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+}
+.material-drop-page .material-row-content {
+  min-width: 0;
+}
+.material-drop-page .material-row-title {
+  gap: 8px;
+}
+.material-drop-page .material-row-title h2 {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.material-drop-page .material-row-content > p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: var(--text-secondary);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.material-drop-page .material-facts {
+  gap: 6px 14px;
+  margin: 8px 0 0;
+  font-size: var(--text-meta);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.material-drop-page .material-facts code {
+  font-size: inherit;
+}
+.material-drop-page .material-row-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.material-drop-page .empty-state {
+  padding: 48px var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+}
+@media (max-width: 960px) {
+  .app-shell .material-drop-page .material-row {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+  .material-drop-page .material-row-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+@media (max-width: 640px) {
+  .materials-overview {
+    gap: 10px 20px;
+    margin-bottom: 20px;
+  }
+  .materials-stat-icon {
+    display: none;
+  }
+  .materials-stat > div {
+    gap: 8px;
+  }
+  .material-drop-page .materials-toolbar {
+    gap: 10px;
+  }
+  .material-drop-page .materials-toolbar .segmented-control {
+    width: 100%;
+  }
+  .material-drop-page .materials-toolbar .search-field {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .app-shell .material-drop-page .material-row {
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+  }
+  .app-shell .material-drop-page .material-row-icon {
+    width: 28px;
+    min-width: 28px;
+  }
+  .material-drop-page .material-row-actions > .button {
+    margin-right: 0;
   }
 }

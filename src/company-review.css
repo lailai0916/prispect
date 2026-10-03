@@ -1,6 +1,6 @@
 .company-workspace.company-workspace-report {
-  max-width: 1280px;
-  padding: 12px 0 48px;
+  max-width: var(--workspace-content-width);
+  padding: 0;
 }
 
 .company-research-status {
@@ -10,10 +10,11 @@
   padding: 14px 16px;
   margin: -8px 0 24px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--surface-subtle);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .company-research-status > div {
   flex: 1;
@@ -45,12 +46,13 @@
   }
 }
 .company-workspace-report .context-page-heading {
-  margin-bottom: 28px;
+  margin-bottom: var(--workspace-section-gap);
 }
 .company-workspace-report .context-page-heading h1 {
-  font-size: 26px;
-  letter-spacing: -0.025em;
-  line-height: 1.4;
+  font-size: var(--workspace-heading-size);
+  font-weight: var(--workspace-heading-weight);
+  letter-spacing: var(--workspace-heading-letter-spacing);
+  line-height: 1.35;
 }
 .company-workspace-report .context-page-heading .context-data-note {
   margin-bottom: 0;
@@ -74,19 +76,19 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
 }
 .company-review-lead {
   margin: 14px 0 6px;
   max-width: 70ch;
-  font-size: 15px;
+  font-size: var(--text-body);
   line-height: 1.9;
   color: var(--ink);
 }
 .company-review-source-note,
 .company-review-footnote {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   line-height: 1.8;
   margin: 6px 0;
@@ -95,7 +97,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--accent);
+  color: var(--muted);
   margin-left: 10px;
 }
 .company-review-metrics {
@@ -114,7 +116,7 @@
   border-left: 0;
 }
 .company-review-metrics dt {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   margin-bottom: 8px;
 }
@@ -133,7 +135,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 8px 18px;
-  font-size: 11px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   line-height: 1.7;
 }
@@ -161,12 +163,12 @@
 }
 .company-review-number {
   color: var(--subtle);
-  font-size: 12px;
+  font-size: var(--text-meta);
   font-variant-numeric: tabular-nums;
   padding-top: 2px;
 }
 .company-review h3 {
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 550;
   margin: 0 0 6px;
   line-height: 1.65;
@@ -174,16 +176,16 @@
 .company-review-findings p,
 .company-review-followup > p,
 .company-review-requests p {
-  font-size: 13px;
+  font-size: var(--text-body);
   color: var(--muted);
   line-height: 1.8;
   margin: 0;
   max-width: 66ch;
 }
 .company-review-findings .text-link {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   padding-top: 2px;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 .company-review-followup > p {
   margin-top: 12px;
@@ -202,11 +204,11 @@
   margin-top: 16px;
 }
 .company-review-actions .button {
-  font-size: 12px;
+  font-size: var(--text-ui);
   min-height: 34px;
 }
 .company-review-actions .text-link {
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .company-review-requests[hidden] {
   display: none;
@@ -224,20 +226,21 @@
 }
 .company-review-footnote {
   margin-top: 22px;
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .company-review-details {
-  margin-top: 24px;
+  margin-top: var(--card-gap);
   border-top: 1px solid var(--line);
 }
 .company-review-details > summary {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 18px 0;
+  min-height: 52px;
+  padding: 14px 0;
   cursor: pointer;
   list-style: none;
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .company-review-details > summary::-webkit-details-marker {
   display: none;
@@ -256,8 +259,8 @@
   flex-wrap: wrap;
   gap: 16px;
   padding-bottom: 24px;
-  font-size: 12px;
-  color: var(--accent);
+  font-size: var(--text-ui);
+  color: var(--muted);
 }
 .report-content.report-content-summary .verdict-section {
   border: 0;
@@ -277,7 +280,7 @@
   margin: 20px 0 10px;
 }
 .report-content.report-content-summary .verdict-section .report-summary-text {
-  font-size: 15px;
+  font-size: var(--text-body);
   color: var(--ink);
   line-height: 1.9;
   max-width: 70ch;
@@ -311,7 +314,7 @@
   cursor: pointer;
   color: var(--muted);
   padding: 14px 0;
-  font-size: 12px;
+  font-size: var(--text-ui);
   list-style: none;
 }
 .report-purpose-details > summary::-webkit-details-marker {
@@ -324,7 +327,7 @@
 }
 .report-summary-detail-link {
   margin-top: 16px;
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 @media (max-width: 760px) {
   .report-content.report-content-summary .metric-item {
@@ -345,9 +348,6 @@
     flex-wrap: wrap;
     gap: 14px;
   }
-  .company-workspace-report .context-page-heading h1 {
-    font-size: 22px;
-  }
   .company-review-metrics {
     margin-top: 22px;
   }
@@ -355,7 +355,7 @@
     padding: 0 12px;
   }
   .company-review-metrics dt {
-    font-size: 11px;
+    font-size: var(--text-secondary);
   }
   .company-review-metrics dd {
     font-size: 19px;
@@ -417,7 +417,7 @@
 
 /* The public report shares its reading rhythm with the original-evidence report. */
 .company-workspace.company-workspace-report {
-  max-width: 1080px;
+  max-width: var(--workspace-content-width);
 }
 .company-review-evidence {
   margin-top: 22px;
@@ -429,7 +429,7 @@
 }
 .company-review-evidence-description,
 .company-review-private-step p {
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.9;
   color: var(--muted);
   max-width: 80ch;
@@ -443,7 +443,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--text-ui);
   color: var(--ink);
   padding: 7px 0;
   list-style: none;
@@ -461,7 +461,7 @@
 }
 .company-review-checklist > summary span {
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-variant-numeric: tabular-nums;
 }
 .company-review-checklist .company-review-requests {
@@ -477,13 +477,13 @@
 .company-review-private-step p {
   margin: 0;
   flex: 1;
-  min-width: 220px;
+  min-width: min(220px, 100%);
 }
 .company-review-private-step .text-link {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 @media (max-width: 640px) {
   .company-review-checklist > summary,
@@ -505,4 +505,38 @@
   .company-review-private-step .text-link {
     display: none;
   }
+}
+
+.company-review-details[open] {
+  padding-bottom: 8px;
+}
+.company-review-details[open] > summary {
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.company-review-details > summary > svg,
+.company-review-checklist > summary > svg {
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+.company-review-details > .context-section:first-of-type {
+  margin-top: 0;
+}
+.company-review-details > .company-workspace-section {
+  padding: 0;
+  border: 0;
+  box-shadow: none;
+}
+@media print {
+  .company-review-details {
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}
+
+.company-review-source-note a:hover,
+.company-review-detail-links a:hover {
+  color: var(--accent);
 }

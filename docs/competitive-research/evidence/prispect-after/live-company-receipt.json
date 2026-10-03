@@ -1,0 +1,301 @@
+{
+  "baselineSha": "d748d1ac5c1a9c6fe702301c819980e1cce87312",
+  "comparisonBoundary": "Actual public lookup on same 300893/2025 with no external model. Not the synthetic 4321 provider.",
+  "startedAt": "2026-10-03T06:02:57.857Z",
+  "sourceType": "actual-public-retrieval",
+  "externalModelConfigured": false,
+  "checks": [
+    {
+      "name": "desktop-light-live-company-running",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-result",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-trends",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc&section=trends",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-industry",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc&section=industry",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-disclosures",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc&section=disclosures",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-profile",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc&section=profile",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-coverage",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc&section=coverage",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-sources",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc&section=sources",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "desktop-light-live-company-evidence",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc&section=evidence",
+      "overflow": {
+        "width": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "narrow-dark-live-company",
+      "url": "http://127.0.0.1:4320/company?run=89a9597e-c66b-4bc7-b6ea-b34c6197fecc",
+      "overflow": {
+        "width": 390,
+        "document": 390
+      }
+    },
+    {
+      "name": "narrow-dark-research-library",
+      "url": "http://127.0.0.1:4320/research",
+      "overflow": {
+        "width": 390,
+        "document": 390
+      }
+    }
+  ],
+  "errors": [],
+  "directoryStatus": 200,
+  "directory": {
+    "candidates": 6179
+  },
+  "searchStatus": 200,
+  "search": {
+    "query": "300893",
+    "candidates": [
+      {
+        "securityCode": "300893",
+        "orgId": "9900039861",
+        "shortName": "松原安全",
+        "companyName": null,
+        "exchange": "szse",
+        "sourceUrl": "https://www.cninfo.com.cn/new/snapshot/companyDetailCn?code=300893"
+      }
+    ],
+    "limitedToListed": true,
+    "source": "cninfo",
+    "truncated": false
+  },
+  "createStatus": 202,
+  "initial": {
+    "id": "89a9597e-c66b-4bc7-b6ea-b34c6197fecc",
+    "input": {
+      "securityCode": "300893",
+      "orgId": "9900039861",
+      "year": 2025,
+      "purpose": "external",
+      "useModel": true
+    },
+    "status": "queued",
+    "createdAt": "2026-10-03T06:02:57.980Z",
+    "updatedAt": "2026-10-03T06:02:57.980Z",
+    "trace": [],
+    "announcements": [],
+    "agent": {
+      "version": "langgraph-v1",
+      "revision": 1,
+      "branches": [
+        {
+          "id": "identity",
+          "status": "pending"
+        },
+        {
+          "id": "finance",
+          "status": "pending"
+        },
+        {
+          "id": "market-data",
+          "status": "pending"
+        },
+        {
+          "id": "notes",
+          "status": "pending"
+        },
+        {
+          "id": "announcements",
+          "status": "pending"
+        },
+        {
+          "id": "reconcile",
+          "status": "pending"
+        }
+      ],
+      "recoverable": false,
+      "cancelRequested": false,
+      "evidence": [],
+      "auditOpinion": {
+        "status": "pending",
+        "requestedYear": null,
+        "scope": {
+          "issuer": "unconfirmed",
+          "reportYear": "unconfirmed",
+          "auditPeriod": "unconfirmed"
+        },
+        "evidence": [],
+        "warnings": []
+      },
+      "competingExplanations": [],
+      "coverage": {
+        "annualReports": 0,
+        "recentTitles": 0,
+        "recentFullTexts": 0,
+        "recentTruncated": false,
+        "warnings": []
+      },
+      "budget": {
+        "sourceRequests": 0,
+        "modelRequests": 0,
+        "maxSourceRequests": 32,
+        "maxModelRequests": 12
+      }
+    },
+    "model": {
+      "requested": true,
+      "status": "not-configured"
+    }
+  },
+  "runId": "89a9597e-c66b-4bc7-b6ea-b34c6197fecc",
+  "latest": {
+    "id": "89a9597e-c66b-4bc7-b6ea-b34c6197fecc",
+    "input": {
+      "securityCode": "300893",
+      "orgId": "9900039861",
+      "year": 2025,
+      "purpose": "external",
+      "useModel": true
+    },
+    "status": "failed",
+    "createdAt": "2026-10-03T06:02:57.980Z",
+    "updatedAt": "2026-10-03T06:03:06.389Z",
+    "trace": [
+      {
+        "id": "37699434-420a-4564-b822-345ed9030ac4",
+        "branchId": "identity",
+        "tool": "cninfo_identity",
+        "label": "确认上市主体",
+        "status": "failed",
+        "startedAt": "2026-10-03T06:02:58.031Z",
+        "inputSummary": "300893 · 2025 · 仅公开披露",
+        "sources": [],
+        "finishedAt": "2026-10-03T06:03:06.344Z",
+        "outputSummary": "官方披露来源暂不可达，已完成一次重试；未替换为其他主体或年份"
+      }
+    ],
+    "announcements": [],
+    "agent": {
+      "version": "langgraph-v1",
+      "revision": 1,
+      "branches": [
+        {
+          "id": "identity",
+          "status": "failed",
+          "summary": "官方披露来源暂不可达，已完成一次重试；未替换为其他主体或年份",
+          "startedAt": "2026-10-03T06:02:58.027Z",
+          "finishedAt": "2026-10-03T06:03:06.348Z"
+        },
+        {
+          "id": "finance",
+          "status": "pending"
+        },
+        {
+          "id": "market-data",
+          "status": "pending"
+        },
+        {
+          "id": "notes",
+          "status": "pending"
+        },
+        {
+          "id": "announcements",
+          "status": "pending"
+        },
+        {
+          "id": "reconcile",
+          "status": "pending"
+        }
+      ],
+      "recoverable": true,
+      "cancelRequested": false,
+      "evidence": [],
+      "auditOpinion": {
+        "status": "pending",
+        "requestedYear": 2025,
+        "scope": {
+          "issuer": "unconfirmed",
+          "reportYear": "unconfirmed",
+          "auditPeriod": "unconfirmed"
+        },
+        "evidence": [],
+        "warnings": []
+      },
+      "competingExplanations": [],
+      "coverage": {
+        "annualReports": 0,
+        "recentTitles": 0,
+        "recentFullTexts": 0,
+        "recentTruncated": false,
+        "warnings": []
+      },
+      "budget": {
+        "sourceRequests": 2,
+        "modelRequests": 0,
+        "maxSourceRequests": 32,
+        "maxModelRequests": 12
+      },
+      "providerDiagnostics": {
+        "actualTiers": [],
+        "requests": [],
+        "validationFailures": []
+      }
+    },
+    "model": {
+      "requested": true,
+      "status": "not-configured"
+    },
+    "contextStatus": "failed",
+    "contextError": "官方披露来源暂不可达，已完成一次重试；未替换为其他主体或年份",
+    "contextRevision": 1,
+    "error": "官方披露来源暂不可达，已完成一次重试；未替换为其他主体或年份"
+  },
+  "finishedAt": "2026-10-03T06:03:20.803Z"
+}

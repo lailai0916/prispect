@@ -1,0 +1,111 @@
+
+> hermes-company-analyzer@0.1.0 dev
+> next dev --hostname 127.0.0.1 --port 4402
+
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:4402
+   - Network:      http://127.0.0.1:4402
+
+ ✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+ ✓ Ready in 6.5s
+ ○ Compiling / ...
+ ✓ Compiled / in 11.4s (1532 modules)
+ GET / 200 in 12043ms
+ ○ Compiling /api/llm-status ...
+ ✓ Compiled /api/llm-status in 1364ms (863 modules)
+ ○ Compiling /report/[id] ...
+ ✓ Compiled /report/[id] in 14.5s (3332 modules)
+ ⨯ [Error: Cannot find module '/workspace/competitors/hermes/.next/server/app/api/market/indices/route.js'
+Require stack:
+- /workspace/competitors/hermes/node_modules/next/dist/server/require.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/load-components.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/utils.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/options.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/index.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/next-config-ts/transpile-config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/next.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/api/market/indices'
+}
+ ⨯ [Error: Cannot find module '/workspace/competitors/hermes/.next/server/app/api/news/flash/route.js'
+Require stack:
+- /workspace/competitors/hermes/node_modules/next/dist/server/require.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/load-components.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/utils.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/options.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/index.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/next-config-ts/transpile-config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/next.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/api/news/flash'
+}
+ ⨯ [Error: Cannot find module '/workspace/competitors/hermes/.next/server/app/api/llm-status/route.js'
+Require stack:
+- /workspace/competitors/hermes/node_modules/next/dist/server/require.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/load-components.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/utils.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/options.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/index.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/next-config-ts/transpile-config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/next.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/api/llm-status'
+}
+ ⨯ [Error: Cannot find module '/workspace/competitors/hermes/.next/server/app/icon.svg/route.js'
+Require stack:
+- /workspace/competitors/hermes/node_modules/next/dist/server/require.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/load-components.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/utils.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/options.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/swc/index.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/next-config-ts/transpile-config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/config.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/next.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/lib/start-server.js] {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/icon.svg'
+}
+ ○ Compiling /_error ...
+ ⨯ [Error: ENOENT: no such file or directory, open '/workspace/competitors/hermes/.next/routes-manifest.json'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/workspace/competitors/hermes/.next/routes-manifest.json',
+  page: '/'
+}
+ ⨯ [Error: Cannot find module './vendor-chunks/zustand.js'
+Require stack:
+- /workspace/competitors/hermes/.next/server/webpack-runtime.js
+- /workspace/competitors/hermes/.next/server/app/report/[id]/page.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/require.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/load-components.js
+- /workspace/competitors/hermes/node_modules/next/dist/build/utils.js
+- /workspace/competitors/hermes/node_modules/next/dist/server/dev/static-paths-worker.js
+- /workspace/competitors/hermes/node_modules/next/dist/compiled/jest-worker/processChild.js] {
+  type: 'Error',
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/report/mock-healthy'
+}
+ GET /icon.svg?8a8f499f90672691 500 in 24997ms
+ GET /report/mock-healthy 500 in 23194ms
+ GET /api/llm-status 500 in 24841ms
+ GET /api/news/flash 500 in 24844ms
+ GET /api/market/indices 500 in 24870ms
+ GET / 500 in 9038ms
+[?25h

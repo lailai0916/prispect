@@ -62,12 +62,33 @@ export interface DecisionEvidence extends DecisionEvidenceInput {
   state: 'active' | 'withdrawn';
   createdAt: string;
 }
+export type DecisionClaimTarget =
+  | 'contract-entity'
+  | 'payee-entity'
+  | 'refund-entity'
+  | 'terms'
+  | 'paid'
+  | 'delivered'
+  | 'refunded'
+  | 'opening-cash'
+  | 'cash-events'
+  | 'collections'
+  | 'inventory';
+/** A user-selected statement to examine, never an automatically authenticated assertion. */
+export interface DecisionClaim {
+  id: string;
+  text: string;
+  target: DecisionClaimTarget;
+}
 export interface DecisionInput {
   title: string;
   purpose: ReviewPurpose;
   transactionEntity: string;
+  /** Brand/store/trading name is distinct from the named contract-responsible entity. */
+  tradingName?: string;
   reportTaskId: string | null;
   promise: string;
+  claims?: DecisionClaim[];
   external: ExternalPaymentInput | null;
   datedCash: DatedCashInput | null;
 }
@@ -200,6 +221,8 @@ export interface DecisionDetail {
   decision: DecisionSummary;
   version: DecisionVersion;
   evaluation: DecisionEvaluation;
+  /** Adjacent immutable input versions, evaluated under the current rules; no new retrieval. */
+  changes?: import('./decision-change.js').DecisionChangeSet;
   revisions: {
     revision: number;
     createdAt: string;

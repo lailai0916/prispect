@@ -20,7 +20,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .export-preview-formats button:hover {
   background: var(--hover);
@@ -38,7 +38,7 @@
   padding: 12px 0;
   border-top: 1px solid var(--line);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-meta);
 }
 .export-preview-file > span:first-of-type {
   flex: 1;
@@ -72,7 +72,7 @@
   color: var(--ink);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
 }
 .export-preview-state {

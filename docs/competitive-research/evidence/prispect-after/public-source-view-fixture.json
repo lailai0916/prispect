@@ -1,0 +1,175 @@
+{
+  "scope": "current",
+  "snapshotFetchedAt": "2026-10-03T06:19:34.453Z",
+  "reportSnapshotFetchedAt": "2026-10-03T06:19:34.453Z",
+  "independence": "unknown",
+  "rows": [
+    {
+      "id": "receipt-1",
+      "kind": "receipt",
+      "label": "financial",
+      "provider": "合成第三方字段（工程fixture）",
+      "url": "https://datacenter.eastmoney.com/",
+      "date": "2024-12-31",
+      "readAt": "2026-10-03T06:19:34.453Z",
+      "scope": "source-receipt",
+      "status": "available",
+      "note": "合成测试来源，没有实际下载公开响应。",
+      "clusterId": null,
+      "contentHash": null
+    },
+    {
+      "id": "receipt-2",
+      "kind": "receipt",
+      "label": "financial",
+      "provider": "合成第三方字段（工程fixture）",
+      "url": "https://datacenter.eastmoney.com/",
+      "date": "2025-12-31",
+      "readAt": "2026-10-03T06:19:34.453Z",
+      "scope": "source-receipt",
+      "status": "available",
+      "note": "合成测试来源，没有实际下载公开响应。",
+      "clusterId": null,
+      "contentHash": null
+    },
+    {
+      "id": "receipt-3",
+      "kind": "receipt",
+      "label": "disclosures",
+      "provider": "合成官方来源位置（工程fixture）",
+      "url": "https://www.cninfo.com.cn/",
+      "date": "2026-03-01",
+      "readAt": "2026-10-03T06:19:34.453Z",
+      "scope": "source-receipt",
+      "status": "partial",
+      "note": "合成节选，非真实披露。",
+      "clusterId": null,
+      "contentHash": null
+    },
+    {
+      "id": "disclosure-1",
+      "kind": "disclosure",
+      "label": "合成公告：扩张备货说明（工程样本）",
+      "provider": "合成",
+      "url": "https://static.cninfo.com.cn/finalpage/2026-03-01/fixture.pdf",
+      "date": "2026-03-01",
+      "readAt": null,
+      "scope": "disclosure-excerpt",
+      "status": "available",
+      "note": "Page 1; 1 pages read",
+      "clusterId": null,
+      "contentHash": null
+    },
+    {
+      "id": "news-1",
+      "kind": "news",
+      "label": "合成报道：回款与备货变化需要核对",
+      "provider": "合成媒体甲",
+      "url": "https://finance.eastmoney.com/a/202610033001234567.html",
+      "date": "2026-03-02",
+      "readAt": "2026-10-03T06:19:34.453Z",
+      "scope": "media-excerpt",
+      "status": "available",
+      "note": "",
+      "clusterId": "fixture-repost-family",
+      "contentHash": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    },
+    {
+      "id": "news-2",
+      "kind": "news",
+      "label": "合成报道：回款与备货变化需要核对",
+      "provider": "合成转载乙",
+      "url": "https://finance.sina.com.cn/stock/s/2026-03-03/doc-fixture.shtml",
+      "date": "2026-03-03",
+      "readAt": null,
+      "scope": "digest",
+      "status": "available",
+      "note": "",
+      "clusterId": "fixture-repost-family",
+      "contentHash": null
+    },
+    {
+      "id": "news-3",
+      "kind": "news",
+      "label": "合成另一条线索：订单计划不等于已交付",
+      "provider": "合成媒体丙",
+      "url": "https://finance.eastmoney.com/a/202603043001234568.html",
+      "date": "2026-03-04",
+      "readAt": null,
+      "scope": "digest",
+      "status": "available",
+      "note": "",
+      "clusterId": null,
+      "contentHash": null
+    },
+    {
+      "id": "discussion-1",
+      "kind": "discussion",
+      "label": "合成公众观点：交付多久？（非真实帖子）",
+      "provider": "eastmoney-guba",
+      "url": "https://guba.eastmoney.com/news,601234,12345.html",
+      "date": "2026-03-05",
+      "readAt": null,
+      "scope": "post-title",
+      "status": "available",
+      "note": "",
+      "clusterId": null,
+      "contentHash": null
+    }
+  ],
+  "families": [
+    {
+      "id": "family-1",
+      "memberIds": [
+        "receipt-1",
+        "receipt-2"
+      ],
+      "relations": [
+        {
+          "kind": "same-location",
+          "memberIds": [
+            "receipt-1",
+            "receipt-2"
+          ]
+        }
+      ],
+      "differingContent": false
+    },
+    {
+      "id": "family-2",
+      "memberIds": [
+        "news-1",
+        "news-2"
+      ],
+      "relations": [
+        {
+          "kind": "same-cluster",
+          "memberIds": [
+            "news-1",
+            "news-2"
+          ]
+        }
+      ],
+      "differingContent": false
+    }
+  ],
+  "reading": {
+    "source-receipt": 3,
+    "disclosure-index": 0,
+    "disclosure-excerpt": 1,
+    "headline": 0,
+    "digest": 2,
+    "media-excerpt": 1,
+    "post-title": 1,
+    "post-excerpt": 0
+  },
+  "states": {
+    "available": 7,
+    "partial": 1,
+    "empty": 0,
+    "error": 0,
+    "manual": 0
+  },
+  "omitted": 0,
+  "rejectedDiscussions": 0
+}

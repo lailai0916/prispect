@@ -1,11 +1,10 @@
-import { companySections, type CompanySection } from '../shared/company-workspace';
+import { resolveCompanyLocation, type CompanySection } from '../shared/company-workspace';
 import { documentPaths } from './content/document-navigation';
 
 export const ROUTE_CHANGE_EVENT = 'prispect:routechange';
 
 export function resolveCompanySection(value: string | null | undefined): CompanySection {
-  if (value === 'evidence') return value;
-  return companySections.find(([section]) => section === value)?.[0] || 'overview';
+  return resolveCompanyLocation(value).section;
 }
 
 const pages = new Set([
@@ -48,6 +47,27 @@ export function appPath(value: string, origin: string): string | null {
         : originalPath);
     if (url.origin !== origin || (!pages.has(pathname) && !/^\/tasks\/[^/]+$/.test(pathname)))
       return null;
+    if (pathname === '/company') {
+      const requestedSection = url.searchParams.get('section');
+      const requestedFocus = url.searchParams.get('focus');
+      const oldAnchor =
+        url.hash === '#company-public-data'
+          ? { section: 'financial', focus: 'data', hash: '#company-financial-data' }
+          : url.hash === '#company-public-signals'
+            ? { section: 'sources', focus: 'news', hash: url.hash }
+            : null;
+      const { section, focus } = resolveCompanyLocation(
+        oldAnchor?.section || requestedSection,
+        oldAnchor?.focus || requestedFocus
+      );
+      if (requestedSection !== null || requestedFocus !== null || oldAnchor) {
+        if (section === 'overview') url.searchParams.delete('section');
+        else url.searchParams.set('section', section);
+        if (focus) url.searchParams.set('focus', focus);
+        else url.searchParams.delete('focus');
+        if (oldAnchor) url.hash = oldAnchor.hash;
+      }
+    }
     return pathname + url.search + url.hash;
   } catch {
     return null;

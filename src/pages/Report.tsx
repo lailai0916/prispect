@@ -1687,7 +1687,7 @@ export function CashBridge({ steps, report }: { steps: BridgeStep[]; report: Rep
               <span>
                 {report.year} ·{' '}
                 {source?.page != null
-                  ? `${t('PDF 页', 'PDF p.')} ${source.page}`
+                  ? `${t('来源页', 'Source p.')} ${source.page}`
                   : t('页码未提供', 'Page not supplied')}
                 {selected.sourceRefs.length > 1
                   ? ` · ${selected.sourceRefs.length} ${t('条来源', 'sources')}`

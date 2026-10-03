@@ -140,7 +140,7 @@ export function CompanyBrief({
       : []),
   ];
   const sources = sourceGroups(context?.sources || []);
-  const sourceLink = sourceHref || companyPath(run.id, 'sources');
+  const sourceLink = sourceHref || companyPath(run.id, 'sources', 'source-comparison');
   const excerpts = context?.announcements.filter((item) => item.excerpt).length || 0;
   const newsCount = context?.news.length || 0;
   const newsRead =

@@ -4,6 +4,7 @@ import {
   buildCompanyEvidenceLab,
   buildExampleEvidenceLab,
   buildReportEvidenceLab,
+  evidenceLabSourceHref,
   evaluateEvidenceLab,
   highlightEvidenceLab,
   type EvidenceLabGraph,
@@ -336,6 +337,107 @@ test('original report lab uses exact signed adjustments, original pages and chec
     graph.nodes
       .filter((item) => item.kind === 'hypothesis')
       .every((item) => item.detail[0].includes('待检验') && item.value === null)
+  );
+});
+
+function retainedUpload(): Material {
+  const material = structuredClone(songyuan);
+  material.id = 'owned-material-001';
+  material.uploadId = 'owned-upload-001';
+  material.filename = 'retained-original.json';
+  material.origin = 'user-upload';
+  delete material.sourceUrl;
+  delete material.rawSourceId;
+  return material;
+}
+
+test('saved checks can cite the retained owning-account original without fabricating a public URL', () => {
+  const saved = report(retainedUpload());
+  const before = JSON.stringify(saved);
+  const graph = buildReportEvidenceLab(saved);
+  const fact = node(graph, 'fact-2025-netProfit');
+  assert.equal(fact.value, '366373098.93');
+  assert.equal(node(graph, 'calc-cash-bridge').value, '0.00');
+  assert.equal(fact.sourceRefs[0]!.url, '/api/materials/owned-material-001/file');
+  assert.deepEqual(fact.sourceRefs[0]!.retainedOriginal, { kind: 'upload', isPdf: false });
+  assert.match(fact.sourceRefs[0]!.quote!, /合并净利润/);
+  assert.equal(
+    evidenceLabSourceHref(fact.sourceRefs[0]!),
+    '/api/materials/owned-material-001/file'
+  );
+  assert.equal(JSON.stringify(saved), before);
+  const trial = evaluateEvidenceLab(graph, ['fact-2025-netProfit']);
+  assert.equal(node(trial, 'calc-profit-cash-gap').state, 'paused');
+  assert.equal(node(trial, 'fact-2025-ocf').value, '26197123.70');
+});
+
+test('a retained locator needs matching saved material, company, upload and digest; it never re-adopts raw observations', () => {
+  const original = report(retainedUpload());
+  for (const update of [
+    (saved: Report) => {
+      saved.snapshot = [];
+    },
+    (saved: Report) => {
+      saved.snapshot[0]!.id = 'different-material';
+    },
+    (saved: Report) => {
+      saved.snapshot[0]!.company = 'Different issuer';
+    },
+    (saved: Report) => {
+      delete saved.snapshot[0]!.uploadId;
+    },
+    (saved: Report) => {
+      saved.snapshot[0]!.sha256 = 'missing-digest';
+    },
+    (saved: Report) => {
+      saved.snapshot[0]!.uploadId = '../foreign-upload';
+    },
+  ]) {
+    const saved = structuredClone(original);
+    update(saved);
+    assert.equal(node(buildReportEvidenceLab(saved), 'fact-2025-netProfit').state, 'missing');
+  }
+  const excluded = buildReportEvidenceLab(report(retainedUpload(), ['inventoryAdjustment']));
+  assert.equal(node(excluded, 'fact-2025-inventoryAdjustment').value, null);
+  assert.equal(node(excluded, 'calc-cash-bridge').value, null);
+  const conflicting = structuredClone(original);
+  conflicting.checks.find((check) => check.id === 'subject')!.status = 'fail';
+  assert.equal(node(buildReportEvidenceLab(conflicting), 'fact-2025-netProfit').state, 'conflict');
+  const noExcerpt = structuredClone(original);
+  noExcerpt.checks.find((check) => check.id === '2025-netProfit')!.sourceRefs[0]!.quote = '';
+  assert.equal(node(buildReportEvidenceLab(noExcerpt), 'fact-2025-netProfit').value, null);
+});
+
+test('original source links restrict local endpoints and add PDF pages without interpreting uploads as public sources', () => {
+  const material = retainedUpload();
+  material.filename = 'retained-original.pdf';
+  const source = node(buildReportEvidenceLab(report(material)), 'fact-2025-netProfit')
+    .sourceRefs[0]!;
+  assert.equal(evidenceLabSourceHref(source), '/api/materials/owned-material-001/file#page=190');
+  for (const url of [
+    '//example.org/api/materials/owned-material-001/file',
+    '/api/materials/../foreign/file',
+    '/api/materials/owned-material-001/file?redirect=https://example.org',
+    '/api/materials/owned-material-001/file#page=1',
+    '/api/sources/foreign/pdf',
+    'https://example.org/api/materials/owned-material-001/file',
+    'javascript:alert(1)',
+  ])
+    assert.equal(evidenceLabSourceHref({ ...source, url }), undefined, url);
+  assert.equal(evidenceLabSourceHref({ ...source, retainedOriginal: undefined }), undefined);
+  assert.equal(
+    evidenceLabSourceHref({ ...source, page: -1 }),
+    '/api/materials/owned-material-001/file'
+  );
+  assert.equal(
+    evidenceLabSourceHref({ ...source, page: 1.5 }),
+    '/api/materials/owned-material-001/file'
+  );
+  const publicSource = node(buildReportEvidenceLab(report()), 'fact-2025-netProfit').sourceRefs[0]!;
+  assert.match(evidenceLabSourceHref(publicSource)!, /^https:\/\/.+#page=190$/);
+  assert.equal(
+    evidenceLabSourceHref({ ...publicSource, url: 'https://user:password@example.org/' }),
+    undefined
   );
 });
 

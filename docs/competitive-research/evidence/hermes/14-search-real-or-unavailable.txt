@@ -1,0 +1,15 @@
+HERMES
+v0.9 · DEMO
+HERMES SYSTEM ONLINE
+公司透视
+搜索
+筛选
+对话
+
+输入公司名，30 秒生成一张公司透视报告 —— 财务、司法、舆情、股权，散落线索一次看清。
+
+SCAN ⏎
+去比较 ->
+暂无搜索记录 —— 在上方搜索一家 A 股公司，开始第一次透视
+DATA: MOCK / AKSHARE / CNINFO / JUHE / GDELT · 仅供演示
+数据源暂不可用，请稍后再试

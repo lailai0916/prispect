@@ -1,0 +1,2174 @@
+{
+  "recordedAt": "2026-10-03T06:18:37.725Z",
+  "kind": "actual-private-saved-synthetic-handover",
+  "checks": [
+    {
+      "name": "saved-input-known-day-end400-payments-first-600-gap900-and-events-exported",
+      "pass": true
+    },
+    {
+      "name": "missing-required-event-date-pauses-conservative-calculation-and-diff",
+      "pass": true
+    }
+  ],
+  "pageErrors": [],
+  "before": {
+    "decision": {
+      "id": "c7e42b49-694a-43e2-81d9-19b983f3e50d",
+      "title": "合成现金同日顺序 · 日末充足仍可能短缺",
+      "purpose": "handover",
+      "transactionEntity": "合成现金顺序样本（非真实企业）",
+      "currentRevision": 1,
+      "createdAt": "2026-10-03T06:18:38.628Z",
+      "updatedAt": "2026-10-03T06:18:38.628Z"
+    },
+    "version": {
+      "revision": 1,
+      "createdAt": "2026-10-03T06:18:38.628Z",
+      "reason": "created",
+      "input": {
+        "title": "合成现金同日顺序 · 日末充足仍可能短缺",
+        "purpose": "handover",
+        "transactionEntity": "合成现金顺序样本（非真实企业）",
+        "reportTaskId": null,
+        "promise": "合成安排：同日可能先付款再到账；保留所有金额与日期。",
+        "claims": [
+          {
+            "id": "cash-events-check",
+            "text": "同日回款可覆盖付款（合成说法）",
+            "target": "cash-events"
+          }
+        ],
+        "external": null,
+        "datedCash": {
+          "asOf": "2026-10-03",
+          "openingCash": "1000",
+          "cashFloor": "300",
+          "proposedAmount": "100",
+          "proposedDay": 2,
+          "alternativeDay": 3,
+          "flows": [
+            {
+              "id": "receipt-day2",
+              "label": "合成待到账",
+              "direction": "in",
+              "day": 2,
+              "amount": "1000",
+              "flexibility": "fixed"
+            },
+            {
+              "id": "fixed-payment-day2",
+              "label": "合成必要付款",
+              "direction": "out",
+              "day": 2,
+              "amount": "1500",
+              "flexibility": "fixed"
+            }
+          ]
+        }
+      },
+      "evidence": []
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:18:38.638Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "opening-cash",
+          "label": "起点可用余额记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash"
+          ]
+        },
+        {
+          "id": "flow-receipt-day2",
+          "label": "合成待到账的金额与日期记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "flow-fixed-payment-day2",
+          "label": "合成必要付款的金额与日期记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "cash-floor",
+          "label": "新增付款后的自设现金底线",
+          "status": "unknown",
+          "summary": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash",
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "alternative-terms",
+          "label": "延期方案的可行条件",
+          "status": "unknown",
+          "summary": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "unknown",
+          "summary": "集团或其他主体的年报只作历史背景，不能证明本次交易主体的资金能力。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "reportTaskId",
+              "path": "reportTaskId",
+              "label": "未取得可采用历史任务",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-opening-cash",
+          "title": "补充起点可用余额记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "与起点日期一致的银行账户对账、受限资金和可用余额记录；不能以年报金额代替。",
+          "gateIds": [
+            "opening-cash"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-flow-receipt-day2",
+          "title": "补充合成待到账的金额与日期记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "flow-receipt-day2"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-flow-fixed-payment-day2",
+          "title": "补充合成必要付款的金额与日期记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "flow-fixed-payment-day2"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-cash-floor",
+          "title": "补充新增付款后的自设现金底线",
+          "reason": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "cash-floor"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-alternative-terms",
+          "title": "补充延期方案的可行条件",
+          "reason": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "requestedEvidence": "明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。",
+          "gateIds": [
+            "alternative-terms"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ]
+        }
+      ],
+      "external": null,
+      "cash": {
+        "primary": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 2,
+              "date": "2026-10-05",
+              "openingBalance": "1000.00",
+              "inflow": "1000.00",
+              "outflow": "1600.00",
+              "balance": "400.00",
+              "outflowFirstBalance": "-600.00",
+              "sameDayOrderSensitive": true,
+              "flowIds": [
+                "receipt-day2",
+                "fixed-payment-day2"
+              ],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "400.00"
+            },
+            {
+              "day": 60,
+              "balance": "400.00"
+            },
+            {
+              "day": 90,
+              "balance": "400.00"
+            }
+          ],
+          "minimumBalance": "400.00",
+          "conservativeMinimumBalance": "-600.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "900.00",
+          "sameDayOrderSensitive": true,
+          "maximumAdditionalPayment": "0.00",
+          "thresholdStatus": "baseline-below-floor",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "not-achievable"
+        },
+        "alternative": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 2,
+              "date": "2026-10-05",
+              "openingBalance": "1000.00",
+              "inflow": "1000.00",
+              "outflow": "1500.00",
+              "balance": "500.00",
+              "outflowFirstBalance": "-500.00",
+              "sameDayOrderSensitive": true,
+              "flowIds": [
+                "receipt-day2",
+                "fixed-payment-day2"
+              ],
+              "includesProposal": false
+            },
+            {
+              "day": 3,
+              "date": "2026-10-06",
+              "openingBalance": "500.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "400.00",
+              "outflowFirstBalance": "400.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "400.00"
+            },
+            {
+              "day": 60,
+              "balance": "400.00"
+            },
+            {
+              "day": 90,
+              "balance": "400.00"
+            }
+          ],
+          "minimumBalance": "400.00",
+          "conservativeMinimumBalance": "-500.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "800.00",
+          "sameDayOrderSensitive": true,
+          "maximumAdditionalPayment": "200.00",
+          "thresholdStatus": "baseline-below-floor",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "not-achievable"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "recordedCash": {
+        "primary": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash",
+            "flows.receipt-day2.day",
+            "flows.receipt-day2.amount",
+            "flows.fixed-payment-day2.day",
+            "flows.fixed-payment-day2.amount"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "alternative": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash",
+            "flows.receipt-day2.day",
+            "flows.receipt-day2.amount",
+            "flows.fixed-payment-day2.day",
+            "flows.fixed-payment-day2.amount"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "withheld",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "withheld",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:18:38.628Z",
+        "reason": "created"
+      }
+    ]
+  },
+  "missingDate": {
+    "decision": {
+      "id": "c7e42b49-694a-43e2-81d9-19b983f3e50d",
+      "title": "合成现金同日顺序 · 日末充足仍可能短缺",
+      "purpose": "handover",
+      "transactionEntity": "合成现金顺序样本（非真实企业）",
+      "currentRevision": 2,
+      "createdAt": "2026-10-03T06:18:38.628Z",
+      "updatedAt": "2026-10-03T06:18:39.690Z"
+    },
+    "version": {
+      "revision": 2,
+      "createdAt": "2026-10-03T06:18:39.690Z",
+      "reason": "edited",
+      "input": {
+        "title": "合成现金同日顺序 · 日末充足仍可能短缺",
+        "purpose": "handover",
+        "transactionEntity": "合成现金顺序样本（非真实企业）",
+        "reportTaskId": null,
+        "promise": "合成安排：同日可能先付款再到账；保留所有金额与日期。",
+        "claims": [
+          {
+            "id": "cash-events-check",
+            "text": "同日回款可覆盖付款（合成说法）",
+            "target": "cash-events"
+          }
+        ],
+        "external": null,
+        "datedCash": {
+          "asOf": "2026-10-03",
+          "openingCash": "1000",
+          "cashFloor": "300",
+          "proposedAmount": "100",
+          "proposedDay": 2,
+          "alternativeDay": 3,
+          "flows": [
+            {
+              "id": "receipt-day2",
+              "label": "合成待到账",
+              "direction": "in",
+              "day": 2,
+              "amount": "1000",
+              "flexibility": "fixed"
+            },
+            {
+              "id": "fixed-payment-day2",
+              "label": "合成必要付款",
+              "direction": "out",
+              "day": null,
+              "amount": "1500",
+              "flexibility": "fixed"
+            }
+          ]
+        }
+      },
+      "evidence": []
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:18:39.695Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "opening-cash",
+          "label": "起点可用余额记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash"
+          ]
+        },
+        {
+          "id": "flow-receipt-day2",
+          "label": "合成待到账的金额与日期记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "flow-fixed-payment-day2",
+          "label": "合成必要付款的金额与日期记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "cash-floor",
+          "label": "新增付款后的自设现金底线",
+          "status": "unknown",
+          "summary": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash",
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "alternative-terms",
+          "label": "延期方案的可行条件",
+          "status": "unknown",
+          "summary": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "unknown",
+          "summary": "集团或其他主体的年报只作历史背景，不能证明本次交易主体的资金能力。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "reportTaskId",
+              "path": "reportTaskId",
+              "label": "未取得可采用历史任务",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-opening-cash",
+          "title": "补充起点可用余额记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "与起点日期一致的银行账户对账、受限资金和可用余额记录；不能以年报金额代替。",
+          "gateIds": [
+            "opening-cash"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-flow-receipt-day2",
+          "title": "补充合成待到账的金额与日期记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "flow-receipt-day2"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-flow-fixed-payment-day2",
+          "title": "补充合成必要付款的金额与日期记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "flow-fixed-payment-day2"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-cash-floor",
+          "title": "补充新增付款后的自设现金底线",
+          "reason": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "cash-floor"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-alternative-terms",
+          "title": "补充延期方案的可行条件",
+          "reason": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "requestedEvidence": "明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。",
+          "gateIds": [
+            "alternative-terms"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ]
+        }
+      ],
+      "external": null,
+      "cash": {
+        "primary": {
+          "status": "unknown",
+          "missingFields": [
+            "flows.fixed-payment-day2.day"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "alternative": {
+          "status": "unknown",
+          "missingFields": [
+            "flows.fixed-payment-day2.day"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "recordedCash": {
+        "primary": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash",
+            "flows.receipt-day2.day",
+            "flows.receipt-day2.amount",
+            "flows.fixed-payment-day2.day",
+            "flows.fixed-payment-day2.amount"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "alternative": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash",
+            "flows.receipt-day2.day",
+            "flows.receipt-day2.amount",
+            "flows.fixed-payment-day2.day",
+            "flows.fixed-payment-day2.amount"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "withheld",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "withheld",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 1,
+      "toRevision": 2,
+      "changes": [
+        {
+          "kind": "input",
+          "key": "flow:fixed-payment-day2:day",
+          "label": [
+            "现金事件日",
+            "Cash event day"
+          ],
+          "before": "2",
+          "after": null,
+          "unit": "text"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:minimum",
+          "label": [
+            "按输入方案A最低日末余额",
+            "Input-based option A minimum day-end balance"
+          ],
+          "before": "400.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:day",
+          "label": [
+            "按输入方案A首次低于底线日",
+            "Input-based option A first shortfall day"
+          ],
+          "before": "no-day-end-shortfall",
+          "after": null,
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:gap",
+          "label": [
+            "按输入方案A最大缺口",
+            "Input-based option A maximum gap"
+          ],
+          "before": "0.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:conservativeMinimum",
+          "label": [
+            "按输入方案A最低付款优先余额",
+            "Input-based option A minimum outflows-first balance"
+          ],
+          "before": "-600.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:conservativeGap",
+          "label": [
+            "按输入方案A付款优先最大缺口",
+            "Input-based option A maximum outflows-first gap"
+          ],
+          "before": "900.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:sameDayOrderSensitive",
+          "label": [
+            "按输入方案A同日顺序敏感性",
+            "Input-based option A same-day order sensitivity"
+          ],
+          "before": "order-sensitive",
+          "after": null,
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:maximumAdditionalPayment",
+          "label": [
+            "按输入方案A拟付款额度",
+            "Input-based option A proposed-payment threshold"
+          ],
+          "before": "0.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:thresholdStatus",
+          "label": [
+            "按输入方案A反求状态",
+            "Input-based option A threshold state"
+          ],
+          "before": "baseline-below-floor",
+          "after": "unknown",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:minimumCollectionStatus",
+          "label": [
+            "按输入方案A回款条件状态",
+            "Input-based option A collection condition state"
+          ],
+          "before": "not-achievable",
+          "after": "unknown",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:minimum",
+          "label": [
+            "按输入方案B最低日末余额",
+            "Input-based option B minimum day-end balance"
+          ],
+          "before": "400.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:day",
+          "label": [
+            "按输入方案B首次低于底线日",
+            "Input-based option B first shortfall day"
+          ],
+          "before": "no-day-end-shortfall",
+          "after": null,
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:gap",
+          "label": [
+            "按输入方案B最大缺口",
+            "Input-based option B maximum gap"
+          ],
+          "before": "0.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:conservativeMinimum",
+          "label": [
+            "按输入方案B最低付款优先余额",
+            "Input-based option B minimum outflows-first balance"
+          ],
+          "before": "-500.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:conservativeGap",
+          "label": [
+            "按输入方案B付款优先最大缺口",
+            "Input-based option B maximum outflows-first gap"
+          ],
+          "before": "800.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:sameDayOrderSensitive",
+          "label": [
+            "按输入方案B同日顺序敏感性",
+            "Input-based option B same-day order sensitivity"
+          ],
+          "before": "order-sensitive",
+          "after": null,
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:maximumAdditionalPayment",
+          "label": [
+            "按输入方案B拟付款额度",
+            "Input-based option B proposed-payment threshold"
+          ],
+          "before": "200.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:thresholdStatus",
+          "label": [
+            "按输入方案B反求状态",
+            "Input-based option B threshold state"
+          ],
+          "before": "baseline-below-floor",
+          "after": "unknown",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:minimumCollectionStatus",
+          "label": [
+            "按输入方案B回款条件状态",
+            "Input-based option B collection condition state"
+          ],
+          "before": "not-achievable",
+          "after": "unknown",
+          "unit": "state"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:18:38.628Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:18:39.690Z",
+        "reason": "edited"
+      }
+    ]
+  },
+  "restored": {
+    "decision": {
+      "id": "c7e42b49-694a-43e2-81d9-19b983f3e50d",
+      "title": "合成现金同日顺序 · 日末充足仍可能短缺",
+      "purpose": "handover",
+      "transactionEntity": "合成现金顺序样本（非真实企业）",
+      "currentRevision": 3,
+      "createdAt": "2026-10-03T06:18:38.628Z",
+      "updatedAt": "2026-10-03T06:18:40.465Z"
+    },
+    "version": {
+      "revision": 3,
+      "createdAt": "2026-10-03T06:18:40.465Z",
+      "reason": "edited",
+      "input": {
+        "title": "合成现金同日顺序 · 日末充足仍可能短缺",
+        "purpose": "handover",
+        "transactionEntity": "合成现金顺序样本（非真实企业）",
+        "reportTaskId": null,
+        "promise": "合成安排：同日可能先付款再到账；保留所有金额与日期。",
+        "claims": [
+          {
+            "id": "cash-events-check",
+            "text": "同日回款可覆盖付款（合成说法）",
+            "target": "cash-events"
+          }
+        ],
+        "external": null,
+        "datedCash": {
+          "asOf": "2026-10-03",
+          "openingCash": "1000",
+          "cashFloor": "300",
+          "proposedAmount": "100",
+          "proposedDay": 2,
+          "alternativeDay": 3,
+          "flows": [
+            {
+              "id": "receipt-day2",
+              "label": "合成待到账",
+              "direction": "in",
+              "day": 2,
+              "amount": "1000",
+              "flexibility": "fixed"
+            },
+            {
+              "id": "fixed-payment-day2",
+              "label": "合成必要付款",
+              "direction": "out",
+              "day": 2,
+              "amount": "1500",
+              "flexibility": "fixed"
+            }
+          ]
+        }
+      },
+      "evidence": []
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:18:40.473Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "opening-cash",
+          "label": "起点可用余额记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash"
+          ]
+        },
+        {
+          "id": "flow-receipt-day2",
+          "label": "合成待到账的金额与日期记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "flow-fixed-payment-day2",
+          "label": "合成必要付款的金额与日期记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "cash-floor",
+          "label": "新增付款后的自设现金底线",
+          "status": "unknown",
+          "summary": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "opening-cash",
+            "cash-flow"
+          ]
+        },
+        {
+          "id": "alternative-terms",
+          "label": "延期方案的可行条件",
+          "status": "unknown",
+          "summary": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "unknown",
+          "summary": "集团或其他主体的年报只作历史背景，不能证明本次交易主体的资金能力。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "reportTaskId",
+              "path": "reportTaskId",
+              "label": "未取得可采用历史任务",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-opening-cash",
+          "title": "补充起点可用余额记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "与起点日期一致的银行账户对账、受限资金和可用余额记录；不能以年报金额代替。",
+          "gateIds": [
+            "opening-cash"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-flow-receipt-day2",
+          "title": "补充合成待到账的金额与日期记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "flow-receipt-day2"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-flow-fixed-payment-day2",
+          "title": "补充合成必要付款的金额与日期记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "flow-fixed-payment-day2"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-cash-floor",
+          "title": "补充新增付款后的自设现金底线",
+          "reason": "依据分支仍是有记录字段的情景，不认证未来现金。相同日先后未知时先付款保守边界单列；延期方案假设采购可延期且其他现金流不受影响。",
+          "requestedEvidence": "该事件的金额、日期、主体及必要支出/收款计划原文；缺依据不删除事件或填零。",
+          "gateIds": [
+            "cash-floor"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "opening-cash:",
+              "path": "opening-cash",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:receipt-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "cash-flow:fixed-payment-day2",
+              "path": "cash-flow",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.proposedDay",
+              "path": "datedCash.proposedDay",
+              "label": "拟付款日期",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-alternative-terms",
+          "title": "补充延期方案的可行条件",
+          "reason": "改付款日假设供应商同意延期，交付及相关回款均不受影响；需提供可核对条款，不能推荐延期。",
+          "requestedEvidence": "明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。",
+          "gateIds": [
+            "alternative-terms"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "datedCash.alternativeDay",
+              "path": "datedCash.alternativeDay",
+              "label": "对照日期是假设",
+              "state": "assumption"
+            }
+          ]
+        }
+      ],
+      "external": null,
+      "cash": {
+        "primary": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 2,
+              "date": "2026-10-05",
+              "openingBalance": "1000.00",
+              "inflow": "1000.00",
+              "outflow": "1600.00",
+              "balance": "400.00",
+              "outflowFirstBalance": "-600.00",
+              "sameDayOrderSensitive": true,
+              "flowIds": [
+                "receipt-day2",
+                "fixed-payment-day2"
+              ],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "400.00"
+            },
+            {
+              "day": 60,
+              "balance": "400.00"
+            },
+            {
+              "day": 90,
+              "balance": "400.00"
+            }
+          ],
+          "minimumBalance": "400.00",
+          "conservativeMinimumBalance": "-600.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "900.00",
+          "sameDayOrderSensitive": true,
+          "maximumAdditionalPayment": "0.00",
+          "thresholdStatus": "baseline-below-floor",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "not-achievable"
+        },
+        "alternative": {
+          "status": "known",
+          "missingFields": [],
+          "events": [
+            {
+              "day": 2,
+              "date": "2026-10-05",
+              "openingBalance": "1000.00",
+              "inflow": "1000.00",
+              "outflow": "1500.00",
+              "balance": "500.00",
+              "outflowFirstBalance": "-500.00",
+              "sameDayOrderSensitive": true,
+              "flowIds": [
+                "receipt-day2",
+                "fixed-payment-day2"
+              ],
+              "includesProposal": false
+            },
+            {
+              "day": 3,
+              "date": "2026-10-06",
+              "openingBalance": "500.00",
+              "inflow": "0.00",
+              "outflow": "100.00",
+              "balance": "400.00",
+              "outflowFirstBalance": "400.00",
+              "sameDayOrderSensitive": false,
+              "flowIds": [],
+              "includesProposal": true
+            }
+          ],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": "400.00"
+            },
+            {
+              "day": 60,
+              "balance": "400.00"
+            },
+            {
+              "day": 90,
+              "balance": "400.00"
+            }
+          ],
+          "minimumBalance": "400.00",
+          "conservativeMinimumBalance": "-500.00",
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": "0.00",
+          "conservativeMaximumGap": "800.00",
+          "sameDayOrderSensitive": true,
+          "maximumAdditionalPayment": "200.00",
+          "thresholdStatus": "baseline-below-floor",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "not-achievable"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "recordedCash": {
+        "primary": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash",
+            "flows.receipt-day2.day",
+            "flows.receipt-day2.amount",
+            "flows.fixed-payment-day2.day",
+            "flows.fixed-payment-day2.amount"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "alternative": {
+          "status": "unknown",
+          "missingFields": [
+            "openingCash",
+            "flows.receipt-day2.day",
+            "flows.receipt-day2.amount",
+            "flows.fixed-payment-day2.day",
+            "flows.fixed-payment-day2.amount"
+          ],
+          "events": [],
+          "periodEnds": [
+            {
+              "day": 30,
+              "balance": null
+            },
+            {
+              "day": 60,
+              "balance": null
+            },
+            {
+              "day": 90,
+              "balance": null
+            }
+          ],
+          "minimumBalance": null,
+          "conservativeMinimumBalance": null,
+          "firstShortfallDay": null,
+          "firstShortfallGap": null,
+          "maximumGap": null,
+          "conservativeMaximumGap": null,
+          "sameDayOrderSensitive": false,
+          "maximumAdditionalPayment": null,
+          "thresholdStatus": "unknown",
+          "minimumCollectionPercent": null,
+          "minimumCollectionStatus": "unknown"
+        },
+        "calculationBasis": "user-entered-scenario",
+        "sameDayBasis": "outflows-first-bound"
+      },
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "withheld",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "withheld",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "历史财务依据未形成可用信号，暂不归因；区分材料状态单列，不据此填补当前现金。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 2,
+      "toRevision": 3,
+      "changes": [
+        {
+          "kind": "input",
+          "key": "flow:fixed-payment-day2:day",
+          "label": [
+            "现金事件日",
+            "Cash event day"
+          ],
+          "before": null,
+          "after": "2",
+          "unit": "text"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:minimum",
+          "label": [
+            "按输入方案A最低日末余额",
+            "Input-based option A minimum day-end balance"
+          ],
+          "before": null,
+          "after": "400.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:day",
+          "label": [
+            "按输入方案A首次低于底线日",
+            "Input-based option A first shortfall day"
+          ],
+          "before": null,
+          "after": "no-day-end-shortfall",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:gap",
+          "label": [
+            "按输入方案A最大缺口",
+            "Input-based option A maximum gap"
+          ],
+          "before": null,
+          "after": "0.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:conservativeMinimum",
+          "label": [
+            "按输入方案A最低付款优先余额",
+            "Input-based option A minimum outflows-first balance"
+          ],
+          "before": null,
+          "after": "-600.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:conservativeGap",
+          "label": [
+            "按输入方案A付款优先最大缺口",
+            "Input-based option A maximum outflows-first gap"
+          ],
+          "before": null,
+          "after": "900.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:sameDayOrderSensitive",
+          "label": [
+            "按输入方案A同日顺序敏感性",
+            "Input-based option A same-day order sensitivity"
+          ],
+          "before": null,
+          "after": "order-sensitive",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:maximumAdditionalPayment",
+          "label": [
+            "按输入方案A拟付款额度",
+            "Input-based option A proposed-payment threshold"
+          ],
+          "before": null,
+          "after": "0.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:thresholdStatus",
+          "label": [
+            "按输入方案A反求状态",
+            "Input-based option A threshold state"
+          ],
+          "before": "unknown",
+          "after": "baseline-below-floor",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:primary:minimumCollectionStatus",
+          "label": [
+            "按输入方案A回款条件状态",
+            "Input-based option A collection condition state"
+          ],
+          "before": "unknown",
+          "after": "not-achievable",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:minimum",
+          "label": [
+            "按输入方案B最低日末余额",
+            "Input-based option B minimum day-end balance"
+          ],
+          "before": null,
+          "after": "400.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:day",
+          "label": [
+            "按输入方案B首次低于底线日",
+            "Input-based option B first shortfall day"
+          ],
+          "before": null,
+          "after": "no-day-end-shortfall",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:gap",
+          "label": [
+            "按输入方案B最大缺口",
+            "Input-based option B maximum gap"
+          ],
+          "before": null,
+          "after": "0.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:conservativeMinimum",
+          "label": [
+            "按输入方案B最低付款优先余额",
+            "Input-based option B minimum outflows-first balance"
+          ],
+          "before": null,
+          "after": "-500.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:conservativeGap",
+          "label": [
+            "按输入方案B付款优先最大缺口",
+            "Input-based option B maximum outflows-first gap"
+          ],
+          "before": null,
+          "after": "800.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:sameDayOrderSensitive",
+          "label": [
+            "按输入方案B同日顺序敏感性",
+            "Input-based option B same-day order sensitivity"
+          ],
+          "before": null,
+          "after": "order-sensitive",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:maximumAdditionalPayment",
+          "label": [
+            "按输入方案B拟付款额度",
+            "Input-based option B proposed-payment threshold"
+          ],
+          "before": null,
+          "after": "200.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:thresholdStatus",
+          "label": [
+            "按输入方案B反求状态",
+            "Input-based option B threshold state"
+          ],
+          "before": "unknown",
+          "after": "baseline-below-floor",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "cash:alternative:minimumCollectionStatus",
+          "label": [
+            "按输入方案B回款条件状态",
+            "Input-based option B collection condition state"
+          ],
+          "before": "unknown",
+          "after": "not-achievable",
+          "unit": "state"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:18:38.628Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:18:39.690Z",
+        "reason": "edited"
+      },
+      {
+        "revision": 3,
+        "createdAt": "2026-10-03T06:18:40.465Z",
+        "reason": "edited"
+      }
+    ]
+  }
+}

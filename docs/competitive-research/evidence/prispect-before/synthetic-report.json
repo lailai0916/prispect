@@ -1,0 +1,1337 @@
+{
+  "title": "合成基线 · 利润与经营现金",
+  "company": "合成演练供应商（非真实企业）",
+  "year": 2025,
+  "materialIds": ["9580c6d4-a5bf-4d2f-945c-60c0ff2e1941"],
+  "useModel": true,
+  "purpose": "external",
+  "id": "e6ca9d24-b110-45f7-95e7-f53c23511276",
+  "excludedMetrics": [],
+  "contextNotes": {},
+  "status": "completed",
+  "createdAt": "2026-10-03T05:42:18.160Z",
+  "updatedAt": "2026-10-03T05:42:18.174Z",
+  "stages": [
+    {
+      "key": "read",
+      "label": "读取输入快照",
+      "status": "completed",
+      "message": "已读取 1 份材料；不访问隐藏案例。",
+      "startedAt": "2026-10-03T05:42:18.161Z",
+      "finishedAt": "2026-10-03T05:42:18.162Z"
+    },
+    {
+      "key": "validate",
+      "label": "核验口径与冲突",
+      "status": "completed",
+      "message": "输入字段与精度检查完成；口径冲突与现金桥进入确定性分析。",
+      "startedAt": "2026-10-03T05:42:18.162Z",
+      "finishedAt": "2026-10-03T05:42:18.163Z"
+    },
+    {
+      "key": "calculate",
+      "label": "重算金额与现金桥",
+      "status": "completed",
+      "message": "现金桥已按原始调整行闭合。",
+      "startedAt": "2026-10-03T05:42:18.163Z",
+      "finishedAt": "2026-10-03T05:42:18.165Z"
+    },
+    {
+      "key": "explain",
+      "label": "解释与询证问题",
+      "status": "completed",
+      "message": "规则解释完成；未执行模型调用。",
+      "startedAt": "2026-10-03T05:42:18.167Z",
+      "finishedAt": "2026-10-03T05:42:18.173Z"
+    },
+    {
+      "key": "save",
+      "label": "保存报告",
+      "status": "completed",
+      "message": "核查报告已持久保存，可重开与导出。",
+      "startedAt": "2026-10-03T05:42:18.174Z",
+      "finishedAt": "2026-10-03T05:42:18.174Z"
+    }
+  ],
+  "report": {
+    "verdict": "attention",
+    "headline": "利润增长不等于现金兑现",
+    "summary": "本期经营现金低于合并净利润。已按原表重建现金桥；占款原因需要订单、结算及期后回款继续验证。",
+    "company": "合成演练供应商（非真实企业）",
+    "year": 2025,
+    "previousYear": 2024,
+    "metrics": [
+      {
+        "key": "netProfit",
+        "label": "合并净利润",
+        "value": "100000.00",
+        "previousValue": "80000.00",
+        "unit": "CNY",
+        "kind": "reported",
+        "formula": "原表金额 × 单位换算系数；人民币元",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 netProfit 80000 元"
+          }
+        ]
+      },
+      {
+        "key": "operatingCashFlow",
+        "label": "经营现金净额",
+        "value": "60000.00",
+        "previousValue": "70000.00",
+        "unit": "CNY",
+        "kind": "reported",
+        "formula": "原表金额 × 单位换算系数；人民币元",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 operatingCashFlow 70000 元"
+          }
+        ]
+      },
+      {
+        "key": "inventoryAdjustment",
+        "label": "存货调整",
+        "value": "-10000.00",
+        "previousValue": "-5000.00",
+        "unit": "CNY",
+        "kind": "reported",
+        "formula": "原表金额 × 单位换算系数；人民币元",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 inventoryAdjustment -5000 元"
+          }
+        ]
+      },
+      {
+        "key": "receivablesAdjustment",
+        "label": "经营性应收调整",
+        "value": "-30000.00",
+        "previousValue": "-10000.00",
+        "unit": "CNY",
+        "kind": "reported",
+        "formula": "原表金额 × 单位换算系数；人民币元",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 receivablesAdjustment -10000 元"
+          }
+        ]
+      },
+      {
+        "key": "payablesAdjustment",
+        "label": "经营性应付调整",
+        "value": "5000.00",
+        "previousValue": "7000.00",
+        "unit": "CNY",
+        "kind": "reported",
+        "formula": "原表金额 × 单位换算系数；人民币元",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 payablesAdjustment 5000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 payablesAdjustment 7000 元"
+          }
+        ]
+      },
+      {
+        "key": "otherAdjustments",
+        "label": "其余已披露调整",
+        "value": "-5000.00",
+        "previousValue": "-2000.00",
+        "unit": "CNY",
+        "kind": "calculated",
+        "formula": "原表其余已披露调整逐行分组求和，另与差额核对",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 otherAdjustments -5000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "仅用于规则验收，不是真实企业披露"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 otherAdjustments -2000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "仅用于规则验收，不是真实企业披露"
+          }
+        ]
+      },
+      {
+        "key": "cashConversion",
+        "label": "现金利润比",
+        "value": "60.00",
+        "previousValue": "87.50",
+        "unit": "%",
+        "kind": "calculated",
+        "formula": "经营现金净额 ÷ 合并净利润 × 100%；利润必须为正",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          }
+        ]
+      },
+      {
+        "key": "profitGrowth",
+        "label": "净利润同比",
+        "value": "25.00",
+        "previousValue": null,
+        "unit": "%",
+        "kind": "calculated",
+        "formula": "（本年 − 上年）÷ 上年 × 100%；上年基数必须为正",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 netProfit 80000 元"
+          }
+        ]
+      },
+      {
+        "key": "profitChange",
+        "label": "净利润变动额",
+        "value": "20000.00",
+        "previousValue": null,
+        "unit": "CNY",
+        "kind": "calculated",
+        "formula": "本年金额 − 上年金额；同主体、相邻年度、人民币合并口径；按分计算",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 netProfit 80000 元"
+          }
+        ]
+      },
+      {
+        "key": "cashGrowth",
+        "label": "经营现金同比",
+        "value": "-14.29",
+        "previousValue": null,
+        "unit": "%",
+        "kind": "calculated",
+        "formula": "（本年 − 上年）÷ 上年 × 100%；上年基数必须为正",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 operatingCashFlow 70000 元"
+          }
+        ]
+      },
+      {
+        "key": "cashChange",
+        "label": "经营现金变动额",
+        "value": "-10000.00",
+        "previousValue": null,
+        "unit": "CNY",
+        "kind": "calculated",
+        "formula": "本年金额 − 上年金额；同主体、相邻年度、人民币合并口径；按分计算",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 operatingCashFlow 70000 元"
+          }
+        ]
+      }
+    ],
+    "bridge": [
+      {
+        "key": "netProfit",
+        "label": "合并净利润",
+        "value": "100000.00",
+        "kind": "total",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          }
+        ],
+        "derived": false
+      },
+      {
+        "key": "inventoryAdjustment",
+        "label": "存货调整",
+        "value": "-10000.00",
+        "kind": "adjustment",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+          }
+        ],
+        "derived": false
+      },
+      {
+        "key": "receivablesAdjustment",
+        "label": "经营性应收调整",
+        "value": "-30000.00",
+        "kind": "adjustment",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+          }
+        ],
+        "derived": false
+      },
+      {
+        "key": "payablesAdjustment",
+        "label": "经营性应付调整",
+        "value": "5000.00",
+        "kind": "adjustment",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 payablesAdjustment 5000 元"
+          }
+        ],
+        "derived": false
+      },
+      {
+        "key": "otherAdjustments",
+        "label": "其余已披露调整",
+        "value": "-5000.00",
+        "kind": "adjustment",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 otherAdjustments -5000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "仅用于规则验收，不是真实企业披露"
+          }
+        ],
+        "derived": true
+      },
+      {
+        "key": "operatingCashFlow",
+        "label": "经营现金净额",
+        "value": "60000.00",
+        "kind": "total",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          }
+        ],
+        "derived": false
+      }
+    ],
+    "checks": [
+      {
+        "id": "subject",
+        "label": "主体一致性",
+        "status": "pass",
+        "message": "采用材料的主体字段一致。",
+        "sourceRefs": []
+      },
+      {
+        "id": "2025-netProfit",
+        "label": "2025 合并净利润",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          }
+        ]
+      },
+      {
+        "id": "2025-operatingCashFlow",
+        "label": "2025 经营现金净额",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          }
+        ]
+      },
+      {
+        "id": "2025-inventoryAdjustment",
+        "label": "2025 存货调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+          }
+        ]
+      },
+      {
+        "id": "2025-receivablesAdjustment",
+        "label": "2025 经营性应收调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+          }
+        ]
+      },
+      {
+        "id": "2025-payablesAdjustment",
+        "label": "2025 经营性应付调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 payablesAdjustment 5000 元"
+          }
+        ]
+      },
+      {
+        "id": "2025-otherAdjustments",
+        "label": "2025 其余已披露调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 otherAdjustments -5000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "仅用于规则验收，不是真实企业披露"
+          }
+        ]
+      },
+      {
+        "id": "2024-netProfit",
+        "label": "2024 合并净利润",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 netProfit 80000 元"
+          }
+        ]
+      },
+      {
+        "id": "2024-operatingCashFlow",
+        "label": "2024 经营现金净额",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 operatingCashFlow 70000 元"
+          }
+        ]
+      },
+      {
+        "id": "2024-inventoryAdjustment",
+        "label": "2024 存货调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 inventoryAdjustment -5000 元"
+          }
+        ]
+      },
+      {
+        "id": "2024-receivablesAdjustment",
+        "label": "2024 经营性应收调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 receivablesAdjustment -10000 元"
+          }
+        ]
+      },
+      {
+        "id": "2024-payablesAdjustment",
+        "label": "2024 经营性应付调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 payablesAdjustment 7000 元"
+          }
+        ]
+      },
+      {
+        "id": "2024-otherAdjustments",
+        "label": "2024 其余已披露调整",
+        "status": "pass",
+        "message": "输入声明的主体、年度期间、人民币单位及合并范围一致；这不等于原件真实性已核验。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2024 otherAdjustments -2000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "仅用于规则验收，不是真实企业披露"
+          }
+        ]
+      },
+      {
+        "id": "group-sum",
+        "label": "其余调整逐行核对",
+        "status": "pass",
+        "message": "原始其余调整行求和与分组金额一致；分组不是原表“其他”单行。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 otherAdjustments -5000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "仅用于规则验收，不是真实企业披露"
+          }
+        ]
+      },
+      {
+        "id": "bridge-balance",
+        "label": "现金桥闭合",
+        "status": "pass",
+        "message": "净利润与全部调整之和精确等于经营现金净额，按人民币分核对。",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 payablesAdjustment 5000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 otherAdjustments -5000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "仅用于规则验收，不是真实企业披露"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          }
+        ]
+      }
+    ],
+    "findings": [
+      {
+        "id": "cash-gap",
+        "label": "利润尚未等额体现为经营现金",
+        "severity": "attention",
+        "explanation": "本期经营现金为净利润的 60.00%；这是历史金额配比，不是信用等级或违约概率。",
+        "basis": "calculation",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元"
+          },
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+          }
+        ],
+        "questionIds": []
+      },
+      {
+        "id": "receivables",
+        "label": "应收项目形成现金占用",
+        "severity": "attention",
+        "explanation": "负向调整同时符合业务扩张或结算结构变化，以及回款压力两种可能。公开年报不足以裁定因果，需核查期后回款。",
+        "basis": "calculation",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+          }
+        ],
+        "questionIds": ["collections"]
+      },
+      {
+        "id": "inventory",
+        "label": "存货形成现金占用",
+        "severity": "attention",
+        "explanation": "本期存货调整为负。保留扩张备货与去化压力两种解释，材料尚未证明其中一种。",
+        "basis": "calculation",
+        "sourceRefs": [
+          {
+            "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+            "page": 1,
+            "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+          }
+        ],
+        "questionIds": ["inventory"]
+      }
+    ],
+    "crossSignals": [
+      {
+        "id": "profit-cash-working-capital",
+        "title": {
+          "zh": "利润在增长，经营现金在下降",
+          "en": "Profit rose while operating cash fell"
+        },
+        "reading": {
+          "zh": "两期同口径金额显示方向背离；本期经营性应收和存货调整同时占用现金。这是需要解释的组合，不是违约或造假的证据。",
+          "en": "Comparable annual amounts move in opposite directions while receivables and inventory adjustments both consume cash. This combination needs explanation; it does not establish default or fraud."
+        },
+        "facts": [
+          {
+            "year": 2024,
+            "metric": "netProfit",
+            "amount": "80000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2024 netProfit 80000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "netProfit",
+            "amount": "100000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 netProfit 100000 元"
+              }
+            ]
+          },
+          {
+            "year": 2024,
+            "metric": "operatingCashFlow",
+            "amount": "70000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2024 operatingCashFlow 70000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "operatingCashFlow",
+            "amount": "60000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "receivablesAdjustment",
+            "amount": "-30000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "inventoryAdjustment",
+            "amount": "-10000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+              }
+            ]
+          }
+        ],
+        "explanations": [
+          {
+            "zh": "订单增长、备货或结算周期变化，使现金暂时留在应收和存货中。",
+            "en": "Order growth, stocking or settlement timing temporarily ties up cash in receivables and inventory."
+          },
+          {
+            "zh": "部分客户回款延迟或库存去化不及计划，也会形成相同的报表形态。",
+            "en": "Delayed customer collections or slower inventory turnover could produce the same pattern."
+          }
+        ],
+        "nextEvidence": {
+          "external": {
+            "zh": "付款前核对合同相对方、实际收款主体与退款责任；索取近期履约和可核对的回款证明，不能仅凭年度利润决定付款。",
+            "en": "Before paying, verify the contracting and receiving entities and refund obligation; request recent delivery and verifiable collection records rather than relying on annual profit."
+          },
+          "handover": {
+            "zh": "向财务和业务负责人取得客户账龄、期后回款、订单覆盖、库龄与期后出库；再用当前余额及逐日收付款计划核查接手后的资金安排。",
+            "en": "Request customer ageing, subsequent collections, order coverage, inventory ageing and subsequent shipments; then check the handover cash schedule using current balances and dated flows."
+          }
+        }
+      }
+    ],
+    "crossSignalChecks": [
+      {
+        "id": "profit-cash-working-capital",
+        "title": {
+          "zh": "利润在增长，经营现金在下降",
+          "en": "Profit rose while operating cash fell"
+        },
+        "status": "triggered",
+        "requirements": [
+          {
+            "year": 2025,
+            "metric": "netProfit",
+            "state": "available",
+            "amount": "100000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 netProfit 100000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "operatingCashFlow",
+            "state": "available",
+            "amount": "60000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "inventoryAdjustment",
+            "state": "available",
+            "amount": "-10000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "receivablesAdjustment",
+            "state": "available",
+            "amount": "-30000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "payablesAdjustment",
+            "state": "available",
+            "amount": "5000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 payablesAdjustment 5000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "otherAdjustments",
+            "state": "available",
+            "amount": "-5000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 otherAdjustments -5000 元"
+              },
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "仅用于规则验收，不是真实企业披露"
+              }
+            ]
+          },
+          {
+            "year": 2024,
+            "metric": "netProfit",
+            "state": "available",
+            "amount": "80000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2024 netProfit 80000 元"
+              }
+            ]
+          },
+          {
+            "year": 2024,
+            "metric": "operatingCashFlow",
+            "state": "available",
+            "amount": "70000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2024 operatingCashFlow 70000 元"
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "id": "positive-prior-profit",
+            "label": {
+              "zh": "上年合并净利润为正",
+              "en": "Previous consolidated profit is positive"
+            },
+            "status": "met"
+          },
+          {
+            "id": "profit-increased",
+            "label": {
+              "zh": "本年合并净利润高于上年",
+              "en": "Current consolidated profit exceeds the previous year"
+            },
+            "status": "met"
+          },
+          {
+            "id": "cash-decreased",
+            "label": {
+              "zh": "本年经营现金低于上年",
+              "en": "Current operating cash is below the previous year"
+            },
+            "status": "met"
+          },
+          {
+            "id": "receivables-outflow",
+            "label": {
+              "zh": "本年经营性应收调整为负",
+              "en": "Current operating receivables adjustment is negative"
+            },
+            "status": "met"
+          },
+          {
+            "id": "inventory-outflow",
+            "label": {
+              "zh": "本年存货调整为负",
+              "en": "Current inventory adjustment is negative"
+            },
+            "status": "met"
+          },
+          {
+            "id": "bridge-reconciled",
+            "label": {
+              "zh": "本期现金桥与原始调整行、口径核对通过",
+              "en": "The current cash bridge passes original-row and input checks"
+            },
+            "status": "met"
+          }
+        ],
+        "blockers": []
+      },
+      {
+        "id": "profit-with-cash-outflow",
+        "title": {
+          "zh": "账面盈利，经营现金净流出",
+          "en": "Profit with negative operating cash flow"
+        },
+        "status": "not-triggered",
+        "requirements": [
+          {
+            "year": 2025,
+            "metric": "netProfit",
+            "state": "available",
+            "amount": "100000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 netProfit 100000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "operatingCashFlow",
+            "state": "available",
+            "amount": "60000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 operatingCashFlow 60000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "inventoryAdjustment",
+            "state": "available",
+            "amount": "-10000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "receivablesAdjustment",
+            "state": "available",
+            "amount": "-30000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "payablesAdjustment",
+            "state": "available",
+            "amount": "5000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 payablesAdjustment 5000 元"
+              }
+            ]
+          },
+          {
+            "year": 2025,
+            "metric": "otherAdjustments",
+            "state": "available",
+            "amount": "-5000.00",
+            "sourceRefs": [
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "合成测试数据 2025 otherAdjustments -5000 元"
+              },
+              {
+                "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+                "page": 1,
+                "quote": "仅用于规则验收，不是真实企业披露"
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "id": "positive-profit",
+            "label": {
+              "zh": "本年合并净利润为正",
+              "en": "Current consolidated profit is positive"
+            },
+            "status": "met"
+          },
+          {
+            "id": "negative-cash",
+            "label": {
+              "zh": "本年经营现金为负",
+              "en": "Current operating cash is negative"
+            },
+            "status": "not-met"
+          },
+          {
+            "id": "bridge-reconciled",
+            "label": {
+              "zh": "本期现金桥与原始调整行、口径核对通过",
+              "en": "The current cash bridge passes original-row and input checks"
+            },
+            "status": "met"
+          }
+        ],
+        "blockers": []
+      }
+    ],
+    "questions": [
+      {
+        "id": "collections",
+        "text": "经营性应收占款对应哪些客户与结算方式？",
+        "reason": "应收现金桥调整不等于单一应收账款余额变动，也不能直接证明坏账。",
+        "requestedEvidence": "客户账龄、票据结算明细、期后回款和逾期款项核对表。",
+        "status": "open",
+        "trigger": {
+          "year": 2025,
+          "metric": "receivablesAdjustment",
+          "amount": "-30000.00",
+          "sourceRefs": [
+            {
+              "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+              "page": 1,
+              "quote": "合成测试数据 2025 receivablesAdjustment -30000 元"
+            }
+          ]
+        }
+      },
+      {
+        "id": "inventory",
+        "text": "备货增加能由哪些订单和去化记录支持？",
+        "reason": "存货负向调整可能来自扩张备货，也可能涉及去化压力；不能直接推断滞销。",
+        "requestedEvidence": "订单覆盖、库龄、期后出库与减值测试依据。",
+        "status": "open",
+        "trigger": {
+          "year": 2025,
+          "metric": "inventoryAdjustment",
+          "amount": "-10000.00",
+          "sourceRefs": [
+            {
+              "materialId": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+              "page": 1,
+              "quote": "合成测试数据 2025 inventoryAdjustment -10000 元"
+            }
+          ]
+        }
+      }
+    ],
+    "coverage": {
+      "present": 6,
+      "total": 6
+    },
+    "limitations": [
+      "仅为历史年度合并财务线索核查，不作投资、授信或合作决策。",
+      "公开年报不能单独证明回款风险、坏账或存货滞销。",
+      "公司、期间、单位、币种与合并范围必须一致；空白或缺失不填零。"
+    ],
+    "model": {
+      "enabled": false,
+      "status": "not-configured"
+    },
+    "snapshot": [
+      {
+        "company": "合成演练供应商（非真实企业）",
+        "shortName": "合成演练供应商",
+        "title": "合成年度与付款输入（非真实披露）",
+        "filename": "synthetic-baseline.json",
+        "origin": "user-upload",
+        "documentDate": "2026-10-03",
+        "sha256": "84856a8bec12beaed19da34ff982742fef6399e001e485bf5675898f0381d4fd",
+        "observations": [
+          {
+            "id": "synthetic-2024-netProfit",
+            "key": "netProfit",
+            "year": 2024,
+            "value": "80000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2024 netProfit 80000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2024-operatingCashFlow",
+            "key": "operatingCashFlow",
+            "year": 2024,
+            "value": "70000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2024 operatingCashFlow 70000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2024-inventoryAdjustment",
+            "key": "inventoryAdjustment",
+            "year": 2024,
+            "value": "-5000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2024 inventoryAdjustment -5000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2024-receivablesAdjustment",
+            "key": "receivablesAdjustment",
+            "year": 2024,
+            "value": "-10000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2024 receivablesAdjustment -10000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2024-payablesAdjustment",
+            "key": "payablesAdjustment",
+            "year": 2024,
+            "value": "7000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2024 payablesAdjustment 7000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2024-otherAdjustments",
+            "key": "otherAdjustments",
+            "year": 2024,
+            "value": "-2000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2024 otherAdjustments -2000 元",
+            "kind": "derived",
+            "components": [
+              {
+                "label": "合成其余调整",
+                "value": "-2000",
+                "page": 1,
+                "quote": "仅用于规则验收，不是真实企业披露"
+              }
+            ]
+          },
+          {
+            "id": "synthetic-2025-netProfit",
+            "key": "netProfit",
+            "year": 2025,
+            "value": "100000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2025 netProfit 100000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2025-operatingCashFlow",
+            "key": "operatingCashFlow",
+            "year": 2025,
+            "value": "60000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2025 operatingCashFlow 60000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2025-inventoryAdjustment",
+            "key": "inventoryAdjustment",
+            "year": 2025,
+            "value": "-10000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2025 inventoryAdjustment -10000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2025-receivablesAdjustment",
+            "key": "receivablesAdjustment",
+            "year": 2025,
+            "value": "-30000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2025 receivablesAdjustment -30000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2025-payablesAdjustment",
+            "key": "payablesAdjustment",
+            "year": 2025,
+            "value": "5000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2025 payablesAdjustment 5000 元",
+            "kind": "reported"
+          },
+          {
+            "id": "synthetic-2025-otherAdjustments",
+            "key": "otherAdjustments",
+            "year": 2025,
+            "value": "-5000",
+            "unit": "yuan",
+            "currency": "CNY",
+            "scope": "consolidated",
+            "period": "annual",
+            "page": 1,
+            "quote": "合成测试数据 2025 otherAdjustments -5000 元",
+            "kind": "derived",
+            "components": [
+              {
+                "label": "合成其余调整",
+                "value": "-5000",
+                "page": 1,
+                "quote": "仅用于规则验收，不是真实企业披露"
+              }
+            ]
+          }
+        ],
+        "notes": [
+          "合成输入；不代表任何真实企业，不是实时查询结果。",
+          "用户导入材料；来源链接与数值未经平台独立核验。",
+          "原始上传文件已随本材料保留；预览编辑不改变原始文件。"
+        ],
+        "excerpts": [
+          {
+            "page": 1,
+            "text": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款10000元，已交付对应金额0元，实际已收到退款0元。合成材料，未经鉴真。\n合成测试数据 2024 netProfit 80000 元\n合成测试数据 2024 operatingCashFlow 70000 元\n合成测试数据 2024 inventoryAdjustment -5000 元\n合成测试数据 2024 receivablesAdjustment -10000 元\n合成测试数据 2024 payablesAdjustment 7000 元\n合成测试数据 2024 otherAdjustments -2000 元\n合成测试数据 2025 netProfit 100000 元\n合成测试数据 2025 operatingCashFlow 60000 元\n合成测试数据 2025 inventoryAdjustment -10000 元\n合成测试数据 2025 receivablesAdjustment -30000 元\n合成测试数据 2025 payablesAdjustment 5000 元\n合成测试数据 2025 otherAdjustments -5000 元"
+          }
+        ],
+        "uploadId": "fe3d76ed-d20c-4f63-a9e7-b075e311c721",
+        "id": "9580c6d4-a5bf-4d2f-945c-60c0ff2e1941",
+        "createdAt": "2026-10-03T05:42:18.143Z"
+      }
+    ]
+  }
+}

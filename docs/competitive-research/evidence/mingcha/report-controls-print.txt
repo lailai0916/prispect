@@ -1,0 +1,243 @@
+报告核验控件验收夹具 · 非真实查询
+场景
+current
+
+语言
+English
+
+切换主题
+
+研究调用 0
+
+外部内容
+
+报告外完整分析
+报告外公开讨论
+
+Analysis summary
+
+Financial grade C Under pressure 81.25 / 100
+
+Operating cash quality require further checks.
+2025 annual period · Consolidated scope · Public sources Rule-based analysis
+AI was not called for this analysis; rule results are shown.
+Synthetic acceptance: core dimension cap.
+
+Consolidated net profit
+
+100.00 CNY
+
+Operating cash flow
+
+50.00 CNY
+
+Operating cash ÷ consolidated profit; not a sales collection rate.
+
+Cash-to-profit ratio
+
+50.00%
+
+Review framework Questions, sources and gaps
+Review questions and evidence gaps for this record; consult the research process for actual retrieval and review.
+Selected entity 核查框架验收夹具股份有限公司（合成示例） · 300893
+Research goal Review operating cash, financial changes and material public events, retaining competing
+explanations and unknowns.
+Evidence scope Financial comparison requires: 2025 annual period · Consolidated statements · CNY
+Keep public web fields, retrieved disclosure excerpts and adopted originals separate; web
+data does not automatically become confirmed original evidence.
+Historical statements do not establish currently available cash, actual performance or
+payment safety; specific conditions require direct evidence.
+Source
+snapshot
+
+10/01/2026, 10:00
+
+Review questions
+
+1. Does the evidence belong to the selected entity? Basis available
+Entity identifiers are recorded; they do not establish the relationship between a brand, outlet, contracting
+party and payment recipient.
+Evidence needed: Original entity records and contracting/payment-recipient relationship evidence.
+
+2. Can this year’s profit and operating cash be compared on the same basis? Basis available
+Comparable amounts are available; their causes still require original and operating evidence.
+
+Evidence needed: Same-year consolidated originals, cash-flow supplements and records supporting the explanation.
+
+3. Are operating changes observed facts, plans or inferences? Basis available
+Adjacent annual fields can be compared; balance changes alone do not establish causes.
+Evidence needed: Original disclosures, actual orders, subsequent sales and collections.
+
+4. Have material disclosure clues been checked against originals? Insufficient evidence
+This snapshot has no verifiable retrieved disclosure excerpt; headlines remain clues.
+Evidence needed: Relevant original disclosures, page references and full context.
+
+5. Which competing explanation or new evidence would change the judgment? Clues to verify
+The source-bound report conditions below are retained; they are conditions to test, not future facts.
+Evidence needed: Supporting and contrary originals, plus direct evidence distinguishing the explanations.
+
+Source coverage in this snapshot
+Evidence
+
+Saved items Retrieved excerpts Use limits
+
+Selected-year web
+financials
+
+1
+
+Web fields
+
+Retain the web-field scope; originals require separate
+adoption.
+
+Disclosures and
+excerpts
+
+0
+
+0
+
+Retrieved counts refer to saved excerpts, not full
+documents.
+
+Media items and
+excerpts
+
+1
+
+0
+
+Reposts do not provide independent confirmation;
+reporting still requires verification.
+
+Public posts and
+excerpts
+
+0
+
+0
+
+Unverified opinions in the current sample, not the
+views of all people.
+
+Source attempt records 1 · Retrieval failed 0. Item counts are neither independent evidence-chain counts nor confidence
+probabilities.
+
+Requirements for a supported judgment
+
+Verify the entity, annual period, consolidated scope and currency; missing or conflicting fields pause
+dependent comparisons.
+Trace key judgments to amounts, formulas or retrieved sources; retain the limits of headlines and media
+opinions.
+Keep the basis for supporting and competing explanations separate, with missing materials and incomplete
+steps visible.
+
+Direct evidence to verify
+
+These materials are needed for review; this public research does not establish that they have been obtained. Check the
+entity, period and scope before use.
+
+Subsequent collections, receivable aging and related contracts: distinguish settlement timing from
+persistent noncollection.
+Inventory mix, aging, impairment and subsequent sales: distinguish normal stocking from sell-through
+pressure.
+Restricted funds, debt maturities and actual repayment arrangements: verify currently available funds and
+obligations.
+The contracting-party/payment-recipient relationship, performance and refund terms: provide direct
+evidence for specific payment conditions.
+
+Change conditions in the report
+Evidence snapshot: 10/01/2026, 10:00
+
+Subsequent collections and aging evidence may change the explanation (synthetic acceptance copy).
+
+Sources and reading scope
+Retrieved excerpts
+
+0
+
+Source snapshot · 10/01/2026, 10:00
+
+Digests
+
+Titles or indexes only
+
+0
+
+1
+
+Failed provider reads
+
+0
+
+Counts describe the inspected entries below. Excerpts are not full documents, and media or public opinions are not
+verified facts. Independence is unknown; platform or repost counts do not establish independent corroboration.
+Entry and location
+合成财务来源记录
+Fixture provider
+Open source
+
+Reading scope
+
+Record date
+
+Retrieval status
+
+Provider
+response
+
+2025-12-31
+
+Retrieved
+合成响应，不含真实企
+业数据
+
+Requested at 10/01/2026,
+10:00
+
+Entry and location
+合成未读新闻标题
+Fixture media
+Open source
+
+Reading scope
+
+Record date
+
+Retrieval status
+
+News headline
+only
+
+10/01/2026, 10:00
+
+Retrieved
+
+Key findings
+01 Operating cash trails consolidated profit, indicating weaker cash realization; the ratio alone
+
+does not establish a cause.
+
+Next checks
+01 Check subsequent collections, receivable aging and inventory sell-through records.
+
+Originals and follow-up evidence
+Original evidence is incomplete. Inspect the retrieval record or add your own financial records.
+
+1. Collect evidence beyond current source coverage
+Credit records, current registration, bank statements, tax records and key
+contracts from the company or authorised sources
+Do disclosures align with internal records? How can missing evidence be
+obtained?
+These are requested records, not evidence already obtained or authenticated.
+Before a payment, separately check the contracting entity, payee account, delivery and refund
+terms. The public-data gap still requires subsequent collections, ageing and inventory records.
+Scope of this analysis 2 financial years 13/13 key fields
+
+未列入核验范围
+独立内容
+
+Originals incomplete
+
+

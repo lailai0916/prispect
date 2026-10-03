@@ -1,0 +1,61 @@
+.decision-changes {
+  margin: 18px 0;
+  padding: 14px 0;
+  border-block: 1px solid var(--line);
+}
+.decision-changes > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.decision-changes > summary > span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.decision-change-counts {
+  font-size: 13px;
+  color: var(--muted);
+}
+.decision-change-table {
+  max-width: 100%;
+  overflow: auto;
+}
+.decision-change-table table {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: fixed;
+  min-width: 440px;
+  font-size: 13px;
+}
+.decision-change-table th,
+.decision-change-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  vertical-align: top;
+  font-weight: 400;
+}
+.decision-change-table thead th {
+  color: var(--muted);
+}
+.decision-change-table tbody th {
+  font-weight: 500;
+  width: 38%;
+}
+@media print {
+  .decision-changes > :not(summary) {
+    display: block;
+  }
+  .decision-change-table {
+    overflow: visible;
+  }
+  .decision-change-table table {
+    min-width: 0;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "url": "/api/company/600519/xray",
+  "status": 500,
+  "elapsedSec": 0.441,
+  "body": "{\"error\":\"INTERNAL_ERROR\"}"
+}

@@ -1,0 +1,8 @@
+{
+  "url": "/api/llm-status",
+  "status": 200,
+  "elapsedSec": 0.021,
+  "body": {
+    "available": false
+  }
+}

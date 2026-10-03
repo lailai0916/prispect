@@ -1,0 +1,227 @@
+{
+  "executionTime": "2026-10-03T06:06:25.388Z",
+  "mode": "Synthetic full CompanyResearchReport; no real query",
+  "checks": [
+    {
+      "name": "initial retained content collapsed",
+      "passed": true,
+      "evidence": "核验区 0/5 已展开"
+    },
+    {
+      "name": "keyboard Enter expands actual five review disclosures",
+      "passed": true,
+      "evidence": [
+        {
+          "id": "",
+          "class": "research-grade-limits",
+          "open": true,
+          "label": "评级受核心弱项限制"
+        },
+        {
+          "id": "company-research-process",
+          "class": "research-progress",
+          "open": true,
+          "label": "部分研究结果\n查看研究过程"
+        },
+        {
+          "id": "company-research-framework",
+          "class": "research-plan",
+          "open": true,
+          "label": "核查框架\n问题、依据与待补资料"
+        },
+        {
+          "id": "",
+          "class": "source-trust-detail",
+          "open": true,
+          "label": "检查逐条来源与已知关系 (2)"
+        },
+        {
+          "id": "company-review-requests",
+          "class": "company-review-checklist",
+          "open": true,
+          "label": "需要核对的材料\n1"
+        }
+      ]
+    },
+    {
+      "name": "expand affects one report only",
+      "passed": true,
+      "evidence": "Outside matching class stays open; outside complete analysis and discussions stay closed."
+    },
+    {
+      "name": "opening source list does not change reading status",
+      "passed": true,
+      "evidence": "已读节选\n0\n摘要\n0\n仅标题或索引\n1\n来源读取失败\n0"
+    },
+    {
+      "name": "manual keyboard fold updates mixed count",
+      "passed": true,
+      "evidence": "核验区 4/5 已展开"
+    },
+    {
+      "name": "keyboard Space collapses only review whitelist",
+      "passed": true,
+      "evidence": [
+        {
+          "id": "",
+          "class": "research-grade-limits",
+          "open": false,
+          "label": "评级受核心弱项限制"
+        },
+        {
+          "id": "company-research-process",
+          "class": "research-progress",
+          "open": false,
+          "label": "部分研究结果\n查看研究过程"
+        },
+        {
+          "id": "company-research-framework",
+          "class": "research-plan",
+          "open": false,
+          "label": "核查框架\n问题、依据与待补资料"
+        },
+        {
+          "id": "",
+          "class": "source-trust-detail",
+          "open": false,
+          "label": "检查逐条来源与已知关系 (2)"
+        },
+        {
+          "id": "company-review-requests",
+          "class": "company-review-checklist",
+          "open": false,
+          "label": "需要核对的材料\n1"
+        },
+        {
+          "id": "unrelated-report-detail",
+          "class": "",
+          "open": true,
+          "label": "未列入核验范围"
+        }
+      ]
+    },
+    {
+      "name": "local controls leave saved data unchanged",
+      "passed": true,
+      "evidence": "Same serialized input/context/report before and after view controls."
+    },
+    {
+      "name": "current, previous, record, year and issuer scopes reset",
+      "passed": true,
+      "evidence": [
+        {
+          "scenario": "previous",
+          "count": "核验区 0/5 已展开",
+          "notice": "仅展开本报告已保存的核验内容；打开来源入口不代表已读原文。 核验范围已变化，展开状态已重置。",
+          "unrelatedStillOpen": true
+        },
+        {
+          "scenario": "current",
+          "count": "核验区 0/5 已展开",
+          "notice": "仅展开本报告已保存的核验内容；打开来源入口不代表已读原文。 核验范围已变化，展开状态已重置。",
+          "unrelatedStillOpen": true
+        },
+        {
+          "scenario": "other-record",
+          "count": "核验区 0/5 已展开",
+          "notice": "仅展开本报告已保存的核验内容；打开来源入口不代表已读原文。 核验范围已变化，展开状态已重置。",
+          "unrelatedStillOpen": true
+        },
+        {
+          "scenario": "other-year",
+          "count": "核验区 0/3 已展开",
+          "notice": "仅展开本报告已保存的核验内容；打开来源入口不代表已读原文。 核验范围已变化，展开状态已重置。",
+          "unrelatedStillOpen": true
+        },
+        {
+          "scenario": "other-issuer",
+          "count": "核验区 0/3 已展开",
+          "notice": "仅展开本报告已保存的核验内容；打开来源入口不代表已读原文。 核验范围已变化，展开状态已重置。",
+          "unrelatedStillOpen": true
+        },
+        {
+          "scenario": "missing",
+          "count": "核验区 0/3 已展开",
+          "notice": "仅展开本报告已保存的核验内容；打开来源入口不代表已读原文。 核验范围已变化，展开状态已重置。",
+          "unrelatedStillOpen": true
+        },
+        {
+          "scenario": "current",
+          "count": "核验区 0/5 已展开",
+          "notice": "仅展开本报告已保存的核验内容；打开来源入口不代表已读原文。 核验范围已变化，展开状态已重置。",
+          "unrelatedStillOpen": true
+        }
+      ]
+    },
+    {
+      "name": "disclosure controls never invoke research",
+      "passed": true,
+      "evidence": {
+        "apiRequests": [],
+        "refreshCount": "研究调用 0"
+      }
+    },
+    {
+      "name": "narrow layout and keyboard controls remain usable",
+      "passed": true,
+      "evidence": [
+        {
+          "viewport": 375,
+          "documentWidth": 375,
+          "buttons": [
+            {
+              "width": 77,
+              "height": 44
+            },
+            {
+              "width": 77,
+              "height": 44
+            }
+          ]
+        },
+        {
+          "viewport": 320,
+          "documentWidth": 320,
+          "buttons": [
+            {
+              "width": 141.328125,
+              "height": 44
+            },
+            {
+              "width": 147.578125,
+              "height": 44
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "print reveals retained review content without changing disclosure state",
+      "passed": true,
+      "evidence": {
+        "controlDisplay": "none",
+        "sourcePagedDisplay": "none",
+        "sourcePrintDisplay": "block",
+        "frameworkVisibility": "visible",
+        "requestsVisibility": "visible",
+        "collapsedStill": true
+      }
+    },
+    {
+      "name": "no browser errors",
+      "passed": true,
+      "evidence": []
+    }
+  ],
+  "print": {
+    "controlDisplay": "none",
+    "sourcePagedDisplay": "none",
+    "sourcePrintDisplay": "block",
+    "frameworkVisibility": "visible",
+    "requestsVisibility": "visible",
+    "collapsedStill": true
+  },
+  "errors": [],
+  "apiRequests": [],
+  "failures": []
+}

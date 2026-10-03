@@ -1,0 +1,21 @@
+✔ known location, cluster and body relationships retain different meanings (2.841423ms)
+✔ platform names, titles and response hashes do not certify common content or independence (0.312721ms)
+✔ same recorded hash with different retrieved excerpts is not labelled identical content (0.321975ms)
+✔ bounded metadata does not invent a cluster relationship by truncating distinct long IDs (0.328164ms)
+✔ scope labels use accepted readers and distinguish titles, digests and public opinions (0.587145ms)
+✔ a PDF response hash is not mistaken for equality of different quoted passages (0.300453ms)
+✔ model text packing retains different and opposing bodies inside the same collector cluster (10.862773ms)
+✔ matching packed prefixes cannot discard a differing original excerpt ending (1.153478ms)
+✔ issuer, identity, annual scope and unresolved entity gaps withhold source summaries (0.395235ms)
+✔ source updates remain separate from a saved assessment snapshot (0.289346ms)
+✔ large snapshots have bounded rows, relationships and strings with explicit omissions (3.549489ms)
+✔ read model and public model payload retain only public allowlisted metadata without mutating the run (1.033959ms)
+✔ unsafe or credential-bearing URLs are withheld and exact revision URLs remain separate (0.233471ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 215.012731

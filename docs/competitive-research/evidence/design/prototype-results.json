@@ -1,0 +1,38 @@
+{
+  "mode": "synthetic-design-prototype; no company queries or saved records",
+  "capturedAt": "2026-10-03T06:07:52.522Z",
+  "sourceSha256": "68cbc7e9432befe3bca2377ed4a784c87f6227f8ed1357ba08525db386769481",
+  "browser": "151.0.7922.173",
+  "checks": [
+    {
+      "name": "inline-original-statement-generates-specific-request",
+      "pass": true
+    },
+    {
+      "name": "version-difference-retains-independent-assumptions",
+      "pass": true
+    },
+    {
+      "name": "source-count-does-not-create-rating",
+      "pass": true
+    },
+    {
+      "name": "prediction-compares-dependent-pauses-with-independent-fact",
+      "pass": true
+    },
+    {
+      "name": "restore-retains-exact-synthetic-ratio",
+      "pass": true
+    },
+    {
+      "name": "375-dark-no-page-overflow",
+      "pass": true
+    },
+    {
+      "name": "zero-page-errors",
+      "pass": true
+    }
+  ],
+  "pageErrors": [],
+  "userEffects": "Not tested with real users"
+}
