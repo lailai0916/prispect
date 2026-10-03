@@ -52,6 +52,51 @@
 .decision-claim > summary > strong {
   overflow-wrap: anywhere;
 }
+.decision-followup-change,
+.decision-reply-question {
+  padding-block: 12px;
+  border-block: 1px solid var(--line-soft);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.decision-followup-change > span {
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+.decision-followup-change p,
+.decision-reply-question p {
+  margin: 6px 0;
+}
+.decision-followup-records {
+  margin-top: 14px;
+}
+.decision-followup-record {
+  padding-block: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.decision-followup-record-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.decision-followup-record p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+.decision-followup-record > .text-link {
+  margin: 8px 0 0;
+}
+.decision-followup-needed,
+.decision-prior-question {
+  margin-top: 12px;
+}
+.decision-followup-needed summary,
+.decision-prior-question summary {
+  cursor: pointer;
+  color: var(--muted);
+}
 @media (max-width: 600px) {
   .decision-claim-edit-controls > .form-field {
     flex-basis: 100%;

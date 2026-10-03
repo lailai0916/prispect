@@ -39,7 +39,8 @@ export const decisionInputSchema = z
         z
           .object({
             id: text,
-            text: z.string().trim().min(1).max(1000),
+            text: z.string().trim().max(1000),
+            question: z.string().trim().max(2000).optional(),
             target: z.enum([
               'contract-entity',
               'payee-entity',
@@ -55,6 +56,9 @@ export const decisionInputSchema = z
             ]),
           })
           .strict()
+          .refine((claim) => Boolean(claim.text || claim.question), {
+            message: '请填写具体问题或待核对原话',
+          })
       )
       .max(12)
       .optional(),
@@ -136,6 +140,7 @@ export const decisionEvidenceSchema = z
     entity: text,
     asOf: date.nullable(),
     flowId: text.optional(),
+    claimId: text.optional(),
     values: z
       .object({
         amount: amount.nullable().optional(),

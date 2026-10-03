@@ -11,6 +11,10 @@ import {
 } from '../shared/company-workspace.js';
 import type { ModelConfig } from '../server/model.js';
 import { runCompanyResearchAgent as researchAgent } from '../server/company-research-agent.js';
+import {
+  buildCompanyResearchAgenda,
+  selectCompanyReviewDisclosures,
+} from '../server/company-research-policy.js';
 
 // Isolate existing targeted-tool tests; the default full collection is covered separately.
 const runCompanyResearchAgent = (...args: Parameters<typeof researchAgent>) =>
@@ -1035,4 +1039,246 @@ test('initial public context above the unchanged one-MB budget is withheld befor
   assert.match(result.steps[0]!.summary, /资料预算/);
   assert.deepEqual(diagnostics, ['budget']);
   assert.deepEqual(result.run.context, run.context);
+});
+
+test('a proposed stop after financial tools still triggers a separate review and a relevant acquired official original', async () => {
+  const run = company();
+  run.context!.announcements = [
+    {
+      ...run.context!.announcements[0]!,
+      id: 'cash-clarification',
+      title: '关于经营现金与回款情况的澄清公告',
+      category: '经营现金',
+    },
+  ];
+  const before = structuredClone(run);
+  const pdf = samplePdf();
+  let turns = 0,
+    pdfCalls = 0;
+  const result = await researchAgent(
+    run,
+    config(async (_url, init) => {
+      turns++;
+      const request = JSON.parse(String(init?.body));
+      if (turns === 1) {
+        const payload = JSON.parse(request.messages[1].content);
+        const issue = payload.reviewAgenda.issues.find(
+          (row: { dimensionId: string }) => row.dimensionId === 'cash'
+        );
+        assert.ok(issue.metricIds.includes('cash-profit'));
+        assert.equal(issue.alternatives.length, 2);
+        assert.ok(issue.evidenceIds.length > 0);
+        return plan([call('get_financial_history')]);
+      }
+      if (turns === 2) return done();
+      const review = JSON.parse(request.messages.at(-1).content);
+      assert.equal(review.reviewRequested, true);
+      assert.match(review.reviewTask, /待核查|替代解释/);
+      assert.equal(review.targetedReads.length, 1);
+      assert.equal(review.targetedReads[0].id, 'cash-clarification');
+      assert.equal(review.targetedReads[0].ok, true);
+      assert.equal(review.targetedReads[0].result.excerpt.page, 1);
+      assert.equal(
+        review.targetedReads[0].result.excerpt.sha256,
+        createHash('sha256').update(pdf).digest('hex')
+      );
+      assert.match(review.reviewAgenda.scope, /待检验假设/);
+      return done();
+    }),
+    {
+      industry: async () => industry(),
+      fetch: async (url) => {
+        if (String(url).endsWith('/12345.pdf')) {
+          pdfCalls++;
+          return new Response(pdf);
+        }
+        return new Response('unavailable', { status: 503 });
+      },
+    }
+  );
+  assert.equal(turns, 3, 'a source-bearing first turn cannot bypass the independent review');
+  assert.equal(pdfCalls, 1);
+  assert.equal(result.toolCalls, 4);
+  assert.equal(
+    result.steps.filter((step) => step.tool === 'read_disclosure' && step.status === 'completed')
+      .length,
+    1
+  );
+  assert.deepEqual(run, before, 'research still enriches only its public copy');
+  assert.equal(
+    result.run.context!.financials.find((row) => row.period === '2025-12-31')!.amounts.ocf,
+    '7.15'
+  );
+});
+
+test('same-job repeated topic searches and failed originals reuse recorded outcomes without spending the remaining tool budget', async () => {
+  const run = company();
+  let turns = 0,
+    topicRequests = 0,
+    pdfRequests = 0;
+  const result = await runCompanyResearchAgent(
+    run,
+    config(async (_url, init) => {
+      turns++;
+      const request = JSON.parse(String(init?.body));
+      if (turns === 1)
+        return plan([
+          call('search_news', { topic: '回款  存货' }, 'first-news'),
+          call('read_disclosure', { id: 'cninfo-12345' }, 'first-original'),
+        ]);
+      if (turns === 2)
+        return plan([
+          call('search_news', { topic: '回款 存货' }, 'same-news'),
+          call('read_disclosure', { id: 'cninfo-12345' }, 'same-original'),
+        ]);
+      const replies = new Map<string, any>(
+        request.messages
+          .filter((row: { role: string }) => row.role === 'tool')
+          .map((row: { tool_call_id: string; content: string }) => [
+            row.tool_call_id,
+            JSON.parse(row.content),
+          ])
+      );
+      assert.equal(replies.get('same-news').result.reused, true);
+      assert.match(replies.get('same-news').result.referenceStepId, /^research-\d+$/);
+      assert.equal(
+        replies.get('same-news').result.news,
+        undefined,
+        'cached body text is not sent again'
+      );
+      assert.equal(replies.get('same-original').ok, false);
+      assert.equal(replies.get('same-original').error, replies.get('first-original').error);
+      return done();
+    }),
+    {
+      industry: async () => industry(),
+      fetch: async (url) => {
+        if (String(url).includes('/12345.pdf')) {
+          pdfRequests++;
+          return new Response('unavailable', { status: 503 });
+        }
+        topicRequests++;
+        return Response.json({ hitsTotal: 0, result: { cmsArticleWebOld: [] } });
+      },
+    }
+  );
+  assert.equal(result.modelCalls, 3);
+  assert.equal(result.toolCalls, 2);
+  assert.equal(topicRequests, 1);
+  assert.equal(pdfRequests, 1);
+  assert.equal(
+    result.steps.filter((step) => step.tool === 'read_disclosure' && step.status === 'failed')
+      .length,
+    2
+  );
+  assert.ok(result.run.context!.announcements.every((row) => !row.excerpt));
+});
+
+test('a retry has its own request cache; repeated failures are not falsely promoted into acquired originals', async () => {
+  let pdfRequests = 0;
+  for (let retry = 0; retry < 2; retry++) {
+    let turns = 0;
+    const result = await runCompanyResearchAgent(
+      company(),
+      config(async () =>
+        ++turns === 1
+          ? plan([
+              call('read_disclosure', { id: 'cninfo-12345' }, 'original-a'),
+              call('read_disclosure', { id: 'cninfo-12345' }, 'original-b'),
+            ])
+          : done()
+      ),
+      {
+        industry: async () => industry(),
+        fetch: async () => {
+          pdfRequests++;
+          return new Response('unavailable', { status: 503 });
+        },
+      }
+    );
+    assert.equal(result.toolCalls, 1);
+    assert.equal(
+      result.run.context!.sources.filter((row) => row.id.startsWith('agent-disclosure-')).length,
+      1
+    );
+    assert.equal(result.run.context!.announcements[0]!.excerpt, undefined);
+  }
+  assert.equal(
+    pdfRequests,
+    2,
+    'a separate user-authorized retry does not reuse the previous job failure'
+  );
+});
+
+test('cache-only model loops still stop at six real planning calls and explicitly report that limit', async () => {
+  let modelRequests = 0,
+    sourceRequests = 0;
+  const result = await runCompanyResearchAgent(
+    company(),
+    config(async () => {
+      modelRequests++;
+      return plan(
+        Array.from({ length: 24 }, (_, index) =>
+          call('search_news', { topic: '回款' }, `replay-${modelRequests}-${index}`)
+        )
+      );
+    }),
+    {
+      industry: async () => industry(),
+      fetch: async () => {
+        sourceRequests++;
+        return Response.json({ hitsTotal: 0, result: { cmsArticleWebOld: [] } });
+      },
+    }
+  );
+  assert.equal(modelRequests, 6);
+  assert.equal(sourceRequests, 1);
+  assert.equal(result.toolCalls, 1);
+  assert.equal(result.steps.filter((step) => step.tool === 'search_news').length, 144);
+  assert.match(
+    [...result.steps].reverse().find((step) => step.tool === 'planning')!.summary,
+    /六轮规划预算已用完/
+  );
+});
+
+test('review agenda uses real same-scope metrics, keeps conflict hypotheses empty and does not trust duplicate or already-read catalog IDs', () => {
+  const run = company();
+  const row = run.context!.announcements[0]!;
+  run.context!.announcements = [
+    { ...row, id: 'basis-cash', title: '关于经营现金情况的公告' },
+    { ...row, id: 'alternative-cash', title: '关于回款情况的澄清回复' },
+    { ...row, id: 'ambiguous', title: '关于现金回款的澄清' },
+    { ...row, id: 'ambiguous', title: '关于现金回款的公告' },
+  ];
+  const agenda = buildCompanyResearchAgenda(run);
+  assert.equal(agenda.officialChecks[0]!.id, 'alternative-cash');
+  assert.equal(agenda.officialChecks[0]!.purpose, 'check-alternative');
+  assert.ok(agenda.officialChecks.every((item) => item.id !== 'ambiguous'));
+  assert.deepEqual(selectCompanyReviewDisclosures(run, new Set(['alternative-cash'])), [
+    'basis-cash',
+  ]);
+  assert.deepEqual(selectCompanyReviewDisclosures(run, new Set(), 0), []);
+  run.context!.announcements[1]!.excerpt = {
+    url: run.context!.announcements[1]!.url,
+    sha256: 'invalid',
+    page: 5,
+    pagesRead: 8,
+    quote: 'legacy invalid cached excerpt',
+  };
+  assert.equal(buildCompanyResearchAgenda(run).officialChecks[0]!.hasExcerpt, false);
+  assert.ok(selectCompanyReviewDisclosures(run, new Set()).includes('alternative-cash'));
+  run.context!.comparisons.push({
+    field: 'ocf',
+    period: '2025-12-31',
+    primary: '7.15',
+    secondary: '900.00',
+    status: 'conflict',
+    sources: [],
+  } as any);
+  const cash = buildCompanyResearchAgenda(run).issues.find((item) => item.dimensionId === 'cash')!;
+  assert.equal(cash.status, 'conflict');
+  assert.deepEqual(cash.alternatives, []);
+  assert.match(cash.question, /不能据此推断/);
+  run.context!.orgId = 'another-issuer';
+  assert.deepEqual(buildCompanyResearchAgenda(run).officialChecks, []);
 });

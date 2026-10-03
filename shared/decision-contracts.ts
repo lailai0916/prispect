@@ -56,11 +56,17 @@ export interface DecisionEvidenceInput {
   materialId?: string;
   observationId?: string;
   page?: number | null;
+  /** Explicit association within this private decision, never text-similarity matching. */
+  claimId?: string;
 }
 export interface DecisionEvidence extends DecisionEvidenceInput {
   id: string;
   state: 'active' | 'withdrawn';
   createdAt: string;
+  /** The question at submission time, stamped by the server and retained in older versions. */
+  claimQuestion?: string;
+  claimText?: string;
+  claimTarget?: DecisionClaimTarget;
 }
 export type DecisionClaimTarget =
   | 'contract-entity'
@@ -79,6 +85,7 @@ export interface DecisionClaim {
   id: string;
   text: string;
   target: DecisionClaimTarget;
+  question?: string;
 }
 export interface DecisionInput {
   title: string;
@@ -223,6 +230,7 @@ export interface DecisionDetail {
   evaluation: DecisionEvaluation;
   /** Adjacent immutable input versions, evaluated under the current rules; no new retrieval. */
   changes?: import('./decision-change.js').DecisionChangeSet;
+  followUpChanges?: import('./decision-followup.js').DecisionFollowUpChange[];
   revisions: {
     revision: number;
     createdAt: string;

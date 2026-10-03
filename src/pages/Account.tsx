@@ -716,10 +716,6 @@ export function AccountPage() {
     <div className="account-page">
       <PageHeading
         title={t(...productTerms.accountSettings)}
-        description={t(
-          '管理个人信息、登录方式与私人工作区。',
-          'Manage your profile, sign-in methods and private workspace.'
-        )}
         action={
           <button className="button button-secondary" onClick={logout} disabled={pending}>
             <LogOut size={16} />
@@ -881,8 +877,8 @@ export function AccountPage() {
                       {avatarDragging
                         ? t('松开以更换头像', 'Drop to change your avatar')
                         : t(
-                            '拖入图片或点击更换。单张 PNG、JPEG、WebP，最多 2 MiB、1600 万像素。',
-                            'Drop an image or choose a file. Single PNG, JPEG or WebP, up to 2 MiB and 16 million pixels.'
+                            'PNG / JPEG / WebP · 单张 ≤ 2 MiB、≤ 1600 万像素。',
+                            'PNG / JPEG / WebP · One image, up to 2 MiB and 16 million pixels.'
                           )}
                     </p>
                     <div
@@ -958,16 +954,12 @@ export function AccountPage() {
                     />
                   </label>
                   <label>
-                    <span id="account-bio-label">{t('简介', 'Bio')}</span>
+                    <span id="account-bio-label">{t('简介（选填）', 'Bio (optional)')}</span>
                     <textarea
                       aria-labelledby="account-bio-label"
                       maxLength={500}
                       value={bio}
                       onChange={(event) => setBio(event.target.value)}
-                      placeholder={t(
-                        '可选，写一点关于你自己的信息。',
-                        'Optional. A little about yourself.'
-                      )}
                     />
                   </label>
                   <div className="account-field-row">

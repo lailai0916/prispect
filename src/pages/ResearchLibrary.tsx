@@ -57,10 +57,6 @@ export function ResearchLibraryPage() {
     <div className="research-library">
       <PageHeading
         title={t(...productTerms.researchLibrary)}
-        description={t(
-          '已保存的研究报告与研究记录。',
-          'Saved research reports and research records.'
-        )}
         action={
           <button className="button button-primary" onClick={() => navigate('/query')}>
             <Plus size={15} /> {t(...productTerms.newResearch)}

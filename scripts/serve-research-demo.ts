@@ -116,7 +116,14 @@ export const researchDemoSearch = async (query: string): Promise<CompanySearchRe
   truncated: false,
 });
 
-export async function openResearchDemo(dataDir: string) {
+/** Explicit, local failure injection. These controls are never an HTTP or production API. */
+export interface ResearchDemoFaults {
+  context?: boolean;
+  assessment?: boolean;
+  challenge?: boolean;
+}
+
+export async function openResearchDemo(dataDir: string, faults: ResearchDemoFaults = {}) {
   const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
   return createApp({
     root,
@@ -136,6 +143,7 @@ export async function openResearchDemo(dataDir: string) {
     companyContextService: {
       searchCompanies: researchDemoSearch,
       context: async (_identity, options) => {
+        if (faults.context) throw new Error('离线演练：模拟公开资料读取失败。');
         const snapshot = researchDemoSnapshot();
         await options?.onSnapshot?.(structuredClone(snapshot));
         return snapshot;
@@ -150,10 +158,14 @@ export async function openResearchDemo(dataDir: string) {
         modelCalls: 0,
         toolCalls: 0,
       }),
-      assessment: async (run) => deriveCompanyAssessment(run),
+      assessment: async (run) => {
+        if (faults.assessment) throw new Error('离线演练：模拟分析服务失败。');
+        return deriveCompanyAssessment(run);
+      },
     },
     companyChallengeService: {
       challenge: async (run, target) => {
+        if (faults.challenge) throw new Error('离线演练：模拟反向核验失败。');
         const result = deriveChallengeResult(run, target);
         result.model = { status: 'not-configured', calls: 0 };
         result.gaps.unshift([

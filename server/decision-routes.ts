@@ -12,6 +12,10 @@ import type { WorkspaceStore } from './store.js';
 import { ApiFault } from './validation.js';
 import { deriveDecisionChanges } from '../shared/decision-change.js';
 import {
+  decisionFollowUpBinding,
+  deriveDecisionFollowUpChanges,
+} from '../shared/decision-followup.js';
+import {
   evaluateDecision,
   validateDecisionInput,
   validateDecisionEvidence,
@@ -56,20 +60,24 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
       knownConflicts: record.knownConflicts,
     });
     const previous = record.versions.find((item) => item.revision === version.revision - 1);
+    const previousEvaluation = previous
+      ? evaluateDecision(previous, {
+          tasks: store.state.tasks,
+          materials: store.state.materials,
+          knownConflicts: record.knownConflicts,
+        })
+      : undefined;
     return {
       decision: summary(record),
       version: structuredClone(version),
       evaluation,
-      ...(previous
+      ...(previous && previousEvaluation
         ? {
-            changes: deriveDecisionChanges(
+            changes: deriveDecisionChanges(previous, version, previousEvaluation, evaluation),
+            followUpChanges: deriveDecisionFollowUpChanges(
               previous,
               version,
-              evaluateDecision(previous, {
-                tasks: store.state.tasks,
-                materials: store.state.materials,
-                knownConflicts: record.knownConflicts,
-              }),
+              previousEvaluation,
               evaluation
             ),
           }
@@ -264,8 +272,31 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
             (version) => {
               if (version.evidence.length >= 50)
                 throw new ApiFault(429, 'DECISION_EVIDENCE_LIMIT', '每个核查事项最多50条证据记录');
+              const binding = decisionFollowUpBinding(version.input, evidence);
+              if (!binding.valid) {
+                if (binding.reason === 'missing-claim')
+                  throw new ApiFault(404, 'DECISION_CLAIM_NOT_FOUND', '未找到本事项版本中的问询');
+                if (binding.reason === 'missing-flow')
+                  throw new ApiFault(
+                    400,
+                    'DECISION_CLAIM_FLOW_MISMATCH',
+                    '请关联本事项中的收付款事件'
+                  );
+                if (binding.reason === 'unsupported-kind')
+                  throw new ApiFault(
+                    400,
+                    'DECISION_CLAIM_KIND_MISMATCH',
+                    '问询只关联对方回复或原件记录；情景假设请单独保存'
+                  );
+                throw new ApiFault(
+                  400,
+                  'DECISION_CLAIM_TARGET_MISMATCH',
+                  '材料用途或责任主体角色与问询目标不符'
+                );
+              }
               version.evidence.push({
                 ...evidence,
+                ...binding.snapshot,
                 id: randomUUID(),
                 state: 'active',
                 createdAt: new Date().toISOString(),

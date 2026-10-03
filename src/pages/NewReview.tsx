@@ -245,13 +245,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
           {materialImport.dropError}
         </p>
       )}
-      <PageHeading
-        title={t(...productTerms.newFinancialReview)}
-        description={t(
-          '先选材料，再确认主体与年度。',
-          'Choose materials, then confirm the company and financial year.'
-        )}
-      />
+      <PageHeading title={t(...productTerms.newFinancialReview)} />
       <div className="financial-create-layout">
         <section className="financial-source-step">
           <div className="form-section-heading">
@@ -471,10 +465,6 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
       )}
       <PageHeading
         title={t(...productTerms.materials)}
-        description={t(
-          '上传文件、已采用原件与已确认指标。',
-          'Uploaded files, adopted originals and confirmed metrics.'
-        )}
         action={
           <button className="button button-primary" onClick={() => materialImport.setOpen(true)}>
             <Upload size={17} />
@@ -1064,8 +1054,8 @@ export function MaterialImporter({
           )}
           <p className="field-note">
             {t(
-              '预览并确认字段后保存到材料库。不支持扫描件 OCR；账号总上传额度为 250 MB。',
-              'Preview and confirm the fields before saving to your materials. Scanned-PDF OCR is unsupported. The total upload limit is 250 MB per account.'
+              'PDF 需含可选取文本；账号上传总额度 250 MB。',
+              'PDFs need selectable text. Total upload limit: 250 MB per account.'
             )}
           </p>
           <details className="input-format">
@@ -1222,8 +1212,8 @@ export function MaterialImporter({
             {!preview.material.observations.length && (
               <p className="field-note">
                 {t(
-                  '文本材料：保存提供的原文，不生成财务观测。用于核查事项依据时仍需核对主体、日期和字段；财报核查缺少指标会停止计算。',
-                  'Text material: saves supplied text without creating financial observations. Review-item evidence still requires entity, date and field checks; financial calculations stop when metrics are missing.'
+                  '仅保存原文；缺少指标时停止财务计算。事项依据仍需核对主体、日期和字段。',
+                  'Source text only; missing metrics stop financial calculations. Review-item evidence still needs entity, date and field checks.'
                 )}
               </p>
             )}

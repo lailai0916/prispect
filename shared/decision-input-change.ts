@@ -17,7 +17,7 @@ function fingerprint(input: DecisionInput): string {
     {
       ...input,
       tradingName: input.tradingName || '',
-      claims: input.claims || [],
+      claims: (input.claims || []).map((claim) => ({ ...claim, question: claim.question || '' })),
       external: input.purpose === 'external' ? input.external : null,
       datedCash: input.purpose === 'handover' ? input.datedCash : null,
     },
