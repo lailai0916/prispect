@@ -1,0 +1,173 @@
+{
+  "project": "cosinXx/mingcha-pro",
+  "sha": "99aae0ab181715361aacdcd108c7a1d342928754",
+  "executionTime": "2026-10-03T05:40:32.371Z",
+  "mode": "Original unmodified template with unresolved placeholders; no real company research",
+  "initial": {
+    "title": "{{标题}} · 信息总结报告",
+    "sections": [
+      {
+        "id": "sec-overview",
+        "title": "摘要"
+      },
+      {
+        "id": "sec-detail",
+        "title": "{{详细章节总标题}}"
+      },
+      {
+        "id": "sec-chart",
+        "title": "数据图表"
+      },
+      {
+        "id": "sec-timeline",
+        "title": "时间线"
+      },
+      {
+        "id": "sec-conflict",
+        "title": "矛盾信息与置信度清单"
+      },
+      {
+        "id": "sec-conclusion",
+        "title": "结论与建议"
+      },
+      {
+        "id": "sec-source",
+        "title": "数据来源清单"
+      }
+    ],
+    "openFolds": [true, false],
+    "missingAria": [
+      {
+        "expanded": null,
+        "controls": null
+      },
+      {
+        "expanded": null,
+        "controls": null
+      }
+    ],
+    "unresolvedPlaceholders": 91,
+    "barWidths": ["100%", "60%", "30%"]
+  },
+  "individualFold": true,
+  "allClosed": {
+    "open": 0,
+    "button": "展开全部折叠面板"
+  },
+  "allOpened": {
+    "open": 2,
+    "button": "收起全部折叠面板"
+  },
+  "conflictNavigation": {
+    "hash": "#sec-conflict",
+    "active": "矛盾",
+    "top": 75.921875,
+    "backtop": "flex"
+  },
+  "backtop": {
+    "scrollTop": 0
+  },
+  "dark": {
+    "background": "rgb(15, 19, 25)",
+    "ink": "rgb(230, 235, 242)",
+    "colorScheme": "dark"
+  },
+  "darkPrint": {
+    "body": "rgb(255, 255, 255)",
+    "colorScheme": "dark",
+    "foldBodyDisplay": ["block", "block"],
+    "conclusionBackground": "linear-gradient(135deg, rgb(26, 36, 54), rgb(33, 47, 71))",
+    "topbar": "none"
+  },
+  "reducedMotion": {
+    "duration": "1e-05s",
+    "scrollBehavior": "auto"
+  },
+  "mobile375": {
+    "documentWidth": 375,
+    "viewportWidth": 375,
+    "kpiColumns": "166.5px 166.5px",
+    "navigation": {
+      "client": 343,
+      "scroll": 343
+    },
+    "foldDirection": "column"
+  },
+  "mobile320": {
+    "documentWidth": 336,
+    "viewportWidth": 320,
+    "overflowElements": [
+      {
+        "class": "",
+        "tag": "A",
+        "right": 342.59375
+      },
+      {
+        "class": "",
+        "tag": "DIV",
+        "right": 337
+      },
+      {
+        "class": "info-item",
+        "tag": "DIV",
+        "right": 337
+      },
+      {
+        "class": "k",
+        "tag": "SPAN",
+        "right": 337
+      },
+      {
+        "class": "v",
+        "tag": "SPAN",
+        "right": 337
+      },
+      {
+        "class": "info-item",
+        "tag": "DIV",
+        "right": 337
+      },
+      {
+        "class": "k",
+        "tag": "SPAN",
+        "right": 337
+      },
+      {
+        "class": "v",
+        "tag": "SPAN",
+        "right": 337
+      },
+      {
+        "class": "",
+        "tag": "DIV",
+        "right": 337
+      },
+      {
+        "class": "info-item",
+        "tag": "DIV",
+        "right": 337
+      },
+      {
+        "class": "k",
+        "tag": "SPAN",
+        "right": 337
+      },
+      {
+        "class": "v",
+        "tag": "SPAN",
+        "right": 337
+      }
+    ]
+  },
+  "requests": [
+    {
+      "url": "http://127.0.0.1:4405/assets/report-template.html",
+      "resourceType": "document"
+    },
+    {
+      "url": "http://127.0.0.1:4405/assets/report-template.html",
+      "resourceType": "document"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,190 @@
+{
+  "startedAt": "2026-10-03T06:04:09.760Z",
+  "base": "http://127.0.0.1:5401",
+  "checks": [
+    {
+      "name": "reused-isolated-test-account-no-new-registration",
+      "pass": true
+    },
+    {
+      "name": "purpose-switch-retains-quote-and-invalid-target",
+      "pass": true
+    },
+    {
+      "name": "explicit-retarget-keeps-verbatim-quotation",
+      "pass": true
+    },
+    {
+      "name": "editor-twelve-limit",
+      "pass": true
+    },
+    {
+      "name": "explicit-remove-enables-add",
+      "pass": true
+    },
+    {
+      "name": "keyboard-select-target",
+      "pass": true
+    },
+    {
+      "name": "claim-add-evidence-prefills-payee-and-refund-role-separately",
+      "pass": true
+    },
+    {
+      "name": "historical-claims-preserve-quotation-and-hide-mutation",
+      "pass": true
+    }
+  ],
+  "screens": [
+    {
+      "name": "28-prispect-claims-editor-desktop",
+      "dims": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "29-prispect-claims-invalid-target",
+      "dims": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "30-prispect-claims-mobile-dark",
+      "dims": {
+        "width": 390,
+        "scroll": 390
+      }
+    },
+    {
+      "name": "31-prispect-claims-report-desktop",
+      "dims": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    }
+  ],
+  "pageErrors": [],
+  "limits": [
+    "Local Playwright with isolated synthetic input; no external model or real user effect."
+  ],
+  "caseId": "b67ca343-0e20-4ec0-aba7-ea3f806fdfaa",
+  "roleProbe": {
+    "text": "记录核查事项依据\n材料用途\n合同、收款与退款主体\n记录性质\n原文记录\n记录所涉及主体\n记录覆盖日期\n主体角色\n收款主体\n原文主体完整名称\n来源名称\n原文摘录\n关联保存的材料文本（可选）\n\n未关联材料文本时保存为用户转录；对方陈述与假设不作为实际退款或现金依据。\n\n取消\n保存并重新核对",
+    "controls": [
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "",
+        "labels": []
+      },
+      {
+        "tag": "BUTTON",
+        "role": "combobox",
+        "text": "合同、收款与退款主体",
+        "labels": [
+          "材料用途合同、收款与退款主体"
+        ]
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": []
+      },
+      {
+        "tag": "BUTTON",
+        "role": "combobox",
+        "text": "原文记录",
+        "labels": [
+          "记录性质原文记录"
+        ]
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": []
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": [
+          "记录所涉及主体"
+        ]
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": [
+          "记录覆盖日期"
+        ]
+      },
+      {
+        "tag": "BUTTON",
+        "role": "combobox",
+        "text": "收款主体",
+        "labels": [
+          "主体角色收款主体"
+        ]
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": []
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": [
+          "原文主体完整名称"
+        ]
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": [
+          "来源名称"
+        ]
+      },
+      {
+        "tag": "BUTTON",
+        "role": "combobox",
+        "text": "不关联材料 · 用户转录",
+        "labels": [
+          "材料不关联材料 · 用户转录"
+        ]
+      },
+      {
+        "tag": "INPUT",
+        "role": null,
+        "text": "",
+        "labels": []
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "取消",
+        "labels": []
+      },
+      {
+        "tag": "BUTTON",
+        "role": null,
+        "text": "保存并重新核对",
+        "labels": []
+      }
+    ]
+  },
+  "sourceHashes": {
+    "shared/decision-claims.ts": "6ed171486d54201d34595d41e8156ef02a43cfefdb6d0e990ccb820d8bdb2e54",
+    "src/DecisionClaims.tsx": "cfa89fd5fde7481120a0681bc751f15afd2081ffe31712d0e6a75c46e4609d9a",
+    "src/decision-claims.css": "a89077d00d2d41d23e033c7bf37c81383e76ccba0b577610940df42042c28f4a"
+  },
+  "finishedAt": "2026-10-03T06:04:16.455Z"
+}

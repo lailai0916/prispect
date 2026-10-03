@@ -709,6 +709,11 @@ kbd {
   }
 }
 @media print {
+  /* Chromium's closed-details content remains invisible even after child display overrides. */
+  details::details-content {
+    content-visibility: visible !important;
+    height: auto !important;
+  }
   .command-dialog,
   .operation-progress {
     display: none !important;

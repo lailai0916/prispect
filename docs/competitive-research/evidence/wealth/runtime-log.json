@@ -1,0 +1,102 @@
+{
+  "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+  "url": "http://127.0.0.1:4404/xray.html",
+  "recorded_at": "2026-10-03T05:43:56.583Z",
+  "logs": [
+    {
+      "type": "log",
+      "text": "[X-RAY] 棋盘布局已随机打散（启动格/银行中心格锚定）"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY] 格数 48 · 公司 24 家 · 投资题 43/48 (90%)"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY] 已接管 1135 个自发光材质"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY] 迷你地图邻色分离已启用：相邻格最小色距目标 96"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY] 标签降亮已启用：顶底压暗 60%，描边 0.3，近处再压至 60%"
+    },
+    {
+      "type": "warning",
+      "text": "THREE.Material: 'size' is not a property of THREE.ShaderMaterial."
+    },
+    {
+      "type": "warning",
+      "text": "THREE.Material: 'sizeAttenuation' is not a property of THREE.ShaderMaterial."
+    },
+    {
+      "type": "warning",
+      "text": "THREE.Material: 'map' is not a property of THREE.ShaderMaterial."
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY-PRO] 已把 1 组方块粒子换成柔光圆点"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY-PRO] 星尘点径已收敛（1 组）"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY-PRO] 电影级视觉增强已启用 · 贴图 ×2 · 目标点柔化 · 扫描波 · 数据雨"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY-PRO] 反馈层已启用：回合 / 落点 / 收购 / 现金 / 终局联动"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY-PRO] 教学卡已接线：24 家公司 + 33 道情景题（guide 强弹 / normal 按钮 / hard 静默）"
+    },
+    {
+      "type": "log",
+      "text": "[xray-build] 建筑 49 → 60 栋（×1.22）"
+    },
+    {
+      "type": "log",
+      "text": "[xray-light] 灯光已调暗 5 个 / 自发光材质 1135 个"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY] 已接管 1135 个自发光材质"
+    },
+    {
+      "type": "log",
+      "text": "[xray-light] 灯光已调暗 10 个 / 自发光材质 1135 个"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY] 已接管 1135 个自发光材质"
+    },
+    {
+      "type": "log",
+      "text": "[xray-light] 灯光已调暗 15 个 / 自发光材质 1135 个"
+    },
+    {
+      "type": "error",
+      "text": "Failed to load resource: the server responded with a status of 404 (File not found)"
+    },
+    {
+      "type": "log",
+      "text": "[X-RAY-PRO] 性能自适应：已降级画质"
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "url": "http://127.0.0.1:4404/xray.html",
+      "method": "GET"
+    }
+  ]
+}

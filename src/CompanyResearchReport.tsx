@@ -1,5 +1,5 @@
 import { productTerms } from '../shared/product-terms';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { ArrowRight, Check, ChevronDown, FileSearch, LoaderCircle, Minus } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type { AssessmentJudgment, AssessmentText } from '../shared/company-assessment';
@@ -15,6 +15,9 @@ import { CompanyContextEvidence } from './CompanyContextViews';
 import { CompanyReview } from './CompanyReview';
 import { useApp } from './context';
 import { date, money } from './format';
+import { ResearchPlan } from './ResearchPlan';
+import { SourceTrust } from './SourceTrust';
+import { ReportEvidenceControls } from './ReportEvidenceControls';
 import './research-report.css';
 
 const [, coverageZh, coverageEn] = companySections.find(([key]) => key === 'coverage')!;
@@ -170,6 +173,7 @@ export function CompanyResearchReport({
   refreshing: boolean;
 }) {
   const { t, locale } = useApp();
+  const reportId = useId();
   const brief = deriveCompanyResearchBrief(run);
   const progress = deriveCompanyResearchProgress(run);
   const amounts = companyReviewSummary(run);
@@ -201,7 +205,24 @@ export function CompanyResearchReport({
   const ratio = amounts.ratio === null ? '—' : `${(amounts.ratio * 100).toFixed(2)}%`;
   const coverage = brief.coverage;
   return (
-    <article className="company-research-report" data-testid="company-research-report">
+    <article
+      id={reportId}
+      className="company-research-report"
+      data-testid="company-research-report"
+      data-report-evidence-scope
+    >
+      <ReportEvidenceControls
+        scopeId={reportId}
+        scopeKey={JSON.stringify([
+          run.id,
+          run.input.securityCode,
+          run.input.orgId,
+          run.input.year,
+          run.context?.fetchedAt,
+          run.assessment?.generatedAt,
+          progress.snapshot,
+        ])}
+      />
       <section className="research-summary" aria-labelledby="research-summary-heading">
         <div className="research-section-heading">
           <h2 id="research-summary-heading">{t('分析摘要', 'Analysis summary')}</h2>
@@ -337,6 +358,8 @@ export function CompanyResearchReport({
         </p>
         <CompanyResearchProgress run={run} />
       </section>
+      <ResearchPlan run={run} />
+      <SourceTrust run={run} />
       {brief.priorities.length > 0 && (
         <section className="research-report-section" aria-labelledby="research-findings-heading">
           <div className="research-section-heading">

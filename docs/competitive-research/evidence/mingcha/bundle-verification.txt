@@ -1,0 +1,8 @@
+/workspace/competitor-backups/mingcha.bundle is okay
+The bundle contains these 4 refs:
+99aae0ab181715361aacdcd108c7a1d342928754 refs/heads/main
+99aae0ab181715361aacdcd108c7a1d342928754 refs/remotes/origin/HEAD
+99aae0ab181715361aacdcd108c7a1d342928754 refs/remotes/origin/main
+99aae0ab181715361aacdcd108c7a1d342928754 HEAD
+The bundle records a complete history.
+The bundle uses this hash algorithm: sha1

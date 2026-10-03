@@ -1,0 +1,25 @@
+{
+  "project": "JFY-JFY/xray",
+  "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+  "fetched_at": "2026-10-03T05:38:27Z",
+  "remote": "https://github.com/JFY-JFY/xray.git",
+  "backup": "/workspace/competitor-backups/wealth.bundle",
+  "license": "README.md:342 — Hackathon Demo，版权归作者所有。无标准 LICENSE 文件；不授权代码/素材复制。",
+  "files": [
+    {
+      "path": "xray-demo-test.html",
+      "sha256": "d8fd0a5e38313f9aff4043af340b316d9f03deabec0ffec7a34afb1991d21b69",
+      "bytes": 1003732
+    },
+    {
+      "path": "xray.html",
+      "sha256": "6d1f116bcb52ab80a049b02debcd66e21022eac293b54f03ff84ceca5ff45660",
+      "bytes": 1000445
+    },
+    {
+      "path": "README.md",
+      "sha256": "3d81f732365b1af99f26fb92f68162a095e4b7a4d1f8563e270992539a87cc77",
+      "bytes": 16902
+    }
+  ]
+}

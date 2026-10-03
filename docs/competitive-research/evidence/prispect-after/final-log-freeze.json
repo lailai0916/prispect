@@ -1,0 +1,24 @@
+{
+  "recordedAt": "2026-10-03T06:17:02.814782+00:00",
+  "stopped": [
+    {
+      "pid": 23195,
+      "port": 4320,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 23203,
+      "port": 4321,
+      "signal": "SIGTERM"
+    }
+  ],
+  "futureStandardOutput": "/workspace/research-envs/prispect-after-final-server.log",
+  "researchServerLogsFrozen": true,
+  "publicFixtureStoppedAt": "2026-10-03T06:20:47.535104+00:00",
+  "publicFixturePidsStopped": [
+    28994
+  ],
+  "baselineServerStoppedAt": "2026-10-03T06:23:30.256553+00:00",
+  "baselineServerPidStopped": 10862,
+  "baselineServerPort": 4319
+}

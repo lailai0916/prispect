@@ -1,0 +1,128 @@
+start {
+  text: 'X-RAY · 财富透视局\n' +
+    'HANGZHOU BANK SPECIAL\n' +
+    '回合\n' +
+    '1\n' +
+    '/20\n' +
+    '准备开始\n' +
+    '🍜 差旅餐费 2回合后\n' +
+    '🔊\n' +
+    '⛶\n' +
+    '?\n' +
+    '🎯\n' +
+    '欢迎来到金融城\n' +
+    '我的资产\n' +
+    '当前格子\n' +
+    '—\n' +
+    '把镜头拖动一下，看看这座悬浮金融城吧\n' +
+    '市场快讯\n' +
+    '▾\n' +
+    '金融城地图\n' +
+    '你的位置\n' +
+    '陷阱\n' +
+    '–\n' +
+    '🎲 掷骰子\n' +
+    '👁 漫游(V)\n' +
+    '🎥 跟随(F)\n' +
+    '结束回合\n' +
+    '‹\n' +
+    '玩家 · 地图\n' +
+    '情报 · 资产\n' +
+    '›\n' +
+    'HACKATHON DEMO · 2026\n' +
+    'X-RAY\n' +
+    '财富透视局\n' +
+    '看得懂的公司，才值得你下注\n' +
+    '你是这座金融城的首席投资官。掷骰巡城，遇到公司先看它的 公司资料， 再决定要不要掏钱。\n' +
+    '· 每个投资机会都会弹出 真实金融风险情景，你只用做一件事 ——\n' +
+    '  选择「投资 / 放弃 / 举报」：看准了就投、看穿了就举报、没把握就放弃。\n' +
+    '· 看准了投 → 赚钱；看穿了举报 → 拿奖金； 看走眼 → 亏钱；不敢动 → 交一点机会成本。\n' +
+    '· 收购公司后可 布设风险陷阱，让对手来踩雷。\n' +
+    '· 20 回合后，总资产最高者成为金融城之王。\n' +
+    '· 掷骰后，用键盘 W / A / S / D（分别对应 前 / 左 / 后 / 右）在城市里 自由选择方向 穿行，街角四通八达（触屏设备则点屏幕上的方向箭头）； 随时按 V（或点「漫游」）切到第一人称在金融城里自由漫步、走进建筑；按 F（或点「跟随」）切到第三人称跟着你的投资人一起在城里走动—— 你越有钱，杭州银行周围的楼就越密、越高。\n' +
+    '🎚 选择游戏模式（开局前定好）\n' +
+    '🧭\n' +
+    '引导模式\n' +
+    '重点词汇高亮 · 防骗要点提示更多，新手友好\n' +
+    '🎯\n' +
+    '普通模式\n' +
+    '当前标准玩法：三选一，轻提示\n' +
+    '🔥\n' +
+    '困难模式\n' +
+    '自行输入投钱金额 · 提示极少，考验眼力\n' +
+    '🎬\n' +
+    '演示局 · 2 回合\n' +
+    '快节奏走完整闭环，适合现场展示\n' +
+    '开始游戏 ▶\n' +
+    '🔬 X-RAY 体检',
+  diag: {
+    vt: 'object',
+    rd: 'function',
+    data: true,
+    xray: true,
+    keys: 24,
+    wrapped: true
+  },
+  keys: [
+    '汇金财富', '口味餐饮', '绿能电力',
+    '巨力地产', '优品电商', '智通健康',
+    '传媒万象', '汇金矿业', '天下粮仓',
+    '宏图资本', '智造工厂', '云栖科技',
+    '潮玩工坊', '星链物流', '数智医疗',
+    '云顶商城', '文创园区', '云帆软件',
+    '恒信保险', '蓝湾冷链', '鼎元装备',
+    '绿源食品', '安泰基建', '星海影业'
+  ],
+  cfg: {
+    ROUNDS: 20,
+    START_CASH: 120,
+    CELL: 2.62,
+    GO_BONUS: 10,
+    TRAP_COST: 6,
+    MAX_LEVEL: 3,
+    UPKEEP_EVERY: 2,
+    UPKEEP_FEE: 6
+  }
+}
+city {
+  phase: undefined,
+  round: 1,
+  player: {
+    id: 0,
+    name: '你',
+    tag: '首席投资官',
+    color: 16766826,
+    css: '#ffd76a',
+    ai: false,
+    cash: 120,
+    own: [],
+    savings: 0,
+    stocks: 0,
+    skills: 0,
+    judgeTotal: 0,
+    dead: false,
+    fed: false
+  },
+  keys: [
+    'round',       'cur',
+    'turnCount',   'over',
+    'resolveTurn', 'upkeepClock',
+    'pos',         'owner',
+    'level',       'traps',
+    'sealed',      'doomed',
+    'players',     'PAWNS'
+  ]
+}
+page.screenshot: Target page, context or browser has been closed
+Call log:
+[2m  - taking page screenshot[22m
+[2m  - waiting for fonts to load...[22m
+[2m  - fonts loaded[22m
+
+    at /workspace/competitors/wealth/runtime-research.cjs:20:93 {
+  log: [
+    '  - taking page screenshot',
+    '  - waiting for fonts to load...',
+    '  - fonts loaded'
+  ]
+}

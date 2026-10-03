@@ -1,0 +1,118 @@
+{
+  "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+  "markers": [
+    {
+      "line": 4772,
+      "marker": "/* ---------- @ xray-shuffle 随机打散棋盘布局 ----------"
+    },
+    {
+      "line": 4968,
+      "marker": "/* ===== X-RAY 反诈学习系统 @ xray-learn ===== */"
+    },
+    {
+      "line": 5191,
+      "marker": "/* ===== X-RAY 五步扫描 · 财务造假识别 @ xray-five-step ===== */"
+    },
+    {
+      "line": 5663,
+      "marker": "/* ===== X-RAY 教学模块（手册 + 踩雷弹窗） @ xray-manual ===== */"
+    },
+    {
+      "line": 6065,
+      "marker": "/* 旧的\"开局立即弹出手册\"已移除：改为玩家点击开始游戏后播放 5s+5s 教学幻灯片，见 @ xray-slides */"
+    },
+    {
+      "line": 6073,
+      "marker": "/* ===== X-RAY 推导链（五步推导 + 终局复盘） @ xray-derive ===== */"
+    },
+    {
+      "line": 6519,
+      "marker": "/* ===== @ xray-light-01 灯光调暗 ===== */"
+    },
+    {
+      "line": 6623,
+      "marker": "/* ===== @ xray-build-03 建筑数量x1.5 ===== */"
+    },
+    {
+      "line": 6769,
+      "marker": "/* ===== @ xray-slides 开局幻灯片5s+确认 ===== */"
+    },
+    {
+      "line": 7021,
+      "marker": "/* ===== X-RAY HUD：侧边收纳 + 7×7 地图 @ xray-hud-fold ===== */"
+    },
+    {
+      "line": 7143,
+      "marker": "/* ===== X-RAY 辉光治理 @ xray-glow-near ===== */"
+    },
+    {
+      "line": 7258,
+      "marker": "/* ===== X-RAY 迷你地图 · 邻色分离着色 @ xray-mapcolor ===== */"
+    },
+    {
+      "line": 7451,
+      "marker": "/* @ xray-bank-core 小地图中心格：杭州银行标识 */"
+    },
+    {
+      "line": 7528,
+      "marker": "/* ===== X-RAY 标签与光环降亮 @ xray-label-dim ===== */"
+    },
+    {
+      "line": 7703,
+      "marker": "/* ===== @ xray-cinema-pro · 电影级视觉 / 动态增强层 ===== */"
+    },
+    {
+      "line": 8248,
+      "marker": "/* ===== @ xray-feel-pro · 游戏反馈层（把引擎状态变化翻译成视听反馈） ===== */"
+    },
+    {
+      "line": 8496,
+      "marker": "@ xray-solution-ui · 判定后教学卡的渲染与三档模式接线"
+    },
+    {
+      "line": 8823,
+      "marker": "/* ===== @ xray-demo-mode 演示局（2 回合极速局） ===== */"
+    },
+    {
+      "line": 9450,
+      "marker": "<!-- ============ @ xray-solution · 教学数据层 ============ -->"
+    }
+  ],
+  "scripts": [
+    {
+      "index": 0,
+      "tag": " type=\"module\"",
+      "line_start": 705,
+      "line_end": 8778,
+      "chars": 836424
+    },
+    {
+      "index": 1,
+      "tag": " id=\"xray-enhance-js\"",
+      "line_start": 8802,
+      "line_end": 8820,
+      "chars": 1268
+    },
+    {
+      "index": 2,
+      "tag": "",
+      "line_start": 8822,
+      "line_end": 8864,
+      "chars": 1476
+    },
+    {
+      "index": 3,
+      "tag": " id=\"xray-pro-js\"",
+      "line_start": 9253,
+      "line_end": 9448,
+      "chars": 8327
+    },
+    {
+      "index": 4,
+      "tag": " id=\"xray-solution-data\"",
+      "line_start": 9451,
+      "line_end": 10045,
+      "chars": 30931
+    }
+  ]
+}

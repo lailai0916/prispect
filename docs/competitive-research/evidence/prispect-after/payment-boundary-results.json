@@ -1,0 +1,94 @@
+{
+  "beforeRoles": {
+    "assumptions": {
+      "status": "known",
+      "maximumProposedAmount": "10000.00",
+      "currentExposure": "10000.00",
+      "currentExcess": "0.00",
+      "exposureHeadroom": "10000.00",
+      "remainingContractAmount": "90000.00",
+      "bindingConstraint": "exposure",
+      "missingFields": [],
+      "invalidFields": []
+    },
+    "records": {
+      "status": "unknown",
+      "maximumProposedAmount": null,
+      "currentExposure": null,
+      "currentExcess": null,
+      "exposureHeadroom": null,
+      "remainingContractAmount": null,
+      "bindingConstraint": null,
+      "missingFields": [
+        "gate:identity-contract",
+        "gate:identity-payee",
+        "gate:identity-refund",
+        "gate:terms"
+      ],
+      "invalidFields": []
+    },
+    "recordEvidenceIds": [
+      "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+      "647f72e4-872f-4043-86c9-6c14e4972215",
+      "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a"
+    ],
+    "missingRecordGateIds": [
+      "identity-contract",
+      "identity-payee",
+      "identity-refund",
+      "terms"
+    ],
+    "inputConditionFields": [
+      "totalAmount",
+      "exposureLimit"
+    ],
+    "recordInput": {
+      "totalAmount": "100000",
+      "exposureLimit": "20000",
+      "alreadyPaid": "10000.00",
+      "deliveredAmount": "0.00",
+      "actualRefund": "0.00"
+    }
+  },
+  "completeBoundary": {
+    "assumptions": {
+      "status": "known",
+      "maximumProposedAmount": "10000.00",
+      "currentExposure": "10000.00",
+      "currentExcess": "0.00",
+      "exposureHeadroom": "10000.00",
+      "remainingContractAmount": "90000.00",
+      "bindingConstraint": "exposure",
+      "missingFields": [],
+      "invalidFields": []
+    },
+    "records": {
+      "status": "known",
+      "maximumProposedAmount": "10000.00",
+      "currentExposure": "10000.00",
+      "currentExcess": "0.00",
+      "exposureHeadroom": "10000.00",
+      "remainingContractAmount": "90000.00",
+      "bindingConstraint": "exposure",
+      "missingFields": [],
+      "invalidFields": []
+    },
+    "recordEvidenceIds": [
+      "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+      "647f72e4-872f-4043-86c9-6c14e4972215",
+      "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a"
+    ],
+    "missingRecordGateIds": [],
+    "inputConditionFields": [
+      "totalAmount",
+      "exposureLimit"
+    ],
+    "recordInput": {
+      "totalAmount": "100000",
+      "exposureLimit": "20000",
+      "alreadyPaid": "10000.00",
+      "deliveredAmount": "0.00",
+      "actualRefund": "0.00"
+    }
+  }
+}

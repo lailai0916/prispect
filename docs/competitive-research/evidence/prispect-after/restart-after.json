@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-10-03T06:18:37.632Z",
+  "mode": "after",
+  "paths": [
+    {
+      "path": "/api/tasks/f2fe5ebe-f82b-49d6-a300-cada12809269",
+      "status": 200,
+      "sha256": "9b5172099e8ddc724290af9e5b86d70ed4012483ef28eab9ecd6981c71af3817"
+    },
+    {
+      "path": "/api/decisions/c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "status": 200,
+      "sha256": "5df75dd63c4c1abc4ddd52e5728e1294996e77ce7a78db57e3093eebc174f72e"
+    },
+    {
+      "path": "/api/materials/079bcbc1-a832-4d5f-8160-7d933deb3618/file",
+      "status": 200,
+      "sha256": "84856a8bec12beaed19da34ff982742fef6399e001e485bf5675898f0381d4fd"
+    },
+    {
+      "path": "/api/materials/56abe65c-04c3-4faf-b518-6fbd8589c02d/file",
+      "status": 200,
+      "sha256": "3533db4b523be67d411526eff8d67179c8d58f3208354dc2678fc8a9f068ec87"
+    },
+    {
+      "path": "/api/materials/31d8b751-949f-45aa-9403-8b303dcd9538/file",
+      "status": 200,
+      "sha256": "eccc9863e588a15ae7f5e1335a9a69b50b2e23dc0c4089e3094636c993da26c8"
+    }
+  ],
+  "kind": "actual-isolated-production-build-server-restart",
+  "smallDarkLayoutVerified": true,
+  "browserReloadRestored": true
+}

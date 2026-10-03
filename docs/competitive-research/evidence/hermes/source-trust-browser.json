@@ -1,0 +1,16 @@
+{
+  "kind": "fixture",
+  "input": "source-trust-fixture.html",
+  "pageSize": 12,
+  "printedRowsWithClosedDetailsAfterPaging": 49,
+  "narrowOverflow": {
+    "viewport": 390,
+    "document": 390
+  },
+  "narrowExpandedOverflow": {
+    "viewport": 390,
+    "document": 390
+  },
+  "scopeMismatchWithheld": true,
+  "errors": []
+}

@@ -4,6 +4,7 @@ import { productTerms } from '../../shared/product-terms';
 
 export const guideDocument: ProductDocument = {
   ...documentMetadata['/docs/guide'],
+  version: '1.1',
   sections: [
     {
       id: 'start',
@@ -120,6 +121,10 @@ export const guideDocument: ProductDocument = {
       ],
       bullets: [
         [
+          '“核查框架”列出本次主体、年度、目标、实际资料范围和仍缺的直接材料；它不是自动生成并已执行的任务清单。目标示例只填写输入，不立即发起研究。“来源关系与读取范围”显示有限已检查条目的同链接、同采集组或相同节选关系；来源独立性仍未知，条数不表示确信度。',
+          'The review framework records the entity, year, goal, actual source scope and missing direct evidence; it is not an automatically executed task plan. Goal examples fill the input without starting research. Source relationships and read scope show bounded same-location, collection-group or identical-excerpt relationships. Independence stays unknown; counts are not confidence.',
+        ],
+        [
           '点击“查看研究过程”，展开取得资料、定向补查、形成判断和反向复核四阶段。阶段状态、调用记录和时间来自实际执行；没有记录时会说明，缓存命中也不会伪装成新调用。研究未完成时，上一份分析与当前资料分别标明时点。',
           'Select View research process to inspect Gather sources, Targeted research, Form judgments and Review contrary evidence. Stage states, call records and times come from actual execution. Missing records are stated, and cache reuse is not presented as a new call. During unfinished research, the previous analysis and current sources retain separate timestamps.',
         ],
@@ -172,6 +177,10 @@ export const guideDocument: ProductDocument = {
       id: 'evidence-lab',
       title: ['企业证据实验室', 'Company evidence lab'],
       bullets: [
+        [
+          '可选练习先预测撤回一项事实会暂停哪些路径，再查看实际依赖反馈并恢复。练习使用单独本地图，不改变已保存报告、采用材料或财务评级；复盘只保留在本会话，切换账号或资料范围会清除。评价的是依赖预测，不是公司安全性。',
+          'Optional practice asks you to predict which paths pause when a fact is withdrawn, then shows actual dependency feedback and restoration. It uses a separate local graph without changing saved reports, adopted evidence or grades. Reviews stay in the session and clear when the owner or source scope changes. It assesses dependencies, not company safety.',
+        ],
         [
           '选择一条事实，查看对应来源、页码或网页字段，再沿连线检查计算与待检验解释。点击“在试验中撤回”只在本地暂停依赖它的路径；点击“在试验中恢复”重新计算，不修改已保存报告或财务评级，也不发送模型请求。',
           'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or financial grades or sending a model request.',
@@ -244,6 +253,14 @@ export const guideDocument: ProductDocument = {
       id: 'external',
       title: ['付款前核对：责任与敞口', 'Before payment: responsibility and exposure'],
       bullets: [
+        [
+          '经营名义可以另填品牌或门店名称，不能替代合同、收款和退款责任主体。可摘录待核验说法并选择对应字段，逐项查看依据状态、原文及下一步材料请求；“字段可核对”不代表原话真实、已经同意或已经履行。',
+          'Record a brand or store name separately as a trading name. It does not substitute for contract, payee or refund responsibility. Quote statements and select their fields to inspect evidence states, originals and next requests. Fields available for review do not establish truth, consent or performance.',
+        ],
+        [
+          '条件演算可反求本次拟付金额的数学上限，无需先填写拟付金额。它同时受交易剩余额与自设未交付暴露约束；记录路径还需主体、条款及实际金额的定位依据。总额与上限仍是输入条件。当前已经超出自设上限时显示无非负解，不给可付零元结论。',
+          'Conditional calculations can solve the mathematical ceiling without a proposed amount. Both the remaining transaction and your undelivered-exposure limit constrain it; the record path also requires located entity, terms and amount evidence. Total and limit remain entered conditions. An already-exceeded limit has no nonnegative solution, rather than permission to pay zero.',
+        ],
         [
           '先填公司或商家名称和拟付金额；不知道金额时可留空。名称暂按你的输入保存，尚未确认合同责任主体。补充条件中分别核对合同、收款与退款主体，以及授权和责任关系。',
           'Start with the company or seller and proposed amount; an unknown amount can stay blank. The name is saved as supplied and does not confirm the contractual entity. In additional conditions, check contract, payee and refund entities separately, including authority and responsibility.',
@@ -379,6 +396,10 @@ export const guideDocument: ProductDocument = {
       title: ['保存版本与比较结果', 'Save versions and compare results'],
       bullets: [
         [
+          '“本版改变了什么”比较相邻保存版本的输入、材料状态、门槛和演算，包括记录撤回后暂停的路径及保留的假设结果。两版按当前规则核算，没有重新取证，不把输入差异说成企业经济变化。',
+          'What changed in this version compares adjacent saved inputs, evidence states, gates and calculations, including paused record paths and retained assumptions after withdrawal. Both versions use current rules, without new retrieval; input differences are not business changes.',
+        ],
+        [
           '私人事项保存完整输入和证据变化。历史版本为只读；恢复历史输入另存新版本，并保留当前已知冲突。恢复前重新核对日期与当前条件。',
           'Private reviews retain full inputs and evidence changes. Historical versions are read-only; restoring older inputs creates a new version while retaining current known conflicts. Recheck dates and current conditions before restoring.',
         ],
@@ -401,6 +422,10 @@ export const guideDocument: ProductDocument = {
       id: 'exports',
       title: ['原件与导出底稿', 'Originals and exported working papers'],
       paragraphs: [
+        [
+          '私人事项的静态 HTML 保留所看版本的说法、依据状态、条件演算、材料摘录与版本差异，可离线阅读和打印。原件文件未打包；恢复联网后仍需在本账号核对原件。离线记录不认证资料、不批准付款，也不保证旧输入仍适用于今天。',
+          'A private review’s static HTML retains the viewed version’s statements, evidence states, calculations, excerpts and changes for offline reading and printing. Original files are not bundled; inspect them in the owning account when online. The offline record does not authenticate documents, approve payment or establish that old inputs apply today.',
+        ],
         [
           '材料页和来源窗口区分公开原件、保留的原始上传文件与确认后的字段。PDF 可按页查看；CSV 与 JSON 原文件可下载核对。仅手工结构化输入而没有上传文件时，不会提供虚构原件下载。',
           'Materials and source windows distinguish public originals, retained uploads and confirmed fields. PDFs can be viewed by page; original CSV and JSON files can be downloaded. Manual structured inputs without an uploaded file do not receive a fabricated original download.',

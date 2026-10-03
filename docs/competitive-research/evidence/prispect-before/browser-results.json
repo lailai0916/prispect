@@ -1,0 +1,303 @@
+{
+  "base": "http://127.0.0.1:4319",
+  "recordedAt": "2026-10-03T05:42:29.894Z",
+  "browser": "154.0.8037.0",
+  "sha": "d748d1ac5c1a9c6fe702301c819980e1cce87312",
+  "checks": [
+    {
+      "name": "desktop-light-home",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/"
+    },
+    {
+      "name": "desktop-light-query-empty",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/query"
+    },
+    {
+      "name": "real-register",
+      "pass": true
+    },
+    {
+      "name": "retained-synthetic-original-byte-match",
+      "pass": true
+    },
+    {
+      "name": "desktop-light-materials",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/materials"
+    },
+    {
+      "name": "desktop-light-report",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/tasks/e6ca9d24-b110-45f7-95e7-f53c23511276"
+    },
+    {
+      "name": "desktop-light-source-drawer",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/tasks/e6ca9d24-b110-45f7-95e7-f53c23511276"
+    },
+    {
+      "name": "desktop-light-evidence-lab",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/tasks/e6ca9d24-b110-45f7-95e7-f53c23511276"
+    },
+    {
+      "name": "external-exposure-A30000-B15000",
+      "pass": true
+    },
+    {
+      "name": "desktop-light-decision-next",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "desktop-light-decision-scenarios",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "desktop-light-decision-conditions",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "desktop-light-decision-evidence",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "desktop-light-decision-history",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "withdraw-paid-recorded-state",
+      "before": {
+        "assumptionScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ],
+        "recordScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": ["deliveredAmount", "actualRefund"]
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": ["deliveredAmount", "actualRefund"]
+          }
+        ]
+      },
+      "after": {
+        "assumptionScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ],
+        "recordScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": ["alreadyPaid", "deliveredAmount", "actualRefund"]
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": ["alreadyPaid", "deliveredAmount", "actualRefund"]
+          }
+        ]
+      }
+    },
+    {
+      "name": "stale-version-409",
+      "pass": true
+    },
+    {
+      "name": "desktop-light-decision-load-failure",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "desktop-light-decision-recovered",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "desktop-dark-report",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/tasks/e6ca9d24-b110-45f7-95e7-f53c23511276"
+    },
+    {
+      "name": "desktop-dark-decision",
+      "overflow": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "bodyWidth": 1440
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "narrow-dark-decision",
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyWidth": 390
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "narrow-dark-report",
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyWidth": 390
+      },
+      "url": "http://127.0.0.1:4319/tasks/e6ca9d24-b110-45f7-95e7-f53c23511276"
+    },
+    {
+      "name": "narrow-light-decision",
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyWidth": 390
+      },
+      "url": "http://127.0.0.1:4319/decisions?id=4248ba95-81b9-4dc7-a09e-08161ee98ad7"
+    },
+    {
+      "name": "narrow-light-query",
+      "overflow": {
+        "width": 390,
+        "scrollWidth": 390,
+        "bodyWidth": 390
+      },
+      "url": "http://127.0.0.1:4319/query"
+    }
+  ],
+  "images": [
+    "desktop-light-home",
+    "desktop-light-query-empty",
+    "desktop-light-materials",
+    "desktop-light-report",
+    "desktop-light-source-drawer",
+    "desktop-light-evidence-lab",
+    "desktop-light-decision-next",
+    "desktop-light-decision-scenarios",
+    "desktop-light-decision-conditions",
+    "desktop-light-decision-evidence",
+    "desktop-light-decision-history",
+    "desktop-light-decision-load-failure",
+    "desktop-light-decision-recovered",
+    "desktop-dark-report",
+    "desktop-dark-decision",
+    "narrow-dark-decision",
+    "narrow-dark-report",
+    "narrow-light-decision",
+    "narrow-light-query"
+  ],
+  "failures": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "expectedNetworkErrors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "unexpectedErrors": [],
+  "note": "The 503 console message was caused by the documented local failure injection, then retry recovered. It is not an unexpected page runtime exception."
+}

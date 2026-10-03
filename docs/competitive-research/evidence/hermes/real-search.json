@@ -1,0 +1,27 @@
+{
+  "url": "/api/search?q=600519",
+  "status": 200,
+  "elapsedSec": 5.719,
+  "body": {
+    "suggestions": [],
+    "sources": [
+      {
+        "title": "全国股转系统 · 年报实时检索",
+        "url": "https://www.neeq.com.cn/m/disclosure/announcement.html",
+        "kind": "discovery",
+        "state": "unavailable",
+        "fetchedAt": "2026-10-03T05:42:00.761Z",
+        "note": "fetch failed"
+      },
+      {
+        "title": "上市主体检索",
+        "url": "https://www.eastmoney.com/",
+        "fetchedAt": "2026-10-03T05:42:06.470Z",
+        "kind": "discovery",
+        "state": "unavailable"
+      }
+    ],
+    "found": false,
+    "ambiguous": false
+  }
+}

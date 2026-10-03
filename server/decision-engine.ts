@@ -33,6 +33,31 @@ export const decisionInputSchema = z
     transactionEntity: text,
     reportTaskId: z.string().min(1).max(200).nullable(),
     promise: z.string().max(2000),
+    tradingName: z.string().trim().max(200).optional(),
+    claims: z
+      .array(
+        z
+          .object({
+            id: text,
+            text: z.string().trim().min(1).max(1000),
+            target: z.enum([
+              'contract-entity',
+              'payee-entity',
+              'refund-entity',
+              'terms',
+              'paid',
+              'delivered',
+              'refunded',
+              'opening-cash',
+              'cash-events',
+              'collections',
+              'inventory',
+            ]),
+          })
+          .strict()
+      )
+      .max(12)
+      .optional(),
     external: z
       .object({
         asOf: date,
@@ -76,6 +101,14 @@ export const decisionInputSchema = z
   })
   .strict()
   .superRefine((input, ctx) => {
+    if (input.claims && new Set(input.claims.map((claim) => claim.id)).size !== input.claims.length)
+      ctx.addIssue({ code: 'custom', message: '待核对说法ID不得重复', path: ['claims'] });
+    const unavailableTargets =
+      input.purpose === 'external'
+        ? ['opening-cash', 'cash-events']
+        : ['payee-entity', 'refund-entity', 'paid', 'delivered', 'refunded'];
+    if (input.claims?.some((claim) => unavailableTargets.includes(claim.target)))
+      ctx.addIssue({ code: 'custom', message: '说法核验目标不适用于本事项类型', path: ['claims'] });
     if (
       input.datedCash &&
       new Set(input.datedCash.flows.map((flow) => flow.id)).size !== input.datedCash.flows.length
@@ -804,6 +837,15 @@ export function evaluateDecision(
     });
   } else if (input.purpose === 'handover' && input.datedCash) {
     const plan = input.datedCash;
+    // Optional, explicitly requested contract-field review. It is not a mandatory
+    // historical-report prerequisite and does not supply cash-plan inputs.
+    if (input.claims?.some((claim) => claim.target === 'contract-entity'))
+      addGate(
+        'identity-contract',
+        '签约主体',
+        resolve('identity', input.transactionEntity, null, undefined, undefined, 'contract'),
+        ['identity']
+      );
     cash = compareDatedCash(plan);
     const opening = resolve('opening-cash', input.transactionEntity, plan.asOf, plan.openingCash);
     addGate('opening-cash', '起点可用余额记录', opening, ['opening-cash']);
@@ -976,7 +1018,9 @@ export function evaluateDecision(
                   (dep) => dep.path === 'external.exposureLimit' && dep.state === 'missing'
                 )
               ? '填写用户自设暴露上限'
-              : `补充${gate.label}`,
+              : gate.id === 'exposure-condition' && gate.status === 'condition-unmet'
+                ? '核对拟付款与自设暴露条件'
+                : `补充${gate.label}`,
       reason: gate.summary,
       requestedEvidence: requestFor(gate),
       gateIds: [gate.id],

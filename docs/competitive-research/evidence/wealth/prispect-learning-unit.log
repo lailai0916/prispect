@@ -1,0 +1,40 @@
+✔ company lab fixes issuer, selected annual consolidated scope and exact public amounts (11.737227ms)
+✔ withdrawing inventory pauses only its dependent paths and leaves independent collection facts readable (2.350521ms)
+✔ withdrawing profit pauses ratios, cash differences and hypotheses without removing inventory balances (1.006716ms)
+✔ missing and source conflicts remain unknown after trial withdrawal and restoration (1.244494ms)
+✔ nonpositive bases preserve exact amount differences but withhold ratios (0.778362ms)
+✔ cash at or above positive profit makes low-cash hypotheses inapplicable without hiding material requests (2.831014ms)
+✔ original strong-cash and nonpositive-profit reports never claim low-cash causes (5.17242ms)
+✔ one-cent differences above floating-point safe precision remain exact (0.813706ms)
+✔ foreign issuer, unsupported financial institutions and invalid sources cannot supply adopted facts (1.596845ms)
+✔ public graph excludes run IDs, user notes, uploaded previews, questions and model narrative (1.101629ms)
+✔ original report lab uses exact signed adjustments, original pages and checked cash bridge (1.472908ms)
+✔ saved checks can cite the retained owning-account original without fabricating a public URL (2.017609ms)
+✔ a retained locator needs matching saved material, company, upload and digest; it never re-adopts raw observations (5.772534ms)
+✔ original source links restrict local endpoints and add PDF pages without interpreting uploads as public sources (1.508432ms)
+✔ withdrawing original inventory suspends its bridge and two explanations while independent receivables remain (0.920727ms)
+✔ original report excludes unadopted metrics and does not restore them from its preserved snapshot (0.939535ms)
+✔ original scope conflicts and failed grouped-original checks withhold the relevant facts and bridge (1.684687ms)
+✔ saved issuer and annual checks permit original quotes without a repeated year while missing issuer checks withhold facts (1.71971ms)
+✔ a numerically wrong bridge never becomes available from retained successful checks (0.972284ms)
+✔ legacy public examples without adjustments keep those facts missing instead of parsing source prose (0.971774ms)
+✔ public example missing annual/consolidated provenance or safe source refs is withheld (1.956727ms)
+✔ path highlighting follows ancestors and descendants without adding unrelated sibling facts (0.965905ms)
+✔ invalid or nonfact trial selections cannot disable claims or manufacture missing values (0.953466ms)
+✔ prediction uses the same transitive pauses as the lab and retains exact unaffected cash (2.313444ms)
+✔ feedback compares missed and extra predictions without inventing a company assessment (0.350137ms)
+✔ missing, conflicting, non-fact, null-valued and pre-withdrawn fields cannot become practice facts (0.653494ms)
+✔ preexisting withdrawals and unavailable paths remain unavailable instead of counting as new effects (0.382897ms)
+✔ a legitimate prediction of no affected results is allowed; unknown option IDs fail closed (0.39837ms)
+✔ nonpositive-denominator inapplicability remains distinct from a withdrawal pause (1.081609ms)
+✔ empty or entirely blocked calculations yield a reason, not a fabricated challenge (0.196416ms)
+✔ known zero and negative amounts remain available facts without guessing company risk (0.161734ms)
+✔ duplicates do not inflate feedback and graph binding changes on scope, source or dependency updates (0.864332ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 287.335505

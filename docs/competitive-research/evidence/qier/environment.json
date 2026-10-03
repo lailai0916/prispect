@@ -1,0 +1,291 @@
+{
+  "repository": "Weichenleeeee123/xray",
+  "remote": "https://github.com/Weichenleeeee123/xray.git",
+  "sha": "8568c394b0423b2f8d56b4fc4a2020ef4cefe2c9",
+  "fetched_at_utc": "2026-10-03T05:38:01Z",
+  "clone": "/workspace/competitors/qier",
+  "bundle_backup": "/workspace/competitor-backups/qier.bundle",
+  "license": "No explicit root/repository license found; independently implement mechanisms, no code/assets copied",
+  "runtime": {
+    "base_url": "http://127.0.0.1:4401",
+    "llm_mode": "off",
+    "commercial_configured": false,
+    "amac_detail": false,
+    "browser": "local Playwright + /usr/bin/chromium headless, reducedMotion reduce for details/version captures",
+    "credential_state_recorded": false
+  },
+  "python": "Python 3.12.14",
+  "python_packages": [
+    "annotated-doc==0.0.5",
+    "annotated-types==0.8.0",
+    "anyio==4.15.1",
+    "certifi==2026.7.22",
+    "cffi==2.1.1",
+    "charset-normalizer==3.5.2",
+    "click==8.5.0",
+    "cryptography==50.0.2",
+    "fastapi==0.142.2",
+    "h11==0.16.0",
+    "httpcore==1.0.9",
+    "httptools==0.8.0",
+    "httpx==0.28.1",
+    "idna==3.20",
+    "iniconfig==2.3.0",
+    "opentelemetry-api==1.45.0",
+    "packaging==26.3",
+    "pdfminer.six==20260107",
+    "pdfplumber==0.11.10",
+    "pillow==12.3.0",
+    "pluggy==1.6.0",
+    "pycparser==3.0",
+    "pydantic==2.13.5",
+    "pydantic_core==2.46.5",
+    "Pygments==2.21.0",
+    "pypdfium2==5.13.0",
+    "pytest==9.1.1",
+    "python-dotenv==1.2.4",
+    "python-multipart==0.0.32",
+    "PyYAML==6.0.3",
+    "starlette==1.7.0",
+    "typing-inspection==0.4.4",
+    "typing_extensions==4.16.0",
+    "uvicorn==0.54.0",
+    "uvloop==0.23.0",
+    "watchfiles==1.3.0",
+    "websockets==17.1"
+  ],
+  "node": "v24.19.0",
+  "screenshots": [
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/01-home-desktop.png",
+      "sha256": "7c983d5613318f7cf28b21d280a46d01d4237c18c87b4bcedd73c219379eb6b0",
+      "captured_at_utc": "2026-10-03T05:39:41.265098+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/02-example-filled.png",
+      "sha256": "a118921c1a98cad2c679751ddd1bda40e9db4a5258a7c611cacb3ea98dc6c6dc",
+      "captured_at_utc": "2026-10-03T05:40:20.361867+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/03-completion-early.png",
+      "sha256": "108776cbc88791996ebd31ded3b616a9eaed2d63756b8ad9ada77623a66ed4e3",
+      "captured_at_utc": "2026-10-03T05:40:21.933898+00:00",
+      "interpretation_note": "Complete at early capture, not waiting evidence"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/04-report-ready.png",
+      "sha256": "d600d28555c72df661d466eef9953dae107f059ca3211f5076d274828e1f58ac",
+      "captured_at_utc": "2026-10-03T05:40:24.957958+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/05-report-desktop.png",
+      "sha256": "7e0e7c6a1d1ef5832084cfc3c950bb764b85b739ab12e2b6a38e400dd4479702",
+      "captured_at_utc": "2026-10-03T05:41:02.066697+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/06-finance-signal.png",
+      "sha256": "762e46416d812c15edea3d8253a14af13637502c6fb8728f12093b3419cec871",
+      "captured_at_utc": "2026-10-03T05:42:24.884389+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/07-source-highlight.png",
+      "sha256": "4aeba0e459be5a8b36db9108be31bb3fca75ae833060144691da74989ce2a0f5",
+      "captured_at_utc": "2026-10-03T05:42:25.648404+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/08-question-steps.png",
+      "sha256": "c1fba66c878039786965d49d04189efdf6286f16eb4cd8c8fe4a23de46bce380",
+      "captured_at_utc": "2026-10-03T05:42:26.235085+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/09-print-family.png",
+      "sha256": "53d6b9dd9f481cab822fa3b77e7c3968bafc44524d84ff0eb5b53ab6384adbbc",
+      "captured_at_utc": "2026-10-03T05:42:26.860429+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/10-print-teller.png",
+      "sha256": "58aa5f762b17cee101a001477d4610fe9563813cf81970d5f38fe754c0c76842",
+      "captured_at_utc": "2026-10-03T05:42:27.588443+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/11-shareholders.png",
+      "sha256": "872898473dd81fbc2f390747a3d9fb4e0c7e4d206f89eb7795879eb5a00a41bb",
+      "captured_at_utc": "2026-10-03T05:42:28.084453+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/12-capital.png",
+      "sha256": "0edf2a2af1d09d37acd55edb1dfeb0fbfe23c0c12e40de2c25c3cdde23ed1bec",
+      "captured_at_utc": "2026-10-03T05:42:28.348458+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/13-reviews.png",
+      "sha256": "aa5dbd409bf1cbe7fb0c871e8870b11ae4e5b10971f18726e69d2bec853cdb37",
+      "captured_at_utc": "2026-10-03T05:42:28.640464+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/14-assistant.png",
+      "sha256": "c635713f6ba977edf549632e89ee069f9ffd922447bce67f5f158f2245bad041",
+      "captured_at_utc": "2026-10-03T05:42:29.128474+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/15-template-answer.png",
+      "sha256": "764a97057c5f4a7185614b0192772b2cb2c7d8ccb1ddf606e8d90c9aba2901ae",
+      "captured_at_utc": "2026-10-03T05:43:04.761195+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/16-supplement-0.png",
+      "sha256": "2c8e811dcac490b7d8a0627d0735ba15e8b09805091590af801247d206f39e6c",
+      "captured_at_utc": "2026-10-03T05:43:05.301206+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/16-supplement-1.png",
+      "sha256": "6b05d6f5dc0f38257e5a742609f38acb5c47c7adbcc191e1a6949a057252025f",
+      "captured_at_utc": "2026-10-03T05:43:06.449229+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/16-supplement-2.png",
+      "sha256": "bfe6c88a9fe2b6c4c3b2dfab4b7dbf1457fd549234cad8fffd7feff1a7257ba4",
+      "captured_at_utc": "2026-10-03T05:43:07.533250+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/16-supplement-3.png",
+      "sha256": "80edca6752b025a166c1d218bb9c1f948e89552b03503e0b9fd2e29e2e84e6cb",
+      "captured_at_utc": "2026-10-03T05:43:08.529270+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/17-version-2.png",
+      "sha256": "c4128700e4ee64cf44670dafed2d490dbac0b7d8db16ed1de30f1d92b8eaf021",
+      "captured_at_utc": "2026-10-03T05:43:05.985219+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/17-version-3.png",
+      "sha256": "917b7e6d814e2b9da846f3c2693f7d6d64ac6ff6874bbc78980700867882f7a5",
+      "captured_at_utc": "2026-10-03T05:43:07.117242+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/17-version-4.png",
+      "sha256": "6c6a94706b84ecf00440c0cce6e38ec07b2e6e587faf86e8d00e1430937de386",
+      "captured_at_utc": "2026-10-03T05:43:08.157263+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/17-version-5.png",
+      "sha256": "580d148a9f7a5bc803688b3774239f39df5917978a23a7f823b8f1e80ecb0505",
+      "captured_at_utc": "2026-10-03T05:43:09.073281+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/18-historical-report.png",
+      "sha256": "0484b4e1885815fe37a0f5cf9eea1de5785a96f138da48bc8065ffbba23d21b8",
+      "captured_at_utc": "2026-10-03T05:43:09.321286+00:00",
+      "interpretation_note": "At preserved scroll, old banner not shown; use19"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/19-history-reload.png",
+      "sha256": "3e3f8562268ec1e3d59081d1874aa7420a36ea2c7c40388f1e48c9c3b60128db",
+      "captured_at_utc": "2026-10-03T05:43:10.457309+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/20-cases.png",
+      "sha256": "e5065663d99aa98288bbfb8de5d4ccaaade351e21e4a581613a4d2ba3d61d5a4",
+      "captured_at_utc": "2026-10-03T05:43:56.858238+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/21-library-empty.png",
+      "sha256": "c8ea91e90637c9d7b202afea932fd681f9878586f5574f7e0e8232f86785fd1e",
+      "captured_at_utc": "2026-10-03T05:43:57.038242+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/22-source-settings.png",
+      "sha256": "a5fc933a2ae217cdcfcf853950e7c0d09c606d17d103f0ac7ff432d598fd48f2",
+      "captured_at_utc": "2026-10-03T05:43:57.242246+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/23-new-attachments.png",
+      "sha256": "0d06735376b05408567721f60dd2b2dd2222f7ed422fe3f5c1c5a1d880d3aca4",
+      "captured_at_utc": "2026-10-03T05:43:57.410249+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/24-glossary-popover.png",
+      "sha256": "db3464318671acd263b2442ace8f789342fdb233fcd16f12036779220425a436",
+      "captured_at_utc": "2026-10-03T05:43:57.942260+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/25-home-mobile.png",
+      "sha256": "07ad064aca12a879623993cb810cb309180b34109037fe9c6360cfa994d5d294",
+      "captured_at_utc": "2026-10-03T05:43:58.722275+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/26-report-mobile.png",
+      "sha256": "f7375c4ffd8b333f2a5b93a404abe9bfef1e813164fbaaf2bb74c0137390db5b",
+      "captured_at_utc": "2026-10-03T05:43:59.402289+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/27-assistant-mobile.png",
+      "sha256": "84764b79394844ad6ddaf87576276649a4d44111647896ce6b4cca93b2e42f2a",
+      "captured_at_utc": "2026-10-03T05:43:59.754296+00:00",
+      "interpretation_note": "Local/off capture, fixture C unless UI settings/new/library"
+    }
+  ],
+  "prispect_improvement_screenshots": [
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/28-prispect-claims-editor-desktop.png",
+      "sha256": "5c85d13090e77cab959c0e230a0afd78266f5a0e8974c2294ab8254deb1802ad",
+      "captured_at_utc": "2026-10-03T06:04:11.507140+00:00",
+      "interpretation_note": "Prispect independent implementation; local Vite5401 using authorized test account/backend4320, not competitor runtime"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/29-prispect-claims-invalid-target.png",
+      "sha256": "210bf25cac00ccbc7a54a88375a206838990fa82d817991cab3ad1b679f4953a",
+      "captured_at_utc": "2026-10-03T06:04:11.675144+00:00",
+      "interpretation_note": "Prispect independent implementation; local Vite5401 using authorized test account/backend4320, not competitor runtime"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/30-prispect-claims-mobile-dark.png",
+      "sha256": "f862dcffba132989f0fa86ed58ec5f8cb69fc14543ad4d5fff03a78c33c7e3d6",
+      "captured_at_utc": "2026-10-03T06:04:13.493435+00:00",
+      "interpretation_note": "Prispect independent implementation; local Vite5401 using authorized test account/backend4320, not competitor runtime"
+    },
+    {
+      "file": "docs/competitive-research/evidence/qier/screenshots/31-prispect-claims-report-desktop.png",
+      "sha256": "4837a04812700c12ac38c2db8f226350b556589efc94daf3d6cfa963b6214e96",
+      "captured_at_utc": "2026-10-03T06:04:15.375220+00:00",
+      "interpretation_note": "Prispect independent implementation; local Vite5401 using authorized test account/backend4320, not competitor runtime"
+    }
+  ],
+  "prispect_claims_ui": {
+    "logs": "prispect-claims-browser.json",
+    "source_hashes_recorded": true,
+    "capture_mode": "Local Playwright, dev Vite5401 proxy backend4320; Origin rewritten to backend authorized origin for development, backend public unconfigured model",
+    "retarget_regression_fixed": "Stable 11 targets disabled by purpose; no removal-index change when retargeting",
+    "no_credentials_in_evidence": true
+  }
+}

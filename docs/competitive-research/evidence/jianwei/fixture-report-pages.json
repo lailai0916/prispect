@@ -1,0 +1,207 @@
+{
+  "sha": "a3274e5ddafbeecf0f5cc8e35093c6d1fe1c4e53",
+  "mode": "controlled_browser_response_fixture_no_real_company_or_model",
+  "report": {
+    "analysis_id": "controlled-analysis",
+    "company_id": "controlled-company",
+    "generated_at": "2026-10-03T05:45:46.216Z",
+    "evidence_as_of": "2026-10-03T05:45:46.216Z",
+    "mode": "controlled_fixture",
+    "fallback": true,
+    "agent_status": "受控样例：未调用模型",
+    "coverage_status": "unverified_leads",
+    "identity": {
+      "id": "controlled-company",
+      "name": "虚构研究演练公司",
+      "basis": "受控交互样例；门店关联尚未核实",
+      "source_ids": ["controlled-source"],
+      "relationship_status": "尚未核实"
+    },
+    "summary": "受控交互样例",
+    "sources": [
+      {
+        "id": "controlled-source",
+        "title": "受控交互样例：不是真实公司资料",
+        "url": "https://example.com/research-fixture",
+        "publisher": "example.com",
+        "excerpt": "受控样例仅用于研究页面如何展示来源状态；不作为真实企业、金融或来源证据。",
+        "published_at": null,
+        "date_semantics": "公开日期未核实",
+        "fetched_at": "2026-10-03T05:45:46.216Z",
+        "verification_status": "search_excerpt",
+        "channel": "community",
+        "purpose": "受控页面状态研究",
+        "page_status": "没有抓取外部正文",
+        "cached": false,
+        "scope": "brand_context"
+      }
+    ],
+    "source_stats": {
+      "websites": 1
+    },
+    "risk": {
+      "level": "undetermined",
+      "decision_level": "medium",
+      "decision_basis": "information_gap",
+      "model_assessed": false,
+      "confidence": "low",
+      "reasons": [
+        {
+          "explanation": "受控样例：资料尚待核实",
+          "direction": "context",
+          "citations": [
+            {
+              "source_id": "controlled-source",
+              "quote": "受控样例仅用于研究页面如何展示来源状态；不作为真实企业、金融或来源证据。"
+            }
+          ]
+        }
+      ],
+      "limitations": ["受控交互样例"],
+      "confidence_explanation": "低确信度：日期仍待核实",
+      "confidence_dimensions": [
+        {
+          "label": "原始支持度",
+          "value": "低确信度（日期仍待核实）"
+        }
+      ]
+    },
+    "reviews": {
+      "status": "completed",
+      "collected_count": 1,
+      "reviewed_count": 1,
+      "independent_content_count": 1,
+      "counts": {
+        "unclear": 1
+      },
+      "observations": [
+        {
+          "source_id": "controlled-source",
+          "kind": "discussion",
+          "sentiment": "unclear",
+          "summary": "受控演练：无法归属具体门店",
+          "quote": "受控样例仅用于研究页面如何展示来源状态；不作为真实企业、金融或来源证据。",
+          "scope": "brand_context",
+          "duplicate_of": null
+        }
+      ],
+      "limitation": "非真实评价统计"
+    },
+    "cashflow": {
+      "mode": "sensitivity_only",
+      "horizon_months": 6,
+      "unit": "受控条件样例指数，非企业实际金额",
+      "baseline": {
+        "description": "样例：基准100",
+        "period": "未取得实际基线"
+      },
+      "facts": [],
+      "driver_source_ids": ["controlled-source"],
+      "scenarios": [
+        {
+          "name": "受控条件样例",
+          "inflow_change_pct": -20,
+          "outflow_change_pct": 10,
+          "assumption": "研究页面结构的虚构输入",
+          "cumulative_net_min": -30,
+          "cumulative_net_max": 10,
+          "months": [
+            {
+              "month": 1,
+              "inflow": 100,
+              "outflow_min": 90,
+              "outflow_max": 110,
+              "net_min": -10,
+              "net_max": 10
+            }
+          ]
+        }
+      ],
+      "limitations": ["未取得实际现金收付款"]
+    },
+    "indicators": [
+      {
+        "id": "identity",
+        "label": "门店与企业关系",
+        "status": "unknown",
+        "value": "门店归属待核实",
+        "explanation": "受控样例：尚待核实",
+        "source_ids": ["controlled-source"],
+        "missing": ["经营关系材料"],
+        "agent_findings": []
+      }
+    ],
+    "changes": [
+      {
+        "id": "controlled-change",
+        "title": "受控样例变化",
+        "fact_text": "没有真实事件",
+        "event_date": null,
+        "stage": "尚待核实",
+        "consumer_relevance": "尚未建立联系",
+        "interpretations": [
+          {
+            "text": "尚待核实"
+          }
+        ],
+        "source_ids": ["controlled-source"]
+      }
+    ],
+    "questions": ["合同抬头与实际收款方是不是同一主体？"],
+    "unknowns": ["门店归属待核实", "公开日期仍待核实"],
+    "counter_source_ids": ["controlled-source"],
+    "counter_search_status": "受控样例，没有实际反方检索",
+    "criteria": {
+      "limitation": "受控样例，不代表真实调查范围"
+    },
+    "trace": [
+      {
+        "action": "受控交互研究",
+        "detail": "浏览器拦截返回，未调用外部服务",
+        "source_ids": ["controlled-source"]
+      }
+    ]
+  },
+  "inspected": [
+    {
+      "page": "这家公司是谁",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n这家公司是谁\n虚构研究演练公司\n\n尚未核实\n\n受控交互样例\n\n资料取得截至 2026/10/3 05:45:46。\n\n受控样例：未调用模型\n\n查看主体依据（1）\n← 返回查询结果"
+    },
+    {
+      "page": "为什么是这个风险",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n为什么是这个风险\n中等风险，慎重！！！\n\n这次能核对的资料还不够，暂时说不清这家公司到底稳不稳。先少付钱，把门店是谁开的、退款怎么退问清楚。\n\n这次判断：把握一般。它说的是资料够不够，不是成功率或退款概率。\n\n受控样例：资料\n\n看这条的证据（1）\n查看完整分析和判断范围\n← 返回查询结果"
+    },
+    {
+      "page": "消费者怎么说",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n消费者怎么说\n用户评价，如何影响判断\n已审阅 1 / 1 条材料\n\n这里只看这次查到的评价，不能代表所有顾客。留意退款、停课等问题有没有后续处理。\n\n查看评价怎样影响判断\n0\n正面材料\n0\n负面材料\n0\n褒贬混合材料\n1\n不明确材料\n\n共 1 组非近似转载的评价或讨论；数量不是人数，也不是总体好评率。\n\n逐条查看全部已审阅评价\n非真实评价统计\n← 返回查询结果"
+    },
+    {
+      "page": "未来收支试算",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n未来收支试算\n未来 6 个月收支情景\n条件压力测试 · 缺少实际收支基线\n\n把“收的钱变少、花的钱变多”算一遍，看看可能承受多大压力。这只是试算，不能当成公司未来会亏多少钱。\n\n查看详细说明\n\n单位：受控条件样例指数，非企业实际金额。变化百分比是试算假设，不是对企业未来增长或亏损的预测。\n\n情景\t第 6 月收款变化\t第 6 月支出变化\t6 个月累计收支差额\n受控条件样例\t-20%\t+10%\t-30 ～ 10\n查看逐月模拟与计算假设\n可能影响收支的材料（1）\n未取得实际现金收付款\n← 返回查询结果"
+    },
+    {
+      "page": "逐项查看情况",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n逐项查看情况\n门店与企业关系\n门店归属\n\n受控样例：\n\n还缺：经营关系材料\n查看证据（1）\n← 返回查询结果"
+    },
+    {
+      "page": "最近有什么变化",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n最近有什么变化\n受控样例变化\n\n没有真实事件\n\n日期：还没查清 · 尚待核实\n\n尚未建立联系\n\n另一种可能：\n\n查看证据（1）\n← 返回查询结果"
+    },
+    {
+      "page": "还要问门店什么",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n还要问门店什么\n到店里直接问\n合同抬头与实际收款方是不是同一主体？\n对方回应或其他说法\n\n受控样例，没有实际反方检索\n\n查看回应依据（1）\n← 返回查询结果"
+    },
+    {
+      "page": "全部证据",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n全部证据\n\n每条资料都能查看来源。消费者发帖是当事人的说法，还要核对是否属于这家公司。\n\n消费者反馈 1\n受控交互样例：不是真实公司资料\nexample.com · 只看到搜索摘要 · 品牌线索，未直接用于公司评级\n\n受控样例仅用于研究页面如何展示来源状态；不作为真实企业、金融或来源证据。\n\n查看详情（1）\n← 返回查询结果"
+    },
+    {
+      "page": "调查范围与局限",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n调查范围与局限\n这次查了什么\n\n本次找到 1 条资料，来自 1 个网站。\n\n受控样例，不代表真实调查范围\n\n还缺什么\n门店归属\n公开日期\n\n这些资料只能帮助你决定下一步问什么，不能保证以后一定不会出问题。\n\n← 返回查询结果"
+    },
+    {
+      "page": "调查过程",
+      "visible": "✦\nX-RAY\n企业变化解释器\n企业检索与历史回放\n原交易演示\n虚构研究演练公司\n调查过程\n受控交互研究\n\n浏览器拦截返回，未调用外部服务\n\n查看这一步的资料（1）\n← 返回查询结果"
+    }
+  ]
+}

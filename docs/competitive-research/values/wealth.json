@@ -1,0 +1,2229 @@
+[
+  {
+    "id": "WEA-001",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "action-review",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8660,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "action-review"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "用户完成投资、放弃或举报后查看解法",
+    "visible_behavior": "教学卡引用本次实际选择并显示对应复盘",
+    "system_behavior": "按 r.act 分流 d.review；judgeRight 从结算结果传入",
+    "problem": "通用讲解未回应用户刚做的动作",
+    "value": "同一规则因选择不同形成有针对性的解释",
+    "conditions_cost": "须拥有真实选择与真实结果，不能事后猜用户思路",
+    "prispect_application": "证据实验先预测再比较实际依赖变化",
+    "risks": "误把动作映射为用户心理；游戏把放弃标错",
+    "transformation": "只评价依赖预测，展示所选与实际两列；无真实记录不归因",
+    "disposition": "combine",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "实验前选受影响节点，实验后逐项对比；不写入grade或永久记录",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-002",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "exact-case-clue",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8636,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "exact-case-clue"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "选择某一公司的解法",
+    "visible_behavior": "决定性线索列出该公司毛利、增长、周转等具体值",
+    "system_behavior": "SOL 以精确公司名绑定档案，clue 定制而不是类型模板",
+    "problem": "用户难将方法用到自己的资料",
+    "value": "把抽象原则落实到输入数值，便于反查",
+    "conditions_cost": "预置题可以定制；实时产品必须来源与期间匹配",
+    "prispect_application": "用图节点的真实标签、金额、公式解释依赖变化",
+    "risks": "游戏数字无外部原件；准确引用不证明数字真实",
+    "transformation": "直接读取 LabNode.value/formula/sourceRefs；禁止补数和猜原因；保留原件来源由同materialId/主体/有效hash的saved snapshot元数据绑定owner文件API，沿用已通过checks；不读取snapshot observations再采用。",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "切换公司/年度后解释更换；缺失/冲突时不引用金额",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "shared/evidence-lab.ts:451",
+      "shared/evidence-lab.ts:685",
+      "tests/evidence-lab.test.ts:353",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/14-solution-stable.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-003",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "rule-cross-reference",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8639,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "rule-cross-reference"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "查看教学卡第三节",
+    "visible_behavior": "显示手册第几步、完整条款和命中标签",
+    "system_behavior": "STEP/RED/YEL/GRN 共享数据渲染规则定位",
+    "problem": "结论无法回到采用的方法",
+    "value": "具体规则比笼统建议更可核查",
+    "conditions_cost": "规则须正确、版本明确；标签映射需唯一",
+    "prispect_application": "依赖实验显示确切公式与阻断规则",
+    "risks": "游戏规则含错误金融普遍化",
+    "transformation": "用析光确定性计算规则，手册入口链接canonical methodology",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "结果解释能回到方法；非正利润比例不计算且说明原因",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/14-solution-stable.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-004",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "next-transfer-action",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8652,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "open()/d.next"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "读完当前案例解法",
+    "visible_behavior": "下次怎么防列2至3个可迁移动作",
+    "system_behavior": "d.next数组由案例决定，不只是最终评分",
+    "problem": "知道答案但不知道下一次找什么",
+    "value": "把教育转成实际调查行动",
+    "conditions_cost": "需动作可取得、具体且说明用途",
+    "prispect_application": "下一步指向应收账龄、期后回款、合同或原件页",
+    "risks": "游戏把缺证直接判造假",
+    "transformation": "复用 companyChallengeDefinitions 材料用途，未知保留；区分材料保持not-obtained、需哪项依据及所检验解释已经存在；新练习复用同图hypothesis.detail，不新增虚构取得。",
+    "disposition": "enhance-existing",
+    "implementation": "implemented",
+    "acceptance": {
+      "method": "材料请求写尚未取得；每项说明可区分的竞争解释",
+      "status": "source-confirmed-existing; module-specific-runtime-boundary-retained",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "既有对应实现重新核实；不把源代码审阅扩大为未做的100节点性能/卸载运行/现场恢复实测。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "already-existing-enhancement-or-reuse",
+    "prispect_evidence": ["shared/company-challenge.ts:52", "src/EvidenceLab.tsx:245"]
+  },
+  {
+    "id": "WEA-005",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "abstain-choice",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4859,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "abstain-choice"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "用户看资料后拿不准",
+    "visible_behavior": "可选择放弃，无须强制二元结论",
+    "system_behavior": "三动作中pass设置judge=null；不改成安全或风险",
+    "problem": "强迫下结论会制造伪确定性",
+    "value": "允许用户保留未知并停止",
+    "conditions_cost": "游戏有固定机会费且把弃权计错误；现实核验不应惩罚谨慎",
+    "prispect_application": "实验提供暂不预测/取消；决策保留未知",
+    "risks": "惩罚等待使用户为分数冒险",
+    "transformation": "将不确定作为有效认识状态，取消不计答错",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "缺证/冲突时停止；取消不会生成正确率或投资评价",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/16-five-step-uncertain.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-006",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "positive-counterexample",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 9666,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "positive-counterexample"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "学习者看高负债或高毛利公司",
+    "visible_behavior": "健康案例解释行业和业务模式，避免一见数字就报警",
+    "system_behavior": "heavy/light/stable 正例档案与坏例并存",
+    "problem": "只教风险导致过度报警",
+    "value": "同一指标不同背景有不同意义",
+    "conditions_cost": "要有真正同行与覆盖数据，非口号",
+    "prispect_application": "教学展示不会因撤回A而改变的独立节点",
+    "risks": "案例行业均值和覆盖结论预置；不能当通用阈值",
+    "transformation": "以依赖链正反例教学，行业真实研究另作独立待办",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "撤回合并净利润后经营现金仍可核对；不推公司健康。",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-007",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "legal-role-context",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 9686,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "legal-role-context"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "看诉讼条数较多的数智医疗案例",
+    "visible_behavior": "解释原告主动维权与被告被追债的区别",
+    "system_behavior": "company clue/teach 明确法律事件角色",
+    "problem": "只数诉讼可能误判信用",
+    "value": "主体角色影响事件解释",
+    "conditions_cost": "需原始案号、角色、事项、状态；仅标题不足",
+    "prispect_application": "公开事件研究保留角色/进展，不把计数当信用",
+    "risks": "预置原告标签不能核实真实事件",
+    "transformation": "扩展来源事件字段后再做角色过滤；目前放证据请求",
+    "disposition": "defer",
+    "implementation": "deferred",
+    "acceptance": {
+      "method": "前置官方原文；缺角色时写待核对，不计入不良事件",
+      "status": "deferred-with-prerequisite-and-next-action",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [
+      "官方事件原文及主体、角色、期间、结案状态可用的结构化接口；当前标题线索不满足。"
+    ],
+    "next_step": "先扩展来源事件解析契约与角色证据，测试原告/被告/已结案的同类输入；目前保留为待核对材料，不计公司不良事件。",
+    "handling_result": "explicit-deferred"
+  },
+  {
+    "id": "WEA-008",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "decision-payoff-preview",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4859,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "decision-payoff-preview"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "提交选项前",
+    "visible_behavior": "各选项描述投入、机会成本、举报奖励或误报代价",
+    "system_behavior": "F_结合 amount/passFee渲染动作结果预告",
+    "problem": "行动后才知道代价",
+    "value": "可见代价帮助比较具体条件",
+    "conditions_cost": "现实代价须计算定义，不能把游戏收益看未来收益",
+    "prispect_application": "付款条件演算在提交前展示最大未履约暴露",
+    "risks": "+35%/-60%为游戏参数，无金融预测含义",
+    "transformation": "采用确定性既定输入，方案与假设标签不消失；原付款条件运算保留输入假设；本轮另一模块补齐同一差额边界。该模块整体验收由主Agent汇总，财富条目不重复宣称独立验收。",
+    "disposition": "enhance-existing",
+    "implementation": "implemented",
+    "acceptance": {
+      "method": "相同输入输出一致；模型不能改金额；缺依赖遮蔽结果",
+      "status": "source-confirmed-existing; module-specific-runtime-boundary-retained",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "既有对应实现重新核实；不把源代码审阅扩大为未做的100节点性能/卸载运行/现场恢复实测。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "already-existing-enhancement-or-reuse",
+    "prispect_evidence": [
+      "shared/decision-contracts.ts",
+      "shared/payment-boundary.ts",
+      "src/PaymentBoundary.tsx"
+    ]
+  },
+  {
+    "id": "WEA-009",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "optional-solution",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8716,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "optional-solution"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "普通模式完成判定后",
+    "visible_behavior": "结算卡底部可点击看解法",
+    "system_behavior": "rd结算钩子在弹窗关闭前插按钮，保留本题LAST",
+    "problem": "教学强弹容易打断行动",
+    "value": "教学附在产生疑问的位置，按需展开",
+    "conditions_cost": "LAST须和当前题/结果绑定；关闭后应仍可回查；正式demo当前此默认选择未可靠呈现，析光以React状态提供入口并单独验收。",
+    "prispect_application": "EvidenceLab同一图中可选展开依赖挑战",
+    "risks": "MutationObserver重插按钮可能状态错配；本轮正式demo运行发现按钮被H_重写quizFoot清除，normal专用observer不为demo恢复。源码实现不代表demo可用，见11-verdict-natural.png。",
+    "transformation": "React显式状态挂在Lab面板，不强弹不分模式",
+    "disposition": "combine",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "默认正常核验流程可用；挑战展开/收起保留当次上下文",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/11-verdict-natural.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-010",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "mandatory-guide",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8689,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "mandatory-guide"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "引导模式每次判定并关闭结算",
+    "visible_behavior": "强制弹独立教学卡",
+    "system_behavior": "PENDING在quiz关闭的MutationObserver后show",
+    "problem": "新手可能不看复盘",
+    "value": "在教学专场确保反馈出现",
+    "conditions_cost": "需教育目标且接受打断；真实任务不应被迫",
+    "prispect_application": "从强制触发提取完成后明显可选反馈入口",
+    "risks": "强弹绕不开，遮挡核心任务",
+    "transformation": "保留optional-solution；拒绝在业务报告强弹",
+    "disposition": "reject",
+    "implementation": "rejected",
+    "acceptance": {
+      "method": "完整核验不被教学阻拦；无模式开关",
+      "status": "rejected; replacement-verified-by-source-and-component-fixture",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "不实施该推断/模式；在用户任务验证中检查替代文案是否仍导致企业风险或能力误解。",
+    "handling_result": "rejected-with-evidence",
+    "rejection_reason": "强制复盘及每页5秒计时会阻断核验，无法保证理解；用默认关闭的可选练习取代。",
+    "prispect_evidence": [
+      "src/EvidenceLearning.tsx:95",
+      "docs/competitive-research/projects/wealth.md"
+    ]
+  },
+  {
+    "id": "WEA-011",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "manual-revisit",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 6054,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "manual-revisit"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "游戏中按H或解法中重看",
+    "visible_behavior": "随时打开五步手册，不要求退出游戏",
+    "system_behavior": "键盘和重看入口共用openManual",
+    "problem": "忘记术语时无法找说明",
+    "value": "帮助在需要处可取得",
+    "conditions_cost": "需焦点与编辑快捷键隔离；同一规则来源",
+    "prispect_application": "实验解释连接方法文档和公式",
+    "risks": "全局H在输入框触发可能抢键",
+    "transformation": "使用显式链接与共享Dialog，不加全局单字键",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "键盘Tab可达链接；输入不会启动实验",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-012",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "keyboard-options",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4859,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "keyboard-options"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "三选一情景题打开",
+    "visible_behavior": "1/2/3按键对应可见选项",
+    "system_behavior": "keydown临时注册，提交后移除",
+    "problem": "用户输入负担和演示点击成本",
+    "value": "可快速完成有限选择",
+    "conditions_cost": "不得在金额输入/其他弹窗抢键；按钮语义需原生",
+    "prispect_application": "依赖实验原生checkbox/button键盘操作",
+    "risks": "div.opt非原生按钮；键盘快捷与modal无焦点陷阱",
+    "transformation": "使用原生控件和label；无隐藏快捷动作",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "键盘完成选择、验证、恢复；焦点指示清楚",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-013",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "amount-focus-range",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4859,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "amount-focus-range"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "困难模式点击投资",
+    "visible_behavior": "金额框自动聚焦、选中，并显示最小/最大范围",
+    "system_behavior": "focus/select；parseFloat后整数、NaN和区间clamp",
+    "problem": "多点一次且用户不懂允许范围",
+    "value": "默认值和范围能缩短输入",
+    "conditions_cost": "金融金额不能静默clamp掩盖输入错误",
+    "prispect_application": "付款计划预填输入并显示约束",
+    "risks": "静默修正金额可能非用户意图",
+    "transformation": "显示字段错误并留原输入；提交前检查、显式更正；既有数值输入保留显式min/max/required、服务端校验，不自动把超范围输入改成合法金额；未新增困难模式。",
+    "disposition": "adapt",
+    "implementation": "implemented",
+    "acceptance": {
+      "method": "空值、负数、超限都可见；未确认不改金额",
+      "status": "source-confirmed-existing; module-specific-runtime-boundary-retained",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "既有对应实现重新核实；不把源代码审阅扩大为未做的100节点性能/卸载运行/现场恢复实测。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "already-existing-enhancement-or-reuse",
+    "prispect_evidence": ["src/pages/Decisions.tsx:1475", "src/pages/Decisions.tsx:1518"]
+  },
+  {
+    "id": "WEA-014",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "single-submit",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4859,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "single-submit"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "点击任何选项后",
+    "visible_behavior": "选项禁点，避免重复结算",
+    "system_behavior": "pointerEvents none、移除keydown再resolve",
+    "problem": "双击会造成重复资金变动",
+    "value": "一次判定有清楚状态",
+    "conditions_cost": "pointerEvents仅鼠标防护；程序应幂等",
+    "prispect_application": "本地实验verify按钮有限状态；服务器变更仍需幂等",
+    "risks": "视觉禁用不构成API幂等",
+    "transformation": "结果阶段禁用选择并移除提交按钮；refguard保证重复点击只记录一次；实验不触发网络。",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "双击不重复记录；验证后按钮和反馈一致",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-015",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "term-purpose-pair",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 6794,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "term-purpose-pair"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "第一次进入教学",
+    "visible_behavior": "指标先给日常定义，再说帮助回答的问题",
+    "system_behavior": "每个xsM依次b/span/em",
+    "problem": "新用户知道名词但不知道用它干什么",
+    "value": "定义连接任务，比术语列表更易理解",
+    "conditions_cost": "日常定义不能丢会计口径",
+    "prispect_application": "学习卡写来源字段→公式→哪些依赖停止",
+    "risks": "游戏将净利润称落袋钱，违背利润≠现金",
+    "transformation": "精确定义利润、现金与依赖，不用落袋现金解释净利润",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "文案不把现金利润比称回款率；中英文一致",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/02-onboarding-first.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-016",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "two-step-onboarding",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 6780,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "two-step-onboarding"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "点击开始游戏",
+    "visible_behavior": "先指标再方法，两页进度/确认",
+    "system_behavior": "PER_PAGE 5000，每页armed后按钮解锁",
+    "problem": "一次介绍太多用户可能迷路",
+    "value": "从概念到行动的顺序有教学价值",
+    "conditions_cost": "实际教学时间不等于理解；强制等待有负担",
+    "prispect_application": "把一段例子与可选预测分两步",
+    "risks": "固定5秒门槛不能证明已读；面板1280×800裁切",
+    "transformation": "不强制计时，用户主动展开并立即可操作",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "320/390明暗与正常认证报告路径可展开、选择、验证、恢复；不存在5秒等待。",
+      "status": "verified-only-for-the-stated-local-scope",
+      "user_effect": "真实用户理解、保持度和成本效果待验证",
+      "boundary": "证据采用已有learning component/browser与正常认证上传报告运行记录；不把一组共同检查当作竞品完整机制验收。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": "需首次使用任务和明确教程需求。",
+    "next_step": "以相同材料测概念→预测顺序的理解；若另做分步教程再比较，保持可跳过。",
+    "handling_result": "partial-adaptation-with-explicit-scope",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/03-onboarding-second.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    },
+    "original_acceptance_goal": {
+      "method": "窄屏内容滚动，CTA可见；无人工等待",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "absorbed_scope": "可选details内同页步骤1选择来源事实、步骤2预测，提交后反馈；无强制计时。",
+    "existing_scope": "既有证据Lab和报告入口。",
+    "remaining_scope": "两页开局教学/强制阅读门槛未引入；首次使用理解效果未测。",
+    "implementation_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json",
+      "src/EvidenceLearning.tsx",
+      "shared/evidence-learning.ts"
+    ],
+    "implementation_scope": "partial-adaptation; see absorbed_scope / existing_scope / remaining_scope",
+    "audit_note": "同一页选事实/预测不等于竞品两页onboarding；原验收没有说明这层转化。",
+    "verified_scope": "320/390明暗与正常认证报告路径可展开、选择、验证、恢复；不存在5秒等待。",
+    "verification_boundary": "工程检查仅覆盖verified_scope中明确的代码与实际记录。root整套619项代码检查通过不替代真实外部来源、冷启离线、历史观察、用户理解或品牌记忆实证。"
+  },
+  {
+    "id": "WEA-017",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "encounter-only-recap",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 5120,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "encounter-only-recap"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "游戏终局",
+    "visible_behavior": "报告列你实际遇到的类别而非全题库",
+    "system_behavior": "LEARN.byTag按Ar真实题目记录seen/ans/ok/bad",
+    "problem": "泛化评价容易虚构用户经验",
+    "value": "复盘和实际记录对应",
+    "conditions_cost": "会话/数据拥有者变化应清空",
+    "prispect_application": "图实验会话记录事实选择与预测",
+    "risks": "学习次数不能当真实投资能力",
+    "transformation": "仅内存保存本图依赖实验，来源图变动清空",
+    "disposition": "combine",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "未做过实验不显示掌握评级；切图/账号无旧记录",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/13-end-recap.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-018",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "dedup-practice",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 5449,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "SCAN.log[pf.n] first-answer guard"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "重复对同公司做体检",
+    "visible_behavior": "首次选择才计asked/ok，同题重看不刷分",
+    "system_behavior": "SCAN.log[pf.n] guard；下次入口优先未看公司",
+    "problem": "重复查看让成绩虚高",
+    "value": "把学习尝试与重复阅读分开",
+    "conditions_cost": "首答保留或多次改答规则须透明",
+    "prispect_application": "会话复盘按attempt记录，不让恢复自动计次",
+    "risks": "固定第一答不体现进步；公司名非稳定ID",
+    "transformation": "明确每次验证一次；重复点击不计新attempt",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "browser duplicate submission只记一条；恢复后新的实际提交可记新尝试，session recap仅最近12次。",
+      "status": "verified-only-for-the-stated-local-scope",
+      "user_effect": "真实用户理解、保持度和成本效果待验证",
+      "boundary": "证据采用已有learning component/browser与正常认证上传报告运行记录；不把一组共同检查当作竞品完整机制验收。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": "若需唯一题复盘，先定义来源图/事实/问题稳定标识。",
+    "next_step": "验证真实复做需求后再设计按题聚合，明确尝试次数与唯一题数，不外推学习能力。",
+    "handling_result": "partial-adaptation-with-explicit-scope",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "original_acceptance_goal": {
+      "method": "连续verify一次只记一条；主动新题才产生新记录",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "absorbed_scope": "同一次验证由submitted ref阻止重复记录；恢复后可对同题再次产生一次真实尝试。",
+    "existing_scope": "既有纯依赖evaluator。",
+    "remaining_scope": "未按唯一题/公司累计去重，未建立跨会话掌握度。",
+    "implementation_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json",
+      "src/EvidenceLearning.tsx",
+      "shared/evidence-learning.ts"
+    ],
+    "implementation_scope": "partial-adaptation; see absorbed_scope / existing_scope / remaining_scope",
+    "audit_note": "实际去重是单次提交refguard，不是跨题目唯一题库去重。",
+    "verified_scope": "browser duplicate submission只记一条；恢复后新的实际提交可记新尝试，session recap仅最近12次。",
+    "verification_boundary": "工程检查仅覆盖verified_scope中明确的代码与实际记录。root整套619项代码检查通过不替代真实外部来源、冷启离线、历史观察、用户理解或品牌记忆实证。"
+  },
+  {
+    "id": "WEA-019",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "zero-sample-state",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 5075,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "buildCard()/n === 0"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "没有有效判定直接终局",
+    "visible_behavior": "显示未形成有效判定与下一步练习建议",
+    "system_behavior": "n===0 单独分支，非0%失败评级",
+    "problem": "零次不能评价水平",
+    "value": "样本不足展示边界比假评级可信",
+    "conditions_cost": "所有百分比应有分母",
+    "prispect_application": "会话复盘无记录时显示未完成实验",
+    "risks": "fa返回0可被别处当0%能力；不可沿用",
+    "transformation": "零样本只提示开始，禁显示能力评级",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "0次时无正确率；提供一个可用入口或缺证原因",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/13-end-recap.png",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-020",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "tracked-reliability",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 5101,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "tracked-reliability"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "终局分类统计的记录数与总判定不同",
+    "visible_behavior": "仅tracked===n时展示易错分类",
+    "system_behavior": "reliable gate防不完整日志推断",
+    "problem": "统计遗漏不能装成完整诊断",
+    "value": "保留记录覆盖率能抑制虚假细节",
+    "conditions_cost": "需定义哪些动作计入判定",
+    "prispect_application": "实验复盘只称本次/本图记录，不能全用户概括",
+    "risks": "评分本身仍泛化能力",
+    "transformation": "会话记录schema及渲染同一列表，不外推总体能力",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "丢失记录无法显示整体“已掌握”；明示当前会话",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-021",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "short-demo",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8830,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "short-demo"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "选择演示局",
+    "visible_behavior": "20回合转成2回合，文案和roundMax同步",
+    "system_behavior": "applyRounds改ft.ROUNDS与局数说明",
+    "problem": "现场演示闭环太慢",
+    "value": "短路径使反馈和终局都能被看到",
+    "conditions_cost": "必须标明demo；不能假实时研究",
+    "prispect_application": "析光用原件例子→证据挑战→恢复的固定短演示",
+    "risks": "随机落点可能见不到核心能力",
+    "transformation": "预置案例清楚标签；固定交互依赖展示，不伪造联网进度",
+    "disposition": "defer",
+    "implementation": "deferred",
+    "acceptance": {
+      "method": "演示可在服务失败时继续本地例子；实际/预置界限可见",
+      "status": "deferred-with-prerequisite-and-next-action",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [
+      "准备官方公开原件或显式标注的工程样例，并在目标演示机器验证服务失败后的打开路径。"
+    ],
+    "next_step": "本轮可选依赖练习闭环已实现；专门演示短路线与离线进入、无服务时资料恢复交由统一演示验收。不得把4322组件fixture称完整产品离线可用。",
+    "handling_result": "explicit-deferred",
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/natural-flow-log.json",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-022",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "test-variant-honesty",
+    "evidence": [
+      {
+        "file": "xray-demo-test.html",
+        "line": 10086,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "xray-test-badge"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      },
+      {
+        "file": "xray-demo-test.html",
+        "line": 8730,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "mode demo treated as guide"
+      }
+    ],
+    "verification": "source",
+    "trigger": "专用测试版打开",
+    "visible_behavior": "顶栏/标题专用测试版，预选演示，近起点公司更密",
+    "system_behavior": "测试HTML独立布局偏置+demo按guide处理",
+    "problem": "调试教学和正式体验容易混淆",
+    "value": "变体明示让运行结果可归属",
+    "conditions_cost": "test和production须各自记录SHA/hash",
+    "prispect_application": "测试fixture与现场路线分类记录",
+    "risks": "README说完全一致但布局/弹卡改变关键体验",
+    "transformation": "保存每次run_mode/fixture并禁止宣称正式已验",
+    "disposition": "defer",
+    "implementation": "deferred",
+    "acceptance": {
+      "method": "正式与测试截图文件分开；变体路径和hash完整",
+      "status": "deferred-with-prerequisite-and-next-action",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": ["完整产品build与正常用户路径验收完成，明确真实检索/缓存/合成fixture标签。"],
+    "next_step": "研究已独立保留正式SHA和测试变体hash、来源与截图边界；后续演示入口仍需单独验收，不能用测试版替代。",
+    "handling_result": "explicit-deferred"
+  },
+  {
+    "id": "WEA-023",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "fallback-feedback",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8598,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "fallback-feedback"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "未收录题目tag",
+    "visible_behavior": "仍有最小线索/规则/所选动作说明",
+    "system_behavior": "build返回raw，clue取q.tip或暂无补充线索",
+    "problem": "题库遗漏造成无反馈",
+    "value": "空或未匹配时仍告诉用户可确认什么",
+    "conditions_cost": "fallback不得猜正确答案或事实",
+    "prispect_application": "依赖实验未知标签保留节点label+公式理由",
+    "risks": "现代码a不safe默认risk，把缺答案认定风险",
+    "transformation": "无节点/无规则时诚实不可演练，保留原因",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "缺失映射不编造答案；显示无法建立依赖题",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/runtime-log.json",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-024",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "offline-package",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 705,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "offline-package"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "断网打开单文件",
+    "visible_behavior": "同一城市与教学可用",
+    "system_behavior": "three.js内联、题库内联、程序化纹理",
+    "problem": "现场网络故障导致核心演示失败",
+    "value": "完全本地部分可独立继续",
+    "conditions_cost": "WebGL硬件与本地解析仍可能失败；无实时事实",
+    "prispect_application": "析光本地图依赖实验与例子不调用模型",
+    "risks": "离线例子不代表现实数据最新；应保护品牌整体轻量",
+    "transformation": "使用现有React/纯函数，不引入3D引擎",
+    "disposition": "combine",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "合成生产组件与正常认证上传报告的practice交互记录API请求为零；这项verified仅指已加载图上的本地练习，非离线冷启包。",
+      "status": "verified-only-for-the-stated-local-scope",
+      "user_effect": "真实用户理解、保持度和成本效果待验证",
+      "boundary": "证据采用已有learning component/browser与正常认证上传报告运行记录；不把一组共同检查当作竞品完整机制验收。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": "独立离线需求、静态资产缓存/权限/原件保存与版本策略。",
+    "next_step": "断开网络后分别测已加载页面、刷新和冷启动；设计包与缓存之前不得称完全离线可用。",
+    "handling_result": "partial-adaptation-with-explicit-scope",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/natural-flow-log.json",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    },
+    "original_acceptance_goal": {
+      "method": "记录网络请求为零；不触发模型/检索；预置有标签",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "absorbed_scope": "已加载当前来源图后，本地同步预测/验证/恢复不调用API、模型或检索。",
+    "existing_scope": "已有React页面资产、纯依赖Lab；资料加载/认证仍可能联网。",
+    "remaining_scope": "没有新增service worker、离线冷启动包、登录恢复或资产缓存协议。",
+    "implementation_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json",
+      "src/EvidenceLearning.tsx",
+      "shared/evidence-learning.ts"
+    ],
+    "implementation_scope": "partial-adaptation; see absorbed_scope / existing_scope / remaining_scope",
+    "audit_note": "已加载页面练习无请求，不等于可离线冷启动的独立包。",
+    "verified_scope": "合成生产组件与正常认证上传报告的practice交互记录API请求为零；这项verified仅指已加载图上的本地练习，非离线冷启包。",
+    "verification_boundary": "工程检查仅覆盖verified_scope中明确的代码与实际记录。root整套619项代码检查通过不替代真实外部来源、冷启离线、历史观察、用户理解或品牌记忆实证。"
+  },
+  {
+    "id": "WEA-025",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "procedural-audio",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4916,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "procedural-audio"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "动作点击、收购、现金变化",
+    "visible_behavior": "合成音效可静音",
+    "system_behavior": "WebAudio程序生成，不加载音频",
+    "problem": "反馈资源依赖网络",
+    "value": "本地即时反馈不需外部媒体",
+    "conditions_cost": "音效必须可控且不妨碍听屏",
+    "prispect_application": "保留短文字反馈与共享live region",
+    "risks": "商业核验音效/震屏会干扰金额阅读",
+    "transformation": "不用音效；提取即时反馈与可静默设计",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "harness与正常报告路径确认反馈获得焦点、恢复返回selector；新组件没有音效、金额计数或异步等待。",
+      "status": "verified-only-for-the-stated-local-scope",
+      "user_effect": "真实用户理解、保持度和成本效果待验证",
+      "boundary": "证据采用已有learning component/browser与正常认证上传报告运行记录；不把一组共同检查当作竞品完整机制验收。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": "真实辅助技术设备及全产品动态回归场景。",
+    "next_step": "用读屏和reduced-motion任务复核状态可感知；保留静默设计，不引入金融金额音效。",
+    "handling_result": "partial-adaptation-with-explicit-scope",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/runtime-log.json",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    },
+    "original_acceptance_goal": {
+      "method": "操作有可读状态反馈；prefers-reduced-motion不丢信息",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "absorbed_scope": "验证/恢复用可读状态文字与role=status、错误用alert，反馈和恢复分别移交焦点；没有音频资源。",
+    "existing_scope": "既有主题及页面无障碍基础。",
+    "remaining_scope": "未实现WebAudio、音量/静音控制；未做全产品reduced-motion或听屏真人实验。",
+    "implementation_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json",
+      "src/EvidenceLearning.tsx",
+      "shared/evidence-learning.ts"
+    ],
+    "implementation_scope": "partial-adaptation; see absorbed_scope / existing_scope / remaining_scope",
+    "audit_note": "没有程序音效；有效转化是即时静默文字和焦点反馈。",
+    "verified_scope": "harness与正常报告路径确认反馈获得焦点、恢复返回selector；新组件没有音效、金额计数或异步等待。",
+    "verification_boundary": "工程检查仅覆盖verified_scope中明确的代码与实际记录。root整套619项代码检查通过不替代真实外部来源、冷启离线、历史观察、用户理解或品牌记忆实证。"
+  },
+  {
+    "id": "WEA-026",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "device-tier",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 7786,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "device-tier"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "页面初始化",
+    "visible_behavior": "弱设备像素比1.25，跳过高清纹理",
+    "system_behavior": "cores/memory判strong；TIER驱动MUL/DPR",
+    "problem": "弱机器首屏卡住",
+    "value": "先保交互再画质",
+    "conditions_cost": "粗设备指标不代表真实GPU；仍需实际fps",
+    "prispect_application": "证据图先文字可用，重绘边线后补",
+    "risks": "3D装饰成本不适合研究报告",
+    "transformation": "沿用Lab测量requestAnimationFrame，不阻塞内容；已有Lab文本先render再RAF测量连线，新增练习是静态文本和原生控件；不移植GPU画质配置。",
+    "disposition": "enhance-existing",
+    "implementation": "implemented",
+    "acceptance": {
+      "method": "低CPU/窄屏仍立即有文本、按钮；无假加载",
+      "status": "source-confirmed-existing; module-specific-runtime-boundary-retained",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "既有对应实现重新核实；不把源代码审阅扩大为未做的100节点性能/卸载运行/现场恢复实测。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "already-existing-enhancement-or-reuse",
+    "prispect_evidence": [
+      "src/EvidenceLab.tsx:119",
+      "src/EvidenceLab.tsx:183",
+      "src/evidence-learning.css:169"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/runtime-output-low-device.txt",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-027",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "bounded-render-work",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 7888,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "bounded-render-work"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "高清48张纹理补做",
+    "visible_behavior": "先出现开始入口，随后画质提升",
+    "system_behavior": "每批6ms预算，setTimeout16继续",
+    "problem": "大批同步计算冻结交互",
+    "value": "重任务有明确时间片",
+    "conditions_cost": "首次基础建城仍同步，分帧不保证首屏快",
+    "prispect_application": "依赖图布局计算合帧，必要大图分页",
+    "risks": "软件WebGL初始化仍延迟；不能夸秒开",
+    "transformation": "复用现有requestAnimationFrame+ResizeObserver，每帧一次；既有RAF合并测量与ResizeObserver cleanup，新增组件无需observer；不将3D贴图队列复制到金额计算。",
+    "disposition": "enhance-existing",
+    "implementation": "implemented",
+    "acceptance": {
+      "method": "布局变化无循环observer；100节点测试记录响应",
+      "status": "source-confirmed-existing; module-specific-runtime-boundary-retained",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "既有对应实现重新核实；不把源代码审阅扩大为未做的100节点性能/卸载运行/现场恢复实测。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": ["需100节点以上真实来源图及可重复的目标设备CPU测量"],
+    "next_step": "保留现有逐帧测量；后续图规模扩大时记录输入响应与observer次数，依据测量再改调度。",
+    "handling_result": "already-existing-enhancement-or-reuse",
+    "prispect_evidence": [
+      "src/EvidenceLab.tsx:183",
+      "src/EvidenceLab.tsx:216",
+      "src/EvidenceLab.tsx:223"
+    ]
+  },
+  {
+    "id": "WEA-028",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "resource-disposal",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 7872,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "resource-disposal"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "格子换贴图",
+    "visible_behavior": "不累计旧显存资源",
+    "system_behavior": "new!==old后old.dispose",
+    "problem": "反复操作导致内存泄漏",
+    "value": "明确资源生命周期",
+    "conditions_cost": "只处理纹理；材质/几何体仍需另外治理",
+    "prispect_application": "Lab observer/listener/RAF effect cleanup",
+    "risks": "只借机制，Three.js不引入",
+    "transformation": "对新增监听effect cleanup；卸载无运行回调",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "harness换owner/期间/来源/金额/依赖后结果和recap清空；新练习无observer/RAF/网络句柄。",
+      "status": "verified-only-for-the-stated-local-scope",
+      "user_effect": "真实用户理解、保持度和成本效果待验证",
+      "boundary": "证据采用已有learning component/browser与正常认证上传报告运行记录；不把一组共同检查当作竞品完整机制验收。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": "若新增订阅/动画，先列资源owner及cleanup；内存评估需真实设备与重复任务。",
+    "next_step": "为新资源补卸载/重挂载检查，再测长期反复切图；当前不宣称显存或内存改善。",
+    "handling_result": "partial-adaptation-with-explicit-scope",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "original_acceptance_goal": {
+      "method": "新练习无observer/RAF/异步调用；换图/owner/卸载会丢弃内存状态。既有Lab cleanup源码核实，不另宣称未跑的内存基准。",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "absorbed_scope": "owner/来源图fingerprint作为key重挂载，清除练习选择、结果与会话记录；本地无异步订阅。",
+    "existing_scope": "既有EvidenceLab的ResizeObserver/RAF及listener清理。",
+    "remaining_scope": "未新增或验证WebGL纹理/geometry资源治理；未跑长期内存基准。",
+    "implementation_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json",
+      "src/EvidenceLearning.tsx",
+      "shared/evidence-learning.ts"
+    ],
+    "implementation_scope": "partial-adaptation; see absorbed_scope / existing_scope / remaining_scope",
+    "audit_note": "新组件无observer/RAF需释放；不能称本轮新增完整图形资源治理。",
+    "verified_scope": "harness换owner/期间/来源/金额/依赖后结果和recap清空；新练习无observer/RAF/网络句柄。",
+    "verification_boundary": "工程检查仅覆盖verified_scope中明确的代码与实际记录。root整套619项代码检查通过不替代真实外部来源、冷启离线、历史观察、用户理解或品牌记忆实证。"
+  },
+  {
+    "id": "WEA-029",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "adaptive-effects",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8215,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "adaptive-effects"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "运行两秒平均帧率低于42",
+    "visible_behavior": "DPR降级，lowfx隐藏粒子与渐变动画",
+    "system_behavior": "acc/frames有限窗口，低特效仅一次",
+    "problem": "视觉妨碍操作",
+    "value": "装饰可退让给信息读取",
+    "conditions_cost": "低fps不证明网络坏，阈值依设备",
+    "prispect_application": "prefers-reduced-motion与静态反馈",
+    "risks": "数字滚动会让金融金额不稳定；不沿用",
+    "transformation": "保留金额静态，复用现有主题和motion设置",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "新增练习在320/390明暗harness和上传报告中可读；它自身不依赖动画完成反馈。",
+      "status": "verified-only-for-the-stated-local-scope",
+      "user_effect": "真实用户理解、保持度和成本效果待验证",
+      "boundary": "证据采用已有learning component/browser与正常认证上传报告运行记录；不把一组共同检查当作竞品完整机制验收。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": "全产品reduced-motion测试矩阵与真实低配设备。",
+    "next_step": "复核系统减弱动态下全站阅读/导航；不将静态新组件测试写成GPU性能测试。",
+    "handling_result": "partial-adaptation-with-explicit-scope",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "original_acceptance_goal": {
+      "method": "reduced-motion下金额无计数动画；状态仍读得到",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "absorbed_scope": "新练习金额和结果直接以静态文本渲染，窄屏单列，无数值计数动画。",
+    "existing_scope": "既有主题tokens和reduced-motion基础。",
+    "remaining_scope": "未移植设备画质档、自动GPU检测或全产品动态回归。",
+    "implementation_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json",
+      "src/EvidenceLearning.tsx",
+      "shared/evidence-learning.ts"
+    ],
+    "implementation_scope": "partial-adaptation; see absorbed_scope / existing_scope / remaining_scope",
+    "audit_note": "静态新反馈并非新增设备特效等级或全产品motion机制。",
+    "verified_scope": "新增练习在320/390明暗harness和上传报告中可读；它自身不依赖动画完成反馈。",
+    "verification_boundary": "工程检查仅覆盖verified_scope中明确的代码与实际记录。root整套619项代码检查通过不替代真实外部来源、冷启离线、历史观察、用户理解或品牌记忆实证。"
+  },
+  {
+    "id": "WEA-030",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "loading-recovery-copy",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 9185,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "note": "CSS ::after + bootTip .7s 7s 实现；运行未刻意阻塞确认视觉"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "构建等待较久",
+    "visible_behavior": "README称7秒提示硬件/浏览器/本地打开",
+    "system_behavior": "CSS pseudo-element 7秒后opacity显示；不用JS timer，合成层可在主线程忙时出现",
+    "problem": "无上界等待令人不知下一步",
+    "value": "区分本机计算与网络依赖故障",
+    "conditions_cost": "主线程忙时CSS compositor仍需可合成；纯CSS提示不能自动重试",
+    "prispect_application": "错误提示写具体可重试路径",
+    "risks": "已核实源码，运行未单独触发视觉；不得宣称7秒提示实测",
+    "transformation": "析光失败/等待显示真实原因和可重试动作；不按游戏7秒强加研究进度",
+    "disposition": "defer",
+    "implementation": "deferred",
+    "acceptance": {
+      "method": "前置真实设备；捕捉7秒提示而非只README",
+      "status": "deferred-with-prerequisite-and-next-action",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": ["现场设备慢启动/断网/资源失败可复现，拿到实际耗时和失败原因。"],
+    "next_step": "先测真实服务冷启动并补可取消、重试及恢复路径；不按竞品7秒CSS提示伪造Agent进度或给本地练习增加等待。",
+    "handling_result": "explicit-deferred"
+  },
+  {
+    "id": "WEA-031",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "valid-action-guidance",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4882,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "valid-action-guidance"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "掷骰后每一移动步",
+    "visible_behavior": "提示只列当前可走方向与剩余步数",
+    "system_behavior": "根据mc邻接与hist构造方向map，动态Ci",
+    "problem": "静态WASD提示不能说明当前能做什么",
+    "value": "当前可行动比通用说明更省判断",
+    "conditions_cost": "按钮和文字必须和合法动作同源",
+    "prispect_application": "实验只列可用fact，显示不可操作原因",
+    "risks": "有Keyboard/mouse双路径但读屏语义弱",
+    "transformation": "选项直接由eligible facts derived；原生disabled状态",
+    "disposition": "combine",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "missing/conflict/已撤回fact不可演练；不适用计算保持not-applicable，撤回其真正依赖后才paused；原因可见。",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/natural-flow-log.json",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-032",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "movement-timeout",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4882,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "movement-timeout"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "走入死胡同或动画卡住",
+    "visible_behavior": "无新路允许回头；移动动画4秒race兜底",
+    "system_behavior": "hist过滤→空时邻接回退，catch结束移动",
+    "problem": "交互卡住使闭环断裂",
+    "value": "停止条件和恢复路径比继续装忙更可靠",
+    "conditions_cost": "AI未同样回退，4s超时未取消动画可能晚改位置",
+    "prispect_application": "Lab验证同步；其他异步保留abort与late结果隔离",
+    "risks": "不可把超时结束当计算成功",
+    "transformation": "本地实验无等待；网络challenge复用现有失败态",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "browser验证、恢复、换scope后没有网络请求或晚到异步学习反馈；只验证同步本地流程。",
+      "status": "verified-only-for-the-stated-local-scope",
+      "user_effect": "真实用户理解、保持度和成本效果待验证",
+      "boundary": "证据采用已有learning component/browser与正常认证上传报告运行记录；不把一组共同检查当作竞品完整机制验收。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": "如扩展异步练习，需任务owner、AbortSignal、deadline与迟到事件合同。",
+    "next_step": "为异步扩展注入超时/忽略Abort/owner切换；当前沿用同步方案并另验既有网络恢复。",
+    "handling_result": "partial-adaptation-with-explicit-scope",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "original_acceptance_goal": {
+      "method": "无动画依赖；取消后不产生晚反馈",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "absorbed_scope": "依赖验证同步运行，无移动/动画promise；恢复仅重置本地反馈。",
+    "existing_scope": "既有网络challenge的失败态、Abort和迟到响应隔离。",
+    "remaining_scope": "没有新超时race/取消协议；网络取消和恢复不由学习组件测试证明。",
+    "implementation_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json",
+      "src/EvidenceLearning.tsx",
+      "shared/evidence-learning.ts"
+    ],
+    "implementation_scope": "partial-adaptation; see absorbed_scope / existing_scope / remaining_scope",
+    "audit_note": "同步无等待不等于新增网络timeout/cancel或4秒兜底。",
+    "verified_scope": "browser验证、恢复、换scope后没有网络请求或晚到异步学习反馈；只验证同步本地流程。",
+    "verification_boundary": "工程检查仅覆盖verified_scope中明确的代码与实际记录。root整套619项代码检查通过不替代真实外部来源、冷启离线、历史观察、用户理解或品牌记忆实证。"
+  },
+  {
+    "id": "WEA-033",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "local-view-fold",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 7075,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "local-view-fold"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "Q/E或折叠tab",
+    "visible_behavior": "左右面板收纳，地图跟左面板",
+    "system_behavior": "bodyclass切换；localStorage仅存视图折叠",
+    "problem": "辅助信息占主画面",
+    "value": "偏好调整布局但不删信息",
+    "conditions_cost": "偏好与账户数据不同；所有内容有再入口",
+    "prispect_application": "原报告content-specific展开；移动侧栏回到主文",
+    "risks": "析光禁止简/专分层；折叠不能隐去关键未知",
+    "transformation": "不加模式，保留已有document disclosure；既有按内容渐进展开，新增原生details默认关闭，无Plain/Pro读者模式。",
+    "disposition": "enhance-existing",
+    "implementation": "implemented",
+    "acceptance": {
+      "method": "折叠时结果摘要与未知仍可见；展开有明确标签",
+      "status": "source-confirmed-existing; module-specific-runtime-boundary-retained",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "既有对应实现重新核实；不把源代码审阅扩大为未做的100节点性能/卸载运行/现场恢复实测。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "already-existing-enhancement-or-reuse",
+    "prispect_evidence": ["src/EvidenceLab.tsx", "src/CompanyResearchReport.tsx"]
+  },
+  {
+    "id": "WEA-034",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "map-adjacent-colors",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 7346,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "map-adjacent-colors"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "runtime",
+    "trigger": "浏览棋盘邻接公司",
+    "visible_behavior": "相邻格配色尽量分离，并有当前位置和陷阱符号",
+    "system_behavior": "色距目标96，排序试候选色；owner有统一色",
+    "problem": "邻格颜色相近无法分辨",
+    "value": "颜色与位置帮助快速追踪关系",
+    "conditions_cost": "色彩不是独立编码；必须文本/符号",
+    "prispect_application": "证据图选中链高亮+非依赖保留中性色",
+    "risks": "没有色盲或屏幕阅读验证",
+    "transformation": "沿用节点类型文本，依赖连线/暂停label而非装饰色",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "灰度仍能分状态；键盘选中能显示关系",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ],
+    "competitor_runtime_evidence": {
+      "file": "docs/competitive-research/evidence/wealth/runtime-log.json",
+      "run_mode": "正式xray.html；预置游戏数据；软件GPU渲染/自然流程onboarding skip有独立标记",
+      "boundary": "非实时公司查询；自然两回合未穷尽全部随机状态；指定解法以公开API调用，不能冒充自然教学入口。"
+    }
+  },
+  {
+    "id": "WEA-035",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "ownership-shared-state",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4882,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "W={round,owner,level,traps,sealed,doomed}; Qi/Fr"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "公司收购、升级、查封、陷阱后",
+    "visible_behavior": "格子/地图/资产/日志同步状态",
+    "system_behavior": "W owner/level/traps/sealed/doomed驱動各面板",
+    "problem": "同一信息不同面板矛盾",
+    "value": "一个状态驱动多视图避免概念分裂",
+    "conditions_cost": "全局mutable W缺类型；状态关联要assert",
+    "prispect_application": "实验evaluated graph同源反馈和图面板",
+    "risks": "猴子补丁时不同W引用可陈旧",
+    "transformation": "共享纯evaluate结果，不复算另一套标签",
+    "disposition": "combine",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "feedback affectedIds与实际paused节点一致",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-036",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "raw-metric-gauges",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4882,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "raw-metric-gauges"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "打开公司资料",
+    "visible_behavior": "增长、毛利、负债颜色和长度按硬阈值",
+    "system_behavior": "K_毛利>40绿色、负债>55红；width任意放大",
+    "problem": "快速比较需视觉标尺",
+    "value": "有量纲标注的图能便于对比",
+    "conditions_cost": "当前长度非实际百分比且阈值无行业依据",
+    "prispect_application": "析光需要透明数轴/单位/口径的金融图",
+    "risks": "与教学强调高毛利未必好、高负债未必坏矛盾",
+    "transformation": "拒绝任意增长米尺，保留中性金额与来源链接",
+    "disposition": "reject",
+    "implementation": "rejected",
+    "acceptance": {
+      "method": "任何图轴含单位/期间，颜色不直接宣判公司风险",
+      "status": "rejected; replacement-verified-by-source-and-component-fixture",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "不实施该推断/模式；在用户任务验证中检查替代文案是否仍导致企业风险或能力误解。",
+    "handling_result": "rejected-with-evidence",
+    "rejection_reason": "按毛利/负债硬阈值着色和任意放大的米尺没有完整单位、期间和真实金融解释，会制造可比较外观；只保留中性静态金额、显式state文字。",
+    "prispect_evidence": [
+      "src/EvidenceLearning.tsx:95",
+      "docs/competitive-research/projects/wealth.md"
+    ]
+  },
+  {
+    "id": "WEA-037",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "exact-payload-binding",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8569,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "exact-payload-binding"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "公司判定后建立解法",
+    "visible_behavior": "解法优先对应真正落点公司",
+    "system_behavior": "t.kind=company+t.tile精确索引；名称/当前pos仅回退",
+    "problem": "相似标题或旧位置关联错误证据",
+    "value": "用稳定标识比文本猜更可靠",
+    "conditions_cost": "棋盘洗牌后索引随版本重建；文本回退可能误配",
+    "prispect_application": "事实id/graph fingerprint绑定所有实验记录",
+    "risks": "题目tell相同会误匹配；不可复制回退策略",
+    "transformation": "只允许存在于当前图的stable id，无模糊猜测",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "切图/同名不同年清空；invalid id不显示旧结果",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-038",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "named-test-access",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8761,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "named-test-access"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "路演/调试指定教学",
+    "visible_behavior": "可直接开任意公司解法/列24keys/切mode",
+    "system_behavior": "XRAY.solution/solTest/solMode调试接口",
+    "problem": "随机路径难复现细节",
+    "value": "可重复调用能快速确认覆盖",
+    "conditions_cost": "手动API不是自然完成主流程；调试要明示",
+    "prispect_application": "纯函数fixture与独立浏览器步骤",
+    "risks": "快捷接口绕过真实金额结算，不可算真实任务通过",
+    "transformation": "测试轨迹标manual/debug；用户入口仍要验",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "记录debug invoke和自然用户操作分别；所有fixtures盖正常/缺失/冲突",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-039",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "mutable-hook-architecture",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 8703,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "mutable-hook-architecture"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "教学附加层接入游戏",
+    "visible_behavior": "页面层层增强原函数",
+    "system_behavior": "多次包裹Ar/rd/iy和MutationObserver插DOM",
+    "problem": "快速迭代不同模块",
+    "value": "拦真正事件入口比碰晚异步返回可靠",
+    "conditions_cost": "无类型/顺序敏感/吞异常，附加层难测试",
+    "prispect_application": "显式组件事件和纯金融计算模块",
+    "risks": "脚本标签修复记录暴露单文件脆弱",
+    "transformation": "吸收事件入口认识，拒绝monkeypatch架构",
+    "disposition": "adapt",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "新增功能不重写函数/直接mutationDOM；主要逻辑纯函数测试",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  },
+  {
+    "id": "WEA-040",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "fictional-truth-oracle",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 9456,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "fictional-truth-oracle"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      }
+    ],
+    "verification": "source",
+    "trigger": "任何公司/情景判定",
+    "visible_behavior": "瞬间出现正确/失误、健康/造假标签",
+    "system_behavior": "公司truth常量决定答案；非由财务计算或证据推断",
+    "problem": "教学需要明确标准答案",
+    "value": "固定题可教有限概念",
+    "conditions_cost": "不能声称真实公司真伪；真实未知无oracle",
+    "prispect_application": "析光标准答案仅依赖图受影响关系",
+    "risks": "负现金认造假、红灯举报、现金不能造假、注册开户必须临柜均有误导",
+    "transformation": "拒绝真伪评分，只做数学依赖与材料充分性",
+    "disposition": "reject",
+    "implementation": "rejected",
+    "acceptance": {
+      "method": "实验说明不评价企业风险；无公司真假/投资能力分数",
+      "status": "rejected; replacement-verified-by-source-and-component-fixture",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "不实施该推断/模式；在用户任务验证中检查替代文案是否仍导致企业风险或能力误解。",
+    "handling_result": "rejected-with-evidence",
+    "rejection_reason": "预置truth与单红灯一票否决不可证明造假/信用；放弃被判错也不适用于资料未知。只采用计算依赖答案，不输出企业真假或投资能力。",
+    "prispect_evidence": [
+      "src/EvidenceLearning.tsx:95",
+      "docs/competitive-research/projects/wealth.md"
+    ]
+  },
+  {
+    "id": "WEA-041",
+    "project": "wealth",
+    "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+    "name": "honest-memory-boundary",
+    "evidence": [
+      {
+        "file": "xray.html",
+        "line": 4882,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "W initializer"
+      },
+      {
+        "file": "docs/competitive-research/projects/wealth.md",
+        "note": "Source coverage and research boundary ledger"
+      },
+      {
+        "file": "xray.html",
+        "line": 5013,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "LEARN initializer"
+      },
+      {
+        "file": "xray.html",
+        "line": 5295,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "SCAN initializer"
+      },
+      {
+        "file": "xray.html",
+        "line": 7065,
+        "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+        "symbol": "KEY_L/KEY_R fold-only persistence"
+      }
+    ],
+    "verification": "source",
+    "trigger": "刷新游戏",
+    "visible_behavior": "所有W/LEARN/SCAN重开；折叠偏好仍在",
+    "system_behavior": "无存档API，资料仅内存；localStorage仅fold",
+    "problem": "用户需知道哪些操作可恢复",
+    "value": "明确保存范围避免误以为记录留存",
+    "conditions_cost": "主游戏中未明示刷新重开，README才说",
+    "prispect_application": "本图学习内存，原报告与证据仍原存储",
+    "risks": "用户把本地试验当撤回真实原件",
+    "transformation": "入口/反馈清楚本地实验与恢复；现有证据存储不动",
+    "disposition": "enhance-existing",
+    "implementation": "verified",
+    "acceptance": {
+      "method": "刷新无学习记录；原件和报告不变；图/owner变化清空",
+      "status": "unit-passed; synthetic-component-browser-passed; normal-authenticated-product-path-passed",
+      "user_effect": "待真实用户任务验证，不宣称降低成本已被实测",
+      "boundary": "32纯函数测试；合成依赖图的生产组件50项专项；正常认证应用路径、同基线原始JSON上传材料34项（不构造公网URL、不改保存report）均通过。不等于真实用户学习效果。换图/owner清理有组件harness实证。 最新主后验的正常上传路径另确认最终sort/notice、恢复、0API及report不变；旧34专项与新组件50项不混记为同一run。"
+    },
+    "run_mode": "fixture — 竞品公司/题目均预置；source不表示自然路径运行通过",
+    "prerequisites": [],
+    "next_step": "该项工程验收后，招募首次使用者用相同材料完成依赖预测、找原件和恢复任务；用户成本与学习提升仍待测。",
+    "handling_result": "new-independent-implementation",
+    "prispect_evidence": [
+      "shared/evidence-learning.ts:59",
+      "src/EvidenceLearning.tsx:23",
+      "src/EvidenceLab.tsx:598",
+      "tests/evidence-learning.test.ts",
+      "docs/competitive-research/evidence/wealth/prispect-learning-unit.log",
+      "docs/competitive-research/evidence/wealth/prispect-learning-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-product-browser.json",
+      "docs/competitive-research/evidence/wealth/prispect-learning-final-source.json"
+    ]
+  }
+]

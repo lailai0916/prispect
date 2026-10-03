@@ -1305,7 +1305,7 @@ export function MaterialImporter({
                     </Select>
                   </label>
                   <label className="form-field">
-                    <span>{t('PDF 页码', 'PDF page')}</span>
+                    <span>{t('来源页码', 'Source page')}</span>
                     <input
                       type="number"
                       min="1"

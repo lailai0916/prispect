@@ -1,0 +1,62 @@
+.report-evidence-controls {
+  border-bottom: 1px solid var(--line);
+  padding: 0 0 14px;
+  margin-bottom: 18px;
+}
+.report-evidence-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.report-evidence-actions > .button {
+  min-height: 32px;
+  font-size: 11px;
+  padding: 5px 10px;
+}
+.report-evidence-count {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+.report-evidence-note {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.7;
+  margin: 7px 0 0;
+}
+@media (max-width: 700px) {
+  .report-evidence-actions > .button {
+    min-height: 44px;
+  }
+}
+@media print {
+  .report-evidence-controls {
+    display: none !important;
+  }
+  /* SourceTrust prints its complete retained list separately; do not duplicate its paged view. */
+  .company-research-report[data-report-evidence-scope]
+    details.research-grade-limits::details-content,
+  .company-research-report[data-report-evidence-scope]
+    details#company-research-process::details-content,
+  .company-research-report[data-report-evidence-scope]
+    details#company-research-framework::details-content,
+  .company-research-report[data-report-evidence-scope]
+    details#company-review-requests::details-content {
+    content-visibility: visible !important;
+  }
+  .company-research-report[data-report-evidence-scope]
+    details.research-grade-limits
+    > :not(summary),
+  .company-research-report[data-report-evidence-scope]
+    details#company-research-process
+    > :not(summary),
+  .company-research-report[data-report-evidence-scope]
+    details#company-research-framework
+    > :not(summary),
+  .company-research-report[data-report-evidence-scope]
+    details#company-review-requests
+    > :not(summary) {
+    display: block !important;
+  }
+}

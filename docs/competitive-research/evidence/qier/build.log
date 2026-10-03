@@ -1,0 +1,25 @@
+
+> sites-project@0.1.0 build:home
+> vite build --config vite.home.config.ts
+
+vite v8.0.13 building client environment for production...
+[2Ktransforming...
+/research-assets/office-panorama-door-open.q90.webp?v=9ebb2bcd1d1e referenced in /research-assets/office-panorama-door-open.q90.webp?v=9ebb2bcd1d1e didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/research-assets/office-panorama-closed.q90.webp?v=d216fe3093d4 referenced in /research-assets/office-panorama-closed.q90.webp?v=d216fe3093d4 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/research-assets/office-motion-elements.q90.webp?v=9fa1b2430c9b referenced in /research-assets/office-motion-elements.q90.webp?v=9fa1b2430c9b didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/research-assets/xiaoqi-walk-cycles.q90.webp?v=5175ea0c27c3 referenced in /research-assets/xiaoqi-walk-cycles.q90.webp?v=5175ea0c27c3 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/research-assets/xiaoqi-action-cycles.q90.webp?v=e9c7687ccda8 referenced in /research-assets/xiaoqi-action-cycles.q90.webp?v=e9c7687ccda8 didn't resolve at build time, it will remain unchanged to be resolved at runtime
+
+/research-assets/goose-actions-v2.q90.webp?v=3d67729380fc referenced in /research-assets/goose-actions-v2.q90.webp?v=3d67729380fc didn't resolve at build time, it will remain unchanged to be resolved at runtime
+✓ 1899 modules transformed.
+rendering chunks...
+computing gzip size...
+home-dist/index.html                   1.35 kB │ gzip:  0.83 kB
+home-dist/assets/index-5lF76b3u.css   67.40 kB │ gzip: 15.30 kB
+home-dist/assets/index-5NGHxHZL.js   291.24 kB │ gzip: 94.55 kB
+
+✓ built in 1.02s

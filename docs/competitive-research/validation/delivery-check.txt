@@ -1,0 +1,38 @@
+Final delivery metadata and frozen evidence checks
+Recorded at 2026-10-03T06:25:49.620389+00:00
+Product validation: final-check.txt, 619 tests passed; product source unchanged since final browser fingerprint.
+493 staged evidence files additionally checked against captured byte hashes using git show; all matched.
+
+$ npm run research:check
+
+> research:check
+> node scripts/check-competitive-research.mjs
+
+{
+  "projects": 5,
+  "values": 241,
+  "status": "passed",
+  "frozen_evidence_files": 493,
+  "external_checkout_boundaries": [],
+  "index": null
+}
+Exit code: 0
+
+$ npm run format:check
+
+> format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+Exit code: 0
+
+$ git diff --check
+Exit code: 0
+
+$ git diff --cached --check
+Exit code: 0
+
+$ python3 /workspace/lailai-template/scripts/check_repository.py --root /workspace/prispect-improve --slug lailai0916/prispect --display-name Prispect --github
+Applicable repository checks passed; semantic and runtime acceptance remain separate.
+Exit code: 0

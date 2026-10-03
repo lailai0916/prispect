@@ -1,0 +1,192 @@
+{
+  "company": "合成演练供应商（非真实企业）",
+  "shortName": "合成演练供应商",
+  "title": "合成年度与付款输入（非真实披露）",
+  "filename": "synthetic-baseline.json",
+  "origin": "user-upload",
+  "documentDate": "2026-10-03",
+  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "observations": [
+    {
+      "id": "synthetic-2024-netProfit",
+      "key": "netProfit",
+      "year": 2024,
+      "value": "80000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2024 netProfit 80000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2024-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2024,
+      "value": "70000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2024 operatingCashFlow 70000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2024-inventoryAdjustment",
+      "key": "inventoryAdjustment",
+      "year": 2024,
+      "value": "-5000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2024 inventoryAdjustment -5000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2024-receivablesAdjustment",
+      "key": "receivablesAdjustment",
+      "year": 2024,
+      "value": "-10000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2024 receivablesAdjustment -10000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2024-payablesAdjustment",
+      "key": "payablesAdjustment",
+      "year": 2024,
+      "value": "7000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2024 payablesAdjustment 7000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2024-otherAdjustments",
+      "key": "otherAdjustments",
+      "year": 2024,
+      "value": "-2000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2024 otherAdjustments -2000 元",
+      "kind": "derived",
+      "components": [
+        {
+          "label": "合成其余调整",
+          "value": "-2000",
+          "page": 1,
+          "quote": "仅用于规则验收，不是真实企业披露"
+        }
+      ]
+    },
+    {
+      "id": "synthetic-2025-netProfit",
+      "key": "netProfit",
+      "year": 2025,
+      "value": "100000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2025 netProfit 100000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2025-operatingCashFlow",
+      "key": "operatingCashFlow",
+      "year": 2025,
+      "value": "60000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2025 operatingCashFlow 60000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2025-inventoryAdjustment",
+      "key": "inventoryAdjustment",
+      "year": 2025,
+      "value": "-10000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2025 inventoryAdjustment -10000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2025-receivablesAdjustment",
+      "key": "receivablesAdjustment",
+      "year": 2025,
+      "value": "-30000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2025 receivablesAdjustment -30000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2025-payablesAdjustment",
+      "key": "payablesAdjustment",
+      "year": 2025,
+      "value": "5000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2025 payablesAdjustment 5000 元",
+      "kind": "reported"
+    },
+    {
+      "id": "synthetic-2025-otherAdjustments",
+      "key": "otherAdjustments",
+      "year": 2025,
+      "value": "-5000",
+      "unit": "yuan",
+      "currency": "CNY",
+      "scope": "consolidated",
+      "period": "annual",
+      "page": 1,
+      "quote": "合成测试数据 2025 otherAdjustments -5000 元",
+      "kind": "derived",
+      "components": [
+        {
+          "label": "合成其余调整",
+          "value": "-5000",
+          "page": 1,
+          "quote": "仅用于规则验收，不是真实企业披露"
+        }
+      ]
+    }
+  ],
+  "excerpts": [
+    {
+      "page": 1,
+      "text": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款10000元，已交付对应金额0元，实际已收到退款0元。合成材料，未经鉴真。\n合成测试数据 2024 netProfit 80000 元\n合成测试数据 2024 operatingCashFlow 70000 元\n合成测试数据 2024 inventoryAdjustment -5000 元\n合成测试数据 2024 receivablesAdjustment -10000 元\n合成测试数据 2024 payablesAdjustment 7000 元\n合成测试数据 2024 otherAdjustments -2000 元\n合成测试数据 2025 netProfit 100000 元\n合成测试数据 2025 operatingCashFlow 60000 元\n合成测试数据 2025 inventoryAdjustment -10000 元\n合成测试数据 2025 receivablesAdjustment -30000 元\n合成测试数据 2025 payablesAdjustment 5000 元\n合成测试数据 2025 otherAdjustments -5000 元"
+    }
+  ],
+  "notes": [
+    "合成输入；不代表任何真实企业，不是实时查询结果。"
+  ]
+}

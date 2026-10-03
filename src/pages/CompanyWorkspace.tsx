@@ -33,6 +33,7 @@ import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
 import { resolveCompanySection } from '../routing';
 import { CompanyAssessment } from '../CompanyAssessment';
+import { SourceTrust } from '../SourceTrust';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
@@ -155,6 +156,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       checklist: 'company-review-requests',
       data: 'company-public-data',
       news: 'company-public-signals',
+      plan: 'company-research-plan',
+      trust: 'company-source-trust',
     };
     const reveal = () => {
       const hashId = location.hash.slice(1);
@@ -609,7 +612,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                 </>
               )}
               {section === 'profile' && <CompanyProfileView snapshot={snapshot} />}
-              {section === 'coverage' && <CompanyCoverageView snapshot={snapshot} run={run} />}
+              {section === 'coverage' && (
+                <>
+                  <SourceTrust run={run} />
+                  <CompanyCoverageView snapshot={snapshot} run={run} />
+                </>
+              )}
               {section === 'sources' && <CompanySourcesView snapshot={snapshot} />}
             </>
           )}

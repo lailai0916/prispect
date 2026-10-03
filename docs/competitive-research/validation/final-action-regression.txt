@@ -1,0 +1,33 @@
+✔ distinguishing material review persists through actual HTTP revisions, owner boundaries, withdrawal, restoration and restart without a private model request (556.476337ms)
+✔ private decisions enforce owner and CSRF boundaries, serialize revision writes and survive restart without requests beyond their public financial background (536.651664ms)
+✔ scope correction creates an immutable new version with auditable resolution; history and restore cannot erase unresolved or reopened conflicts (165.302274ms)
+✔ external alternatives retain a 100000 versus 20000 exposure and do not turn arithmetic or recorded fields into payment approval (5.49234ms)
+✔ unbound transcription, mismatched original, promised/future refunds and refund greater than paid cannot reduce a recorded exposure (1.521671ms)
+✔ located planned refunds remain unknown actual events, while a planned cash flow remains a conditional input (2.566294ms)
+✔ dates, negative money and wrong role fields cannot become positive amounts, day numbers or the declared payee (1.184624ms)
+✔ dated-plan records are conditional, and withdrawal of necessary outflow evidence cannot silently delete that event to improve the payment limit (17.874876ms)
+✔ known same-record conflicts survive evidence withdrawal and restoring the earlier input, while a simple corrected input does not acquire a permanent conflict (1.339477ms)
+✔ validation rejects impossible dates, repeated cash event ids and negative inputs before any evaluation (6.533148ms)
+✔ unknown upper limits leave exposure computable, and amount-range errors invalidate only the affected alternatives (0.542447ms)
+✔ negative words and currency signs, English unreceived promises and ambiguous or reversed cash directions cannot support calculations (21.817943ms)
+✔ scope correction preserves conflicts in earlier revisions and reopening a conflicting old version does not launder counterevidence (3.303715ms)
+✔ actual historical adjustment evidence motivates a named inflow investigation but withdrawing it does not change private cash assumptions or support cash records (47.76855ms)
+✔ distinguishing material changes review, source dependencies and next inquiry on add/withdraw/restore without proving causes or changing cash (33.719615ms)
+✔ distinguishing materials require matching entity/date, actual saved text and record kind; transcripts and statements cannot become evidence (41.89772ms)
+✔ same-range distinguishing fields keep unresolved conflict after withdrawal/restore, while historical signal withholding cannot be reversed by a record (21.449128ms)
+✔ handover postponement terms change source inquiry, not hypothetical option B or consent truth, on add/withdraw and wrong scope (19.416117ms)
+✔ missing self-set exposure limit directs to user input and never re-requests already located paid/delivered/refund records (1.25473ms)
+✔ offline export escapes saved text in every table and quote, with no executable or remote content (26.107824ms)
+✔ the inverse payment ceiling remains available without proposed amounts and does not certify records (6.564235ms)
+✔ a current exposure above the chosen limit exports a stopped state, not a zero ceiling (5.581785ms)
+✔ cash exports retain day-end success and the distinct outflows-first shortfall, event and threshold basis (13.292997ms)
+✔ statement exports retain unsupported-target and historical-explanation boundaries (2.89522ms)
+✔ exports use the frozen saved version and label adjacent comparisons under current rules (5.468995ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2989.337616

@@ -1,0 +1,24 @@
+{
+  "required": [
+    "id",
+    "project",
+    "sha",
+    "evidence",
+    "verification",
+    "trigger",
+    "visible_behavior",
+    "system_behavior",
+    "problem",
+    "value",
+    "conditions_cost",
+    "prispect_application",
+    "risks",
+    "transformation",
+    "disposition",
+    "implementation",
+    "acceptance"
+  ],
+  "verification": ["source", "runtime", "fixture", "document-only", "blocked"],
+  "disposition": ["enhance-existing", "implement", "combine", "adapt", "defer", "reject"],
+  "implementation": ["research", "planned", "implemented", "verified", "deferred", "rejected"]
+}

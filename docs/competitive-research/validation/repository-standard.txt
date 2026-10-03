@@ -1,0 +1,1 @@
+Applicable repository checks passed; semantic and runtime acceptance remain separate.

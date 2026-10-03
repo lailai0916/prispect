@@ -1,0 +1,38 @@
+{
+  "project": "明察Pro",
+  "team_mapping": "WebTrace关系未确认，只评价实际仓库",
+  "repository": "https://github.com/cosinXx/mingcha-pro",
+  "sha": "99aae0ab181715361aacdcd108c7a1d342928754",
+  "declared_version": "3.2.1",
+  "fetched_at_utc": "2026-10-03T05:38:36Z",
+  "license": "MIT; Copyright (c) 2026 cosinXx",
+  "local_checkout": "/workspace/competitors/mingcha",
+  "original_backup": "/workspace/competitor-backups/mingcha.bundle",
+  "tracked_files": [
+    ".gitignore",
+    "LICENSE",
+    "README.md",
+    "SKILL.md",
+    "assets/report-template.html",
+    "references/case-walkthrough.md",
+    "references/detailed-playbook.md",
+    "references/methodology.md",
+    "references/report-standards.md",
+    "references/search-playbook.md"
+  ],
+  "checkout_changed": false,
+  "template_sha256": "9013e689097090f63754f1630e0402d9cdb95a4bb3a302282fee8032976c43ee",
+  "runtime_results": "runtime-results.json",
+  "runtime_mode": "unmodified-original-template; no real company research",
+  "browser": "system /usr/bin/chromium",
+  "url": "http://127.0.0.1:4405/assets/report-template.html",
+  "captured_assets": [
+    "desktop-light.png",
+    "desktop-dark.png",
+    "mobile-375-light.png",
+    "mobile-375-dark.png",
+    "mobile-320-dark.png",
+    "conflict-light.png",
+    "template-print.pdf"
+  ]
+}

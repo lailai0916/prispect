@@ -205,6 +205,8 @@ test('distinguishing material review persists through actual HTTP revisions, own
       ...input(),
       title: 'PRIVATE_DECISION_73419',
       promise: 'PRIVATE_PROMISE_73419',
+      tradingName: 'PRIVATE_TRADING_NAME_73419',
+      claims: [{ id: 'private-claim', text: 'PRIVATE_CLAIM_73419', target: 'collections' }],
       purpose: 'handover',
       transactionEntity: demo.company,
       reportTaskId: task.id,
@@ -222,6 +224,9 @@ test('distinguishing material review persists through actual HTTP revisions, own
     const created = await service.request('/api/decisions', options(alice, decisionInput, 'POST'));
     assert.equal(created.status, 201);
     let detail = (await created.json()) as DecisionDetail;
+    assert.equal(detail.version.input.tradingName, 'PRIVATE_TRADING_NAME_73419');
+    assert.equal(detail.version.input.claims?.[0]?.text, 'PRIVATE_CLAIM_73419');
+    assert.equal(detail.changes, undefined);
     const url = `/api/decisions/${detail.decision.id}`;
     const baselineCash = detail.evaluation.cash;
     const payload = {
@@ -253,6 +258,9 @@ test('distinguishing material review persists through actual HTTP revisions, own
     );
     assert.equal(add.status, 200);
     detail = (await add.json()) as DecisionDetail;
+    assert.equal(detail.changes?.fromRevision, 1);
+    assert.equal(detail.changes?.toRevision, 2);
+    assert.ok(detail.changes?.changes.some((row) => row.kind === 'evidence'));
     const firstEvidenceId = detail.version.evidence[0]!.id;
     assert.equal(detail.evaluation.explanations[0]!.evidenceReview?.status, 'ready');
     assert.match(

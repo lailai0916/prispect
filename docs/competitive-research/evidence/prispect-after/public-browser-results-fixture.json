@@ -1,0 +1,709 @@
+{
+  "startedAt": "2026-10-03T06:19:43.266Z",
+  "kind": "synthetic-provider-engineering-fixture",
+  "base": "http://127.0.0.1:4321",
+  "browser": "154.0.8037.0",
+  "checks": [
+    {
+      "name": "public-01-desktop-light-overview-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "public-01a-keyboard-expand-retained-review-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "scoped-disclosure-keyboard-expand-collapse-no-acquisition-practice-or-api",
+      "pass": true
+    },
+    {
+      "name": "public-02-desktop-light-review-framework-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "public-03-copy-fallback-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "framework-download-and-clipboard-fallback",
+      "pass": true
+    },
+    {
+      "name": "public-04-desktop-light-source-families-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "public-05-goal-template-local-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "goal-template-local-no-automatic-research",
+      "pass": true
+    },
+    {
+      "name": "closed-details-print-full-framework-source-table-offline",
+      "pass": true
+    },
+    {
+      "name": "public-06-desktop-dark-framework-sources-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 1440,
+        "document": 1440
+      }
+    },
+    {
+      "name": "public-07-narrow-dark-framework-sources-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "name": "public-08-narrow-light-framework-sources-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 390,
+        "document": 390
+      }
+    },
+    {
+      "name": "public-09-small-light-framework-sources-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 320,
+        "document": 320
+      }
+    },
+    {
+      "name": "public-10-small-dark-framework-sources-fixture",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90",
+      "dim": {
+        "viewport": 320,
+        "document": 320
+      }
+    },
+    {
+      "name": "no-external-browser-retrieval-all-public-data-synthetic",
+      "pass": true
+    }
+  ],
+  "images": [
+    "public-01-desktop-light-overview-fixture",
+    "public-01a-keyboard-expand-retained-review-fixture",
+    "public-02-desktop-light-review-framework-fixture",
+    "public-03-copy-fallback-fixture",
+    "public-04-desktop-light-source-families-fixture",
+    "public-05-goal-template-local-fixture",
+    "public-06-desktop-dark-framework-sources-fixture",
+    "public-07-narrow-dark-framework-sources-fixture",
+    "public-08-narrow-light-framework-sources-fixture",
+    "public-09-small-light-framework-sources-fixture",
+    "public-10-small-dark-framework-sources-fixture"
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/login?next=/query"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/appearance-init.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/index-PSOFEwY3.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/context-BPMAsxku.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/getPseudoElementBounds-Oiy61ukO.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/product-terms-BlJiYtzf.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/chevron-down-IKlR9xWp.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/building-complex-BcZ7lHzE.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/arrow-up-right-COLpndWB.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/file-text-Cy054J1Y.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/x-B4c9-tyy.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/format-CZgzDIGQ.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/DialogTitle-BQMPbZkb.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/MenuTrigger-DvMD9c53.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/components-BetCdj3Y.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/circle-check-BPr-LLeN.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/search-DstjwCq1.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/api-BR0HedSP.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/preload-helper-DjzSQ1t3.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-workspace-ktLSvnny.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/document-navigation-DjX5kdQ9.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/index-BgRCcAq9.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/auth/session"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/cases"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/Auth-DnUbD0ry.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/arrow-left-7DSH8-u2.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/eye-kmuEUHIC.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/mail-za7VOEjl.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/shield-check-DMpSG2JP.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/trash-Ciqy9aXx.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/Select-mIJz432R.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/useFileDrop-Dqi6-Wtb.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/Auth-B-SiJm26.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyAssistant-URGX8aNV.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyAssistant-COY_3KX7.css"
+    },
+    {
+      "method": "POST",
+      "url": "http://127.0.0.1:4321/api/auth/login"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/auth/session"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/cases"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/workspace"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-records"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyQuery-DoZWS0CU.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/chevron-right-Bz-GE7ou.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/StartInput-BhXEYgYw.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/start-intent-CzBozksd.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/StartInput-CCsV31tF.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyQuery-C9pcdPSW.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/appearance-init.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/index-PSOFEwY3.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/context-BPMAsxku.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/getPseudoElementBounds-Oiy61ukO.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/product-terms-BlJiYtzf.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/chevron-down-IKlR9xWp.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/building-complex-BcZ7lHzE.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/arrow-up-right-COLpndWB.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/file-text-Cy054J1Y.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/x-B4c9-tyy.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/format-CZgzDIGQ.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/DialogTitle-BQMPbZkb.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/MenuTrigger-DvMD9c53.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/components-BetCdj3Y.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/circle-check-BPr-LLeN.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/search-DstjwCq1.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/api-BR0HedSP.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/preload-helper-DjzSQ1t3.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-workspace-ktLSvnny.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/document-navigation-DjX5kdQ9.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/index-BgRCcAq9.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/auth/session"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/cases"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/workspace"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyWorkspace-P0cyz5HF.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/chevron-right-Bz-GE7ou.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/copy-0EeKh0SI.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/info-C9Ui-2Ih.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/minus-DOvLuKiE.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-review-CQWYxiGq.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/flask-conical-Bj2by0N5.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-assessment-Bn9xdyUz.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/rotate-ccw-BkfAvYZh.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-review-B5qs2EWa.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/trash-Ciqy9aXx.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/Select-mIJz432R.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyQuery-DoZWS0CU.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/StartInput-BhXEYgYw.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/start-intent-CzBozksd.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/StartInput-CCsV31tF.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyQuery-C9pcdPSW.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyWorkspace-CtWEaX2S.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyAssistant-URGX8aNV.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyAssistant-COY_3KX7.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-records"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-runs/280f96a2-0c00-43ee-af1c-be401bb00d90"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-records"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-runs/280f96a2-0c00-43ee-af1c-be401bb00d90/challenge"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/company?run=280f96a2-0c00-43ee-af1c-be401bb00d90"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/appearance-init.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/index-PSOFEwY3.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/context-BPMAsxku.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/getPseudoElementBounds-Oiy61ukO.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/product-terms-BlJiYtzf.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/chevron-down-IKlR9xWp.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/building-complex-BcZ7lHzE.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/arrow-up-right-COLpndWB.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/file-text-Cy054J1Y.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/x-B4c9-tyy.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/format-CZgzDIGQ.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/DialogTitle-BQMPbZkb.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/MenuTrigger-DvMD9c53.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/components-BetCdj3Y.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/circle-check-BPr-LLeN.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/search-DstjwCq1.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/api-BR0HedSP.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/preload-helper-DjzSQ1t3.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-workspace-ktLSvnny.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/document-navigation-DjX5kdQ9.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/index-BgRCcAq9.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/auth/session"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/cases"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/workspace"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyWorkspace-P0cyz5HF.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/chevron-right-Bz-GE7ou.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/copy-0EeKh0SI.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/info-C9Ui-2Ih.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/minus-DOvLuKiE.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-review-CQWYxiGq.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/flask-conical-Bj2by0N5.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-assessment-Bn9xdyUz.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/rotate-ccw-BkfAvYZh.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/company-review-B5qs2EWa.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/trash-Ciqy9aXx.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/Select-mIJz432R.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyQuery-DoZWS0CU.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/StartInput-BhXEYgYw.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/start-intent-CzBozksd.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/StartInput-CCsV31tF.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyQuery-C9pcdPSW.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyWorkspace-CtWEaX2S.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyAssistant-URGX8aNV.js"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/assets/CompanyAssistant-COY_3KX7.css"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-records"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-runs/280f96a2-0c00-43ee-af1c-be401bb00d90"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-records"
+    },
+    {
+      "method": "GET",
+      "url": "http://127.0.0.1:4321/api/company-runs/280f96a2-0c00-43ee-af1c-be401bb00d90/challenge"
+    }
+  ],
+  "finishedAt": "2026-10-03T06:19:50.326Z"
+}

@@ -1,0 +1,4 @@
+{
+  "restored_metadata": 235,
+  "next": "fetch --resume; extract --resume; validate; build-labels"
+}

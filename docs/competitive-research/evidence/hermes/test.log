@@ -1,0 +1,20 @@
+
+> hermes-company-analyzer@0.1.0 test
+> vitest run
+
+(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - ESM syntax in a file loaded as CommonJS (vitest.config.ts:1:1). Use a `.mjs` extension or set `"type": "module"` in the closest package.json
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+ RUN  v5.0.3 /workspace/competitors/hermes
+
+
+ Test Files  33 passed (33)
+      Tests  208 passed (208)
+   Start at  05:38:51
+   Duration  15.61s (environment 86%, transform 5%, import 5%, tests 3%, worker 1%)
+
+Environment  jsdom was created 33 times · 33.00s total, 86% of tracked time
+             create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+             learn more: https://vitest.dev/guide/improving-performance#test-environments
+

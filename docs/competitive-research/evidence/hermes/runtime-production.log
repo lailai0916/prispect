@@ -1,0 +1,38 @@
+
+> hermes-company-analyzer@0.1.0 start
+> next start --hostname 127.0.0.1 --port 4402
+
+   ▲ Next.js 15.5.27
+   - Local:        http://127.0.0.1:4402
+   - Network:      http://127.0.0.1:4402
+
+ ✓ Starting...
+ ✓ Ready in 753ms
+[xray] 生成失败: Error [CompanyLookupUnavailableError]: COMPANY_LOOKUP_UNAVAILABLE
+    at h (.next/server/app/api/company/[id]/sentiment/route.js:1:1290)
+    at async o (.next/server/chunks/884.js:1:6794)
+    at async s (.next/server/chunks/332.js:1:12874)
+    at async B (.next/server/app/api/company/[id]/xray/route.js:1:1023)
+    at async k (.next/server/app/api/company/[id]/xray/route.js:1:4102)
+    at async g (.next/server/app/api/company/[id]/xray/route.js:1:5105)
+ ⨯ Error [CompanyLookupUnavailableError]: COMPANY_LOOKUP_UNAVAILABLE
+    at h (.next/server/app/api/company/[id]/sentiment/route.js:1:1290)
+    at async o (.next/server/chunks/884.js:1:6794)
+    at async s (.next/server/chunks/332.js:1:12874)
+    at async m (.next/server/app/report/[id]/page.js:2:15311) {
+  digest: '4041977680'
+}
+[xray] 生成失败: Error [CompanyLookupUnavailableError]: COMPANY_LOOKUP_UNAVAILABLE
+    at h (.next/server/app/api/company/[id]/sentiment/route.js:1:1290)
+    at async o (.next/server/chunks/884.js:1:6794)
+    at async s (.next/server/chunks/332.js:1:12874)
+    at async B (.next/server/app/api/company/[id]/xray/route.js:1:1023)
+    at async k (.next/server/app/api/company/[id]/xray/route.js:1:4102)
+    at async g (.next/server/app/api/company/[id]/xray/route.js:1:5105)
+[xray] 生成失败: Error [CompanyLookupUnavailableError]: COMPANY_LOOKUP_UNAVAILABLE
+    at h (.next/server/app/api/company/[id]/sentiment/route.js:1:1290)
+    at async o (.next/server/chunks/884.js:1:6794)
+    at async s (.next/server/chunks/332.js:1:12874)
+    at async B (.next/server/app/api/company/[id]/xray/route.js:1:1023)
+    at async k (.next/server/app/api/company/[id]/xray/route.js:1:4102)
+    at async g (.next/server/app/api/company/[id]/xray/route.js:1:5105)

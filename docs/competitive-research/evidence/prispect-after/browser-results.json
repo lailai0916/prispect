@@ -1,0 +1,409 @@
+{
+  "startedAt": "2026-10-03T06:17:13.210Z",
+  "base": "http://127.0.0.1:4320",
+  "browser": "154.0.8037.0",
+  "baselineSha": "d748d1ac5c1a9c6fe702301c819980e1cce87312",
+  "head": "d748d1ac5c1a9c6fe702301c819980e1cce87312",
+  "checks": [
+    {
+      "name": "no-external-model-configured",
+      "pass": true
+    },
+    {
+      "name": "real-UI-login-existing-isolated-owner",
+      "pass": true
+    },
+    {
+      "name": "01-desktop-light-query",
+      "url": "http://127.0.0.1:4320/query",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "same-financial-input-rules-completed",
+      "pass": true,
+      "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269"
+    },
+    {
+      "name": "02-desktop-light-report",
+      "url": "http://127.0.0.1:4320/tasks/f2fe5ebe-f82b-49d6-a300-cada12809269",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "03-desktop-light-original-drawer",
+      "url": "http://127.0.0.1:4320/tasks/f2fe5ebe-f82b-49d6-a300-cada12809269",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "04-desktop-light-learning-lab",
+      "url": "http://127.0.0.1:4320/tasks/f2fe5ebe-f82b-49d6-a300-cada12809269",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "04a-desktop-light-prediction-feedback",
+      "url": "http://127.0.0.1:4320/tasks/f2fe5ebe-f82b-49d6-a300-cada12809269",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "prediction-trial-restoration-local-no-write-no-grade-change",
+      "pass": true
+    },
+    {
+      "name": "04b-desktop-light-prediction-restored",
+      "url": "http://127.0.0.1:4320/tasks/f2fe5ebe-f82b-49d6-a300-cada12809269",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "known-record-A30000-B15000-and-assumptions",
+      "pass": true
+    },
+    {
+      "name": "05-desktop-light-decision-overview",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "desktop-light-06-payment-boundary",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "desktop-light-07-trading-identity",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "desktop-light-08-evidence",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "desktop-light-09-change-history",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "role-term-originals-unlock-record-boundary-input-limit10000",
+      "pass": true
+    },
+    {
+      "name": "09a-desktop-light-complete-record-boundary",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "09b-desktop-light-located-claims-not-truth",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "10-desktop-light-withdrawn-change",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "withdraw-restored-record-calculation-and-change-set",
+      "pass": true
+    },
+    {
+      "name": "11-desktop-light-restored-change",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "stale-revision-write-409",
+      "pass": true
+    },
+    {
+      "name": "12-desktop-light-missing-user-limit",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "future-promise-does-not-reduce-actual-exposure",
+      "pass": true
+    },
+    {
+      "name": "serialized-concurrent-one200-one409",
+      "pass": true
+    },
+    {
+      "name": "13-desktop-light-read-failure",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "14-desktop-light-read-recovered",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "503-read-manual-retry-restores-current-version",
+      "pass": true
+    },
+    {
+      "name": "15-desktop-light-conflict-persists",
+      "url": "http://127.0.0.1:4320/decisions?id=c4d9870f-74bf-4371-9303-80515e3e8be0",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "same-range-conflict-survives-counterevidence-withdrawal",
+      "pass": true
+    },
+    {
+      "name": "actual-html-json-export",
+      "pass": true
+    },
+    {
+      "name": "15a-desktop-light-saved-version-export-preview",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "saved-version-export-sandbox-CSP-escaped-injection-offline",
+      "pass": true
+    },
+    {
+      "name": "financial-print-closed-details-offline-retains-basis",
+      "pass": true
+    },
+    {
+      "name": "16-desktop-dark-overview",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "17-desktop-dark-payment-boundary",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "18-narrow-dark-overview",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    {
+      "name": "19-narrow-dark-change-history",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    {
+      "name": "20-narrow-dark-report",
+      "url": "http://127.0.0.1:4320/tasks/f2fe5ebe-f82b-49d6-a300-cada12809269",
+      "dimensions": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    {
+      "name": "21-narrow-light-overview",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    {
+      "name": "22-narrow-light-payment-boundary",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 390,
+        "document": 390,
+        "body": 390
+      }
+    },
+    {
+      "name": "23-small-light-payment-boundary",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 320,
+        "document": 320,
+        "body": 320
+      }
+    },
+    {
+      "name": "24-small-light-change-history",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 320,
+        "document": 320,
+        "body": 320
+      }
+    },
+    {
+      "name": "25-keyboard-command-search",
+      "url": "http://127.0.0.1:4320/decisions?id=c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "other-owner404-and-anonymous401-on-known-private-ids",
+      "pass": true
+    },
+    {
+      "name": "cross-origin403",
+      "pass": true
+    },
+    {
+      "name": "26-late-response-owner-isolation",
+      "url": "http://127.0.0.1:4320/decisions",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "late-old-owner-response-does-not-enter-new-owner-view",
+      "pass": true
+    },
+    {
+      "name": "browser-session-really-switched-owner",
+      "pass": true
+    }
+  ],
+  "images": [
+    "01-desktop-light-query",
+    "02-desktop-light-report",
+    "03-desktop-light-original-drawer",
+    "04-desktop-light-learning-lab",
+    "04a-desktop-light-prediction-feedback",
+    "04b-desktop-light-prediction-restored",
+    "05-desktop-light-decision-overview",
+    "desktop-light-06-payment-boundary",
+    "desktop-light-07-trading-identity",
+    "desktop-light-08-evidence",
+    "desktop-light-09-change-history",
+    "09a-desktop-light-complete-record-boundary",
+    "09b-desktop-light-located-claims-not-truth",
+    "10-desktop-light-withdrawn-change",
+    "11-desktop-light-restored-change",
+    "12-desktop-light-missing-user-limit",
+    "13-desktop-light-read-failure",
+    "14-desktop-light-read-recovered",
+    "15-desktop-light-conflict-persists",
+    "15a-desktop-light-saved-version-export-preview",
+    "16-desktop-dark-overview",
+    "17-desktop-dark-payment-boundary",
+    "18-narrow-dark-overview",
+    "19-narrow-dark-change-history",
+    "20-narrow-dark-report",
+    "21-narrow-light-overview",
+    "22-narrow-light-payment-boundary",
+    "23-small-light-payment-boundary",
+    "24-small-light-change-history",
+    "25-keyboard-command-search",
+    "26-late-response-owner-isolation"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "limitations": [],
+  "sourceFingerprint": "df9d6566286d12a41d0cd47b5f0d7197fdfccd19ab0fcbf383b1011aa218f6e2",
+  "finishedAt": "2026-10-03T06:17:33.507Z",
+  "expectedNetworkErrors": [
+    "Failed to load resource: the server responded with a status of 503 (Service Unavailable)"
+  ],
+  "unexpectedConsoleErrors": []
+}

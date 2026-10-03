@@ -1,0 +1,16 @@
+{
+  "recorded_at_utc": "2026-10-03T05:58:53.268592+00:00",
+  "test_command": "node --import tsx --test tests/decision-claims.test.ts",
+  "passed": 13,
+  "failed": 0,
+  "typecheck_command": "npm run typecheck",
+  "typecheck_exit_code": 0,
+  "boundaries": [
+    "No semantic assertion truth check",
+    "Record matching does not authenticate source, consent or performance",
+    "Counterparty statements and assumptions not adopted as source records",
+    "Withdrawn contrary evidence does not clear known conflict",
+    "No private statements enter model payloads",
+    "Runtime integration verified separately by main agent"
+  ]
+}

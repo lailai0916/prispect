@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-10-03T05:59:55.911Z",
+  "base": "http://127.0.0.1:4320",
+  "checks": [
+    {
+      "name": "purpose-switch-retains-quote-and-invalid-target",
+      "pass": true
+    }
+  ],
+  "screens": [
+    {
+      "name": "28-prispect-claims-editor-desktop",
+      "dims": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    },
+    {
+      "name": "29-prispect-claims-invalid-target",
+      "dims": {
+        "width": 1440,
+        "scroll": 1440
+      }
+    }
+  ],
+  "pageErrors": [],
+  "limits": [
+    "Local Playwright with isolated synthetic input; no external model or real user effect."
+  ],
+  "error": "AssertionError [ERR_ASSERTION]: The input did not match the regular expression /当前可用现金/. Input:\n\n'付款、交付与退款条件'\n",
+  "finishedAt": "2026-10-03T05:59:59.007Z"
+}

@@ -1,0 +1,75 @@
+
+> hermes-company-analyzer@0.1.0 build
+> next build
+
+   ▲ Next.js 15.5.27
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 30.2s
+   Linting and checking validity of types ...
+
+./components/home/ChatEntry.tsx
+5:25  Warning: 'Send' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./components/xray/EChart.tsx
+40:6  Warning: React Hook useEffect has a missing dependency: 'onReady'. Either include it or remove the dependency array. If 'onReady' changes too often, find the parent component that defines it and wrap that definition in useCallback.  react-hooks/exhaustive-deps
+
+./components/xray/RelationGraph.tsx
+133:6  Warning: React Hook useMemo has a missing dependency: 'NODE_COLOR'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+195:6  Warning: React Hook useMemo has a missing dependency: 'NODE_COLOR'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./lib/__tests__/narrative.test.ts
+7:15  Warning: 'CompanyXRay' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/data/adapters/juhe.ts
+14:15  Warning: '_companyId' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/data/wikidata.ts
+1:10  Warning: 'createHash' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./lib/llm/client.test.ts
+185:22  Warning: '_ev' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+   Collecting page data ...
+   Generating static pages (0/6) ...
+   Generating static pages (1/6) 
+   Generating static pages (2/6) 
+   Generating static pages (4/6) 
+ ✓ Generating static pages (6/6)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    12.4 kB         172 kB
+├ ○ /_not-found                            992 B         104 kB
+├ ƒ /api/chat                              162 B         103 kB
+├ ƒ /api/chats                             162 B         103 kB
+├ ƒ /api/company/[id]/health               162 B         103 kB
+├ ƒ /api/company/[id]/sentiment            162 B         103 kB
+├ ƒ /api/company/[id]/xray                 162 B         103 kB
+├ ƒ /api/compare-ai                        162 B         103 kB
+├ ƒ /api/llm-status                        162 B         103 kB
+├ ƒ /api/market/fflow/[id]                 162 B         103 kB
+├ ƒ /api/market/indices                    162 B         103 kB
+├ ƒ /api/market/kline/[id]                 162 B         103 kB
+├ ƒ /api/market/quote/[id]                 162 B         103 kB
+├ ƒ /api/news/flash                        162 B         103 kB
+├ ƒ /api/raw/[id]                          162 B         103 kB
+├ ƒ /api/report-ai                         162 B         103 kB
+├ ƒ /api/screen                            162 B         103 kB
+├ ƒ /api/search                            162 B         103 kB
+├ ƒ /api/suggest                           162 B         103 kB
+├ ○ /chat                                51.7 kB         158 kB
+├ ƒ /compare                             10.6 kB         520 kB
+├ ○ /icon.svg                                0 B            0 B
+└ ƒ /report/[id]                         27.2 kB         537 kB
++ First Load JS shared by all             103 kB
+  ├ chunks/255-ce8c7c75002f810b.js       46.5 kB
+  ├ chunks/4bd1b696-c023c6e3521b1417.js  54.2 kB
+  └ other shared chunks (total)          1.97 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

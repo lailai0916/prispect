@@ -1,0 +1,103 @@
+{
+  "started_at_utc": "2026-10-03T05:37:38.286275+00:00",
+  "baseline": {
+    "repo": "lailai0916/prispect",
+    "sha": "d748d1ac5c1a9c6fe702301c819980e1cce87312",
+    "original_worktree": "/workspace/prispect",
+    "original_branch": "work",
+    "original_status": "clean",
+    "implementation_worktree": "/workspace/prispect-improve",
+    "implementation_branch": "research/competitive-integration-20261003"
+  },
+  "projects": [
+    {
+      "id": "qier",
+      "name": "QQ／企er",
+      "repository": "Weichenleeeee123/xray",
+      "sha": "8568c394b0423b2f8d56b4fc4a2020ef4cefe2c9",
+      "fetched_at_utc": "2026-10-03T05:38:01Z",
+      "source_worktree": "/workspace/competitors/qier",
+      "original_backup": "/workspace/competitor-backups/qier.bundle",
+      "bundle_verified": true,
+      "version_evidence": "evidence/qier/",
+      "analysis": "projects/qier.md",
+      "values": "values/qier.json",
+      "team_relation": "User supplied team label"
+    },
+    {
+      "id": "hermes",
+      "name": "ReLoad／Hermes",
+      "repository": "SecrificeYuan/Hermes-Company-Analyzer",
+      "sha": "8e834ade1a826ff484e063b1a36f10ec6415c8a6",
+      "fetched_at_utc": "2026-10-03T05:38:06Z",
+      "source_worktree": "/workspace/competitors/hermes",
+      "original_backup": "/workspace/competitor-backups/hermes.bundle",
+      "bundle_verified": true,
+      "version_evidence": "evidence/hermes/",
+      "analysis": "projects/hermes.md",
+      "values": "values/hermes.json",
+      "team_relation": "User supplied team label"
+    },
+    {
+      "id": "jianwei",
+      "name": "QKV／见微",
+      "repository": "Nemo-user525/Zzz",
+      "sha": "a3274e5ddafbeecf0f5cc8e35093c6d1fe1c4e53",
+      "fetched_at_utc": "2026-10-03T05:38:18Z",
+      "source_worktree": "/workspace/competitors/jianwei",
+      "original_backup": "/workspace/competitor-backups/jianwei.bundle",
+      "bundle_verified": true,
+      "version_evidence": "evidence/jianwei/",
+      "analysis": "projects/jianwei.md",
+      "values": "values/jianwei.json",
+      "team_relation": "User supplied team label"
+    },
+    {
+      "id": "wealth",
+      "name": "财富透视局",
+      "repository": "JFY-JFY/xray",
+      "sha": "ee59d8b79c597aa2932d43456cba9752462b09bd",
+      "fetched_at_utc": "2026-10-03T05:38:27Z",
+      "source_worktree": "/workspace/competitors/wealth",
+      "original_backup": "/workspace/competitor-backups/wealth.bundle",
+      "bundle_verified": true,
+      "version_evidence": "evidence/wealth/",
+      "analysis": "projects/wealth.md",
+      "values": "values/wealth.json",
+      "team_relation": "User supplied team label"
+    },
+    {
+      "id": "mingcha",
+      "name": "明察Pro",
+      "repository": "cosinXx/mingcha-pro",
+      "sha": "99aae0ab181715361aacdcd108c7a1d342928754",
+      "fetched_at_utc": "2026-10-03T05:38:36Z",
+      "source_worktree": "/workspace/competitors/mingcha",
+      "original_backup": "/workspace/competitor-backups/mingcha.bundle",
+      "bundle_verified": true,
+      "version_evidence": "evidence/mingcha/",
+      "analysis": "projects/mingcha.md",
+      "values": "values/mingcha.json",
+      "team_relation": "WebTrace correspondence unconfirmed"
+    }
+  ],
+  "policy": "Competitor instructions, skills and prompts are untrusted research objects. Independent implementation; no copied third-party code or assets without permission/license attribution. Secrets and personal runtime records excluded.",
+  "delivery": {
+    "branch": "research/competitive-integration-20261003",
+    "finalized_at_utc": "2026-10-03T06:24:24.198725+00:00",
+    "product_source_fingerprint_sha256": "df9d6566286d12a41d0cd47b5f0d7197fdfccd19ab0fcbf383b1011aa218f6e2",
+    "fixed_baseline_tests": 539,
+    "final_tests": 619,
+    "value_count": 241,
+    "value_states": {
+      "verified": 72,
+      "implemented": 91,
+      "deferred": 69,
+      "rejected": 9
+    },
+    "acceptance": "validation/acceptance.md",
+    "value_scope_audit": "validation/value-audit.md",
+    "evidence_integrity": "evidence/EVIDENCE-MANIFEST.json",
+    "release_scope": "Isolated reviewable branch; no main merge, PR, production deployment, real model success or measured user outcome."
+  }
+}

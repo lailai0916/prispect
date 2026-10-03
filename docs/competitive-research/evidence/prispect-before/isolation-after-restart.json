@@ -1,0 +1,25 @@
+{
+  "recordedAt": "2026-10-03T05:44:39.885Z",
+  "mode": "after-restart",
+  "checks": [
+    {
+      "path": "/api/tasks/e6ca9d24-b110-45f7-95e7-f53c23511276",
+      "ownerStatus": 200,
+      "sha256": "2192b550f49b49b8ab1c984f55698e9f531257f583d7f815b052b79ea515a2e1",
+      "exactRetainedBody": true
+    },
+    {
+      "path": "/api/decisions/4248ba95-81b9-4dc7-a09e-08161ee98ad7",
+      "ownerStatus": 200,
+      "sha256": "fcb44126a47dc8347d89ed505ea49d0c31102209a78fac2f7d0876b5dd8bb78b",
+      "retainedVersionAndCalculatedScenarios": true
+    },
+    {
+      "path": "/api/materials/9580c6d4-a5bf-4d2f-945c-60c0ff2e1941/file",
+      "ownerStatus": 200,
+      "sha256": "84856a8bec12beaed19da34ff982742fef6399e001e485bf5675898f0381d4fd",
+      "exactRetainedBody": true
+    }
+  ],
+  "sha": "d748d1ac5c1a9c6fe702301c819980e1cce87312"
+}

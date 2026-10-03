@@ -1,0 +1,10 @@
+{
+  "recordedAt": "2026-10-03T06:12:28.872Z",
+  "status": 429,
+  "code": "RATE_LIMITED",
+  "message": "尝试过于频繁，请稍后重试",
+  "inputsRetained": true,
+  "noNavigation": true,
+  "kind": "actual-persisted-controlled-account-login-throttle",
+  "limitsNotModified": true
+}

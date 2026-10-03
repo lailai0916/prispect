@@ -1,0 +1,15 @@
+$ tsc -b && vite build
+vite v6.4.3 building for production...
+transforming...
+✓ 642 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.38 kB │ gzip:   0.31 kB
+dist/assets/index-Cqu8Wfde.css   77.45 kB │ gzip:  18.18 kB
+dist/assets/index-CVCknR_o.js   897.04 kB │ gzip: 296.61 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 5.42s

@@ -1,0 +1,19 @@
+{
+  "company": "合成演练供应商（非真实企业）",
+  "shortName": "合成演练供应商",
+  "title": "三条独立定位字段（合成原文）",
+  "filename": "complete-records.json",
+  "origin": "user-upload",
+  "documentDate": "2026-10-03",
+  "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "observations": [],
+  "excerpts": [
+    {
+      "page": 1,
+      "text": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款10000元。\n合成演练供应商（非真实企业）截至2026-10-03，已交付对应金额0元。\n合成演练供应商（非真实企业）截至2026-10-03，实际已收到退款0元。"
+    }
+  ],
+  "notes": [
+    "纯合成输入；每条记录独立包含主体、日期与金额，不表示真实经济事件。"
+  ]
+}

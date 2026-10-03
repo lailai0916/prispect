@@ -2,6 +2,12 @@
 
 本项目没有采购商业企业数据库，没有虚构银行合作、客户、客户测试、荣誉或付费意愿。
 
+## 竞品研究材料
+
+2026-10-03 的五仓库研究以 [固定版本清单](competitive-research/manifest.json)和[各项目报告](competitive-research/README.md)为准。完整源码与 Git bundle 在研究工作区外保留，没有将竞品整套代码、字体、角色、图片或Skills作为本项目执行内容或产品素材复制。新机制由析光独立实现。
+
+`docs/competitive-research/evidence/` 的竞品截图与必要摘录只用于指明被评价的实现与交互，其权利属于各项目原作者，项目 MIT 不改授这些第三方作品权利；固定 SHA 与截图来源提供归属。无明确 LICENSE 或声明保留全部权利的项目不做代码/素材复用。明察Pro仓库的MIT及作者归属在其报告记录；它与WebTrace的队伍对应关系未确认。私有测试账号、会话、浏览器storage与实际凭据不入Git；研究数据均明确合成或来自公开企业源。
+
 ## 真实数据
 
 来源清单与 SHA256 见 [source-manifest.json](../data/source-manifest.json)，事实核验及口径见 [research.md](research.md)。原件为松原安全与海康威视 2025 年度年报及其中 2024 比较列，来自巨潮信息披露原件。

@@ -1,0 +1,13 @@
+const {chromium}=require('/workspace/prispect-improve/node_modules/playwright');
+const fs=require('fs');
+const out='/workspace/prispect-improve/docs/competitive-research/evidence/qier';
+(async()=>{const b=await chromium.launch({headless:true,executablePath:'/usr/bin/chromium',args:['--no-sandbox']}); const ctx=await b.newContext({viewport:{width:1440,height:1000}}); const p=await ctx.newPage(); const errors=[];p.on('pageerror',e=>errors.push(e.message)); const logs=[];
+await p.goto('http://127.0.0.1:4401'); await p.waitForLoadState('networkidle');
+logs.push({step:'initial',text:await p.locator('body').innerText()});
+await p.getByRole('button',{name:'满盈禾虚构'}).click();
+await p.screenshot({path:out+'/screenshots/02-example-filled.png',fullPage:true});logs.push({step:'filled',text:await p.locator('body').innerText()});
+await p.getByRole('button',{name:'开始查询',exact:true}).click();await p.waitForTimeout(400);
+await p.screenshot({path:out+'/screenshots/03-completion-early.png',fullPage:true});logs.push({step:'process',text:await p.locator('body').innerText()});
+await p.waitForTimeout(1500); logs.push({step:'later',text:await p.locator('body').innerText(),controls:await p.locator('button,a').evaluateAll(es=>es.map(e=>({tag:e.tagName,text:e.textContent,aria:e.getAttribute('aria-label'),href:e.getAttribute('href')})))});
+await p.screenshot({path:out+'/screenshots/04-report-ready.png',fullPage:true});
+await ctx.storageState({path:'/workspace/qier-runtime/browser-state.json'});fs.writeFileSync(out+'/home-runtime.json',JSON.stringify({logs,errors,url:p.url()},null,2));console.log(logs.at(-1));console.log(errors);await b.close();})().catch(e=>{console.error(e);process.exitCode=1});

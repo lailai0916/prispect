@@ -1,0 +1,40 @@
+const {chromium}=require('playwright');
+const fs=require('fs');const assert=require('node:assert/strict');const crypto=require('node:crypto');
+const out='/workspace/prispect-improve/docs/competitive-research/evidence/wealth';
+(async()=>{
+ const credentials=JSON.parse(fs.readFileSync('/workspace/research-envs/prispect-after-account.json','utf8'));
+ const ids=JSON.parse(fs.readFileSync('/workspace/prispect-improve/docs/competitive-research/evidence/prispect-after/record-ids.json','utf8'));
+ const browser=await chromium.launch({executablePath:'/usr/bin/chromium',headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
+ const context=await browser.newContext({viewport:{width:390,height:844},colorScheme:'light',reducedMotion:'reduce'});const page=await context.newPage();const checks=[],requests=[],errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ const check=(ok,name)=>{assert.ok(ok,name);checks.push({name,passed:true})};
+ await page.goto(`http://127.0.0.1:4320/login?next=${encodeURIComponent('/tasks/'+ids.taskId)}`);
+ await page.locator('input[name=email]').fill(credentials.email);await page.locator('input[name=password]').fill(credentials.password);await page.getByRole('button',{name:'登录',exact:true}).click();await page.waitForURL(url=>url.pathname==='/tasks/'+ids.taskId);await page.waitForLoadState('networkidle');
+ const savedRes=await context.request.get(`http://127.0.0.1:4320/api/tasks/${ids.taskId}`);assert.equal(savedRes.status(),200);const saved=await savedRes.json();
+ await page.getByText('分析依据与核查记录',{exact:true}).click();await page.getByRole('button',{name:'证据实验室',exact:true}).click();
+ const lab=page.locator('.evidence-lab');const learning=page.getByTestId('evidence-learning');
+ check(await learning.count()===1,'normal owned report opens actual learning component');check(!await learning.evaluate(e=>e.open),'normal report optional practice starts collapsed');
+ const source=lab.locator('.lab-source-document a');check(await source.count()>0,'saved upload original is linked in actual evidence inspector');const href=await source.first().getAttribute('href');check(/^\/api\/materials\/[a-zA-Z0-9_-]+\/file$/.test(href),'JSON original links to private owner endpoint without invented public URL or PDF fragment');
+ const localFile=await context.request.get('http://127.0.0.1:4320'+href);check(localFile.status()===200,'owning account can read retained original');const fileDigest=crypto.createHash('sha256').update(await localFile.body()).digest('hex');const retained=saved.report.snapshot.find(m=>href===`/api/materials/${m.id}/file`);check(retained && fileDigest===retained.sha256,'retained original byte digest matches saved report source');
+ const other=await browser.newContext();const forbidden=await other.request.get('http://127.0.0.1:4320'+href);check([401,403].includes(forbidden.status()),'anonymous context cannot read owning-account retained original');await other.close();
+ page.on('request',r=>{if(r.url().includes('/api/'))requests.push({method:r.method(),url:r.url()})});
+ await learning.locator('summary').first().focus();await page.keyboard.press('Enter');await page.keyboard.press('Tab');check(await page.evaluate(()=>document.activeElement?.tagName)==='SELECT','normal path keyboard reaches source fact selector');
+ // Native ArrowDown from default first field to the fifth current-year inventory adjustment.
+ for(let i=0;i<4;i++)await page.keyboard.press('ArrowDown');
+ check(await learning.locator('select').inputValue()==='fact-2025-inventoryAdjustment','native keyboard chooses saved signed inventory adjustment');
+ const boxes=learning.getByRole('checkbox');const labels=await boxes.evaluateAll(es=>es.map(e=>e.closest('label').innerText));
+ for(let i=0;i<labels.length;i++){await page.keyboard.press('Tab');if(/^(存货调整所示占用|现金桥核对|扩张备货|存货去化压力)/.test(labels[i]))await page.keyboard.press('Space');}
+ await page.keyboard.press('Tab');check((await page.evaluate(()=>document.activeElement?.textContent))?.includes('验证我的预测'),'keyboard reaches prediction validation');await page.keyboard.press('Enter');await learning.locator('.learning-feedback').waitFor();
+ check((await learning.locator('.learning-feedback h3').innerText())==='预测与实际依赖一致','normal path predicts exact signed inventory dependencies');check(await learning.locator('[data-learning-state=paused]').count()===4,'inventory withdrawal pauses own adjustment, bridge and two explanations');
+ check(await learning.locator('.learning-comparison article').first().getAttribute('data-learning-state')==='paused','normal path presents paused dependencies before unaffected calculations');
+ check((await learning.innerText()).includes('60.00%'),'independent cash-profit ratio is retained at exact 60.00 percent');check(await page.evaluate(()=>document.activeElement?.tagName)==='H3','normal path feedback receives keyboard focus');
+ await learning.screenshot({path:out+'/prispect-learning-product-390-light.png',animations:'disabled'});
+ await page.keyboard.press('Tab');check((await page.evaluate(()=>document.activeElement?.textContent))?.includes('恢复演练'),'normal path next keyboard action restores practice');await page.keyboard.press('Enter');check(await page.evaluate(()=>document.activeElement?.tagName)==='SELECT','normal path restore returns keyboard focus to source selector');check(await learning.locator('.learning-feedback').count()===0,'normal path restore clears trial result');
+ for(const width of [390,320]){await page.setViewportSize({width,height:844});for(const theme of ['dark','light']){await page.emulateMedia({colorScheme:theme});check(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),`${width}px ${theme} actual report has no page horizontal overflow`);check(await learning.evaluate(e=>e.scrollWidth<=e.clientWidth),`${width}px ${theme} actual learning fits its container`);check(await learning.locator('.learning-options').evaluate(e=>getComputedStyle(e).gridTemplateColumns.split(' ').length===1),`${width}px ${theme} actual prediction is one readable column`);await learning.screenshot({path:out+`/prispect-learning-product-${width}-${theme}-restored.png`,animations:'disabled'});}}
+ await learning.getByRole('button',{name:'验证我的预测',exact:true}).click();await learning.locator('.learning-feedback').waitFor();check((await learning.locator('.learning-recap summary').innerText()).endsWith('2'),'actual memory recap records only two submitted trials');
+ const activity=[...requests];page.removeAllListeners('request');check(activity.length===0,'normal path source choice, prediction, restoration and themes call no API/model');
+ const afterRes=await context.request.get(`http://127.0.0.1:4320/api/tasks/${ids.taskId}`);assert.equal(afterRes.status(),200);const after=await afterRes.json();check(JSON.stringify(after.report)===JSON.stringify(saved.report),'complete saved report and grade unchanged after practice');
+ await page.reload({waitUntil:'networkidle'});await page.getByText('分析依据与核查记录',{exact:true}).click();await page.getByRole('button',{name:'证据实验室',exact:true}).click();check(await page.getByTestId('evidence-learning').locator('.learning-recap').count()===0,'refresh clears normal path learning memory');check(errors.length===0,'normal path no browser page errors');
+ fs.writeFileSync(out+'/prispect-learning-product-browser.json',JSON.stringify({recorded_at:new Date().toISOString(),run_mode:'normal authenticated application route; owned uploaded synthetic JSON financial facts; no fake public URL; no production data mutation',task_id:ids.taskId,checks,api_requests_during_practice:activity,errors,original_digest_matches:true,source_fingerprints:Object.fromEntries(['shared/evidence-lab.ts','shared/evidence-learning.ts','src/EvidenceLab.tsx','src/EvidenceLearning.tsx','src/evidence-learning.css'].map(p=>[p,crypto.createHash('sha256').update(fs.readFileSync('/workspace/prispect-improve/'+p)).digest('hex')])),
+      dist_html_sha256:crypto.createHash('sha256').update(fs.readFileSync('/workspace/prispect-improve/dist/index.html')).digest('hex')},null,2));await browser.close();
+})().catch(e=>{console.error(e);process.exit(1)});

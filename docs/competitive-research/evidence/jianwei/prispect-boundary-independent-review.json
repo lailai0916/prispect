@@ -1,0 +1,15 @@
+{
+  "reviewed_at_utc": "2026-10-03T06:03:53.206338+00:00",
+  "reviewer": "independent subagent /root/research_jianwei/review_boundary",
+  "mode": "read-only source review plus targeted unit tests; no browser review",
+  "finding": "No concrete defect found in authorized formula, missing/zero/above-limit handling, BigInt precision, current source gating or entity-role wording. No files changed.",
+  "tests": "tests/payment-boundary.test.ts 17 passed",
+  "limits": "Source-located semantics depend on server current-rule evaluation; this does not authenticate documents or business relationships. Production-component browser checks are separate controlled fixtures.",
+  "files_sha256": {
+    "shared/payment-boundary.ts": "ffe09024fbfa56a59edf5858002654ffdaf1460cbbf81f03d03467711bf3bf73",
+    "src/DecisionEntityPath.tsx": "13c053ca3e6d0c5278cfc73f603e3f62d2ee73d9591fd14af17c9d629909a7a1",
+    "src/PaymentBoundary.tsx": "7f80cac5fb30b706412bd5adbd0f36ed2b12db13b669537933b0e61c61a5f293",
+    "src/payment-boundary.css": "315fc772e220aa82ed5d14f1a990cb86e2835d08e21a75d41c78e818042343cf",
+    "tests/payment-boundary.test.ts": "26c879ff7b12517c05016c4ad0169455559408c78bbf3abca1a6d40e49aea2bf"
+  }
+}
