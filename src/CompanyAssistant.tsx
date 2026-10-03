@@ -98,12 +98,6 @@ export function CompanyAssistant({ route }: { route: string }) {
     : currentRecord
       ? { name: currentRecord.name, year: currentRecord.input.year }
       : previousCompany || (recent ? { name: recent.name, year: recent.input.year } : null);
-  const backgroundLabel =
-    current || currentRecord
-      ? t('当前页面', 'Current page')
-      : previousCompany
-        ? t('上次回答', 'Previous answer')
-        : t('最近研究', 'Latest research');
   const panelId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
@@ -380,14 +374,6 @@ export function CompanyAssistant({ route }: { route: string }) {
             </button>
           </div>
         </header>
-        {backgroundCompany && (
-          <p className="company-assistant-context">
-            <span>{backgroundLabel}</span>
-            <span>
-              {backgroundCompany.name} · {backgroundCompany.year}
-            </span>
-          </p>
-        )}
         <div
           className="company-assistant-history"
           ref={scrolling}

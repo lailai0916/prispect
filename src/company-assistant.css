@@ -92,28 +92,6 @@
   width: 32px;
   height: 32px;
 }
-.company-assistant-context {
-  display: flex;
-  flex: 0 0 auto;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0;
-  padding: 9px 16px;
-  color: var(--muted);
-  border-bottom: 1px solid var(--line-soft);
-  font-size: var(--text-meta);
-  line-height: 1.6;
-  background: var(--surface-subtle);
-}
-.company-assistant-context > span:first-child {
-  flex: 0 0 auto;
-}
-.company-assistant-context > span:last-child {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .company-assistant-history {
   flex: 1;
   min-height: 0;
@@ -372,9 +350,6 @@
   .company-assistant-header {
     min-height: 44px;
     padding-block: 7px;
-  }
-  .company-assistant-context {
-    padding-block: 5px;
   }
   .company-assistant-footer {
     padding-block: 8px;
