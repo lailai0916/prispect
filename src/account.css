@@ -279,44 +279,6 @@
   max-width: var(--workspace-content-width);
   margin: 0 auto;
 }
-.account-tabs {
-  display: flex;
-  gap: 4px;
-  width: fit-content;
-  max-width: 100%;
-  padding: 5px;
-  border: 1px solid var(--account-line);
-  border-radius: 12px;
-  background: var(--paper);
-  margin-bottom: var(--workspace-section-gap);
-  overflow-x: auto;
-}
-.account-tab {
-  border: 0;
-  border-radius: var(--radius);
-  padding: 9px 14px;
-  background: none;
-  color: var(--account-muted);
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font: inherit;
-  font-size: var(--text-body);
-  white-space: nowrap;
-  cursor: pointer;
-  transition:
-    background-color 140ms ease,
-    color 140ms ease;
-}
-.account-tab:hover {
-  background: var(--hover);
-  color: var(--account-ink);
-}
-.account-tab[aria-selected='true'] {
-  color: var(--account-ink);
-  background: var(--selected);
-  font-weight: 550;
-}
 .account-section {
   display: grid;
   grid-template-columns: 200px minmax(0, 1fr);
@@ -546,13 +508,6 @@
     grid-template-columns: 1fr;
     gap: 16px;
     padding: 20px 0;
-  }
-  .account-tabs {
-    margin-bottom: 26px;
-  }
-  .account-tab {
-    padding: 9px 11px;
-    font-size: var(--text-ui);
   }
   .account-field-row {
     grid-template-columns: 1fr;

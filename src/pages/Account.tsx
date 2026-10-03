@@ -5,14 +5,12 @@ import QRCode from 'react-qr-code';
 import { Dialog } from '@base-ui/react/dialog';
 import {
   Camera,
-  UserRound,
   ShieldCheck,
   KeyRound,
   LogOut,
   Mail,
   Trash2,
   Check,
-  Database,
   Laptop,
   LoaderCircle,
   X,
@@ -208,8 +206,8 @@ function deviceLabel(agent: string | null) {
 export function AccountPage() {
   const { t, locale, user, execute, busy, refresh, navigate, confirm } = useApp();
   const [overview, setOverview] = useState<AccountOverview | null>(null),
-    [tab, setTab] = useState<'profile' | 'security' | 'data'>('profile'),
-    [failure, setFailure] = useState('');
+    [failure, setFailure] = useState(''),
+    [passwordFailure, setPasswordFailure] = useState('');
   const [loadFailed, setLoadFailed] = useState(false),
     [keysFailed, setKeysFailed] = useState(false),
     [sessionsFailed, setSessionsFailed] = useState(false),
@@ -224,9 +222,6 @@ export function AccountPage() {
     accountOwner = useRef(user?.id);
   accountOwner.current = user?.id;
   const listFailed = keysFailed || sessionsFailed;
-  useEffect(() => {
-    setFailure('');
-  }, [tab]);
   const submitOnce = async (action: () => Promise<void>) => {
     if (busy || submitLock.current || avatarLock.current) return;
     submitLock.current = true;
@@ -364,6 +359,7 @@ export function AccountPage() {
     setSessionsFailed(false);
     setReloadFailed(false);
     setFailure('');
+    setPasswordFailure('');
     setEnrollment(null);
     setCodes([]);
     setReauthAction(null);
@@ -590,9 +586,9 @@ export function AccountPage() {
         owner === accountOwner.current &&
         avatarAlive.current &&
         location.pathname === '/account';
-      setFailure('');
+      setPasswordFailure('');
       if (newPassword !== confirmation) {
-        setFailure(t('两次输入的新密码不一致。', 'The new passwords do not match.'));
+        setPasswordFailure(t('两次输入的新密码不一致。', 'The new passwords do not match.'));
         return;
       }
       let weak: boolean;
@@ -603,14 +599,14 @@ export function AccountPage() {
         ]);
       } catch {
         if (current())
-          setFailure(
+          setPasswordFailure(
             t('密码强度检查未载入，请重试。', 'The password strength check did not load. Retry.')
           );
         return;
       }
       if (!current()) return;
       if (weak) {
-        setFailure(
+        setPasswordFailure(
           t(
             '新密码太容易猜测，请换用更长且独特的密码。',
             'Choose a longer, unique password that is harder to guess.'
@@ -705,11 +701,6 @@ export function AccountPage() {
       if (result || completed) finish();
     });
   };
-  const tabs = [
-    { id: 'profile' as const, label: t('个人信息', 'Profile'), icon: UserRound },
-    { id: 'security' as const, label: t('登录与安全', 'Security'), icon: ShieldCheck },
-    { id: 'data' as const, label: t('数据与隐私', 'Data & privacy'), icon: Database },
-  ];
   if (!user)
     return (
       <div className="account-page">
@@ -727,43 +718,6 @@ export function AccountPage() {
           </button>
         }
       />
-      <div
-        className="account-tabs"
-        role="tablist"
-        aria-label={t('账号设置分类', 'Account settings sections')}
-      >
-        {tabs.map((item, index) => (
-          <button
-            key={item.id}
-            role="tab"
-            id={`account-tab-${item.id}`}
-            aria-controls={`account-panel-${item.id}`}
-            aria-selected={tab === item.id}
-            tabIndex={tab === item.id ? 0 : -1}
-            className="account-tab"
-            onClick={() => setTab(item.id)}
-            onKeyDown={(event) => {
-              const direction = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-              if (direction || event.key === 'Home' || event.key === 'End') {
-                event.preventDefault();
-                const target =
-                  tabs[
-                    event.key === 'Home'
-                      ? 0
-                      : event.key === 'End'
-                        ? tabs.length - 1
-                        : (index + direction + tabs.length) % tabs.length
-                  ]!;
-                setTab(target.id);
-                document.getElementById(`account-tab-${target.id}`)?.focus();
-              }
-            }}
-          >
-            <item.icon size={16} />
-            {item.label}
-          </button>
-        ))}
-      </div>
       {failure && (
         <p className="account-error" role="alert">
           {failure}
@@ -806,699 +760,689 @@ export function AccountPage() {
           {t('载入账号资料…', 'Loading account details…')}
         </p>
       ) : (
-        <div
-          role="tabpanel"
-          id={`account-panel-${tab}`}
-          aria-labelledby={`account-tab-${tab}`}
-          tabIndex={0}
-        >
-          {tab === 'profile' && (
-            <>
-              <Section title={t('公开称呼', 'Your profile')}>
-                <div
-                  {...avatarDropProps}
-                  className={`account-avatar-row avatar-upload${avatarDragging ? ' is-dragging' : ''}`}
-                  role="group"
-                  aria-label={t('头像上传', 'Avatar upload')}
-                  aria-describedby="avatar-upload-hint avatar-upload-status"
-                  aria-busy={Boolean(avatarBusy)}
-                >
-                  {overview.user.image ? (
-                    <img
-                      className="account-avatar"
-                      src={overview.user.image}
-                      alt={t('你的头像', 'Your avatar')}
-                    />
-                  ) : (
-                    <div className="account-avatar" aria-label={t('默认头像', 'Default avatar')}>
-                      {overview.user.name.slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="account-avatar-controls">
-                    <div className="account-actions">
+        <div>
+          <>
+            <Section title={t('公开称呼', 'Your profile')}>
+              <div
+                {...avatarDropProps}
+                className={`account-avatar-row avatar-upload${avatarDragging ? ' is-dragging' : ''}`}
+                role="group"
+                aria-label={t('头像上传', 'Avatar upload')}
+                aria-describedby="avatar-upload-hint avatar-upload-status"
+                aria-busy={Boolean(avatarBusy)}
+              >
+                {overview.user.image ? (
+                  <img
+                    className="account-avatar"
+                    src={overview.user.image}
+                    alt={t('你的头像', 'Your avatar')}
+                  />
+                ) : (
+                  <div className="account-avatar" aria-label={t('默认头像', 'Default avatar')}>
+                    {overview.user.name.slice(0, 1).toUpperCase()}
+                  </div>
+                )}
+                <div className="account-avatar-controls">
+                  <div className="account-actions">
+                    <button
+                      type="button"
+                      className="account-secondary"
+                      onClick={() => fileRef.current?.click()}
+                      disabled={pending || Boolean(avatarBusy)}
+                      aria-describedby="avatar-upload-hint"
+                    >
+                      {avatarBusy && avatarBusy !== 'deleting' ? (
+                        <LoaderCircle size={15} className="spinner" aria-hidden="true" />
+                      ) : (
+                        <Camera size={15} aria-hidden="true" />
+                      )}
+                      {avatarBusy === 'checking'
+                        ? t('检查图片…', 'Checking image…')
+                        : avatarBusy === 'uploading'
+                          ? t('上传中…', 'Uploading…')
+                          : t('更换头像', 'Change avatar')}
+                    </button>
+                    {overview.user.image && (
                       <button
                         type="button"
-                        className="account-secondary"
-                        onClick={() => fileRef.current?.click()}
+                        className="account-link-button"
                         disabled={pending || Boolean(avatarBusy)}
-                        aria-describedby="avatar-upload-hint"
+                        onClick={() => void updateAvatar()}
                       >
-                        {avatarBusy && avatarBusy !== 'deleting' ? (
-                          <LoaderCircle size={15} className="spinner" aria-hidden="true" />
-                        ) : (
-                          <Camera size={15} aria-hidden="true" />
-                        )}
-                        {avatarBusy === 'checking'
-                          ? t('检查图片…', 'Checking image…')
-                          : avatarBusy === 'uploading'
-                            ? t('上传中…', 'Uploading…')
-                            : t('更换头像', 'Change avatar')}
+                        {avatarBusy === 'deleting'
+                          ? t('移除中…', 'Removing…')
+                          : t('移除', 'Remove')}
                       </button>
-                      {overview.user.image && (
-                        <button
-                          type="button"
-                          className="account-link-button"
-                          disabled={pending || Boolean(avatarBusy)}
-                          onClick={() => void updateAvatar()}
-                        >
-                          {avatarBusy === 'deleting'
-                            ? t('移除中…', 'Removing…')
-                            : t('移除', 'Remove')}
-                        </button>
-                      )}
-                      {avatarRetry && avatarFeedback?.error && (
-                        <button
-                          type="button"
-                          className="account-link-button"
-                          disabled={pending || Boolean(avatarBusy)}
-                          onClick={() => void updateAvatar(avatarRetry)}
-                        >
-                          {t('重试上传', 'Retry upload')}
-                        </button>
-                      )}
-                    </div>
-                    <p id="avatar-upload-hint">
-                      {avatarDragging
-                        ? t('松开以更换头像', 'Drop to change your avatar')
-                        : t(
-                            'PNG / JPEG / WebP · 单张 ≤ 2 MiB、≤ 1600 万像素。',
-                            'PNG / JPEG / WebP · One image, up to 2 MiB and 16 million pixels.'
-                          )}
-                    </p>
-                    <div
-                      id="avatar-upload-status"
-                      className="avatar-upload-status"
-                      aria-live="polite"
-                      aria-atomic="true"
-                    >
-                      {avatarBusy ? (
-                        <p role="status">
-                          {avatarBusy === 'checking'
-                            ? t(
-                                '正在检查图片格式与尺寸。',
-                                'Checking the image format and dimensions.'
-                              )
-                            : avatarBusy === 'uploading'
-                              ? t('正在上传头像，请稍候。', 'Uploading your avatar. Please wait.')
-                              : t('正在移除头像，请稍候。', 'Removing your avatar. Please wait.')}
-                        </p>
-                      ) : avatarFeedback ? (
-                        <p
-                          className={
-                            avatarFeedback.error ? 'avatar-upload-error' : 'avatar-upload-success'
-                          }
-                          role={avatarFeedback.error ? 'alert' : 'status'}
-                        >
-                          {t(...avatarFeedback.text)}
-                        </p>
-                      ) : null}
-                    </div>
+                    )}
+                    {avatarRetry && avatarFeedback?.error && (
+                      <button
+                        type="button"
+                        className="account-link-button"
+                        disabled={pending || Boolean(avatarBusy)}
+                        onClick={() => void updateAvatar(avatarRetry)}
+                      >
+                        {t('重试上传', 'Retry upload')}
+                      </button>
+                    )}
                   </div>
-                  <input
-                    className="account-file-input"
-                    ref={fileRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    disabled={pending || Boolean(avatarBusy)}
-                    aria-label={t('选择头像文件', 'Choose avatar file')}
-                    onChange={(event) => {
-                      const files = event.target.files;
-                      const selected = files?.length
-                        ? validateFileSelection(files, avatarPolicy)
-                        : null;
-                      event.target.value = '';
-                      if (typeof selected === 'string') avatarSelectionError(selected);
-                      else if (selected) void updateAvatar(selected);
-                    }}
-                  />
+                  <p id="avatar-upload-hint">
+                    {avatarDragging
+                      ? t('松开以更换头像', 'Drop to change your avatar')
+                      : t(
+                          'PNG / JPEG / WebP · 单张 ≤ 2 MiB、≤ 1600 万像素。',
+                          'PNG / JPEG / WebP · One image, up to 2 MiB and 16 million pixels.'
+                        )}
+                  </p>
+                  <div
+                    id="avatar-upload-status"
+                    className="avatar-upload-status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
+                    {avatarBusy ? (
+                      <p role="status">
+                        {avatarBusy === 'checking'
+                          ? t(
+                              '正在检查图片格式与尺寸。',
+                              'Checking the image format and dimensions.'
+                            )
+                          : avatarBusy === 'uploading'
+                            ? t('正在上传头像，请稍候。', 'Uploading your avatar. Please wait.')
+                            : t('正在移除头像，请稍候。', 'Removing your avatar. Please wait.')}
+                      </p>
+                    ) : avatarFeedback ? (
+                      <p
+                        className={
+                          avatarFeedback.error ? 'avatar-upload-error' : 'avatar-upload-success'
+                        }
+                        role={avatarFeedback.error ? 'alert' : 'status'}
+                      >
+                        {t(...avatarFeedback.text)}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-                <form className="account-form" onSubmit={saveProfile}>
+                <input
+                  className="account-file-input"
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  disabled={pending || Boolean(avatarBusy)}
+                  aria-label={t('选择头像文件', 'Choose avatar file')}
+                  onChange={(event) => {
+                    const files = event.target.files;
+                    const selected = files?.length
+                      ? validateFileSelection(files, avatarPolicy)
+                      : null;
+                    event.target.value = '';
+                    if (typeof selected === 'string') avatarSelectionError(selected);
+                    else if (selected) void updateAvatar(selected);
+                  }}
+                />
+              </div>
+              <form className="account-form" onSubmit={saveProfile}>
+                <label>
+                  {t('姓名 / 昵称', 'Name')}
+                  <input
+                    autoComplete="name"
+                    required
+                    maxLength={80}
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                </label>
+                <label>
+                  <span id="account-phone-label">
+                    {t('手机号（展示用，选填）', 'Display phone number (optional)')}
+                  </span>
+                  <input
+                    type="tel"
+                    aria-labelledby="account-phone-label"
+                    autoComplete="tel"
+                    value={phone}
+                    maxLength={30}
+                    onChange={(event) => setPhone(event.target.value)}
+                    placeholder={t('手机号或带国家区号的号码', 'Phone number with country code')}
+                  />
+                </label>
+                <label>
+                  <span id="account-bio-label">{t('简介（选填）', 'Bio (optional)')}</span>
+                  <textarea
+                    aria-labelledby="account-bio-label"
+                    maxLength={500}
+                    value={bio}
+                    onChange={(event) => setBio(event.target.value)}
+                  />
+                </label>
+                <div className="account-field-row">
                   <label>
-                    {t('姓名 / 昵称', 'Name')}
+                    {t('组织 / 公司', 'Organization')}
                     <input
-                      autoComplete="name"
-                      required
-                      maxLength={80}
-                      value={name}
-                      onChange={(event) => setName(event.target.value)}
+                      autoComplete="organization"
+                      maxLength={120}
+                      value={company}
+                      onChange={(event) => setCompany(event.target.value)}
                     />
                   </label>
                   <label>
-                    <span id="account-phone-label">
-                      {t('手机号（展示用，选填）', 'Display phone number (optional)')}
+                    {t('时区', 'Time zone')}
+                    <Select
+                      value={timezone}
+                      onValueChange={(selectedValue) => setTimezone(selectedValue)}
+                    >
+                      {[
+                        ...new Set([
+                          timezone,
+                          'Asia/Shanghai',
+                          'Asia/Hong_Kong',
+                          'Asia/Tokyo',
+                          'Europe/London',
+                          'America/New_York',
+                          'America/Los_Angeles',
+                          'UTC',
+                        ]),
+                      ].map((value) => (
+                        <option key={value}>{value}</option>
+                      ))}
+                    </Select>
+                  </label>
+                </div>
+                <div className="account-actions">
+                  <button className="account-action" disabled={pending}>
+                    {t('保存个人信息', 'Save profile')}
+                  </button>
+                </div>
+              </form>
+            </Section>
+            <Section title={t('邮箱', 'Email')}>
+              <div className="account-binding-row">
+                <div>
+                  <strong>{overview.user.email}</strong>
+                  <p>
+                    <span className="account-badge" data-active={overview.user.emailVerified}>
+                      {overview.user.emailVerified
+                        ? t('已验证', 'Verified')
+                        : t('未验证', 'Unverified')}
                     </span>
-                    <input
-                      type="tel"
-                      aria-labelledby="account-phone-label"
-                      autoComplete="tel"
-                      value={phone}
-                      maxLength={30}
-                      onChange={(event) => setPhone(event.target.value)}
-                      placeholder={t('手机号或带国家区号的号码', 'Phone number with country code')}
-                    />
-                  </label>
+                  </p>
+                </div>
+                <button
+                  className="account-secondary"
+                  disabled={pending || !overview.capabilities.email.configured}
+                  onClick={() =>
+                    secure(async () => {
+                      await post('/account/email/verify', {});
+                    })
+                  }
+                >
+                  <Mail size={16} />
+                  {t('验证邮箱', 'Verify email')}
+                </button>
+              </div>
+              {!overview.capabilities.email.configured ? (
+                <div className="account-notice">
+                  <Mail size={17} />
+                  <p>
+                    {t(
+                      '邮箱验证暂不可用。当前无法发送验证邮件、换绑邮箱或通过邮件找回密码。',
+                      'Email verification is temporarily unavailable. We cannot currently send verification emails, change your email or recover your password by email.'
+                    )}
+                  </p>
+                </div>
+              ) : (
+                <form
+                  className="account-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    secure(async () => {
+                      await post('/account/email/change', { email: newEmail });
+                    });
+                  }}
+                >
                   <label>
-                    <span id="account-bio-label">{t('简介（选填）', 'Bio (optional)')}</span>
-                    <textarea
-                      aria-labelledby="account-bio-label"
-                      maxLength={500}
-                      value={bio}
-                      onChange={(event) => setBio(event.target.value)}
+                    {t('新的邮箱', 'New email')}
+                    <input
+                      type="email"
+                      required
+                      value={newEmail}
+                      onChange={(event) => setNewEmail(event.target.value)}
                     />
                   </label>
-                  <div className="account-field-row">
+                  <button className="account-secondary" disabled={pending}>
+                    {t('发送换绑验证', 'Send change verification')}
+                  </button>
+                </form>
+              )}
+            </Section>
+          </>
+          <>
+            {listFailed && (
+              <div className="account-notice" role="status">
+                <p>
+                  {t(
+                    '部分通行密钥或设备会话暂未载入。',
+                    'Some passkeys or device sessions could not load.'
+                  )}
+                </p>
+                <button
+                  type="button"
+                  className="account-link-button"
+                  disabled={pending}
+                  onClick={() => void execute(() => load())}
+                >
+                  {t('重试', 'Retry')}
+                </button>
+              </div>
+            )}
+            <Section
+              title={t('密码', 'Password')}
+              description={t(
+                '修改密码前重新验证身份。完成后会退出其他设备会话。',
+                'Reauthenticate before changing your password. Other device sessions will be signed out.'
+              )}
+            >
+              <form className="account-form" onSubmit={changePassword}>
+                <label>
+                  {t('当前密码', 'Current password')}
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    maxLength={128}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                </label>
+                {overview.user.twoFactorEnabled && (
+                  <label>
+                    {t('验证器验证码', 'Authenticator code')}
+                    <input
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      required
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      value={code}
+                      onChange={(event) => setCode(event.target.value)}
+                    />
+                  </label>
+                )}
+                <label>
+                  {t('新密码', 'New password')}
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    maxLength={128}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                  />
+                  <PasswordMeter value={newPassword} context={[user.name, user.email]} />
+                </label>
+                <label>
+                  {t('确认新密码', 'Confirm new password')}
+                  <input
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    maxLength={128}
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                  />
+                </label>
+                {passwordFailure && (
+                  <p className="account-error" role="alert">
+                    {passwordFailure}
+                  </p>
+                )}
+                <div className="account-actions">
+                  <button className="account-action" disabled={pending}>
+                    {t('修改密码', 'Change password')}
+                  </button>
+                </div>
+              </form>
+            </Section>
+            <Section
+              title={t('两步验证', 'Two-step verification')}
+              description={t(
+                '使用验证器生成动态验证码。每次密码登录都需要第二因素。',
+                'Use time-based authenticator codes. Every password login requires a second factor.'
+              )}
+            >
+              <div className="account-binding-row">
+                <span className="account-badge" data-active={overview.user.twoFactorEnabled}>
+                  {overview.user.twoFactorEnabled ? (
+                    <>
+                      <Check size={13} />
+                      {t('已启用', 'Enabled')}
+                    </>
+                  ) : (
+                    t('尚未启用', 'Not enabled')
+                  )}
+                </span>
+                {overview.user.twoFactorEnabled ? (
+                  <button
+                    className="account-secondary"
+                    disabled={pending}
+                    onClick={() =>
+                      secure(async (currentPassword) => {
+                        identityResult(
+                          await identityClient.twoFactor.disable({ password: currentPassword })
+                        );
+                      })
+                    }
+                  >
+                    {t('关闭两步验证', 'Disable two-step verification')}
+                  </button>
+                ) : (
+                  <button
+                    className="account-action"
+                    disabled={pending || !!enrollment}
+                    onClick={enableTotp}
+                  >
+                    <ShieldCheck size={16} />
+                    {t('设置验证器', 'Set up authenticator')}
+                  </button>
+                )}
+              </div>
+              {enrollment && (
+                <div className="account-enroll">
+                  <div className="account-qr">
+                    <QRCode
+                      value={enrollment.totpURI}
+                      size={150}
+                      aria-label={t(
+                        '验证器设置二维码，含私密密钥',
+                        'Authenticator setup QR code containing a private secret'
+                      )}
+                    />
+                    <p>
+                      {t(
+                        '在你自己的验证器中扫描二维码。不要公开二维码或分享密钥。输入有效验证码后才会启用。',
+                        'Scan in your own authenticator. Keep this QR code and secret private. Verification is enabled only after a valid code.'
+                      )}
+                    </p>
+                  </div>
+                  <details>
+                    <summary>
+                      {t('无法扫描？查看手动设置密钥', 'Cannot scan? Show manual setup key')}
+                    </summary>
+                    <p style={{ overflowWrap: 'anywhere' }}>
+                      <code>{new URL(enrollment.totpURI).searchParams.get('secret')}</code>
+                    </p>
+                  </details>
+                  <form className="account-form" onSubmit={verifyEnrollment}>
                     <label>
-                      {t('组织 / 公司', 'Organization')}
+                      {t('验证器中的6位验证码', '6-digit authenticator code')}
                       <input
-                        autoComplete="organization"
-                        maxLength={120}
-                        value={company}
-                        onChange={(event) => setCompany(event.target.value)}
+                        autoComplete="one-time-code"
+                        inputMode="numeric"
+                        pattern="[0-9]{6}"
+                        maxLength={6}
+                        required
+                        value={enrollCode}
+                        onChange={(event) => setEnrollCode(event.target.value)}
                       />
                     </label>
-                    <label>
-                      {t('时区', 'Time zone')}
-                      <Select
-                        value={timezone}
-                        onValueChange={(selectedValue) => setTimezone(selectedValue)}
-                      >
-                        {[
-                          ...new Set([
-                            timezone,
-                            'Asia/Shanghai',
-                            'Asia/Hong_Kong',
-                            'Asia/Tokyo',
-                            'Europe/London',
-                            'America/New_York',
-                            'America/Los_Angeles',
-                            'UTC',
-                          ]),
-                        ].map((value) => (
-                          <option key={value}>{value}</option>
-                        ))}
-                      </Select>
-                    </label>
-                  </div>
-                  <div className="account-actions">
                     <button className="account-action" disabled={pending}>
-                      {t('保存个人信息', 'Save profile')}
+                      {t('确认启用', 'Confirm and enable')}
                     </button>
-                  </div>
-                </form>
-              </Section>
-              <Section title={t('邮箱', 'Email')}>
-                <div className="account-binding-row">
-                  <div>
-                    <strong>{overview.user.email}</strong>
-                    <p>
-                      <span className="account-badge" data-active={overview.user.emailVerified}>
-                        {overview.user.emailVerified
-                          ? t('已验证', 'Verified')
-                          : t('未验证', 'Unverified')}
-                      </span>
-                    </p>
+                  </form>
+                </div>
+              )}
+              {overview.user.twoFactorEnabled && (
+                <button
+                  className="account-link-button"
+                  disabled={pending}
+                  onClick={() =>
+                    secure(async (currentPassword, current) => {
+                      const data = identityResult(
+                        await identityClient.twoFactor.generateBackupCodes({
+                          password: currentPassword,
+                        })
+                      );
+                      if (current()) setCodes(data.backupCodes);
+                    })
+                  }
+                >
+                  {t('重新生成恢复码', 'Regenerate recovery codes')}
+                </button>
+              )}
+              {codes.length > 0 && (
+                <div className="account-enroll">
+                  <strong>{t('妥善保存一次性恢复码', 'Save your one-time recovery codes')}</strong>
+                  <p className="account-muted">
+                    {t(
+                      '每个码只能使用一次。重新生成后旧恢复码失效；这些码只在当前页面显示。',
+                      'Each code works once. Regeneration invalidates old codes. These codes are shown only in this current page.'
+                    )}
+                  </p>
+                  <div className="account-codes">
+                    {codes.map((value) => (
+                      <code key={value}>{value}</code>
+                    ))}
                   </div>
                   <button
                     className="account-secondary"
-                    disabled={pending || !overview.capabilities.email.configured}
-                    onClick={() =>
-                      secure(async () => {
-                        await post('/account/email/verify', {});
-                      })
-                    }
-                  >
-                    <Mail size={16} />
-                    {t('验证邮箱', 'Verify email')}
-                  </button>
-                </div>
-                {!overview.capabilities.email.configured ? (
-                  <div className="account-notice">
-                    <Mail size={17} />
-                    <p>
-                      {t(
-                        '邮箱验证暂不可用。当前无法发送验证邮件、换绑邮箱或通过邮件找回密码。',
-                        'Email verification is temporarily unavailable. We cannot currently send verification emails, change your email or recover your password by email.'
-                      )}
-                    </p>
-                  </div>
-                ) : (
-                  <form
-                    className="account-form"
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      secure(async () => {
-                        await post('/account/email/change', { email: newEmail });
-                      });
+                    onClick={() => {
+                      setCodes([]);
                     }}
                   >
-                    <label>
-                      {t('新的邮箱', 'New email')}
-                      <input
-                        type="email"
-                        required
-                        value={newEmail}
-                        onChange={(event) => setNewEmail(event.target.value)}
-                      />
-                    </label>
-                    <button className="account-secondary" disabled={pending}>
-                      {t('发送换绑验证', 'Send change verification')}
-                    </button>
-                  </form>
-                )}
-              </Section>
-            </>
-          )}
-          {tab === 'security' && (
-            <>
-              {listFailed && (
-                <div className="account-notice" role="status">
-                  <p>
-                    {t(
-                      '部分通行密钥或设备会话暂未载入。',
-                      'Some passkeys or device sessions could not load.'
-                    )}
-                  </p>
-                  <button
-                    type="button"
-                    className="account-link-button"
-                    disabled={pending}
-                    onClick={() => void execute(() => load())}
-                  >
-                    {t('重试', 'Retry')}
+                    {t('已自行保存，隐藏恢复码', 'I saved them; hide codes')}
                   </button>
                 </div>
               )}
-              <Section
-                title={t('密码', 'Password')}
-                description={t(
-                  '修改密码前重新验证身份。完成后会退出其他设备会话。',
-                  'Reauthenticate before changing your password. Other device sessions will be signed out.'
-                )}
-              >
-                <form className="account-form" onSubmit={changePassword}>
-                  <label>
-                    {t('当前密码', 'Current password')}
-                    <input
-                      type="password"
-                      autoComplete="current-password"
-                      required
-                      maxLength={128}
-                      value={password}
-                      onChange={(event) => setPassword(event.target.value)}
-                    />
-                  </label>
-                  {overview.user.twoFactorEnabled && (
-                    <label>
-                      {t('验证器验证码', 'Authenticator code')}
-                      <input
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        required
-                        pattern="[0-9]{6}"
-                        maxLength={6}
-                        value={code}
-                        onChange={(event) => setCode(event.target.value)}
-                      />
-                    </label>
-                  )}
-                  <label>
-                    {t('新密码', 'New password')}
-                    <input
-                      type="password"
-                      autoComplete="new-password"
-                      required
-                      minLength={8}
-                      maxLength={128}
-                      value={newPassword}
-                      onChange={(event) => setNewPassword(event.target.value)}
-                    />
-                    <PasswordMeter value={newPassword} context={[user.name, user.email]} />
-                  </label>
-                  <label>
-                    {t('确认新密码', 'Confirm new password')}
-                    <input
-                      type="password"
-                      autoComplete="new-password"
-                      required
-                      minLength={8}
-                      maxLength={128}
-                      value={confirmation}
-                      onChange={(event) => setConfirmation(event.target.value)}
-                    />
-                  </label>
-                  <div className="account-actions">
-                    <button className="account-action" disabled={pending}>
-                      {t('修改密码', 'Change password')}
-                    </button>
-                  </div>
-                </form>
-              </Section>
-              <Section
-                title={t('两步验证', 'Two-step verification')}
-                description={t(
-                  '使用验证器生成动态验证码。每次密码登录都需要第二因素。',
-                  'Use time-based authenticator codes. Every password login requires a second factor.'
-                )}
-              >
-                <div className="account-binding-row">
-                  <span className="account-badge" data-active={overview.user.twoFactorEnabled}>
-                    {overview.user.twoFactorEnabled ? (
-                      <>
-                        <Check size={13} />
-                        {t('已启用', 'Enabled')}
-                      </>
-                    ) : (
-                      t('尚未启用', 'Not enabled')
-                    )}
-                  </span>
-                  {overview.user.twoFactorEnabled ? (
-                    <button
-                      className="account-secondary"
-                      disabled={pending}
-                      onClick={() =>
-                        secure(async (currentPassword) => {
-                          identityResult(
-                            await identityClient.twoFactor.disable({ password: currentPassword })
-                          );
-                        })
-                      }
-                    >
-                      {t('关闭两步验证', 'Disable two-step verification')}
-                    </button>
-                  ) : (
-                    <button
-                      className="account-action"
-                      disabled={pending || !!enrollment}
-                      onClick={enableTotp}
-                    >
-                      <ShieldCheck size={16} />
-                      {t('设置验证器', 'Set up authenticator')}
-                    </button>
-                  )}
-                </div>
-                {enrollment && (
-                  <div className="account-enroll">
-                    <div className="account-qr">
-                      <QRCode
-                        value={enrollment.totpURI}
-                        size={150}
-                        aria-label={t(
-                          '验证器设置二维码，含私密密钥',
-                          'Authenticator setup QR code containing a private secret'
-                        )}
-                      />
-                      <p>
-                        {t(
-                          '在你自己的验证器中扫描二维码。不要公开二维码或分享密钥。输入有效验证码后才会启用。',
-                          'Scan in your own authenticator. Keep this QR code and secret private. Verification is enabled only after a valid code.'
-                        )}
-                      </p>
-                    </div>
-                    <details>
-                      <summary>
-                        {t('无法扫描？查看手动设置密钥', 'Cannot scan? Show manual setup key')}
-                      </summary>
-                      <p style={{ overflowWrap: 'anywhere' }}>
-                        <code>{new URL(enrollment.totpURI).searchParams.get('secret')}</code>
-                      </p>
-                    </details>
-                    <form className="account-form" onSubmit={verifyEnrollment}>
-                      <label>
-                        {t('验证器中的6位验证码', '6-digit authenticator code')}
-                        <input
-                          autoComplete="one-time-code"
-                          inputMode="numeric"
-                          pattern="[0-9]{6}"
-                          maxLength={6}
-                          required
-                          value={enrollCode}
-                          onChange={(event) => setEnrollCode(event.target.value)}
-                        />
-                      </label>
-                      <button className="account-action" disabled={pending}>
-                        {t('确认启用', 'Confirm and enable')}
-                      </button>
-                    </form>
-                  </div>
-                )}
-                {overview.user.twoFactorEnabled && (
+            </Section>
+            <Section
+              title={t('通行密钥', 'Passkeys')}
+              description={t(
+                '用设备锁屏、生物识别或安全密钥登录。登记前需重新验证现有账号。',
+                'Log in with a device lock, biometrics or security key. Reauthenticate before registering.'
+              )}
+            >
+              <div className="account-form">
+                <label>
+                  {t('设备名称（可选）', 'Device name (optional)')}
+                  <input
+                    value={keyName}
+                    maxLength={80}
+                    onChange={(event) => setKeyName(event.target.value)}
+                    placeholder={t('例如：我的笔记本', 'For example: My laptop')}
+                  />
+                </label>
+                <div className="account-actions">
                   <button
-                    className="account-link-button"
-                    disabled={pending}
+                    className="account-action"
+                    disabled={pending || !window.PublicKeyCredential}
                     onClick={() =>
-                      secure(async (currentPassword, current) => {
-                        const data = identityResult(
-                          await identityClient.twoFactor.generateBackupCodes({
-                            password: currentPassword,
+                      secure(async () => {
+                        identityResult(
+                          await identityClient.passkey.addPasskey({
+                            name: keyName.trim() || undefined,
                           })
                         );
-                        if (current()) setCodes(data.backupCodes);
+                        setKeyName('');
                       })
                     }
                   >
-                    {t('重新生成恢复码', 'Regenerate recovery codes')}
+                    <KeyRound size={16} />
+                    {t('添加通行密钥', 'Add a passkey')}
                   </button>
-                )}
-                {codes.length > 0 && (
-                  <div className="account-enroll">
-                    <strong>
-                      {t('妥善保存一次性恢复码', 'Save your one-time recovery codes')}
-                    </strong>
-                    <p className="account-muted">
-                      {t(
-                        '每个码只能使用一次。重新生成后旧恢复码失效；这些码只在当前页面显示。',
-                        'Each code works once. Regeneration invalidates old codes. These codes are shown only in this current page.'
-                      )}
-                    </p>
-                    <div className="account-codes">
-                      {codes.map((value) => (
-                        <code key={value}>{value}</code>
-                      ))}
-                    </div>
-                    <button
-                      className="account-secondary"
-                      onClick={() => {
-                        setCodes([]);
-                      }}
-                    >
-                      {t('已自行保存，隐藏恢复码', 'I saved them; hide codes')}
-                    </button>
-                  </div>
-                )}
-              </Section>
-              <Section
-                title={t('通行密钥', 'Passkeys')}
-                description={t(
-                  '用设备锁屏、生物识别或安全密钥登录。登记前需重新验证现有账号。',
-                  'Log in with a device lock, biometrics or security key. Reauthenticate before registering.'
-                )}
-              >
-                <div className="account-form">
-                  <label>
-                    {t('设备名称（可选）', 'Device name (optional)')}
-                    <input
-                      value={keyName}
-                      maxLength={80}
-                      onChange={(event) => setKeyName(event.target.value)}
-                      placeholder={t('例如：我的笔记本', 'For example: My laptop')}
-                    />
-                  </label>
-                  <div className="account-actions">
-                    <button
-                      className="account-action"
-                      disabled={pending || !window.PublicKeyCredential}
-                      onClick={() =>
-                        secure(async () => {
-                          identityResult(
-                            await identityClient.passkey.addPasskey({
-                              name: keyName.trim() || undefined,
-                            })
-                          );
-                          setKeyName('');
-                        })
-                      }
-                    >
-                      <KeyRound size={16} />
-                      {t('添加通行密钥', 'Add a passkey')}
-                    </button>
-                  </div>
                 </div>
-                {!window.PublicKeyCredential && (
-                  <p className="account-muted">
-                    {t(
-                      '当前浏览器或连接不支持WebAuthn。',
-                      'This browser or connection does not support WebAuthn.'
-                    )}
-                  </p>
-                )}
-                {keys.length ? (
-                  <ul className="account-key-list">
-                    {keys.map((key) => (
-                      <li key={key.id}>
-                        <KeyRound size={18} />
-                        <div className="account-row-grow">
-                          <strong>{key.name || t('通行密钥', 'Passkey')}</strong>
-                          <small>
-                            {key.createdAt ? date(key.createdAt, locale) : ''} ·{' '}
-                            {key.backedUp
-                              ? t('设备同步密钥', 'Synced credential')
-                              : t('设备密钥', 'Device credential')}
-                          </small>
-                        </div>
-                        <button
-                          className="account-secondary"
-                          disabled={pending}
-                          aria-label={
-                            t('删除通行密钥：', 'Delete passkey: ') + (key.name || key.id)
-                          }
-                          onClick={() =>
-                            secure(async () => {
-                              identityResult(
-                                await identityClient.passkey.deletePasskey({ id: key.id })
-                              );
-                            })
-                          }
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="account-empty">
-                    {keysLoading
-                      ? t('载入通行密钥…', 'Loading passkeys…')
-                      : keysFailed
-                        ? t('通行密钥列表暂未载入。', 'The passkey list could not load.')
-                        : t('尚未登记通行密钥。', 'No passkeys registered.')}
-                  </p>
-                )}
-              </Section>
-              <Section title={t('设备会话', 'Device sessions')}>
-                {sessionsLoading ? (
-                  <p className="account-muted" role="status">
-                    {t('载入设备会话…', 'Loading device sessions…')}
-                  </p>
-                ) : sessionsFailed ? (
-                  <p className="account-empty">
-                    {t('设备会话列表暂未载入。', 'The device session list could not load.')}
-                  </p>
-                ) : !sessions.length ? (
-                  <p className="account-empty">
-                    {t('没有可显示的设备会话。', 'No device sessions to display.')}
-                  </p>
-                ) : null}
-                <ul className="account-session-list">
-                  {sessions.map((session) => (
-                    <li key={session.id}>
-                      <Laptop size={18} />
+              </div>
+              {!window.PublicKeyCredential && (
+                <p className="account-muted">
+                  {t(
+                    '当前浏览器或连接不支持WebAuthn。',
+                    'This browser or connection does not support WebAuthn.'
+                  )}
+                </p>
+              )}
+              {keys.length ? (
+                <ul className="account-key-list">
+                  {keys.map((key) => (
+                    <li key={key.id}>
+                      <KeyRound size={18} />
                       <div className="account-row-grow">
-                        <strong>
-                          {session.current
-                            ? t('当前会话', 'Current session')
-                            : t('其他会话', 'Other session')}
-                        </strong>
+                        <strong>{key.name || t('通行密钥', 'Passkey')}</strong>
                         <small>
-                          {deviceLabel(session.userAgent) || t('浏览器', 'Browser')}
-                          <br />
-                          {t('创建于', 'Created')} {date(session.createdAt, locale)} ·{' '}
-                          {t('到期', 'Expires')} {date(session.expiresAt, locale)}
+                          {key.createdAt ? date(key.createdAt, locale) : ''} ·{' '}
+                          {key.backedUp
+                            ? t('设备同步密钥', 'Synced credential')
+                            : t('设备密钥', 'Device credential')}
                         </small>
-                        {session.userAgent && (
-                          <details className="account-device-details">
-                            <summary>{t('查看浏览器信息', 'Browser details')}</summary>
-                            <code>{session.userAgent}</code>
-                          </details>
-                        )}
                       </div>
                       <button
                         className="account-secondary"
                         disabled={pending}
+                        aria-label={t('删除通行密钥：', 'Delete passkey: ') + (key.name || key.id)}
                         onClick={() =>
-                          confirm({
-                            title: t('退出此会话？', 'Log out this session?'),
-                            text: session.current
-                              ? t('此操作会退出当前设备。', 'This logs out your current device.')
-                              : t(
-                                  '该设备下一次访问私人工作区时需要重新登录。',
-                                  'The device will need to log in again before accessing the workspace.'
-                                ),
-                            action: async () => {
-                              const scope = accountScope.current,
-                                owner = user.id;
-                              const current = () =>
-                                scope === accountScope.current &&
-                                owner === accountOwner.current &&
-                                avatarAlive.current &&
-                                location.pathname === '/account';
-                              await post(`/account/sessions/${session.id}/revoke`, {});
-                              if (session.current) {
-                                if (owner === accountOwner.current) navigate('/');
-                              } else if (current()) {
-                                try {
-                                  await load();
-                                } catch {
-                                  if (current()) setReloadFailed(true);
-                                }
-                              }
-                            },
+                          secure(async () => {
+                            identityResult(
+                              await identityClient.passkey.deletePasskey({ id: key.id })
+                            );
                           })
                         }
                       >
-                        {t('退出此会话', 'Log out this session')}
+                        <Trash2 size={15} />
                       </button>
                     </li>
                   ))}
                 </ul>
-              </Section>
-            </>
-          )}
-          {tab === 'data' && (
-            <>
-              <Section title={t('数据使用说明', 'Data use')}>
-                <p className="account-muted">
-                  {t('注册于', 'Joined')} {date(overview.user.createdAt, locale)} ·{' '}
-                  <a href="/docs/privacy">{t('隐私政策', 'Privacy policy')}</a>
+              ) : (
+                <p className="account-empty">
+                  {keysLoading
+                    ? t('载入通行密钥…', 'Loading passkeys…')
+                    : keysFailed
+                      ? t('通行密钥列表暂未载入。', 'The passkey list could not load.')
+                      : t('尚未登记通行密钥。', 'No passkeys registered.')}
                 </p>
-              </Section>
-              <Section
-                title={t(...productTerms.clearMyWorkspace)}
-                description={t(
-                  '这是删除操作。账号、头像和登录因素会保留，工作区内容会清空。',
-                  'This deletes workspace content. Your account, avatar and sign-in factors remain.'
+              )}
+            </Section>
+            <Section title={t('设备会话', 'Device sessions')}>
+              {sessionsLoading ? (
+                <p className="account-muted" role="status">
+                  {t('载入设备会话…', 'Loading device sessions…')}
+                </p>
+              ) : sessionsFailed ? (
+                <p className="account-empty">
+                  {t('设备会话列表暂未载入。', 'The device session list could not load.')}
+                </p>
+              ) : !sessions.length ? (
+                <p className="account-empty">
+                  {t('没有可显示的设备会话。', 'No device sessions to display.')}
+                </p>
+              ) : null}
+              <ul className="account-session-list">
+                {sessions.map((session) => (
+                  <li key={session.id}>
+                    <Laptop size={18} />
+                    <div className="account-row-grow">
+                      <strong>
+                        {session.current
+                          ? t('当前会话', 'Current session')
+                          : t('其他会话', 'Other session')}
+                      </strong>
+                      <small>
+                        {deviceLabel(session.userAgent) || t('浏览器', 'Browser')}
+                        <br />
+                        {t('创建于', 'Created')} {date(session.createdAt, locale)} ·{' '}
+                        {t('到期', 'Expires')} {date(session.expiresAt, locale)}
+                      </small>
+                      {session.userAgent && (
+                        <details className="account-device-details">
+                          <summary>{t('查看浏览器信息', 'Browser details')}</summary>
+                          <code>{session.userAgent}</code>
+                        </details>
+                      )}
+                    </div>
+                    <button
+                      className="account-secondary"
+                      disabled={pending}
+                      onClick={() =>
+                        confirm({
+                          title: t('退出此会话？', 'Log out this session?'),
+                          text: session.current
+                            ? t('此操作会退出当前设备。', 'This logs out your current device.')
+                            : t(
+                                '该设备下一次访问私人工作区时需要重新登录。',
+                                'The device will need to log in again before accessing the workspace.'
+                              ),
+                          action: async () => {
+                            const scope = accountScope.current,
+                              owner = user.id;
+                            const current = () =>
+                              scope === accountScope.current &&
+                              owner === accountOwner.current &&
+                              avatarAlive.current &&
+                              location.pathname === '/account';
+                            await post(`/account/sessions/${session.id}/revoke`, {});
+                            if (session.current) {
+                              if (owner === accountOwner.current) navigate('/');
+                            } else if (current()) {
+                              try {
+                                await load();
+                              } catch {
+                                if (current()) setReloadFailed(true);
+                              }
+                            }
+                          },
+                        })
+                      }
+                    >
+                      {t('退出此会话', 'Log out this session')}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          </>
+          <>
+            <Section title={t('数据使用说明', 'Data use')}>
+              <p className="account-muted">
+                {t('注册于', 'Joined')} {date(overview.user.createdAt, locale)} ·{' '}
+                <a href="/docs/privacy">{t('隐私政策', 'Privacy policy')}</a>
+              </p>
+            </Section>
+            <Section
+              title={t(...productTerms.clearMyWorkspace)}
+              description={t(
+                '这是删除操作。账号、头像和登录因素会保留，工作区内容会清空。',
+                'This deletes workspace content. Your account, avatar and sign-in factors remain.'
+              )}
+            >
+              <p className="account-muted">
+                {t(
+                  '将删除本账号的核查事项及全部版本、研究记录、财报核查、跟进状态、上传材料和保留原件，不会影响其他账号。请先导出需要保留的报告和材料。',
+                  'This removes your review items and all revisions, research records, financial reviews, follow-up states, uploaded materials and retained originals. Other accounts are unaffected. Export anything you need first.'
                 )}
+              </p>
+              <button
+                className="account-danger"
+                disabled={pending}
+                onClick={() =>
+                  confirm({
+                    title: t('清空你的全部工作区内容？', 'Clear all your workspace content?'),
+                    text: t(
+                      '上传原件与全部核查事项版本将被删除，此页面无法撤销。账号与安全设置保留。',
+                      'Uploaded originals and all review-item revisions will be deleted. This page cannot undo the action. Account and security settings remain.'
+                    ),
+                    action: async () => {
+                      await post('/reset', { confirm: 'RESET_DEMO' });
+                      if (user) clearCompanyRunCache(user.id);
+                      window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
+                      await refresh();
+                    },
+                  })
+                }
               >
-                <p className="account-muted">
-                  {t(
-                    '将删除本账号的核查事项及全部版本、研究记录、财报核查、跟进状态、上传材料和保留原件，不会影响其他账号。请先导出需要保留的报告和材料。',
-                    'This removes your review items and all revisions, research records, financial reviews, follow-up states, uploaded materials and retained originals. Other accounts are unaffected. Export anything you need first.'
-                  )}
-                </p>
-                <button
-                  className="account-danger"
-                  disabled={pending}
-                  onClick={() =>
-                    confirm({
-                      title: t('清空你的全部工作区内容？', 'Clear all your workspace content?'),
-                      text: t(
-                        '上传原件与全部核查事项版本将被删除，此页面无法撤销。账号与安全设置保留。',
-                        'Uploaded originals and all review-item revisions will be deleted. This page cannot undo the action. Account and security settings remain.'
-                      ),
-                      action: async () => {
-                        await post('/reset', { confirm: 'RESET_DEMO' });
-                        if (user) clearCompanyRunCache(user.id);
-                        window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
-                        await refresh();
-                      },
-                    })
-                  }
-                >
-                  <Trash2 size={16} />
-                  {t(...productTerms.clearMyWorkspace)}
-                </button>
-              </Section>
-            </>
-          )}
+                <Trash2 size={16} />
+                {t(...productTerms.clearMyWorkspace)}
+              </button>
+            </Section>
+          </>
         </div>
       )}
       {reauthAction && (
