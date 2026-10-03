@@ -11,6 +11,10 @@
   border-top: 1px solid var(--line);
   padding-top: 8px;
 }
+.sidebar-account-divider {
+  border-top: 1px solid var(--line);
+  margin-bottom: 8px;
+}
 .sidebar-company-context > .sidebar-group-label {
   display: block;
   overflow: hidden;

@@ -646,6 +646,7 @@ export function App() {
           <BookOpen size={16} />
           {t(...documentationTitle)}
         </a>
+        {user && <div className="sidebar-account-divider" aria-hidden="true" />}
         {user && (
           <ActionMenu
             label={t('账号菜单', 'Account menu')}
