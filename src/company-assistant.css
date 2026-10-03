@@ -31,9 +31,9 @@
   display: inline-block;
   flex-shrink: 0;
   width: 72px;
-  height: 76px;
+  height: 72px;
   pointer-events: none;
-  transform-origin: 50% 80%;
+  transform-origin: 50% 50%;
 }
 .assistant-character-visual {
   position: absolute;
@@ -52,8 +52,7 @@
 .assistant-character-idle {
   opacity: 1;
 }
-.assistant-character-happy,
-.assistant-character-wave {
+.assistant-character-happy {
   opacity: 0;
 }
 .assistant-character[data-happy='true'] .assistant-character-idle {
@@ -110,10 +109,6 @@
     animation: assistant-character-blink var(--character-idle-duration) step-end
       var(--character-idle-delay) infinite;
   }
-  .company-assistant-trigger[data-idle='true'] .assistant-character-wave {
-    animation: assistant-character-wave var(--character-idle-duration) step-end
-      var(--character-idle-delay) infinite;
-  }
   .company-assistant-trigger[data-idle='true']:is(:hover, :focus-visible, :active) *,
   .company-assistant-trigger[data-page-visible='false'] .assistant-character,
   .company-assistant-trigger[data-page-visible='false'] .assistant-character * {
@@ -125,34 +120,32 @@
   12%,
   44%,
   64%,
-  86%,
+  82%,
   100% {
-    transform: translateY(0) rotate(0);
+    transform: translateY(0) rotate(0) scale(1);
   }
   6%,
   35% {
-    transform: translateY(-2px) rotate(-1deg);
+    transform: translateY(-2px) rotate(-1deg) scale(1);
   }
   20%,
   54% {
-    transform: translateY(-1px) rotate(1deg);
+    transform: translateY(-1px) rotate(1deg) scale(1);
   }
-  70%,
+  68% {
+    transform: translateY(1px) rotate(0) scale(1.03, 0.97);
+  }
+  72% {
+    transform: translateY(-6px) rotate(2deg) scale(0.98, 1.02);
+  }
   76% {
-    transform: translateY(-1px) rotate(-2deg);
-  }
-  73%,
-  79% {
-    transform: translateY(-1px) rotate(2deg);
-  }
-  82% {
-    transform: translateY(0) rotate(0);
+    transform: translateY(1px) rotate(-1deg) scale(1.02, 0.98);
   }
 }
 @keyframes assistant-character-resting {
   0%,
   11%,
-  82%,
+  71%,
   100% {
     opacity: 1;
   }
@@ -164,19 +157,11 @@
 @keyframes assistant-character-blink {
   0%,
   11%,
+  71%,
   100% {
     opacity: 0;
   }
-  9% {
-    opacity: 1;
-  }
-}
-@keyframes assistant-character-wave {
-  0%,
-  82%,
-  100% {
-    opacity: 0;
-  }
+  9%,
   68% {
     opacity: 1;
   }
@@ -268,7 +253,7 @@
 }
 .company-assistant-welcome .assistant-character {
   width: 60px;
-  height: 68px;
+  height: 60px;
 }
 .company-assistant-welcome p {
   margin: 0;
@@ -491,7 +476,7 @@
   }
   .company-assistant-trigger > .assistant-character {
     width: 64px;
-    height: 68px;
+    height: 64px;
   }
   .company-assistant-panel {
     right: 16px;
