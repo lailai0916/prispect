@@ -142,3 +142,69 @@ test('new currency-rejected reports keep their valid independent CNY ratio and a
     'fail'
   );
 });
+
+test('failed and warned historical checks withhold currency-dependent calculations while preserving recorded statuses', () => {
+  for (const status of ['fail', 'warn'] as const) {
+    const material = structuredClone(fixture.materials[0]!);
+    material.observations.find(
+      (item) => item.key === 'inventoryAdjustment' && item.year === 2025
+    )!.value = '-321030061.96';
+    const saved = analyze(
+      { title: '历史失败核查', company: material.company, year: 2025, materialIds: [material.id] },
+      [material]
+    );
+    observation(saved, 'inventoryAdjustment').currency = 'USD';
+    const balance = saved.checks.find((item) => item.id === 'bridge-balance')!;
+    assert.equal(balance.status, 'fail');
+    assert.match(balance.message, /26197124\.70 元/);
+    balance.status = status;
+    const indicator = saved.checks.find((item) => item.id === '2025-inventoryAdjustment')!;
+    indicator.status = status;
+    indicator.message = '历史换算结果为 917263.45 元，按人民币分核对。';
+    const group = saved.checks.find((item) => item.id === 'group-sum')!;
+    group.status = status;
+    group.message = '历史分组换算结果为 817263.45 元。';
+    for (const check of saved.crossSignalChecks || []) {
+      check.blockers.push(
+        {
+          code: 'invalid:2025:inventoryAdjustment',
+          message: { zh: indicator.message, en: 'Historical conversion: CNY 917263.45.' },
+          sourceRefs: indicator.sourceRefs,
+        },
+        {
+          code: 'group-sum',
+          message: { zh: group.message, en: 'Historical group conversion: CNY 817263.45.' },
+          sourceRefs: group.sourceRefs,
+        }
+      );
+    }
+    saved.model = { enabled: true, status: 'completed', text: 'Saved historical interpretation.' };
+    const before = JSON.stringify(saved);
+    const view = reportCurrencyView(saved);
+    for (const id of ['bridge-balance', 'group-sum', '2025-inventoryAdjustment']) {
+      const check = view.report.checks.find((item) => item.id === id)!;
+      assert.equal(check.status, status);
+      assert.match(check.message, /币种或金额单位待核对/);
+      assert.ok(!check.message.includes('26197124.70'));
+      assert.ok(!check.message.includes('917263.45'));
+      assert.ok(!check.message.includes('817263.45'));
+    }
+    assert.equal(metric(view.report, 'cashConversion').value, '7.15');
+    assert.equal(view.report.bridge, null);
+    for (const check of view.report.crossSignalChecks || []) {
+      const copiedBalance = check.blockers.find((item) => item.code === 'bridge-balance')!;
+      assert.match(copiedBalance.message.zh, /币种或金额单位待核对/);
+      assert.ok(!copiedBalance.message.zh.includes('26197124.70'));
+      for (const code of ['invalid:2025:inventoryAdjustment', 'group-sum']) {
+        const copied = check.blockers.find((item) => item.code === code)!;
+        assert.match(copied.message.zh, /币种或金额单位待核对/);
+        assert.ok(!copied.message.zh.includes('917263.45'));
+        assert.ok(!copied.message.zh.includes('817263.45'));
+        assert.ok(copied.sourceRefs.length > 0);
+      }
+    }
+    assert.equal(view.report.model, saved.model);
+    assert.equal(view.report.snapshot, saved.snapshot);
+    assert.equal(JSON.stringify(saved), before);
+  }
+});

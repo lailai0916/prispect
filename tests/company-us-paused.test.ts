@@ -12,6 +12,7 @@ import { searchCompanies } from '../server/company-sources.js';
 import type { CompanyService } from '../server/company-routes.js';
 import type { CompanyContextService } from '../server/company-context-routes.js';
 import type { CompanyChallengeRouteService } from '../server/company-challenge-routes.js';
+import { answerCompanyQuestion } from '../server/company-questions.js';
 import { ApiFault } from '../server/validation.js';
 
 const unsupported = (error: unknown) =>
@@ -71,6 +72,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
     sourceUrl: 'https://www.cninfo.com.cn/',
   };
   const supplementaryCalls: string[] = [];
+  let localGapId: string | undefined;
   const refuseSupplementary = (operation: string): never => {
     supplementaryCalls.push(operation);
     throw new Error('Historical unsupported records must not dispatch supplementary services');
@@ -79,7 +81,8 @@ test('paused US routes reject search, create, retry and resume while preserving 
     searchCompanies: async () => refuseSupplementary('lookup'),
     context: async () => refuseSupplementary('context'),
     industry: async () => refuseSupplementary('industry'),
-    question: async () => refuseSupplementary('question'),
+    question: async (run, ...args) =>
+      run.id === localGapId ? answerCompanyQuestion(run, ...args) : refuseSupplementary('question'),
     research: async () => refuseSupplementary('research'),
     assessment: async () => refuseSupplementary('assessment'),
   };
@@ -258,7 +261,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
     });
     assert.equal(resume.status, 400);
     assert.equal((await resume.json()).code, 'COMPANY_MARKET_UNSUPPORTED');
-    for (const [operation, body] of [
+    const researchRequests = [
       ['context', {}],
       ['context', { refresh: true }],
       ['Context/', { refresh: true }],
@@ -266,7 +269,8 @@ test('paused US routes reject search, create, retry and resume while preserving 
       ['industry', { period: '2025-12-31', refresh: true }],
       ['questions', { question: 'How did cash change?', basis: 'consolidated' }],
       ['challenge', { target: 'expansion', refresh: true }],
-    ] as const) {
+    ] as const;
+    for (const [operation, body] of researchRequests) {
       const response = await request(
         `/api/company-runs/${legacy.id}/${operation}`,
         alice.headers,
@@ -296,6 +300,71 @@ test('paused US routes reject search, create, retry and resume while preserving 
     assert.equal((await numericRefresh.json()).code, 'COMPANY_MARKET_UNSUPPORTED');
     assert.deepEqual(supplementaryCalls, []);
     store.state.companyRuns.pop();
+
+    for (const historical of [legacy, numericUs]) {
+      const usGap = {
+        ...structuredClone(historical),
+        id: randomUUID(),
+        informationGap: { name: 'Historical US gap', reason: 'Legacy incomplete record' },
+      };
+      const before = structuredClone(usGap);
+      store.state.companyRuns.push(usGap);
+      for (const [operation, body] of researchRequests) {
+        const response = await request(
+          `/api/company-runs/${usGap.id}/${operation}`,
+          alice.headers,
+          body
+        );
+        assert.equal(response.status, 400);
+        assert.equal((await response.json()).code, 'COMPANY_MARKET_UNSUPPORTED');
+      }
+      assert.deepEqual(usGap, before);
+      const detail = await request(`/api/company-runs/${usGap.id}`, alice.headers);
+      assert.equal(detail.status, 200);
+      assert.deepEqual(await detail.json(), before);
+      assert.deepEqual(supplementaryCalls, []);
+      assert.deepEqual(calls, { searches: 0, research: 0 });
+      store.state.companyRuns.pop();
+    }
+    assert.deepEqual(store.state.companyRuns, [saved]);
+
+    const localGap: CompanyResearchRun = {
+      id: randomUUID(),
+      input: { securityCode: '', orgId: '', year: 2025, purpose: 'external', useModel: true },
+      status: 'ready',
+      createdAt: now,
+      updatedAt: now,
+      trace: [],
+      announcements: [],
+      model: { requested: true, status: 'not-configured' },
+      informationGap: { name: '未上市制造公司', reason: 'No matching supported listed issuer' },
+      contextStatus: 'ready',
+      context: {
+        ...legacy.context!,
+        securityCode: '',
+        orgId: '',
+        companyName: '未上市制造公司',
+        status: 'unavailable',
+      },
+    };
+    localGapId = localGap.id;
+    store.state.companyRuns.push(localGap);
+    const localContext = await request(`/api/company-runs/${localGap.id}/context`, alice.headers, {
+      refresh: true,
+    });
+    assert.equal(localContext.status, 200);
+    assert.deepEqual(await localContext.json(), localGap);
+    const localQuestion = await request(
+      `/api/company-runs/${localGap.id}/questions`,
+      alice.headers,
+      { question: '还缺少哪些资料？', basis: 'consolidated' }
+    );
+    assert.equal(localQuestion.status, 200);
+    assert.equal((await localQuestion.json()).mode, 'rules-fallback');
+    assert.deepEqual(supplementaryCalls, []);
+    store.state.companyRuns.pop();
+    await store.persist();
+    assert.deepEqual(store.state.companyRuns, [saved]);
 
     const detail = await request(`/api/company-runs/${legacy.id}`, alice.headers);
     assert.equal(detail.status, 200);

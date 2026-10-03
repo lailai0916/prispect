@@ -1,6 +1,8 @@
 import { metricNames } from './format';
 
 const rules: Record<string, string> = {
+  '币种或金额单位待核对；相关历史计算暂停展示，原记录与来源保留。':
+    'Currency or amount units need review. Dependent historical calculations are withheld; original records and sources remain.',
   '输入存在混用或矛盾，系统保留来源并拒绝无声覆盖。请按问题单修复后再核查。':
     'The inputs are mixed or contradictory. Sources are retained without silently overwriting values. Resolve the evidence requests before reviewing again.',
   '原始文件已暂存于当前账号；请在24小时内确认保存，未确认文件会过期清理。确认后随材料保留，个人额度250MB。':

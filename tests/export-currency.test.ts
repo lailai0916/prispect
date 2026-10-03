@@ -155,3 +155,40 @@ test('valid CNY exports preserve amount calculations, source references and reco
   assert.ok(buildReviewChecklist(task, 'en').includes('Saved triggering fact'));
   assert.equal(JSON.stringify(task), original);
 });
+
+test('HTML and checklist mask failed or warned historical currency calculations without rewriting the saved report', () => {
+  for (const status of ['fail', 'warn'] as const) {
+    const task = historicalTask();
+    const material = structuredClone(task.report!.snapshot[0]!);
+    material.observations.find(
+      (item) => item.key === 'inventoryAdjustment' && item.year === 2025
+    )!.value = '-321030061.96';
+    task.report = analyze(
+      { title: task.title, company: task.company, year: task.year, materialIds: task.materialIds },
+      [material]
+    );
+    observation(task.report, 'inventoryAdjustment').currency = 'USD';
+    const balance = task.report.checks.find((item) => item.id === 'bridge-balance')!;
+    assert.match(balance.message, /26197124\.70 元/);
+    balance.status = status;
+    const indicator = task.report.checks.find((item) => item.id === '2025-inventoryAdjustment')!;
+    indicator.status = status;
+    indicator.message = '历史换算结果为 917263.45 元，按人民币分核对。';
+    const before = JSON.stringify(task);
+    const html = reportHtml(task);
+    const checks = section(html, '口径检查');
+    assert.match(checks, /币种或金额单位待核对/);
+    assert.ok(!checks.includes('26197124.70'));
+    assert.ok(!checks.includes('917263.45'));
+    assert.ok(!section(html, '组合规则评估记录').includes('26197124.70'));
+    assert.match(checks, status === 'fail' ? /未通过/ : /需核对/);
+    assert.match(section(html, '币种与单位核对'), /-321030061\.96.*?USD/s);
+    for (const locale of ['zh-Hans', 'en'] as const) {
+      const markdown = buildReviewChecklist(task, locale);
+      assert.ok(!markdown.includes('26197124.70'));
+      assert.ok(!markdown.includes('917263.45'));
+      assert.ok(markdown.includes('-321030061.96'));
+    }
+    assert.equal(JSON.stringify(task), before);
+  }
+});

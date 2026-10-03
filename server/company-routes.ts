@@ -70,7 +70,12 @@ export function installCompanyRoutes(
     }
     try {
       const run = byId(res.locals.store as WorkspaceStore, String(req.params.id));
-      if (!run.informationGap)
+      if (
+        !run.informationGap ||
+        run.input.securityCode !== '' ||
+        run.input.orgId !== '' ||
+        run.identity?.exchange === 'us'
+      )
         assertCompanyResearchSupported(run.input.securityCode, run.identity?.exchange);
       next();
     } catch (error) {

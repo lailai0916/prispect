@@ -83,6 +83,23 @@ export function reportCurrencyView(original: Report) {
     };
 
   const warning = '币种或金额单位待核对；相关历史计算暂停展示，原记录与来源保留。';
+  const warningMessage = {
+    zh: warning,
+    en: 'Currency or amount units need review. Dependent historical calculations are withheld; original records and sources remain.',
+  };
+  const affectedCheck = (id: string) =>
+    affected.has(id) || (bridgeBlocked && ['bridge-balance', 'group-sum'].includes(id));
+  const affectedBlocker = (code: string) => {
+    if (affectedCheck(code)) return true;
+    const requirement = /^(?:excluded|missing|conflict|invalid):(\d+):(.+)$/.exec(code);
+    return (
+      !!requirement &&
+      (affectedCheck(`${requirement[1]}-${requirement[2]}`) ||
+        (bridgeBlocked &&
+          requirement[1] === String(original.year) &&
+          requirement[2] === 'otherAdjustments'))
+    );
+  };
   const metrics = original.metrics.map((metric): ComputedMetric => {
     let value = metric.value;
     let previousValue = metric.previousValue;
@@ -125,23 +142,26 @@ export function reportCurrencyView(original: Report) {
       ),
       conditions: check.conditions.map((item) => ({ ...item, status: 'unknown' as const })),
       blockers: [
-        ...check.blockers.filter((blocker) => blocker.code !== 'display-currency'),
+        ...check.blockers
+          .filter((blocker) => blocker.code !== 'display-currency')
+          .map((blocker) =>
+            affectedBlocker(blocker.code) ? { ...blocker, message: warningMessage } : blocker
+          ),
         {
           code: 'display-currency',
-          message: {
-            zh: warning,
-            en: 'Currency or amount units need review. Dependent historical calculations are withheld; original records and sources remain.',
-          },
+          message: warningMessage,
           sourceRefs: issues.flatMap((issue) => issue.sourceRefs),
         },
       ],
     };
   });
   const checks = original.checks.map((check) =>
-    check.status === 'pass' &&
-    (affected.has(check.id) ||
-      (bridgeBlocked && ['bridge-balance', 'group-sum'].includes(check.id)))
-      ? { ...check, status: 'warn' as const, message: warning }
+    affectedCheck(check.id)
+      ? {
+          ...check,
+          status: check.status === 'pass' ? ('warn' as const) : check.status,
+          message: warning,
+        }
       : check
   );
   const removedAmounts = original.metrics.filter(
