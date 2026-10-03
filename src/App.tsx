@@ -549,16 +549,6 @@ export function App() {
           }}
         >
           <div className={`app-shell ${business ? 'business-shell' : 'public-shell'}`}>
-            <a
-              className="skip-link"
-              href="#main"
-              onClick={(event) => {
-                event.preventDefault();
-                document.getElementById('main')?.focus();
-              }}
-            >
-              {t('跳至主要内容', 'Skip to content')}
-            </a>
             <header className="site-header">
               <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
                 <Logo />
