@@ -92,7 +92,6 @@ export function CompanyAssistant({ route }: { route: string }) {
   const scrolling = useRef<HTMLDivElement>(null);
   const following = useRef(true);
   const mounted = useRef(false);
-  const revision = useRef(0);
   const sequence = useRef(0);
   const request = useRef<{
     owner: string | null;
@@ -118,7 +117,6 @@ export function CompanyAssistant({ route }: { route: string }) {
     if (conversation.owner === owner) return;
     request.current?.controller.abort();
     request.current = null;
-    revision.current++;
     setConversation({ owner, draft: '', messages: [] });
     setOpen(false);
     following.current = true;
@@ -139,7 +137,7 @@ export function CompanyAssistant({ route }: { route: string }) {
       scrolling.current.scrollTop = scrolling.current.scrollHeight;
   }, [open, messages]);
 
-  const perform = async (message: AssistantMessage) => {
+  const perform = async (message: AssistantMessage, clearDraft = false) => {
     const session = latest.current;
     if (
       request.current ||
@@ -150,14 +148,13 @@ export function CompanyAssistant({ route }: { route: string }) {
     const controller = new AbortController();
     const operation = { owner: session.owner, id: message.id, controller };
     request.current = operation;
-    const submittedRevision = revision.current;
-    const submittedFromDraft = session.conversation.draft.trim() === message.request.question;
     following.current = true;
     setConversation((previous) => {
       if (previous.owner !== operation.owner) return previous;
       const next = { ...message, status: 'pending' as const, answer: undefined, cause: undefined };
       return {
         ...previous,
+        draft: clearDraft ? '' : previous.draft,
         messages: previous.messages.some((item) => item.id === message.id)
           ? previous.messages.map((item) => (item.id === message.id ? next : item))
           : [...previous.messages, next],
@@ -179,7 +176,6 @@ export function CompanyAssistant({ route }: { route: string }) {
         if (previous.owner !== operation.owner) return previous;
         return {
           ...previous,
-          draft: submittedFromDraft && revision.current === submittedRevision ? '' : previous.draft,
           messages: previous.messages.map((item) =>
             item.id === message.id
               ? { ...item, status: 'completed', answer, cause: undefined }
@@ -215,7 +211,7 @@ export function CompanyAssistant({ route }: { route: string }) {
       if (request.current === operation) request.current = null;
     }
   };
-  const ask = (value: string) => {
+  const ask = (value: string, clearDraft = false) => {
     const session = latest.current;
     const question = value.trim();
     if (!question || request.current || session.conversation.owner !== session.owner) return;
@@ -232,7 +228,7 @@ export function CompanyAssistant({ route }: { route: string }) {
         .slice(-4)
         .map((message) => message.request.question),
     };
-    void perform({ id: ++sequence.current, request: payload, status: 'pending' });
+    void perform({ id: ++sequence.current, request: payload, status: 'pending' }, clearDraft);
   };
   const cancel = () => {
     const operation = request.current;
@@ -253,7 +249,7 @@ export function CompanyAssistant({ route }: { route: string }) {
   };
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    ask(draft);
+    ask(draft, true);
   };
   const suggestions = backgroundCompany
     ? [
@@ -432,7 +428,6 @@ export function CompanyAssistant({ route }: { route: string }) {
               placeholder={t('输入问题', 'Ask a question')}
               onChange={(event) => {
                 const value = event.target.value;
-                revision.current++;
                 setConversation((previous) =>
                   previous.owner === owner ? { ...previous, draft: value } : previous
                 );
@@ -450,11 +445,6 @@ export function CompanyAssistant({ route }: { route: string }) {
               }}
             />
             <div className="company-assistant-composer-toolbar">
-              <div className="company-assistant-composer-meta">
-                <small>
-                  {t('Enter 发送 · Shift+Enter 换行', 'Enter to send · Shift+Enter for a new line')}
-                </small>
-              </div>
               {pending ? (
                 <button
                   key="cancel"
