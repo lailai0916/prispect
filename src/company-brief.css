@@ -258,11 +258,11 @@
   align-items: center;
   gap: 4px;
   font-size: var(--text-ui);
-  color: var(--accent);
+  color: var(--muted);
   text-decoration: none;
 }
 .company-brief a:hover {
-  color: var(--ink);
+  color: var(--accent);
 }
 .company-brief a:focus-visible,
 .company-brief-profile > summary:focus-visible {

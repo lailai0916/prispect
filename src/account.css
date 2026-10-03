@@ -36,12 +36,12 @@
   width: 48px;
   height: 48px;
   border: 1px solid var(--account-line);
-  background: var(--accent-soft);
+  background: var(--surface);
   border-radius: 14px;
   display: grid;
   place-items: center;
   margin-bottom: 22px;
-  color: var(--accent, #2764d5);
+  color: var(--account-muted);
 }
 .account-auth-card h1 {
   font-size: 30px;
@@ -311,8 +311,8 @@
   color: var(--account-ink);
 }
 .account-tab[aria-selected='true'] {
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--account-ink);
+  background: var(--selected);
   font-weight: 550;
 }
 .account-section {
@@ -394,9 +394,9 @@
   vertical-align: middle;
 }
 .account-badge[data-active='true'] {
-  color: var(--accent, #2764d5);
-  background: var(--accent-soft, #eff5ff);
-  border-color: var(--accent-border, #c6d8f5);
+  color: var(--account-ink);
+  background: var(--surface);
+  border-color: var(--account-line);
 }
 .account-binding-row {
   display: flex;

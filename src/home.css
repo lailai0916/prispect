@@ -309,10 +309,10 @@ button.start-mode:hover {
 }
 .company-completions > button:hover,
 .company-completions > button[aria-selected='true'] {
-  background: var(--accent-soft);
+  background: var(--selected);
 }
 .company-completions > button[aria-selected='true'] .company-completion-identity strong {
-  color: var(--accent);
+  color: var(--ink);
 }
 .company-completion-identity {
   flex: 1;
@@ -402,10 +402,10 @@ button.start-mode:hover {
   flex-shrink: 0;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--accent-border);
+  border: 1px solid var(--line);
   border-radius: 9px;
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--muted);
+  background: var(--surface);
 }
 .research-record-name {
   flex: 1;
@@ -526,7 +526,7 @@ button.start-mode:hover {
 }
 .research-cash-example > summary > svg {
   flex-shrink: 0;
-  color: var(--accent);
+  color: var(--muted);
   transition: transform 120ms;
 }
 .research-cash-example[open] > summary > svg {
@@ -611,14 +611,14 @@ button.start-mode:hover {
   margin-bottom: 24px;
 }
 .preview-icon {
-  border: 1px solid var(--accent-border);
+  border: 1px solid var(--home-line);
   display: grid;
   place-items: center;
   width: 38px;
   height: 38px;
   border-radius: 10px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--home-soft);
+  color: var(--muted);
 }
 .preview-title h3 {
   font-size: 18px;
@@ -773,7 +773,7 @@ button.start-mode:hover {
 }
 .preview-source > svg {
   flex-shrink: 0;
-  color: var(--accent);
+  color: var(--muted);
 }
 .preview-source > div {
   min-width: 0;

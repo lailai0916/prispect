@@ -61,8 +61,8 @@
   background: var(--hover);
 }
 .document-navigation a[aria-current='page'] {
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--ink);
+  background: var(--selected);
   font-weight: 550;
 }
 .document-navigation .document-navigation-home {
@@ -116,8 +116,8 @@
   height: 36px;
   padding: 8px;
   border-radius: 10px;
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--muted);
+  background: var(--surface);
 }
 .document-home-card-heading > svg:last-child {
   margin-left: auto;
@@ -234,8 +234,8 @@
   color: var(--ink);
 }
 .document-contents a[aria-current='location'] {
-  color: var(--accent);
-  border-left-color: var(--accent);
+  color: var(--ink);
+  border-left-color: var(--ink);
 }
 .document-section {
   padding-bottom: 34px;

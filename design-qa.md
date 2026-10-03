@@ -9,7 +9,10 @@ Source visual: the user's attached tokenflux dashboard screenshot in this chat
 equal-width card grid, rounded surfaces, outlined icons, clear metric hierarchy,
 readable charts and a visible theme color. This is a redesign of Prispect's real
 application, not a reproduction of the reference's billing dashboard. Preserve
-Prispect's geometric logo, purple identity, financial content and existing controls.
+Prispect's geometric logo, financial content and existing controls. The user's
+subsequent direction takes precedence over the reference's extensive color:
+restore a primarily white and neutral-gray Linear-style interface with only
+small, subdued theme accents.
 
 Source browser chrome and outer black framing are excluded from the comparison.
 Rendered evidence uses 1440 × 960 desktop, 390 × 960 mobile and 320px English
@@ -51,9 +54,11 @@ These checks do not use production records or a live model.
 - Layout: one workspace width, equal metric tracks, 14px card radii, shared
   24px/18px padding and 20px/16px gaps. Narrow layouts stack cards; tables and
   large charts retain local scrolling. Header heights remain 52px/56px.
-- Colors: quiet canvas and paper cards, one purple accent for navigation,
-  actions, icons and chart series. Light and dark tokens remain distinct;
-  numeric amounts stay readable and semantic errors keep explicit labels.
+- Colors: pure white light-theme canvas, neutral paper cards, gray/black
+  navigation, actions, icons and grade panels. Subdued purple appears only in
+  small focus/hover details and a chart comparison series. Light and dark
+  tokens remain distinct; numeric amounts stay readable and semantic errors
+  keep explicit labels.
 - Assets: preserve the supplied Prispect logo and installed Lucide outline
   icons. Financial charts render recorded data. Reference-site avatars and
   provider logos are outside the intended product scope; no decorative raster
@@ -76,6 +81,17 @@ These checks do not use production records or a live model.
    and 390px Chinese captures and mouse/keyboard checks show no page overflow.
 
 ## Validation and limits
+
+The subsequent palette refinement was checked at 1440px on the report,
+research library and document home, and at 390px on the dark assistant.
+The light canvas measured `rgb(255, 255, 255)`; grade/icon surfaces and buttons
+were neutral. Report geometry and all three first-fold amounts were unchanged.
+The source drawer and document navigation remained usable. No page overflow,
+browser errors, unexpected requests or missing endpoints were observed.
+Final palette captures and measurements are in
+`output/playwright/linear-restraint/`: `light-report-1440.png`,
+`light-library-1440.png`, `light-docs-1440.png`, `dark-assistant-390.png` and
+`results.json`. The earlier visual-upgrade screenshots remain as before evidence.
 
 Type checking, production build and changed-file formatting checks passed.
 Final Chromium checks cover report, library, materials, sources, charts,

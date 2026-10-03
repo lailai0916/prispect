@@ -26,6 +26,11 @@
   gap: 5px;
   flex-shrink: 0;
   font-size: var(--text-secondary);
+  color: var(--muted);
+}
+.assessment-refresh:hover,
+.assessment-basis-link:hover {
+  color: var(--accent);
 }
 .assessment-summary {
   display: grid;
@@ -251,6 +256,10 @@
   align-items: center;
   gap: 6px;
   font-size: var(--text-ui);
+  color: var(--muted);
+}
+.assessment-audit-actions button:hover {
+  color: var(--accent);
 }
 .assessment-footnote {
   margin: 17px 0 0;
@@ -317,6 +326,9 @@
   font-size: var(--text-meta);
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+.assessment-source-url:hover {
+  color: var(--accent);
 }
 @media (max-width: 700px) {
   .assessment-summary {

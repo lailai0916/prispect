@@ -28,7 +28,7 @@
   top: 21px;
   left: 17px;
   z-index: 1;
-  color: var(--accent);
+  color: var(--muted);
   pointer-events: none;
 }
 .query-create-page .start-input {

@@ -92,13 +92,13 @@
 
 .company-history-tabs button[aria-selected='true'] {
   background: var(--paper);
-  color: var(--accent);
+  color: var(--ink);
   box-shadow: var(--shadow-card);
   font-weight: 550;
 }
 
 .company-history-tabs button:active {
-  color: var(--accent);
+  color: var(--ink);
 }
 
 .company-history-small-multiples {
@@ -189,14 +189,14 @@
 
 .company-history-bar.series-0,
 .company-history-legend i.series-0 {
-  fill: var(--accent);
-  background: var(--accent);
+  fill: var(--chart-total);
+  background: var(--chart-total);
 }
 
 .company-history-bar.series-1,
 .company-history-legend i.series-1 {
-  fill: color-mix(in srgb, var(--accent) 38%, var(--paper));
-  background: color-mix(in srgb, var(--accent) 38%, var(--paper));
+  fill: var(--accent);
+  background: var(--accent);
 }
 
 .company-history-value-line {
@@ -204,11 +204,11 @@
 }
 
 .company-history-value-line.series-0 {
-  stroke: var(--accent);
+  stroke: var(--chart-total);
 }
 
 .company-history-value-line.series-1 {
-  stroke: color-mix(in srgb, var(--accent) 38%, var(--paper));
+  stroke: var(--accent);
 }
 
 .company-history-missing {
@@ -218,7 +218,7 @@
 }
 
 .company-history-selection {
-  stroke: var(--accent);
+  stroke: var(--ink);
   stroke-width: 2;
 }
 
@@ -296,9 +296,9 @@
 }
 
 .company-history-year-switch button[aria-pressed='true'] {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
-  color: var(--accent);
+  border-color: var(--line);
+  background: var(--selected);
+  color: var(--ink);
 }
 
 .company-history-year-date {
@@ -334,8 +334,8 @@
 }
 
 .company-history-exact-values > article.selected {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
+  border-color: var(--control-border);
+  background: var(--selected);
 }
 
 .company-history-exact-heading > span {
@@ -499,14 +499,14 @@
 }
 
 .company-history-heading h2 > svg {
-  color: var(--accent);
+  color: var(--muted);
   flex: 0 0 auto;
 }
 .company-history-tabs button > svg {
   flex: 0 0 auto;
 }
 .company-history-tabs button:hover {
-  color: var(--accent);
+  color: var(--ink);
 }
 .company-review-details > .company-financial-history {
   margin: 0;
@@ -531,4 +531,11 @@
     border: 0;
     box-shadow: none;
   }
+}
+
+.company-financial-history a.text-link {
+  color: var(--muted);
+}
+.company-financial-history a.text-link:hover {
+  color: var(--accent);
 }

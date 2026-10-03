@@ -73,8 +73,8 @@
   height: 32px;
   padding: 7px;
   border-radius: 9px;
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--muted);
+  background: var(--surface);
 }
 .company-assistant-header h2 {
   margin: 0;
@@ -151,13 +151,13 @@
     background-color 140ms ease;
 }
 .company-assistant-suggestions button:hover {
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
+  border-color: var(--control-hover);
+  background: var(--hover);
   color: var(--ink);
 }
 .company-assistant-suggestions button > svg {
   flex-shrink: 0;
-  color: var(--accent);
+  color: var(--muted);
 }
 .company-assistant-suggestions button:focus-visible,
 .company-assistant-send:focus-visible {
@@ -181,7 +181,7 @@
   margin: 0;
   padding: 8px 11px;
   border-radius: 12px 12px 4px 12px;
-  background: var(--accent-soft);
+  background: var(--surface);
   color: var(--ink);
   font-size: var(--text-body);
   font-weight: 400;
@@ -197,7 +197,7 @@
   align-items: center;
   gap: 6px;
   margin-bottom: 8px;
-  color: var(--accent);
+  color: var(--muted);
   font-size: var(--text-meta);
   line-height: 1.7;
 }

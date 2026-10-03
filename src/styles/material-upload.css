@@ -24,7 +24,7 @@
 }
 
 .material-page-drop-feedback svg {
-  color: var(--accent);
+  color: var(--muted);
 }
 
 .material-page-drop-feedback span {
@@ -62,8 +62,8 @@
 
 .material-importer .upload-zone:hover:not(:disabled),
 .material-importer .upload-zone.is-file-dragging {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--muted);
+  background: var(--surface);
 }
 
 .material-importer .upload-zone:active:not(:disabled) {
@@ -219,8 +219,8 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--surface);
+  color: var(--muted);
 }
 .materials-stat > div {
   min-width: 0;
@@ -283,7 +283,7 @@
   background: var(--paper);
 }
 .app-shell .material-drop-page .material-row.material-located {
-  border-color: var(--accent);
+  border-color: var(--muted);
   background: var(--paper);
   box-shadow: 0 0 0 2px var(--focus-ring);
 }
@@ -295,8 +295,8 @@
   padding: 0;
   border: 0;
   border-radius: 12px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--surface);
+  color: var(--muted);
 }
 .material-drop-page .material-row-content {
   min-width: 0;

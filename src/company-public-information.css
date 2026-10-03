@@ -52,7 +52,7 @@
   cursor: pointer;
 }
 .public-info-tabs button[aria-selected='true'] {
-  color: var(--accent);
+  color: var(--ink);
   background: var(--paper);
   box-shadow: var(--shadow-card);
 }
@@ -206,12 +206,12 @@
   background: var(--surface-subtle);
 }
 .public-info-row[aria-current='true'] {
-  background: var(--accent-soft);
-  box-shadow: inset 3px 0 var(--accent);
+  background: var(--selected);
+  box-shadow: inset 3px 0 var(--ink);
 }
 .public-info-row-icon,
 .public-info-row-arrow {
-  color: var(--accent);
+  color: var(--muted);
   flex-shrink: 0;
   margin-top: 5px;
 }
@@ -580,7 +580,7 @@
 }
 
 .public-info-tabs button:hover {
-  color: var(--accent);
+  color: var(--ink);
 }
 .public-info-coverage {
   padding: 16px 18px;
@@ -596,4 +596,15 @@
     border-radius: 0;
     box-shadow: none;
   }
+}
+
+.company-public-information a.text-link,
+.public-info-reader a.text-link,
+.public-info-drawer a.text-link {
+  color: var(--muted);
+}
+.company-public-information a.text-link:hover,
+.public-info-reader a.text-link:hover,
+.public-info-drawer a.text-link:hover {
+  color: var(--accent);
 }

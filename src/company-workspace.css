@@ -249,7 +249,7 @@
   font-size: var(--text-ui);
 }
 .context-segmented button[aria-pressed='true'] {
-  color: var(--accent);
+  color: var(--ink);
   background: var(--paper);
   box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 7%, transparent);
 }
@@ -703,7 +703,7 @@
 .context-tabs button[aria-selected='true'] {
   background: var(--paper);
   box-shadow: var(--shadow-card);
-  color: var(--accent);
+  color: var(--ink);
 }
 .context-chart-panel {
   padding: 20px 0;
@@ -734,7 +734,7 @@
   fill: transparent;
 }
 .context-chart-selection.selected {
-  fill: var(--accent-soft);
+  fill: var(--selected);
 }
 .context-chart-scroll svg g[role='button'] {
   cursor: pointer;
@@ -812,9 +812,9 @@
   font-size: var(--text-ui);
 }
 .context-year-button[aria-pressed='true'] {
-  color: var(--accent);
-  border-color: var(--accent-border);
-  background: var(--accent-soft);
+  color: var(--ink);
+  border-color: var(--line);
+  background: var(--selected);
 }
 .context-industry-heading {
   display: flex;
@@ -986,7 +986,7 @@
   margin: 5px 0 8px;
 }
 .context-eyebrow {
-  color: var(--accent);
+  color: var(--muted);
   font-size: var(--text-meta);
   margin: 0;
 }
@@ -1190,8 +1190,8 @@
   cursor: pointer;
 }
 .company-page-index button:hover {
-  color: var(--accent);
-  background: var(--accent-soft);
+  color: var(--ink);
+  background: var(--hover);
 }
 .company-workspace-section {
   padding: var(--card-padding);
@@ -1232,8 +1232,8 @@
   text-decoration: none;
 }
 .company-next-sections a:hover {
-  color: var(--accent);
-  border-color: var(--accent-border);
+  color: var(--ink);
+  border-color: var(--control-hover);
 }
 .company-next-sections svg {
   flex: 0 0 auto;
@@ -1286,10 +1286,10 @@
   border-radius: 12px;
 }
 .context-tabs button:hover {
-  color: var(--accent);
+  color: var(--ink);
 }
 .context-page-actions > .text-link {
-  color: var(--accent);
+  color: var(--muted);
 }
 @media print {
   .company-workspace-section,
@@ -1299,4 +1299,25 @@
     border: 0;
     box-shadow: none;
   }
+}
+
+.company-workspace
+  :where(
+    a.text-link,
+    .context-news-list article > a,
+    .context-verification-grid a,
+    .context-priority-detail a,
+    .context-answer-citations a
+  ) {
+  color: var(--muted);
+}
+.company-workspace
+  :where(
+    a.text-link,
+    .context-news-list article > a,
+    .context-verification-grid a,
+    .context-priority-detail a,
+    .context-answer-citations a
+  ):hover {
+  color: var(--accent);
 }
