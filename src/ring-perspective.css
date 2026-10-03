@@ -281,30 +281,33 @@
   min-height: 15px;
 }
 
-/* 三格（来源） */
-.ringp-cells {
+/* 来源检查圆点 */
+.ringp-credit-dots {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   margin-bottom: 2px;
 }
-.ringp-cell {
-  width: 15px;
-  height: 22px;
-  border-radius: 3px;
+.ringp-credit-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  animation: ringp-pulse 2.4s ease-in-out infinite;
 }
-.ringp-cell-ok {
-  background: rgba(52, 211, 153, 0.2);
-  border: 1.5px solid #34d399;
-  box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+.ringp-credit-dot.ok {
+  background: rgba(52, 211, 153, 0.22);
+  border: 2px solid #34d399;
+  box-shadow: 0 0 9px rgba(52, 211, 153, 0.5);
 }
-.ringp-cell-warn {
-  background: rgba(245, 185, 66, 0.18);
-  border: 1.5px solid #f5b942;
-  box-shadow: 0 0 8px rgba(245, 185, 66, 0.4);
+.ringp-credit-dot.warn {
+  background: rgba(245, 185, 66, 0.2);
+  border: 2px solid #f5b942;
+  box-shadow: 0 0 9px rgba(245, 185, 66, 0.5);
+  animation-delay: 0.4s;
 }
-.ringp-cell-unk {
-  background: rgba(255, 255, 255, 0.04);
-  border: 1.5px solid #5d6b84;
+.ringp-credit-dot.unk {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid #5d6b84;
+  animation: none;
 }
 
 /* 口碑圆点 */

@@ -391,16 +391,25 @@ function DimensionCenter({
   }
 
   if (dimension.key === 'credit') {
+    const gaps = dimension.metrics.filter((m) => m.tone !== 'good').length;
+    const allUnknown = dimension.metrics.every((m) => m.tone === 'plain' || m.tone === 'unknown');
+    const bigText =
+      allUnknown || dimension.metrics.length === 0
+        ? t('待查', 'Pending')
+        : gaps === 0
+          ? t('全齐', 'Complete')
+          : t(`缺 ${gaps} 项`, `${gaps} missing`);
     return (
       <div className="ringp-core">
-        <div className="ringp-cells">
-          {dimension.metrics.slice(0, 3).map((m: RiskMetric, i: number) => (
-            <span
+        <div className="ringp-credit-dots" aria-hidden="true">
+          {dimension.metrics.map((m: RiskMetric, i: number) => (
+            <i
               key={i}
-              className={`ringp-cell ringp-cell-${m.tone === 'good' ? 'ok' : m.tone === 'warn' ? 'warn' : 'unk'}`}
+              className={`ringp-credit-dot${m.tone === 'good' ? ' ok' : m.tone === 'warn' ? ' warn' : ' unk'}`}
             />
           ))}
         </div>
+        <span className="ringp-big ringp-big-sm">{bigText}</span>
         <span className="ringp-sub">{t(dimension.summary.zh, dimension.summary.en)}</span>
       </div>
     );
