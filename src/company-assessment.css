@@ -16,7 +16,7 @@
 .assessment-section-heading h2 {
   margin: 0;
   color: var(--ink);
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 550;
 }
 .assessment-refresh,
@@ -341,7 +341,7 @@
     gap: 8px;
   }
   .assessment-main-judgment {
-    font-size: var(--text-body);
+    font-size: 15px;
   }
   .assessment-dimensions,
   .assessment-priorities {
@@ -446,7 +446,7 @@
   min-height: 76px;
   resize: vertical;
   line-height: 1.8;
-  font-size: var(--text-body);
+  font-size: 16px;
 }
 .assessment-research-request form > div {
   display: flex;

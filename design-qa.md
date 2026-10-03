@@ -12,9 +12,11 @@ application, not a reproduction of the reference's billing dashboard. Preserve
 Prispect's geometric logo, financial content and existing controls. The user's
 subsequent direction takes precedence over the reference's extensive color:
 restore a primarily white and neutral-gray Linear-style interface with only
-small, subdued theme accents. The latest refinement targets information density:
-keep content substantial and readable while removing large repeated wrappers,
-icon backgrounds and unused space.
+small, subdued theme accents. The density refinement keeps content substantial
+and readable while removing large repeated wrappers, icon backgrounds and unused
+space. The latest typography correction restores normal navigation, body and
+heading sizes across the application, while raising the smallest screen text to
+a 12px floor. The sidebar is one example of the shared correction, not its scope.
 
 Source browser chrome and outer black framing are excluded from the comparison.
 Rendered evidence uses 1440 × 960 desktop, 390 × 960 mobile and 320px English
@@ -49,10 +51,13 @@ These checks do not use production records or a live model.
 
 ## Required visual surfaces
 
-- Typography: native system/PingFang fallbacks, restrained weights, 16px body,
-  15px controls, 14px explanations, 13px sources and 12px compact chart labels.
-  Titles, amounts and grades retain stronger hierarchy. Native mobile inputs
-  remain 16px. Source titles wrap and full originals remain accessible.
+- Typography: native system/PingFang fallbacks, restrained weights, 14px body,
+  13px navigation and ordinary controls, 13px explanations, and at least 12px
+  screen metadata and captions. Workspace titles return to 25px/23px. Preserve
+  the original larger main judgments and grades, with amounts at 26px/22px.
+  Native mobile inputs and the main research composer remain 16px. Source titles
+  wrap and full originals remain accessible. Earlier screenshots below reflect
+  the preceding typography and are historical evidence.
 - Layout: one workspace width, equal metric tracks, 12px card radii, shared
   20px/18px padding and 16px gaps. Related summary, grade, amounts and actual
   stages share one report section; detailed execution and coverage expand in
@@ -112,7 +117,7 @@ Production deployment, live research execution, other browser engines and every
 hidden legacy modal are outside this visual verification. The local preview
 and screenshots remain available for review.
 
-## Current density refinement
+## Earlier density refinement
 
 Local before evidence is in `output/playwright/density-flow/`, including
 `before-report-1440.png`, `before-library-1440.png`,
@@ -152,3 +157,34 @@ Type checking, production build, changed-file formatting and diff checks passed.
 Production deployment and CI completion were not awaited.
 
 Current density browser acceptance: passed.
+
+## Current typography floor correction
+
+Restore the ordinary role hierarchy throughout the application, not just in the
+sidebar. Shared body/navigation/metadata sizes are 14px/13px/12px. Workspace
+headings return to 25px desktop and 23px mobile. Compare original declarations
+at `1c16e73` with the broad enlargement at `32b4e42`: restore 44 remaining
+ordinary section, record and tool headings that had been enlarged or flattened.
+This covers materials, company analysis, original review, the evidence lab,
+payment tools, research library, source drawers, documents and account surfaces.
+Library grades return to their original 18px. Original prominent judgments,
+report grades, larger amounts and mobile/native input roles keep their hierarchy.
+Former 9–11px screen text, including the newly integrated research modules, has a
+12px minimum; the 10px print-only document URL suffix is outside screen scope.
+
+`output/playwright/type-floor/results.json` records six successful targeted
+Chromium groups at the actual local application, using synthetic saved research
+and intercepted API responses. Desktop report measurements are body 14px,
+navigation 13px, title 25px, metadata 12px, main judgment 34px, grade 52px and
+amounts 26px. Document article text is 14px; home-card titles/descriptions are
+15px/13px and version metadata is 12px. Research-library metadata is 12px.
+Visible text in ResearchPlan, SourceTrust and ReportEvidenceControls has a 12px
+minimum. At 390px in the dark theme, the report title is 23px, judgment 26px,
+grade 36px and amounts 22px. Assistant and new-research inputs remain 16px.
+No page overflow, browser errors, unexpected writes or external requests were
+observed. The assistant reply uses one explicit mocked request.
+
+Screenshots: `report-1440-light.png`, `docs-guide-1440-light.png` and
+`assistant-390-dark.png` in the same directory. Production build, changed-file
+formatting and diff checks passed. No calculation, retrieval, permission or
+stored-data behavior changed; CI and production deployment were not awaited.

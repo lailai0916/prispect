@@ -85,7 +85,7 @@
 .learning-options small {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
 }
 .learning-actions {
   display: flex;
@@ -155,7 +155,7 @@
 }
 .learning-comparison article > p {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .learning-comparison article > .learning-formula {
   color: var(--ink);

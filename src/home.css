@@ -128,7 +128,7 @@
   box-shadow: none;
   background: none;
   padding: 4px 3px;
-  font-size: var(--text-body);
+  font-size: 16px;
   line-height: 1.6;
   outline: 0;
 }
@@ -930,7 +930,7 @@ button.start-mode:hover {
     padding: 12px;
   }
   .start-input textarea {
-    font-size: var(--text-body);
+    font-size: 16px;
     min-height: 64px;
   }
   .start-input-toolbar,
@@ -989,7 +989,7 @@ button.start-mode:hover {
     align-items: flex-start;
   }
   .preview-title h3 {
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .preview-title p {
     font-size: var(--text-secondary);

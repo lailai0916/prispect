@@ -79,7 +79,7 @@
 }
 .company-assistant-header h2 {
   margin: 0;
-  font-size: var(--text-body);
+  font-size: var(--text-ui);
   font-weight: 550;
   line-height: 1.5;
 }
@@ -341,6 +341,9 @@
   background: var(--action-hover);
 }
 @media (max-width: 600px) {
+  .company-assistant-composer textarea {
+    font-size: 16px;
+  }
   .company-assistant-trigger {
     right: 16px;
     bottom: max(16px, env(safe-area-inset-bottom));

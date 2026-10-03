@@ -156,7 +156,7 @@
     font-size: 24px;
   }
   .query-create-page .start-input textarea {
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .query-create-page .start-submit {
     min-height: 44px;

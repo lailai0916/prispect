@@ -274,7 +274,7 @@
 
 .company-history-year-header h3 {
   margin: 0;
-  font-size: var(--text-secondary);
+  font-size: var(--text-body);
   font-weight: 500;
 }
 

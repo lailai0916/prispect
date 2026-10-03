@@ -769,7 +769,7 @@
   padding: 0;
 }
 .company-hypotheses h3 {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.65;
 }
@@ -915,7 +915,7 @@
   padding: 24px;
 }
 .company-source-content > h3 {
-  font-size: 18px;
+  font-size: 16px;
   line-height: 1.6;
   font-weight: 550;
   margin-bottom: 12px;
@@ -961,7 +961,7 @@
     align-items: stretch;
   }
   .company-search-form input {
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .company-run-fields {
     grid-template-columns: minmax(0, 1fr);
@@ -1006,7 +1006,7 @@
     margin-left: 0;
   }
   .company-candidate-table :is(input, .select-trigger) {
-    font-size: var(--text-ui);
+    font-size: 16px;
     min-height: 44px;
   }
   .company-options > summary,

@@ -29,7 +29,7 @@
   margin: 18px 0;
 }
 .source-trust-summary dt {
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
   line-height: 1.6;
 }
@@ -67,7 +67,7 @@
 }
 .source-trust-table small {
   display: block;
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
   line-height: 1.7;
   margin-top: 4px;
@@ -79,12 +79,12 @@
   gap: 4px;
   margin-top: 5px;
   color: var(--ink);
-  font-size: 11px;
+  font-size: var(--text-meta);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .source-trust-state {
-  font-size: 11px;
+  font-size: var(--text-meta);
 }
 .source-trust-state.state-error {
   color: var(--danger);
@@ -95,11 +95,12 @@
   align-items: center;
   gap: 14px;
   margin-top: 12px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
 }
 .source-trust-paging button {
   display: inline-flex;
+  font-size: var(--text-ui);
   gap: 5px;
   align-items: center;
   color: var(--ink);

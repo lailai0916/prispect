@@ -42,7 +42,7 @@
   flex-wrap: wrap;
 }
 .material-row-title h2 {
-  font-size: 18px;
+  font-size: 14px;
 }
 .material-row-title .tag {
   flex-shrink: 0;
@@ -85,7 +85,7 @@
   margin-bottom: 18px;
 }
 .form-section-heading h2 {
-  font-size: 18px;
+  font-size: 15px;
 }
 .form-section-heading .text-link {
   margin-left: auto;
@@ -491,7 +491,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   margin-bottom: 18px;
 }
 .context-heading h2 {
-  font-size: 18px;
+  font-size: 16px;
 }
 .purpose-switch {
   flex-wrap: wrap;
@@ -534,7 +534,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   min-width: 0;
 }
 .review-path-list h3 {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 500;
   margin-bottom: 8px;
 }
@@ -595,7 +595,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
 }
 .context-checklist h3,
 .cash-worksheet h3 {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
 }
 .save-state {
@@ -862,7 +862,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   margin-bottom: 12px;
 }
 .report-section-title h2 {
-  font-size: 18px;
+  font-size: 16px;
 }
 .section-intro {
   color: var(--muted);
@@ -1118,7 +1118,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
 }
 .checks-panel h2,
 .source-panel h2 {
-  font-size: 18px;
+  font-size: 14px;
   margin-bottom: 13px;
 }
 .check-row {
@@ -1214,7 +1214,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   margin-bottom: 7px;
 }
 .finding-title h3 {
-  font-size: 18px;
+  font-size: 14px;
 }
 .finding-row p {
   color: var(--muted);
@@ -1289,7 +1289,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   margin-bottom: 3px;
 }
 .question-row h3 {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
 }
 .question-row p {
@@ -1339,7 +1339,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   gap: 7px;
   align-items: center;
   color: var(--ink);
-  font-size: 18px;
+  font-size: 13px;
   margin-bottom: 12px;
 }
 .report-limitations ul {
@@ -1574,7 +1574,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   border-top: 1px solid var(--line);
 }
 .change-item h3 {
-  font-size: 18px;
+  font-size: 13px;
 }
 .change-item p {
   font-size: var(--text-secondary);
@@ -1586,7 +1586,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--muted);
   margin-bottom: 12px;
@@ -1670,7 +1670,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   margin-bottom: 16px;
 }
 .method-content h3 {
-  font-size: 18px;
+  font-size: 14px;
   margin: 18px 0 8px;
 }
 .method-content h2 {
@@ -1767,7 +1767,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
   font-variant-numeric: tabular-nums;
 }
 .evidence-entry h3 {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 500;
 }
 .evidence-meta {
@@ -1897,7 +1897,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
     border: 0;
   }
   .lens-value strong {
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .lens-source p {
     -webkit-line-clamp: 2;
@@ -1973,14 +1973,14 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
     grid-row: auto;
   }
   .context-check-body textarea {
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .worksheet-start {
     grid-template-columns: minmax(0, 1fr);
     gap: 18px;
   }
   .worksheet-table input {
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .material-row {
     gap: 10px;
@@ -2028,7 +2028,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
     margin-bottom: 14px;
   }
   .form-section-heading h2 {
-    font-size: 18px;
+    font-size: 14px;
   }
   .form-section-heading .text-link {
     font-size: var(--text-ui);
@@ -2112,7 +2112,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
     padding: 22px 0;
   }
   .report-section-title h2 {
-    font-size: 18px;
+    font-size: 15px;
   }
   .report-secondary {
     grid-template-columns: minmax(0, 1fr);
@@ -2188,7 +2188,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
     height: 44px;
   }
   .question-row h3 {
-    font-size: 18px;
+    font-size: 13px;
   }
   .question-trigger {
     font-size: var(--text-ui);
@@ -2251,7 +2251,7 @@ input:not([type='checkbox']):not([type='radio']):not([type='file']):not(
     font-size: var(--text-body);
   }
   .method-content h2 {
-    font-size: 18px;
+    font-size: 16px;
   }
   .method-callout {
     padding: 12px;

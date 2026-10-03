@@ -34,7 +34,7 @@
 }
 .research-section-heading h2,
 .research-deep-heading {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 550;
   letter-spacing: -0.015em;
   color: var(--ink);
@@ -255,7 +255,7 @@
   align-items: baseline;
   gap: 6px;
   flex-wrap: wrap;
-  font-size: 30px;
+  font-size: 26px;
   color: var(--ink);
   font-weight: 550;
   letter-spacing: -0.025em;
@@ -594,7 +594,7 @@
     overflow-wrap: anywhere;
   }
   .research-key-amounts dd {
-    font-size: 26px;
+    font-size: 22px;
   }
   .research-key-amounts dt {
     align-items: flex-start;
@@ -687,7 +687,7 @@
     margin-bottom: 10px;
   }
   .research-key-amounts dd {
-    font-size: 30px;
+    font-size: 22px;
     margin-bottom: 8px;
   }
   .research-progress-stages,

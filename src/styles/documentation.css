@@ -124,14 +124,14 @@
 }
 .document-home-card h2 {
   margin: 0;
-  font-size: var(--text-body);
+  font-size: 15px;
   line-height: 1.6;
   font-weight: 550;
 }
 .document-home-card p {
   margin: 10px 0 0;
   color: var(--muted);
-  font-size: var(--text-body);
+  font-size: var(--text-secondary);
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
@@ -198,7 +198,7 @@
   color: var(--muted);
   max-width: 680px;
   margin: 18px 0 22px;
-  font-size: var(--text-body);
+  font-size: 15px;
   line-height: 1.8;
 }
 .document-meta {
@@ -223,7 +223,7 @@
   padding: 6px 0 6px 16px;
   border-left: 2px solid transparent;
   color: var(--muted);
-  font-size: var(--text-secondary);
+  font-size: var(--text-meta);
   line-height: 1.65;
   overflow-wrap: anywhere;
   text-decoration: none;
@@ -284,7 +284,7 @@
   width: 100%;
   min-width: 500px;
   border-collapse: collapse;
-  font-size: var(--text-secondary);
+  font-size: var(--text-meta);
   line-height: 1.7;
 }
 .document-table-scroll th,
@@ -309,7 +309,7 @@
 }
 .document-contact-note {
   color: var(--muted);
-  font-size: var(--text-secondary) !important;
+  font-size: var(--text-meta) !important;
 }
 .document-related {
   display: flex;
@@ -344,7 +344,7 @@
 }
 .document-section details p,
 .document-section details li {
-  font-size: var(--text-body);
+  font-size: var(--text-secondary);
   line-height: 1.9;
 }
 @media (max-width: 1180px) {

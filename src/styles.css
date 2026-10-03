@@ -10,10 +10,10 @@
   color-scheme: light;
   color: var(--ink);
   background: var(--paper);
-  --text-body: 16px;
-  --text-ui: 15px;
-  --text-secondary: 14px;
-  --text-meta: 13px;
+  --text-body: 14px;
+  --text-ui: 13px;
+  --text-secondary: 13px;
+  --text-meta: 12px;
   --text-caption: 12px;
   --canvas: #ffffff;
   --card-radius: 12px;
@@ -28,7 +28,7 @@
   --workspace-padding-top: 32px;
   --workspace-padding-bottom: 56px;
   --workspace-section-gap: 20px;
-  --workspace-heading-size: 27px;
+  --workspace-heading-size: 25px;
   --workspace-heading-weight: 600;
   --workspace-heading-letter-spacing: -0.025em;
   --sidebar-surface: #f7f7f8;
@@ -282,7 +282,7 @@ h1 {
   letter-spacing: -0.025em;
 }
 h2 {
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 600;
   line-height: 1.45;
   letter-spacing: -0.01em;
@@ -1208,7 +1208,7 @@ thead th {
 }
 .dialog-header h2,
 .drawer-header h2 {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
 }
 .dialog-body {
@@ -1628,7 +1628,7 @@ thead th {
     --workspace-padding-top: 24px;
     --workspace-padding-bottom: 40px;
     --workspace-section-gap: 22px;
-    --workspace-heading-size: 25px;
+    --workspace-heading-size: 23px;
     --card-padding: 18px;
     --card-gap: 16px;
   }
@@ -1714,7 +1714,7 @@ thead th {
   .search-field input:not([type='checkbox']):not([type='radio']):not([type='file']) {
     min-height: 42px;
     padding: 8px 0;
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .table-scroll-hint {
     display: block;

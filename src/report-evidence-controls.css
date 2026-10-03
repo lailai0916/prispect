@@ -11,17 +11,17 @@
 }
 .report-evidence-actions > .button {
   min-height: 32px;
-  font-size: 11px;
+  font-size: var(--text-ui);
   padding: 5px 10px;
 }
 .report-evidence-count {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
   line-height: 1.6;
 }
 .report-evidence-note {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
   margin: 7px 0 0;
 }

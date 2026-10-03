@@ -25,7 +25,7 @@
 .financial-source-step .form-section-heading h2,
 .financial-create-form .form-section-heading h2 {
   flex: 1;
-  font-size: 18px;
+  font-size: 15px;
 }
 .financial-source-actions {
   display: flex;
@@ -64,7 +64,7 @@
 }
 .financial-no-source h3 {
   margin: 16px 0 8px;
-  font-size: 18px;
+  font-size: 15px;
   color: var(--ink);
 }
 .financial-no-source p {
@@ -221,7 +221,7 @@
 }
 .cross-signal-check-heading h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 560;
   line-height: 1.65;
 }
@@ -602,7 +602,7 @@
     margin-top: 0;
   }
   .cross-signal-copy textarea {
-    font-size: var(--text-body);
+    font-size: 16px;
   }
   .financial-source-step,
   .financial-create-form {
@@ -610,7 +610,7 @@
   }
   .financial-create-page input,
   .financial-create-page .select-trigger {
-    font-size: var(--text-body);
+    font-size: 16px;
     min-height: 44px;
   }
   .financial-create-page input[type='radio'],

@@ -42,7 +42,7 @@
   overflow-wrap: anywhere;
 }
 .decision-list-row strong {
-  font-size: var(--text-ui);
+  font-size: 15px;
   font-weight: 550;
 }
 .decision-list-row span {
@@ -109,7 +109,7 @@
 .decision-explanations h3,
 .decision-evidence h3,
 .decision-known-conflicts h3 {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
 }
 .decision-input-section > .field-note {
@@ -119,7 +119,7 @@
   margin-top: 24px;
 }
 .decision-input-section h4 {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: 550;
 }
 .decision-flow-list {
@@ -363,7 +363,7 @@
   color: var(--muted);
 }
 .decision-options .decision-amount-unknown {
-  font-size: var(--text-body);
+  font-size: 16px;
   letter-spacing: 0;
   color: var(--muted);
 }
@@ -517,7 +517,7 @@
 }
 .decision-gate > summary > strong {
   flex: 1;
-  font-size: var(--text-ui);
+  font-size: var(--text-body);
   font-weight: 550;
 }
 .decision-gate > summary > svg {
@@ -595,7 +595,7 @@
   color: var(--muted);
 }
 .decision-explanations h4 {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 550;
 }
 .decision-explanations ol {
@@ -679,7 +679,7 @@
 }
 .decision-empty-evidence h4 {
   color: var(--ink);
-  font-size: 18px;
+  font-size: 15px;
   margin: 16px 0 8px;
 }
 .decision-empty-evidence p {
@@ -895,7 +895,7 @@
   .decision-evidence-form input,
   .decision-evidence-form .select-trigger,
   .decision-evidence-form textarea {
-    font-size: var(--text-body);
+    font-size: 16px;
     min-height: 44px;
   }
   .decision-input-form .purpose-option input {

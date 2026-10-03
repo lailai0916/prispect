@@ -31,7 +31,7 @@
 }
 .lab-header h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 550;
 }
 .lab-header > span {
@@ -334,7 +334,7 @@
   font-size: var(--text-meta);
 }
 .lab-inspector-heading h3 {
-  font-size: 18px;
+  font-size: 15px;
   margin: 12px 0 13px;
   font-weight: 550;
   line-height: 1.7;
@@ -432,7 +432,7 @@
 }
 .lab-distinguishing-records h4,
 .lab-source-section h4 {
-  font-size: 18px;
+  font-size: 12px;
   font-weight: 550;
   margin: 0 0 12px;
 }
@@ -597,7 +597,7 @@
   margin-bottom: 15px;
 }
 .lab-results-heading h3 {
-  font-size: 18px;
+  font-size: 14px;
   font-weight: 550;
   margin: 0;
   overflow-wrap: anywhere;
@@ -686,7 +686,7 @@
   min-width: 0;
 }
 .lab-clue-group h4 {
-  font-size: 18px;
+  font-size: 12px;
   display: flex;
   gap: 8px;
   align-items: baseline;

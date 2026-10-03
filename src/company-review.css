@@ -60,7 +60,7 @@
 .company-review h2,
 .company-review-details > summary {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 550;
   color: var(--ink);
   letter-spacing: -0.015em;
@@ -275,7 +275,7 @@
   max-width: 1000px;
 }
 .report-content.report-content-summary .verdict-section h2 {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 550;
   margin: 20px 0 10px;
 }
