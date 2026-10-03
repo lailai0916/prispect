@@ -274,6 +274,60 @@
   color: var(--ink);
 }
 
+.report-analysis-details {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+}
+
+.report-analysis-details > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 12px 0;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+}
+
+.report-analysis-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.report-analysis-details > summary svg {
+  color: var(--muted);
+  flex: 0 0 auto;
+  transform: rotate(-90deg);
+  transition: transform 160ms ease;
+}
+
+.report-analysis-details[open] > summary svg {
+  transform: none;
+}
+
+.report-analysis-details > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-small);
+}
+
+.report-analysis-content {
+  padding-top: 12px;
+}
+
+.report-content-summary #report-summary-findings > .company-review-section:first-child {
+  border-top: 0;
+  margin-top: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .report-analysis-details > summary svg {
+    transition: none;
+  }
+}
+
 @media (max-width: 720px) {
   .report-purpose-body {
     grid-template-columns: 1fr;
@@ -326,5 +380,18 @@
   .report-purpose-topline .purpose-switch,
   .report-purpose-body .text-link {
     display: none;
+  }
+
+  .report-content details::details-content {
+    display: block !important;
+    content-visibility: visible !important;
+  }
+
+  .report-analysis-details > summary {
+    display: none;
+  }
+
+  .report-analysis-content {
+    display: block !important;
   }
 }

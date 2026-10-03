@@ -127,6 +127,7 @@ export function CompanyFinancialFindings({
       row.scope === 'consolidated' &&
       row.period === 'annual' &&
       row.currency === 'CNY' &&
+      ['yuan', 'wan', 'yi'].includes(row.unit) &&
       ['netProfit', 'operatingCashFlow'].includes(row.key)
   );
   if (!rows?.length) return null;

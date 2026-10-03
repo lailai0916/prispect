@@ -67,6 +67,8 @@ const errorMessages: Record<string, string> = {
     'Enter a company short name or six-digit security code, up to 80 characters.',
   COMPANY_INPUT_INVALID:
     'The security code, organization ID or year is outside the supported range.',
+  COMPANY_MARKET_UNSUPPORTED:
+    'Research currently supports mainland A-share companies. US research is paused; saved records remain available.',
   COMPANY_IDENTITY_MISMATCH:
     'The code and organization ID did not match the official source. No similar company was substituted.',
   COMPANY_UPLOAD_BOUND:

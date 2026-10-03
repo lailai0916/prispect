@@ -52,11 +52,9 @@ import {
 import '../review-pages.css';
 import '../report-enhancements.css';
 import '../company-review.css';
-import '../risk-perspective.css';
-import { RiskOverview } from '../RiskOverview';
-import { RiskDetail } from '../RiskDetail';
 import { EvidenceLab } from '../EvidenceLab';
 import { buildReportEvidenceLab } from '../../shared/evidence-lab';
+import { reportCurrencyView } from '../../shared/report-currency-view';
 
 type ReviewExportFormat = 'html' | 'json' | 'checklist';
 type ReportSection = 'evidence' | 'explanations' | 'requests' | 'scope' | 'lab';
@@ -320,7 +318,7 @@ export function StageList({ task }: { task: AnalysisTask }) {
 
 export function ReportView({
   task,
-  report,
+  report: savedReport,
   onExport,
 }: {
   task: AnalysisTask;
@@ -328,6 +326,8 @@ export function ReportView({
   onExport?: (format: ReviewExportFormat) => void;
 }) {
   const { t, locale, execute, showEvidence, navigate, busy } = useApp();
+  const currencyView = reportCurrencyView(savedReport);
+  const report = currencyView.report;
   const purpose = task.purpose || 'external';
   const contextControl = useRef<ReviewContextHandle>(null);
   const [section, setSection] = useState<ReportSection>('evidence');
@@ -381,6 +381,43 @@ export function ReportView({
         : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
   return (
     <div className="report-content report-content-summary">
+      {currencyView.issues.length > 0 && (
+        <div className="warning-box" role="status">
+          <CircleAlert size={19} />
+          <div>
+            <p>
+              {t(
+                '这份报告包含非人民币或币种、单位不一致的金额。相关历史比例、同比和现金桥已暂停展示；可独立核对的人民币金额与比例保留。原始记录与来源未改动。',
+                'This report contains non-CNY amounts or inconsistent currencies and units. Dependent historical ratios, annual changes and cash bridges are withheld; independently valid CNY amounts and ratios remain. Original records and sources are unchanged.'
+              )}
+            </p>
+            <details>
+              <summary>{t('查看原始币种金额', 'Inspect original-currency amounts')}</summary>
+              {currencyView.issues.map((issue, index) => (
+                <p key={index}>
+                  {issue.year} · {metricName(issue.key, locale)} ·{' '}
+                  <span className="mono">
+                    {money(issue.value, locale, false)} {issue.unit}
+                  </span>{' '}
+                  <small>
+                    {t('原始单位', 'Original unit')}: {issue.unit} ·{' '}
+                    {t('币种字段', 'Currency field')}: {issue.currency || '—'}
+                  </small>{' '}
+                  {issue.sourceRefs.length > 0 && (
+                    <button
+                      className="text-link"
+                      onClick={() => showEvidence(issue.sourceRefs, report)}
+                    >
+                      {t('查看原文', 'View source')}
+                      <ArrowUpRight size={12} />
+                    </button>
+                  )}
+                </p>
+              ))}
+            </details>
+          </div>
+        </div>
+      )}
       <section className={`verdict-section verdict-${report.verdict}`}>
         <div className="verdict-topline">
           <VerdictTag verdict={report.verdict} />
@@ -395,8 +432,15 @@ export function ReportView({
         </div>
         <h2>{t('核查摘要', 'Review summary')}</h2>
         <p className="report-summary-text">
-          {report.verdict === 'conflict' || report.verdict === 'insufficient'
-            ? t(report.summary, englishSummary)
+          {currencyView.issues.length ||
+          report.verdict === 'conflict' ||
+          report.verdict === 'insufficient'
+            ? t(
+                report.summary,
+                currencyView.issues.length
+                  ? 'Currency or amount units need review. Dependent historical calculations are withheld; original records and sources remain.'
+                  : englishSummary
+              )
             : t(
                 report.year +
                   ' 年合并净利润' +
@@ -428,8 +472,22 @@ export function ReportView({
         </p>
         <details className="verdict-details">
           <summary>{t('计算与证据状态', 'Calculation and evidence status')}</summary>
-          <p>{t(report.headline, englishHeadline)}</p>
-          <p>{t(report.summary, englishSummary)}</p>
+          <p>
+            {t(
+              report.headline,
+              currencyView.issues.length
+                ? 'Currency-dependent interpretation is paused.'
+                : englishHeadline
+            )}
+          </p>
+          <p>
+            {t(
+              report.summary,
+              currencyView.issues.length
+                ? 'Original records and sources are retained; no currency conversion is performed.'
+                : englishSummary
+            )}
+          </p>
         </details>
         {!!report.crossSignals?.length && (
           <button
@@ -470,7 +528,7 @@ export function ReportView({
               {index < 2 ? (
                 <>
                   {t('上年度', 'Previous FY')} {money(metric?.previousValue ?? null, locale)}{' '}
-                  <small>CNY</small>
+                  <small>{metric?.unit === 'USD' ? 'USD' : 'CNY'}</small>
                 </>
               ) : (
                 <>{t('经营现金 / 合并净利润', 'Operating cash / consolidated net profit')}</>
@@ -496,6 +554,14 @@ export function ReportView({
       <div id="report-summary-findings" className="company-review">
         <section className="company-review-section">
           <h2>{t('核查事项', 'Review matters')}</h2>
+          {!report.findings.some((item) => item.basis !== 'management') && (
+            <p>
+              {t(
+                '目前没有可采用的解释，请先核对原件与检查结果。',
+                'No explanation is available for adoption yet. Review the original evidence and checks first.'
+              )}
+            </p>
+          )}
           <ol className="company-review-findings">
             {report.findings
               .filter((item) => item.basis !== 'management')
@@ -664,11 +730,6 @@ export function ReportView({
           <span>{t('分析依据与核查记录', 'Analysis evidence and review records')}</span>
         </summary>
         <div className="report-analysis-content">
-          <RiskOverview
-            report={report}
-            onSelectDimension={(key) => revealAnalysis(section, `risk-detail-${key}`)}
-          />
-          <RiskDetail report={report} />
           <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
             {(
               [
@@ -1175,7 +1236,15 @@ export function ReportView({
                             )
                         : t('AI 解读已完成', 'AI interpretation complete')}
                 </p>
-                {report.model.text && (
+                {currencyView.interpretationWithheld && (
+                  <p className="field-note">
+                    {t(
+                      '上方保留当时的模型执行状态；旧解读可能依赖本次暂停的计算，因此不再作为当前分析展示。模型原文仍保存在完整 JSON 中。',
+                      'The recorded model execution status is retained above. Its historical text may depend on the withheld calculations and is not shown as current analysis; the original text remains in the full JSON.'
+                    )}
+                  </p>
+                )}
+                {report.model.text && !currencyView.interpretationWithheld && (
                   <details className="model-explanation">
                     <summary>{t('查看 AI 解读', 'View AI interpretation')}</summary>
                     <div className="info-strip">

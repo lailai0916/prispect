@@ -1,6 +1,8 @@
 import { metricNames } from './format';
 
 const rules: Record<string, string> = {
+  '币种或金额单位待核对；相关历史计算暂停展示，原记录与来源保留。':
+    'Currency or amount units need review. Dependent historical calculations are withheld; original records and sources remain.',
   '输入存在混用或矛盾，系统保留来源并拒绝无声覆盖。请按问题单修复后再核查。':
     'The inputs are mixed or contradictory. Sources are retained without silently overwriting values. Resolve the evidence requests before reviewing again.',
   '原始文件已暂存于当前账号；请在24小时内确认保存，未确认文件会过期清理。确认后随材料保留，个人额度250MB。':
@@ -74,6 +76,12 @@ const rules: Record<string, string> = {
     'Parent-company and consolidated scopes cannot be mixed. Supply consolidated evidence.',
   '币种不是人民币；本次不进行汇率转换或混币种计算。':
     'The currency is not CNY. This review does not convert exchange rates or combine currencies.',
+  '同一指标存在不同币种；本次不进行汇率转换或混币种计算。':
+    'This metric has different currencies. No currency conversion or mixed-currency calculation is performed.',
+  '币种不是已确认的人民币；本次只核查人民币年度合并材料，不进行汇率转换或混币种计算。':
+    'The currency is not confirmed CNY. This review accepts annual consolidated CNY evidence and does not convert or combine currencies.',
+  '金额单位声明为美元，与人民币币种不一致；停止采用，请核对原表币种和单位。':
+    'The USD amount unit conflicts with the CNY currency. Adoption is stopped; check the source currency and unit.',
   '同一指标存在不同数值，保留双方来源并停止采用，不静默覆盖。':
     'This metric has conflicting values. Both sources are retained and neither is silently adopted.',
   '主体不一致，不能跨公司计算。':
