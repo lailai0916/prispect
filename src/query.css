@@ -18,6 +18,10 @@
   width: min(100%, 600px);
   margin: 0 auto;
 }
+.query-create-page:is([data-query-state='empty'], [data-query-state='loading'])
+  .query-create-content {
+  transform: translateY(-36px);
+}
 .query-create-heading {
   margin-bottom: 24px;
 }
