@@ -8,7 +8,6 @@ import {
   ArrowUpRight,
   CornerDownLeft,
   LoaderCircle,
-  MessageCircle,
   Plus,
   RefreshCw,
   Square,
@@ -22,6 +21,7 @@ import { CompanyAssistantContext } from './company-assistant-context';
 import { appendCompanyAnswer } from './company-question-state';
 import { useCompanyRecords } from './CompanyRecordsContext';
 import { COMPANY_RECORDS_EVENT } from './company-record-events';
+import { AssistantFish } from './AssistantFish';
 import './company-assistant.css';
 
 interface AssistantMessage {
@@ -385,7 +385,7 @@ export function CompanyAssistant({ route }: { route: string }) {
       >
         <header className="company-assistant-header">
           <div>
-            <MessageCircle size={18} aria-hidden="true" />
+            <AssistantFish happy={open} />
             <h2 id={`${panelId}-title`}>{t('析光助手', 'Prispect assistant')}</h2>
           </div>
           <div className="company-assistant-header-actions">
@@ -424,6 +424,10 @@ export function CompanyAssistant({ route }: { route: string }) {
         >
           {!messages.length && (
             <div className="company-assistant-empty">
+              <div className="company-assistant-welcome">
+                <AssistantFish happy />
+                <p>{t('你好呀，想一起看看什么？', 'Hi! What shall we look into?')}</p>
+              </div>
               <div className="company-assistant-suggestions">
                 {suggestions.map((question) => (
                   <button type="button" key={question} onClick={() => fillSuggestion(question)}>
@@ -591,7 +595,15 @@ export function CompanyAssistant({ route }: { route: string }) {
         aria-controls={panelId}
         onClick={() => (open ? close() : setOpen(true))}
       >
-        {open ? <X size={22} /> : <MessageCircle size={23} />}
+        <AssistantFish happy={open} />
+        {open && (
+          <span className="company-assistant-close-mark" aria-hidden="true">
+            <X size={12} />
+          </span>
+        )}
+        <span className="company-assistant-trigger-label" aria-hidden="true">
+          {open ? t('收起对话', 'Close chat') : t('问问小鱼', 'Ask me')}
+        </span>
       </button>
     </>
   );
