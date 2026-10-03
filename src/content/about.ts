@@ -1,7 +1,8 @@
 import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
+import { documentTitles } from './document-navigation';
 
 export const aboutDocument: ProductDocument = {
-  title: ['关于析光', 'About Prispect'],
+  title: documentTitles['/about'],
   description: [
     '企业资料核查与条件计算：从公开财报到具体安排。',
     'Company-evidence review and conditional calculations, from public financials to specific arrangements.',
@@ -123,7 +124,7 @@ export const aboutDocument: ProductDocument = {
           'Financial reviews can be compared and exported as HTML or JSON working papers. Private reviews can export the current version. Exports retain applicable conditions and do not create public sharing links.',
         ],
       ],
-      links: [{ label: ['阅读使用文档', 'Read the guide'], href: '/docs' }],
+      links: [{ label: documentTitles['/docs'], href: '/docs' }],
     },
     {
       id: 'limits-and-data',
@@ -140,7 +141,7 @@ export const aboutDocument: ProductDocument = {
       ],
       links: [
         { label: ['数据与隐私', 'Data and privacy'], href: '/privacy' },
-        { label: ['服务条款', 'Terms of service'], href: '/terms' },
+        { label: documentTitles['/terms'], href: '/terms' },
       ],
     },
   ],

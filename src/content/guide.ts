@@ -1,7 +1,8 @@
 import { DOCUMENT_VERSION, type ProductDocument } from './document';
+import { documentTitles } from './document-navigation';
 
 export const guideDocument: ProductDocument = {
-  title: ['使用文档', 'Documentation'],
+  title: documentTitles['/docs'],
   description: [
     '从公司分析到保存核查：评级依据、研究目标、材料与现金条件的使用方法。',
     'From company analysis to saved reviews: grading evidence, research goals, materials and cash conditions.',

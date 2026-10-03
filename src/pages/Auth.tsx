@@ -11,6 +11,7 @@ import {
 import type { LoginResult } from '../../shared/account-contracts';
 import { post } from '../api';
 import { useApp } from '../context';
+import { documentTitles } from '../content/document-navigation';
 import { identityClient, identityResult } from '../auth-client';
 import { loginDestination, ROUTE_CHANGE_EVENT } from '../routing';
 import '../account.css';
@@ -422,18 +423,18 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 href="/terms"
                 target="_blank"
                 rel="noreferrer"
-                aria-label={t('用户协议（新标签页）', 'Terms of service (new tab)')}
+                aria-label={`${t(...documentTitles['/terms'])}${t('（新标签页）', ' (new tab)')}`}
               >
-                {t('用户协议', 'Terms of service')}
+                {t(...documentTitles['/terms'])}
               </a>
               <span> · </span>
               <a
                 href="/privacy"
                 target="_blank"
                 rel="noreferrer"
-                aria-label={t('隐私政策（新标签页）', 'Privacy policy (new tab)')}
+                aria-label={`${t(...documentTitles['/privacy'])}${t('（新标签页）', ' (new tab)')}`}
               >
-                {t('隐私政策', 'Privacy policy')}
+                {t(...documentTitles['/privacy'])}
               </a>
             </p>
           </>

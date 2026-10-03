@@ -1,7 +1,8 @@
 import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
+import { documentTitles } from './document-navigation';
 
 export const copyrightDocument: ProductDocument = {
-  title: ['版权与许可', 'Copyright and licensing'],
+  title: documentTitles['/copyright'],
   description: [
     '区分析光代码许可、第三方内容与你提供的材料，保留来源和许可条件。',
     'Distinguishing the Prispect code license, third-party content and your materials, while retaining sources and license conditions.',

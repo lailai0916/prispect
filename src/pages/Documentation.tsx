@@ -3,6 +3,7 @@ import { ArrowUpRight, ChevronRight, Mail, Printer } from 'lucide-react';
 import { useApp } from '../context';
 import { DocumentLayout } from '../DocumentLayout';
 import type { ProductDocument } from '../content/document';
+import type { DocumentPath } from '../content/document-navigation';
 import { aboutDocument } from '../content/about';
 import { guideDocument } from '../content/guide';
 import { privacyDocument } from '../content/privacy';
@@ -10,7 +11,7 @@ import { termsDocument } from '../content/terms';
 import { copyrightDocument } from '../content/copyright';
 import '../styles/documentation.css';
 
-export type DocumentPath = '/about' | '/docs' | '/privacy' | '/terms' | '/copyright';
+export type { DocumentPath } from '../content/document-navigation';
 const documents: Record<DocumentPath, ProductDocument> = {
   '/about': aboutDocument,
   '/docs': guideDocument,

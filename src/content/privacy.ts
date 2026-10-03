@@ -1,7 +1,8 @@
 import { DOCUMENT_VERSION, type ProductDocument } from './document';
+import { documentTitles } from './document-navigation';
 
 export const privacyDocument: ProductDocument = {
-  title: ['隐私政策', 'Privacy policy'],
+  title: documentTitles['/privacy'],
   description: [
     '说明析光处理哪些信息、为什么处理，以及你可以怎样查看、更正和删除。',
     'What Prispect processes, why it is needed, and how to access, correct or delete it.',

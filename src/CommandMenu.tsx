@@ -17,6 +17,7 @@ import {
 import { Dialog } from './components';
 import { useCompanyRecords } from './CompanyRecordsContext';
 import { useApp } from './context';
+import { documentTitles } from './content/document-navigation';
 import { companyPath } from '../shared/company-workspace';
 
 type Destination = {
@@ -102,7 +103,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
         ];
     pages.push({
       id: 'docs',
-      label: t('使用文档', 'Documentation'),
+      label: t(...documentTitles['/docs']),
       path: '/docs',
       icon: BookOpen,
       group,

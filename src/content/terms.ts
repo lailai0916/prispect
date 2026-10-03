@@ -1,7 +1,8 @@
 import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
+import { documentTitles } from './document-navigation';
 
 export const termsDocument: ProductDocument = {
-  title: ['用户协议', 'Terms of service'],
+  title: documentTitles['/terms'],
   description: [
     '析光的服务范围、账号使用、材料权利与双方责任。重要责任条款单独标注。',
     'The scope of Prispect, account use, rights in materials, and responsibilities. Important liability provisions are highlighted.',
@@ -46,7 +47,7 @@ export const termsDocument: ProductDocument = {
           'Private cases use your payment, delivery, refund or dated cash-plan inputs to calculate conditional exposure and shortfalls, retaining versions of input and evidence changes.',
         ],
       ],
-      links: [{ label: ['查看使用文档', 'Read the user guide'], href: '/docs' }],
+      links: [{ label: documentTitles['/docs'], href: '/docs' }],
     },
     {
       id: 'accounts',
@@ -87,7 +88,7 @@ export const termsDocument: ProductDocument = {
           'Provide only content you are authorized to process and need for the review. Check authorization and restrictions for others’ personal information, trade secrets or restricted materials, and remove unnecessary details. Public accessibility is not automatic permission to republish.',
         ],
       ],
-      links: [{ label: ['查看版权说明', 'Read copyright information'], href: '/copyright' }],
+      links: [{ label: documentTitles['/copyright'], href: '/copyright' }],
     },
     {
       id: 'privacy',
@@ -102,7 +103,7 @@ export const termsDocument: ProductDocument = {
           'Reading or accepting these terms does not replace data-use notices or consent required by law. You may stop using the relevant features. Processing already performed and subsequent retention are governed by the privacy policy and applicable law.',
         ],
       ],
-      links: [{ label: ['查看隐私政策', 'Read the privacy policy'], href: '/privacy' }],
+      links: [{ label: documentTitles['/privacy'], href: '/privacy' }],
     },
     {
       id: 'conduct',

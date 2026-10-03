@@ -2,18 +2,10 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useApp } from './context';
 import { ROUTE_CHANGE_EVENT } from './routing';
+import { documentNavigation, type DocumentRoute } from './content/document-navigation';
 import './styles/documentation.css';
 
-export type DocumentRoute = '/about' | '/docs' | '/method' | '/privacy' | '/terms' | '/copyright';
-
-const documentNavigation = [
-  { path: '/about', label: ['产品介绍', 'Product overview'] },
-  { path: '/docs', label: ['使用文档', 'User guide'] },
-  { path: '/method', label: ['方法', 'Method'] },
-  { path: '/privacy', label: ['隐私政策', 'Privacy policy'] },
-  { path: '/terms', label: ['用户协议', 'Terms of service'] },
-  { path: '/copyright', label: ['版权声明', 'Copyright'] },
-] as const;
+export type { DocumentRoute } from './content/document-navigation';
 
 export interface DocumentHeading {
   id: string;

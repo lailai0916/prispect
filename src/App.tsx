@@ -33,7 +33,12 @@ import { lazyPage, resetFailedLazyPages } from './lazy-page';
 import { ThemeControl } from './ThemeControl';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
 import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
-import type { DocumentPath } from './pages/Documentation';
+import {
+  documentNavigation,
+  documentPaths,
+  documentTitles,
+  type DocumentPath,
+} from './content/document-navigation';
 import { CompanySidebar } from './CompanySidebar';
 import { CompanyRecordsProvider } from './CompanyRecordsContext';
 import { CommandMenu } from './CommandMenu';
@@ -119,7 +124,6 @@ const DocumentationPage = lazyPage(
   () => import('./pages/Documentation'),
   (module) => module.DocumentationPage
 );
-const documentPaths = ['/about', '/docs', '/privacy', '/terms', '/copyright'] as const;
 const publicPages = ['/', '/method', '/login', '/register', ...documentPaths];
 
 export function App() {
@@ -487,7 +491,7 @@ export function App() {
       <div className="sidebar-bottom">
         <a href="/docs" className="sidebar-method" onClick={() => setMenuOpen(false)}>
           <BookOpen size={16} />
-          {t('使用文档', 'Documentation')}
+          {t(...documentTitles['/docs'])}
         </a>
         {user && (
           <ActionMenu
@@ -534,7 +538,7 @@ export function App() {
               {business && <span className="header-context">{currentSection}</span>}
               {!business && page !== '/docs' && (
                 <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
-                  <a href="/docs">{t('文档', 'Docs')}</a>
+                  <a href="/docs">{t(...documentTitles['/docs'])}</a>
                 </nav>
               )}
               <div className="header-actions">
@@ -736,12 +740,11 @@ export function App() {
               <footer className="site-footer">
                 <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
                 <div>
-                  <a href="/about">{t('产品介绍', 'About')}</a>
-                  <a href="/docs">{t('使用文档', 'Documentation')}</a>
-                  <a href="/method">{t('方法', 'Method')}</a>
-                  <a href="/privacy">{t('隐私政策', 'Privacy')}</a>
-                  <a href="/terms">{t('用户协议', 'Terms')}</a>
-                  <a href="/copyright">{t('版权声明', 'Copyright')}</a>
+                  {documentNavigation.map((item) => (
+                    <a key={item.path} href={item.path}>
+                      {t(item.label[0], item.label[1])}
+                    </a>
+                  ))}
                 </div>
               </footer>
             )}
