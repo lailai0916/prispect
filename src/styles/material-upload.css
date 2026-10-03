@@ -37,6 +37,19 @@
   display: none;
 }
 
+.material-import-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.material-import-heading h2 {
+  margin: 0;
+}
+
+.material-import-heading .field-note {
+  margin: 4px 0 0;
+}
+
 .material-importer {
   min-width: 0;
 }
@@ -162,6 +175,7 @@
 .material-importer .inline-error {
   flex-wrap: wrap;
   margin-top: 16px;
+  scroll-margin-block: var(--dialog-body-padding, 16px);
 }
 
 .material-importer .inline-error > span {

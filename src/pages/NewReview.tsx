@@ -148,14 +148,16 @@ export function ImportDialog({
           finalFocus={returnFocus}
         >
           <div className="dialog-header">
-            <DialogPrimitive.Title>
-              {t('导入并确认材料', 'Import and confirm material')}
-            </DialogPrimitive.Title>
-            {saving && (
-              <span className="field-note" role="status">
-                {t('正在保存，请稍候…', 'Saving. Please wait…')}
-              </span>
-            )}
+            <div className="material-import-heading">
+              <DialogPrimitive.Title>
+                {t('导入并确认材料', 'Import and confirm material')}
+              </DialogPrimitive.Title>
+              {saving && (
+                <span className="field-note" role="status">
+                  {t('正在保存，请稍候…', 'Saving. Please wait…')}
+                </span>
+              )}
+            </div>
             <DialogPrimitive.Close
               className="icon-button"
               disabled={saving}
@@ -738,6 +740,7 @@ export function MaterialImporter({
   const [discardPrompt, setDiscardPrompt] = useState(false);
   const [error, setError] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
+  const errorDetail = useRef<HTMLDivElement>(null);
   const mounted = useRef(true);
   const activeRef = useRef(active);
   const previewRef = useRef(preview);
@@ -766,6 +769,13 @@ export function MaterialImporter({
   useEffect(() => {
     onDraftChange?.(Boolean(preview));
   }, [preview, onDraftChange]);
+  useEffect(() => {
+    if (!active || !error) return;
+    const frame = requestAnimationFrame(() => {
+      errorDetail.current?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [active, error]);
   const cancelOperation = useCallback(() => {
     if (!operation.current) return;
     generation.current++;
@@ -1492,7 +1502,7 @@ export function MaterialImporter({
         </form>
       )}
       {error && (
-        <div className="inline-error" role="alert">
+        <div className="inline-error" role="alert" ref={errorDetail}>
           <CircleAlert size={17} />
           <span>{error}</span>
           {!preview && lastFile.current && (

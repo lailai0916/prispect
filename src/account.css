@@ -249,9 +249,11 @@
   background: #30a46c;
 }
 .account-error {
+  min-width: 0;
   color: var(--red, #b94445);
   font-size: var(--text-secondary);
   line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 .account-notice {
   display: flex;
