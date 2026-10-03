@@ -6,10 +6,10 @@ import { deriveRiskPerspective, riskStatusText, type RiskStatus } from './riskDi
 import './risk-perspective.css';
 
 const statusColor: Record<RiskStatus, string> = {
-  good: '#34d399',
-  warn: '#f59e0b',
-  bad: '#ef4444',
-  unknown: '#8a8f98',
+  good: 'var(--status-good)',
+  warn: 'var(--status-warn)',
+  bad: 'var(--status-bad)',
+  unknown: 'var(--status-unknown)',
 };
 
 /** 公司状态对比：行对应公司，列对应有依据的核查维度。 */
@@ -41,12 +41,11 @@ export function RiskCompareMatrix({ tasks }: { tasks: AnalysisTask[] }) {
         </div>
       </div>
       <div className="risk-matrix-body">
-        {rows.map(({ task, perspective }, rowIndex) => (
+        {rows.map(({ task, perspective }) => (
           <button
             key={task.id}
             type="button"
             className="risk-matrix-row risk-matrix-data-row"
-            style={{ animationDelay: `${rowIndex * 90}ms` }}
             onClick={() => navigate(`/tasks/${task.id}`)}
             aria-label={`${task.company} · ${task.year}`}
           >
@@ -61,10 +60,7 @@ export function RiskCompareMatrix({ tasks }: { tasks: AnalysisTask[] }) {
               const color = statusColor[dimension.status];
               return (
                 <span className="risk-matrix-dim-col" key={dimension.key}>
-                  <i
-                    className="risk-matrix-cell"
-                    style={{ background: color, boxShadow: `0 0 6px ${color}55` }}
-                  />
+                  <i className="risk-matrix-cell" style={{ background: color }} />
                   <em style={{ color }}>
                     {t(riskStatusText[dimension.status].zh, riskStatusText[dimension.status].en)}
                   </em>

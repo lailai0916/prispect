@@ -1,6 +1,16 @@
 # API contract
 
-The canonical types live in `shared/contracts.ts`, `shared/account-contracts.ts`, `shared/company-contracts.ts`, `shared/company-market.ts` and `shared/decision-contracts.ts`. Success responses are direct JSON objects; failures use `{ error, code }` and a non-2xx status. Exports and source PDFs return files. The browser and API share an origin.
+The canonical types live in `shared/contracts.ts`, `shared/account-contracts.ts`, `shared/company-contracts.ts`, `shared/company-workspace.ts`, `shared/company-assessment.ts`, `shared/company-market.ts` and `shared/decision-contracts.ts`. Success responses are direct JSON objects; failures use `{ error, code }` and a non-2xx status. Exports and source PDFs return files. The browser and API share an origin.
+
+## Browser routes and presentation
+
+The main account navigation opens Research library (`/research`), Materials (`/materials`), and Payments and handovers (`/decisions`). `/research` reads the existing account-owned company-record endpoint below; it is not a new public research API. `/query` confirms a supported issuer before creating a company run. `/company?run=:id` presents one central report, with the seven company-section links shown only within the current company. Existing company-section, original-report, task, payment and handover links remain compatible. Entry drafts remain account-scoped; anonymous original-report examples use `/api/public/examples` without new model work.
+
+The central report presents a concise summary, transparent financial grade, three key values and at most three priorities before next checks. `shared/company-research-view.ts` derives four display stages from recorded events: `sources`, `investigate`, `synthesize` and `review`. This read-only presentation does not start research, alter a grade or create a new API response contract. Unknown attempt counts remain unknown. Previous analyses and current source snapshots retain their separate timestamps and scope; a running or failed job does not borrow the previous report's completed execution history.
+
+Explanation trials, six-dimension analysis and original-review tools expand further down. No Plain/Pro or public/management reading mode is required. Financial `parent`/`consolidated` basis controls and external/handover purpose values are retained. News and discussion lists initially show six acquired items; expanded browsing filters and sorts locally, with twelve-item pages and selected-source reading. This is client-side pagination of an acquired catalog, not a new server search or request for complete article bodies.
+
+The current reconstruction is code in the working tree. Its isolated browser replay evidence remains to be recorded, no new live Grok research has been run this round, and the deployment remains blocked by the prior storage-pressure rollback. See [the reconstruction and acceptance record](rebuild-plan.md); an API description does not establish successful production release.
 
 ## Accounts and access
 
@@ -192,19 +202,31 @@ The plan is `{asOf, openingCash, periods}` with a valid calendar date, nonnegati
 
 The client-only `calculateCashStress` experiment uses the saved plan, an integer collection percentage (0–100), a 0/30-day delay and an extra first-interval payment. Collections are multiplied by the percentage and rounded down to cents. A delay shifts the first two intervals into the following interval and moves the last beyond day 90. The minimum percentage is the smallest whole percent keeping all three period-end balances nonnegative under the selected delay and extra payment. Unknown inputs or an infeasible scenario produce explicit unavailable results. This is an assumption-based sensitivity calculation, not a daily cash forecast, probability or company rating. Stress controls are temporary; the saved plan is persistent.
 
-## Company workspace extensions (version C)
+## Company research and workspace extensions
 
 Public snapshots automatically schedule company research after retrieval. Optional run fields include `assessment`, `assessmentStatus`, `assessmentError`, `assessmentRevision`, `assessmentInputHash`, `assessmentFocus` and `assessmentTrace`; `shared/company-assessment.ts` defines scores, source-bound judgments and actual research steps. Manual assessment requests have a separate twelve-per-hour account budget; cached reads consume no model work. Omitted focus retains the saved goal, an empty string restores standard research, and changing an active goal returns 409. Identical in-flight requests return 202. Results are bound to the public snapshot and revision: a changed or deleted record cannot receive an older result. Failed refreshes retain the previous analysis with its original snapshot timestamp. Model configuration/output failure retains transparent rule results. The public capabilities endpoint indicates configuration, not successful provider verification. See [the research method and budgets](company-research-agent.md).
 
 These endpoints require the existing account session; writes require the existing origin and CSRF checks. Every company ID is resolved inside the signed-in user's store.
 
-| Method and path                       | Input                                                                 | Response / effect                                                                                                               |
-| ------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| GET /api/company-records              | —                                                                     | Lightweight `CompanyRecordSummary[]` for sidebar history, excluding evidence and full snapshots                                 |
-| POST /api/company-gaps                | `{ name, year, purpose }`                                             | Saves an information-gap record only if official search has no candidates; never fabricates financial fields                    |
-| POST /api/company-runs/:id/context    | `{ refresh?: boolean }`                                               | Returns the record; 202 while a deduplicated retrieval job runs. GET the existing run endpoint for intermediate/final snapshots |
-| POST /api/company-runs/:id/assessment | `{ refresh?: boolean, focus?: string }`                               | Returns the record; cached 200 or research job 202. Focus ≤1,000 characters; poll GET run for actual steps and final assessment |
-| POST /api/company-runs/:id/industry   | `{ period: "YYYY-12-31", refresh?: boolean }`                         | `{ snapshot, stale, cached, warning? }`; failures may retain an earlier cached snapshot with its original timestamp             |
-| POST /api/company-runs/:id/questions  | `{ question, basis: "parent" \| "consolidated", useModel?: boolean }` | A snapshot-bound `CompanyQuestionAnswer`; configured model with rule fallback, last fifty answers retained                      |
+| Method and path                       | Input                                                                 | Response / effect                                                                                                                    |
+| ------------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| GET /api/company-records              | —                                                                     | Lightweight account-owned `CompanyRecordSummary[]` for navigation, recent research and `/research`; excludes evidence/full snapshots |
+| POST /api/company-gaps                | `{ name, year, purpose }`                                             | Saves an information-gap record only if official search has no candidates; never fabricates financial fields                         |
+| POST /api/company-runs/:id/context    | `{ refresh?: boolean }`                                               | Returns the record; 202 while a deduplicated retrieval job runs. GET the existing run endpoint for intermediate/final snapshots      |
+| POST /api/company-runs/:id/assessment | `{ refresh?: boolean, focus?: string }`                               | Returns the record; cached 200 or research job 202. Focus ≤1,000 characters; poll GET run for actual steps and final assessment      |
+| POST /api/company-runs/:id/industry   | `{ period: "YYYY-12-31", refresh?: boolean }`                         | `{ snapshot, stale, cached, warning? }`; failures may retain an earlier cached snapshot with its original timestamp                  |
+| POST /api/company-runs/:id/questions  | `{ question, basis: "parent" \| "consolidated", useModel?: boolean }` | A snapshot-bound `CompanyQuestionAnswer`; configured model with rule fallback, last fifty answers retained                           |
+
+Each company-record summary retains `id`, `input={securityCode,orgId,year}`, `name`, `status` and `createdAt`, with optional `updatedAt`, `contextStatus`, `assessmentStatus`, `informationGap` and `deletionBlocked`. When a usable saved assessment exists, an optional `result` contains only:
+
+| Field               | Meaning                                                                                                     |
+| ------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `grade`, `score`    | Saved deterministic financial screen; `score` can be `null`, and `NR` withholds a grade                     |
+| `statement={zh,en}` | Server-derived bilingual summary from the saved assessment or its rule results                              |
+| `asOf`              | Saved assessment's public-snapshot retrieval timestamp, not the time of this list request                   |
+| `stale`             | Whether the saved assessment no longer matches the current snapshot/year, or the current snapshot is absent |
+| `modelStatus`       | Saved assessment status: `completed`, `not-configured`, `failed` or `not-called`                            |
+
+The summary omits the full context, assessment, evidence excerpts, source catalog and question history. GET does not trigger retrieval or model work. `stale=false` does not indicate that all work is idle: consumers also inspect the current context/assessment states and `deletionBlocked`. A saved result during an interrupted refresh retains its original `asOf` and model status rather than impersonating a new completed analysis. Client filtering/sorting uses these summaries locally, and account changes clear the shared subscription before another owner's records are rendered.
 
 `shared/company-workspace.ts` and `shared/company-analysis.ts` define these extensions. Company-question requests normalize `useModel` to true, including false or omitted legacy values; missing evidence, unconfigured models and failed calls retain rule answers. Local product help does not call this endpoint or an external model. Old records remain compatible because extension fields are optional. Context/industry caches last 24 hours unless explicitly refreshed. Source outages, incomplete pagination and subject conflicts remain explicit; webpage amounts are never adopted into original-report materials automatically. See [the integration record](version-c-integration.md) for budgets and validation scope.

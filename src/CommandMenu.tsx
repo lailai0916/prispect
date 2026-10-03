@@ -15,9 +15,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Dialog } from './components';
-import { api, requestErrorText } from './api';
+import { useCompanyRecords } from './CompanyRecordsContext';
 import { useApp } from './context';
-import { companyPath, type CompanyRecordSummary } from '../shared/company-workspace';
+import { companyPath } from '../shared/company-workspace';
 
 type Destination = {
   id: string;
@@ -30,47 +30,35 @@ type Destination = {
 };
 
 export function CommandMenu({ onClose }: { onClose: () => void }) {
-  const { t, locale, workspace, user, navigate } = useApp();
+  const { t, workspace, user, navigate } = useApp();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
-  const [records, setRecords] = useState<CompanyRecordSummary[]>([]);
-  const [loading, setLoading] = useState(Boolean(user));
-  const [error, setError] = useState('');
-  const [attempt, setAttempt] = useState(0);
+  const { records, loading, error, reload } = useCompanyRecords();
   const [closing, setClosing] = useState(false);
   const destination = useRef<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     input.current?.focus();
-    if (!user) return;
-    const controller = new AbortController();
-    setLoading(true);
-    void api<CompanyRecordSummary[]>('/company-records', { signal: controller.signal })
-      .then((next) => {
-        if (!controller.signal.aborted) {
-          setRecords(next);
-          setError('');
-        }
-      })
-      .catch((cause) => {
-        if (!controller.signal.aborted) setError(requestErrorText(cause, locale));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
-  }, [user?.id, locale, attempt]);
+  }, []);
   const results = useMemo(() => {
     const group = t('页面', 'Pages');
     const pages: Destination[] = user
       ? [
           {
             id: 'query',
-            label: t('新建查询', 'New query'),
+            label: t('新建研究', 'New research'),
             path: '/query',
             icon: Plus,
             group,
             keywords: '公司 company lookup 查询',
+          },
+          {
+            id: 'research',
+            label: t('研究库', 'Research library'),
+            path: '/research',
+            icon: Building2,
+            group,
+            keywords: '研究 公司 查询 history records research',
           },
           {
             id: 'workspace',
@@ -270,7 +258,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
       {error && (
         <p className="command-error" role="alert">
           {t('企业记录暂时无法读取。', 'Company records are unavailable.')}{' '}
-          <button className="text-link" onClick={() => setAttempt((value) => value + 1)}>
+          <button className="text-link" onClick={() => void reload()}>
             {t('重试', 'Retry')}
           </button>
           <span className="sr-only">{error}</span>

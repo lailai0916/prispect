@@ -3,14 +3,14 @@ import { useContext, useEffect, useId, useRef, useState, type FormEvent } from '
 import { ArrowUp, BookOpen, LoaderCircle, MessageCircle, RefreshCw, X } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type { CompanyReadingBasis } from '../shared/company-analysis';
-import type { CompanyRecordSummary, CompanyQuestionAnswer } from '../shared/company-workspace';
+import type { CompanyQuestionAnswer } from '../shared/company-workspace';
 import { companyPath } from '../shared/company-workspace';
 import { api, requestErrorText } from './api';
 import { useApp } from './context';
 import { CompanyAssistantContext } from './company-assistant-context';
 import { CompanyQuestionsView } from './CompanyQuestionsView';
 import { appendCompanyAnswer } from './company-question-state';
-import { COMPANY_RECORDS_EVENT } from './CompanySidebar';
+import { useCompanyRecords } from './CompanyRecordsContext';
 import './home.css';
 import './company-assistant.css';
 
@@ -20,9 +20,14 @@ export function CompanyAssistant({ route }: { route: string }) {
   const query = new URLSearchParams(route.split('?')[1]);
   const routeRun = route.split('?')[0] === '/company' ? query.get('run') : null;
   const [open, setOpen] = useState(false);
-  const [records, setRecords] = useState<CompanyRecordSummary[]>([]);
-  const [recordsLoaded, setRecordsLoaded] = useState(false);
-  const [recordsError, setRecordsError] = useState('');
+  const {
+    records: savedRecords,
+    loading: recordsLoading,
+    error: recordsError,
+    reload,
+  } = useCompanyRecords();
+  const records = [...savedRecords].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const recordsLoaded = !recordsLoading;
   const [selected, setSelected] = useState(routeRun || company?.run.id || '');
   const [loadedRun, setLoadedRun] = useState<CompanyResearchRun | null>(null);
   const [loading, setLoading] = useState(false);
@@ -85,38 +90,13 @@ export function CompanyAssistant({ route }: { route: string }) {
     return () => cancelAnimationFrame(frame);
   }, [open, mode, run?.id, Boolean(run?.context)]);
   useEffect(() => {
-    if (!open || !user) return;
-    const controller = new AbortController();
-    let generation = 0;
-    const load = async () => {
-      const currentGeneration = ++generation;
-      try {
-        const next = await api<CompanyRecordSummary[]>('/company-records', {
-          signal: controller.signal,
-        });
-        if (controller.signal.aborted || currentGeneration !== generation) return;
-        const sorted = next.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-        setRecords(sorted);
-        setRecordsLoaded(true);
-        setRecordsError('');
-        setSelected((previous) =>
-          sorted.some((record) => record.id === previous) || previous === routeRun
-            ? previous
-            : sorted[0]?.id || ''
-        );
-      } catch (cause) {
-        if (!controller.signal.aborted && currentGeneration === generation)
-          setRecordsError(requestErrorText(cause, locale));
-      }
-    };
-    void load();
-    const update = () => void load();
-    window.addEventListener(COMPANY_RECORDS_EVENT, update);
-    return () => {
-      controller.abort();
-      window.removeEventListener(COMPANY_RECORDS_EVENT, update);
-    };
-  }, [open, user?.id, locale, retry, routeRun]);
+    if (!open || !user || recordsLoading || recordsError) return;
+    setSelected((previous) =>
+      savedRecords.some((record) => record.id === previous) || previous === routeRun
+        ? previous
+        : [...savedRecords].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.id || ''
+    );
+  }, [open, user?.id, savedRecords, recordsLoading, recordsError, routeRun]);
   useEffect(() => {
     if (!open || !user) return;
     if (!selected || current) {
@@ -172,8 +152,8 @@ export function CompanyAssistant({ route }: { route: string }) {
     if (!question) return;
     const text = /查询|搜索|开始|search|start|query/i.test(question)
       ? t(
-          '登录后点击“新建查询”，输入公司名称或证券代码，选择候选企业。概览会先显示，年报原件在后台继续核查。',
-          'Sign in, open New query, and enter a company name or security code. Select a matching entity; context appears while originals are checked in the background.'
+          '登录后点击“新建研究”，输入公司名称或证券代码，确认候选企业。报告会展示公开资料分析，年报原件在后台继续核查。',
+          'Sign in, open New research, and enter a company name or security code. Confirm the entity to see public-source analysis while originals are checked in the background.'
         )
       : /来源|数据|出处|缺失|source|data|missing/i.test(question)
         ? t(
@@ -326,7 +306,13 @@ export function CompanyAssistant({ route }: { route: string }) {
               {(recordsError || loadError) && (
                 <p className="context-data-note" role="alert">
                   {recordsError || loadError}
-                  <button className="text-link" onClick={() => setRetry((value) => value + 1)}>
+                  <button
+                    className="text-link"
+                    onClick={() => {
+                      setRetry((value) => value + 1);
+                      if (recordsError) void reload();
+                    }}
+                  >
                     <RefreshCw size={12} />
                     {t('重试', 'Retry')}
                   </button>

@@ -12,6 +12,7 @@ import { retrieveIndustrySnapshot } from './company-industry.js';
 import { answerCompanyQuestion } from './company-questions.js';
 import { analyzeCompanyWithModel } from './company-assessment.js';
 import { runCompanyResearchAgent } from './company-research-agent.js';
+import { deriveCompanyResearchBrief } from '../shared/company-research-view.js';
 
 export interface CompanyContextService {
   searchCompanies: typeof searchCompanies;
@@ -195,10 +196,10 @@ export function installCompanyContextRoutes(
           finishedAt: new Date().toISOString(),
           summary:
             result.model.status === 'completed'
-              ? '已生成六维判断，评级和指标由规则计算，引用已通过检查。'
+              ? '已形成有来源的分析判断；财务评级与指标保持规则计算结果。'
               : result.model.status === 'not-configured'
-                ? 'AI 尚未配置，已生成公开数据的规则评级与判断。'
-                : 'AI 未返回有效分析，已保留规则评级与判断。',
+                ? 'AI 服务尚未配置；已保留公开数据的规则结果，没有生成 AI 判断。'
+                : 'AI 分析未完成或未通过来源检查；已保留规则结果，没有发布新的 AI 判断。',
         };
         const completedSteps = [
           ...researched.steps,
@@ -326,28 +327,50 @@ export function installCompanyContextRoutes(
   app.get('/api/company-records', (_req, res) => {
     const store = res.locals.store as WorkspaceStore;
     res.json(
-      (store.state.companyRuns || []).map((run) => ({
-        id: run.id,
-        input: {
-          securityCode: run.input.securityCode,
-          orgId: run.input.orgId,
-          year: run.input.year,
-        },
-        name:
-          run.informationGap?.name ||
-          run.identity?.shortName ||
-          run.context?.companyName ||
-          run.input.securityCode,
-        status: run.status,
-        createdAt: run.createdAt,
-        deletionBlocked:
-          options.deletionBlocked?.(run) ||
-          run.status === 'queued' ||
-          run.status === 'running' ||
-          run.contextStatus === 'loading' ||
-          run.assessmentStatus === 'loading' ||
-          run.challenge?.status === 'loading',
-      }))
+      (store.state.companyRuns || []).map((run) => {
+        const brief = deriveCompanyResearchBrief(run);
+        return {
+          id: run.id,
+          input: {
+            securityCode: run.input.securityCode,
+            orgId: run.input.orgId,
+            year: run.input.year,
+          },
+          name:
+            run.informationGap?.name ||
+            run.identity?.shortName ||
+            run.context?.companyName ||
+            run.input.securityCode,
+          status: run.status,
+          createdAt: run.createdAt,
+          updatedAt: run.updatedAt,
+          contextStatus: run.contextStatus,
+          assessmentStatus: run.assessmentStatus,
+          informationGap: Boolean(run.informationGap),
+          ...(run.assessment && brief.mode !== 'none'
+            ? {
+                result: {
+                  grade: run.assessment.grade,
+                  score: run.assessment.score,
+                  statement: brief.summary.text,
+                  asOf: run.assessment.snapshotFetchedAt,
+                  stale:
+                    !run.context ||
+                    run.assessment.snapshotFetchedAt !== run.context.fetchedAt ||
+                    run.assessment.year !== run.input.year,
+                  modelStatus: run.assessment.model.status,
+                },
+              }
+            : {}),
+          deletionBlocked:
+            options.deletionBlocked?.(run) ||
+            run.status === 'queued' ||
+            run.status === 'running' ||
+            run.contextStatus === 'loading' ||
+            run.assessmentStatus === 'loading' ||
+            run.challenge?.status === 'loading',
+        };
+      })
     );
   });
   app.post(

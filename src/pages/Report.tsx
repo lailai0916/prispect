@@ -93,7 +93,7 @@ export function TaskPage({ id }: { id: string }) {
   };
   const report = task.report;
   return (
-    <>
+    <div className="review-report-page">
       <div className="breadcrumb">
         <a href="/workspace">{t('财报核查', 'Financial reviews')}</a>
         <ChevronRight size={14} />
@@ -226,7 +226,7 @@ export function TaskPage({ id }: { id: string }) {
           onClose={() => setExportFormat(null)}
         />
       )}
-    </>
+    </div>
   );
 }
 
