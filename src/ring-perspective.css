@@ -256,7 +256,10 @@
   font-size: 12px;
   color: var(--ringp-sub, #8fa0bd);
   letter-spacing: 0.4px;
-  max-width: 92%;
+  max-width: 100%;
+  line-height: 1.5;
+  padding: 0 6px;
+  overflow-wrap: break-word;
 }
 .ringp-meter {
   width: 150px;
@@ -274,11 +277,12 @@
   animation: ringp-meter-fill 1.1s cubic-bezier(0.25, 0.8, 0.25, 1) both;
 }
 .ringp-hint {
-  margin-top: 12px;
+  margin-top: 14px;
   font-size: 11.5px;
   color: var(--ringp-muted, #5d6b84);
   letter-spacing: 0.4px;
   min-height: 15px;
+  padding: 0 6px;
 }
 
 /* 来源检查圆点 */
@@ -639,14 +643,24 @@
 
 @media (max-width: 600px) {
   .ringp-nodes {
-    gap: 6px;
+    gap: 4px 6px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    width: 100%;
+    margin-top: 16px;
   }
   .ringp-node {
-    padding: 6px 6px;
+    padding: 6px 4px;
+    gap: 5px;
   }
   .ringp-node-ico {
-    width: 46px;
-    height: 46px;
+    width: 44px;
+    height: 44px;
+  }
+  .ringp-node-label {
+    font-size: 11.5px;
+    line-height: 1.35;
+    max-width: 100%;
   }
   .ringp-ticks {
     inset: -9px;
@@ -656,6 +670,15 @@
   .ringp-scope {
     flex-basis: 100%;
     order: 3;
+  }
+  .ringp-head {
+    gap: 8px;
+  }
+  .ringp-meter {
+    width: 130px;
+  }
+  .ringp-big {
+    font-size: clamp(30px, 9vw, 44px);
   }
 }
 

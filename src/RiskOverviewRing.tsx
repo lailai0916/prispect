@@ -470,7 +470,7 @@ function ReputationCenter({
       </span>
       <span className="ringp-sub">
         {count > 0
-          ? t('公开报道 · 仅列出不判断', 'Public coverage · listed, not judged')
+          ? t('只看报道 · 不下判断', 'Listed only · no judgment')
           : t(dimension.summary.zh, dimension.summary.en)}
       </span>
     </div>
