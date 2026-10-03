@@ -29,8 +29,8 @@ function opticalPoints(count: number): OpticalPoint[] {
   });
 }
 
-/** Local optical motion around the generated prism; no account or financial data. */
-export function HeroField() {
+/** Local optical geometry; optional artwork, no account or financial data. */
+export function HeroField({ artwork = true }: { artwork?: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const image = useRef<HTMLImageElement>(null);
@@ -39,7 +39,7 @@ export function HeroField() {
     const scene = root.current;
     const surface = canvas.current;
     const prism = image.current;
-    if (!scene || !surface || !prism) return;
+    if (!scene || !surface || (artwork && !prism)) return;
     const hero = scene.closest<HTMLElement>('.showcase-hero') || scene;
     const context = surface.getContext('2d', { alpha: true });
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -59,7 +59,7 @@ export function HeroField() {
     const position = { x: 0, y: 0 };
 
     const markReady = () => {
-      if (!disposed && initialized && prism.complete && prism.naturalWidth > 0)
+      if (!disposed && initialized && (!artwork || (prism?.complete && prism.naturalWidth > 0)))
         scene.dataset.heroReady = 'true';
     };
     const queryFocused = () =>
@@ -195,7 +195,7 @@ export function HeroField() {
       points = opticalPoints(pointer.matches && width > 650 ? 500 : 180);
       draw(reduced.matches ? 0 : elapsed);
       initialized = true;
-      scene.dataset.heroRendering = context ? 'canvas' : 'image';
+      scene.dataset.heroRendering = context ? 'canvas' : 'static';
       markReady();
       reconcile();
     };
@@ -231,7 +231,7 @@ export function HeroField() {
       { rootMargin: '80px' }
     );
     intersection.observe(scene);
-    prism.addEventListener('load', markReady);
+    prism?.addEventListener('load', markReady);
     hero.addEventListener('pointermove', move, { passive: true });
     hero.addEventListener('pointerleave', reset, { passive: true });
     hero.addEventListener('focusin', focusIn);
@@ -246,7 +246,7 @@ export function HeroField() {
       cancelAnimationFrame(frame);
       observer.disconnect();
       intersection.disconnect();
-      prism.removeEventListener('load', markReady);
+      prism?.removeEventListener('load', markReady);
       hero.removeEventListener('pointermove', move);
       hero.removeEventListener('pointerleave', reset);
       hero.removeEventListener('focusin', focusIn);
@@ -255,23 +255,25 @@ export function HeroField() {
       reduced.removeEventListener('change', reconcile);
       pointer.removeEventListener('change', resize);
     };
-  }, []);
+  }, [artwork]);
 
   return (
     <div ref={root} className="showcase-paper-scene hero-field" aria-hidden="true">
       <canvas ref={canvas} className="hero-field-canvas" />
-      <div className="showcase-paper-follow hero-field-prism">
-        <img
-          ref={image}
-          className="showcase-paper"
-          src="/showcase/optical-prism.webp"
-          width="1254"
-          height="1254"
-          alt=""
-          fetchPriority="high"
-          draggable="false"
-        />
-      </div>
+      {artwork && (
+        <div className="showcase-paper-follow hero-field-prism">
+          <img
+            ref={image}
+            className="showcase-paper"
+            src="/showcase/optical-prism.webp"
+            width="1254"
+            height="1254"
+            alt=""
+            fetchPriority="high"
+            draggable="false"
+          />
+        </div>
+      )}
     </div>
   );
 }

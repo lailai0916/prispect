@@ -19,7 +19,7 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 3,
+  version: 4,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: false,
@@ -114,40 +114,22 @@ async function staticOptics(page, name) {
   await page.mouse.move(24, 200);
   await page.mouse.move(page.viewportSize().width - 24, 300);
   await page.waitForTimeout(180);
-  assert.equal(await canvasStamp(page), before, `${name} optical canvas continues animating`);
+  assert.equal(await canvasStamp(page), before, `${name} ambient canvas continues animating`);
   receipt.opticalInteraction.push({ name, canvasStatic: true });
-  check(`${name}: loaded optical artwork remains static under reduced motion`);
+  check(`${name}: ambient hero remains static under reduced motion`);
 }
 async function pointerOptics(page) {
   const scene = page.locator('[data-hero-ready="true"]');
   assert.equal(await scene.getAttribute('data-hero-rendering'), 'canvas');
+  assert.equal(await page.locator('.showcase-home img[src$="optical-prism.webp"]').count(), 0);
   await page.mouse.move(110, 290, { steps: 10 });
-  await page.waitForFunction(
-    () =>
-      parseFloat(
-        document.querySelector('.showcase-hero').style.getPropertyValue('--showcase-pointer-x')
-      ) < 20
-  );
   await page.waitForTimeout(950);
   const left = await canvasStamp(page);
-  const leftTransform = await page
-    .locator('.hero-field-prism')
-    .evaluate((element) => getComputedStyle(element).transform);
   await capture(page, 'lite-hero-pointer-left');
   await page.mouse.move(page.viewportSize().width - 110, 380, { steps: 10 });
-  await page.waitForFunction(
-    () =>
-      parseFloat(
-        document.querySelector('.showcase-hero').style.getPropertyValue('--showcase-pointer-x')
-      ) > 80
-  );
   await page.waitForTimeout(950);
   const right = await canvasStamp(page);
-  const rightTransform = await page
-    .locator('.hero-field-prism')
-    .evaluate((element) => getComputedStyle(element).transform);
-  assert.notEqual(right, left, 'Optical canvas does not change between live pointer states');
-  assert.notEqual(rightTransform, leftTransform, 'Optical prism does not follow pointer position');
+  assert.notEqual(right, left, 'Ambient canvas does not change during active motion');
   await capture(page, 'lite-hero-pointer-right');
   const input = page.locator('.showcase-search textarea');
   await input.focus();
@@ -162,13 +144,13 @@ async function pointerOptics(page) {
     'Query focus does not pause the decorative canvas'
   );
   receipt.opticalInteraction.push({
-    name: 'desktop pointer',
+    name: 'desktop ambient hero',
     canvasChanged: true,
-    prismTransformChanged: true,
+    repeatedHeroArtworkRemoved: true,
     queryFocusPausedCanvas: true,
   });
   check(
-    'Optical canvas and prism respond to pointer; query focus pauses canvas without submitting'
+    'Ambient hero animates without repeated artwork; query focus pauses canvas without submitting'
   );
   await input.blur();
   await page.mouse.move(0, 0);
@@ -211,11 +193,252 @@ async function emptyRecentReports(page, name) {
     `${name}: keyboard recent-report toggle preserves empty owning guest state without research writes`
   );
 }
+async function companyCandidates(page, name) {
+  const input = page.locator('.showcase-search textarea');
+  const writesBefore = receipt.researchWrites.length;
+  await input.focus();
+  const list = page.locator('.showcase-search .company-completions[role="listbox"]');
+  await list.waitFor();
+  await list.locator('[role="option"]').filter({ hasText: '松原安全' }).waitFor();
+  assert.equal(await input.getAttribute('aria-expanded'), 'true');
+  assert.equal(await input.getAttribute('aria-controls'), await list.getAttribute('id'));
+  await page.keyboard.press('ArrowDown');
+  const activeId = await input.getAttribute('aria-activedescendant');
+  assert.ok(activeId);
+  const active = list.locator(`[role="option"][id="${activeId}"]`);
+  assert.equal(await active.getAttribute('aria-selected'), 'true');
+  assert.equal(await active.locator('.company-completion-code').innerText(), '300893');
+  await noOverflow(page, `${name} native company chooser`);
+  await capture(page, `${name}-company-candidates`);
+  await page.keyboard.press('Escape');
+  await list.waitFor({ state: 'hidden' });
+  assert.equal(await input.inputValue(), '松原安全');
+  assert.equal(await input.evaluate((element) => document.activeElement === element), true);
+  assert.equal(receipt.researchWrites.length, writesBefore);
+  check(
+    `${name}: real public-catalog company candidates support ArrowDown/Escape while retaining the draft without research submission`
+  );
+}
+async function signalChannels(page, name) {
+  await scrollScene(page, '.showcase-signal-stage', 110);
+  const stage = page.locator('.showcase-signal-stage[data-signal-ready="true"]');
+  await stage.waitFor();
+  const writesBefore = receipt.researchWrites.length;
+  const tabs = stage.locator('.signal-channel-tabs button[role="tab"]');
+  assert.equal(await tabs.count(), 4);
+  const selected = async (index, channel) => {
+    await page.waitForFunction(
+      (channel) =>
+        document.querySelector('.showcase-signal-stage')?.getAttribute('data-channel') === channel,
+      channel
+    );
+    assert.equal(await tabs.nth(index).getAttribute('aria-selected'), 'true');
+    assert.equal(await tabs.nth(index).getAttribute('tabindex'), '0');
+    assert.equal(await stage.locator('[role="tab"][aria-selected="true"]').count(), 1);
+    const tabId = await tabs.nth(index).getAttribute('id');
+    const panelId = await tabs.nth(index).getAttribute('aria-controls');
+    const panel = stage.locator(`[role="tabpanel"][id="${panelId}"]`);
+    assert.equal(await panel.isVisible(), true);
+    assert.equal(await panel.getAttribute('aria-labelledby'), tabId);
+    for (let tab = 0; tab < 4; tab++) {
+      if (tab === index) continue;
+      assert.equal(await tabs.nth(tab).getAttribute('aria-selected'), 'false');
+      assert.equal(await tabs.nth(tab).getAttribute('tabindex'), '-1');
+    }
+  };
+  await tabs.nth(0).focus();
+  await page.keyboard.press('Home');
+  await selected(0, 'finance');
+  assert.match(
+    await stage.locator('.signal-stage-context').innerText(),
+    /固定历史示例|Fixed historical example/
+  );
+  assert.match(
+    await stage.locator('.signal-scope').innerText(),
+    /不是当前查询结果|Not a current query result/
+  );
+  assert.deepEqual(await stage.locator('.signal-finance-facts dd > span').allTextContents(), [
+    '366,373,098.93',
+    '26,197,123.70',
+  ]);
+  await financeAmountsFit(page, name);
+  const amounts = await stage.locator('.signal-finance-facts').innerText();
+  const scenes = stage.locator('.signal-scene-controls button');
+  for (const [index, view] of ['numbers', 'difference', 'source'].entries()) {
+    await scenes.nth(index).focus();
+    await page.keyboard.press('Enter');
+    await stage.locator(`.signal-finance-scene[data-finance-view="${view}"]`).waitFor();
+    assert.equal(await scenes.nth(index).getAttribute('aria-pressed'), 'true');
+    assert.equal(await stage.locator('.signal-finance-facts').innerText(), amounts);
+    if (view === 'numbers') {
+      const cashWidth = await stage
+        .locator('.signal-bar-cash')
+        .evaluate((element) =>
+          Number.parseFloat(element.style.getPropertyValue('--signal-bar-width'))
+        );
+      assert.ok(Math.abs(cashWidth / 100 - 26197123.7 / 366373098.93) < 1e-6);
+      assert.match(
+        await stage.locator('.signal-panel-note').innerText(),
+        /同一金额刻度|same monetary scale/
+      );
+    } else if (view === 'difference') {
+      assert.equal(
+        await stage.locator('.signal-difference-amount > span').innerText(),
+        '340,175,975.23'
+      );
+      assert.match(
+        await stage.locator('.signal-panel-note').innerText(),
+        /不证明经营原因|does not establish a business cause/
+      );
+    }
+    if (view !== 'source') await capture(page, `${name}-signal-finance-${view}`);
+  }
+  check(
+    `${name}: financial views retain exact sample amounts and distinguish their derived difference from a business conclusion`
+  );
+  await tabs.nth(0).focus();
+  await page.keyboard.press('ArrowRight');
+  await selected(1, 'public');
+  assert.equal(await tabs.nth(1).evaluate((element) => document.activeElement === element), true);
+  assert.match(
+    await stage.locator('.signal-stage-context').innerText(),
+    /能力示意.*未取得|Capability preview.*not obtained/s
+  );
+  assert.match(
+    await stage.locator('.signal-missing-note').innerText(),
+    /未取得公开事项材料|Public-record material is not obtained/
+  );
+  assert.equal(await stage.locator('.signal-finance-facts').count(), 0);
+  await noOverflow(page, `${name} public-record channel`);
+  await capture(page, `${name}-signal-public`);
+  await page.keyboard.press('ArrowRight');
+  await selected(2, 'reputation');
+  assert.equal(await tabs.nth(2).evaluate((element) => document.activeElement === element), true);
+  assert.match(
+    await stage.locator('.signal-missing-note').innerText(),
+    /不生成评价、星级或可信度评分|No reviews, stars or credibility scores are generated/
+  );
+  await noOverflow(page, `${name} reputation channel`);
+  await capture(page, `${name}-signal-reputation`);
+  await page.keyboard.press('End');
+  await selected(3, 'original');
+  assert.equal(await tabs.nth(3).evaluate((element) => document.activeElement === element), true);
+  const pageButtons = stage.locator('.signal-original-tabs button');
+  for (const [index, pageNumber] of [190, 191].entries()) {
+    await pageButtons.nth(index).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction((pageNumber) => {
+      const image = document.querySelector('.showcase-signal-stage .signal-original-sheet img');
+      return (
+        image?.getAttribute('src')?.includes(`page-${pageNumber}`) &&
+        image.complete &&
+        image.naturalWidth > 0
+      );
+    }, pageNumber);
+    assert.equal(await pageButtons.nth(index).getAttribute('aria-pressed'), 'true');
+  }
+  const original = stage.locator('.signal-original-sheet');
+  await original.focus();
+  await page.keyboard.press('Enter');
+  const dialog = page.locator('.showcase-source-dialog');
+  await dialog.waitFor();
+  await page.waitForFunction(() =>
+    Array.from(document.querySelectorAll('.showcase-source-dialog img')).every(
+      (image) => image.complete && image.naturalWidth > 0
+    )
+  );
+  assert.equal(await dialog.locator('img').count(), 2);
+  await capture(page, `${name}-signal-original-dialog`);
+  await page.keyboard.press('Escape');
+  await dialog.waitFor({ state: 'hidden' });
+  assert.equal(await original.evaluate((element) => document.activeElement === element), true);
+  await tabs.nth(3).focus();
+  await page.keyboard.press('ArrowLeft');
+  await selected(2, 'reputation');
+  await page.keyboard.press('Home');
+  await selected(0, 'finance');
+  await scenes.nth(0).focus();
+  await page.keyboard.press('Enter');
+  assert.equal(receipt.researchWrites.length, writesBefore);
+  check(
+    `${name}: channel tabs support arrow/Home/End focus, absent-source states and real original-page dialog without research writes`
+  );
+}
+async function financeAmountsFit(page, name) {
+  const measured = await page.locator('.signal-finance-facts dd > span').evaluateAll((elements) =>
+    elements.map((element) => {
+      const amount = element.getBoundingClientRect();
+      const cell = element.parentElement.getBoundingClientRect();
+      return {
+        text: element.textContent,
+        left: amount.left,
+        right: amount.right,
+        cellLeft: cell.left,
+        cellRight: cell.right,
+      };
+    })
+  );
+  assert.equal(measured.length, 2);
+  for (const amount of measured) {
+    assert.ok(
+      amount.left >= amount.cellLeft - 1 && amount.right <= amount.cellRight + 1,
+      `${name} clips an exact financial amount: ${JSON.stringify(amount)}`
+    );
+  }
+  check(`${name}: exact financial amounts fit their containing cells without clipping`);
+}
+async function readingCardRoutes(page) {
+  const cards = page.locator('.showcase-reading-card');
+  assert.equal(await cards.count(), 4);
+  const writesBefore = receipt.researchWrites.length;
+  for (const [index, channel] of [
+    [1, 'public'],
+    [3, 'reputation'],
+    [2, 'finance'],
+    [0, 'finance'],
+  ]) {
+    assert.equal(await cards.nth(index).getAttribute('href'), '#showcase-evidence');
+    await cards.nth(index).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(
+      (channel) =>
+        document.querySelector('.showcase-signal-stage')?.getAttribute('data-channel') === channel,
+      channel
+    );
+    assert.equal(new URL(page.url()).hash, '#showcase-evidence');
+  }
+  assert.equal(receipt.researchWrites.length, writesBefore);
+  check(
+    'Keyboard reading-card links select their financial, public-record or reputation channel without research writes'
+  );
+}
+async function staticSignalStage(page, name) {
+  await scrollScene(page, '.showcase-signal-stage', 110);
+  const stage = page.locator('.showcase-signal-stage[data-signal-ready="true"]');
+  await stage.waitFor();
+  assert.equal(await stage.getAttribute('data-signal-motion'), 'paused');
+  const surface = stage.locator('canvas.signal-field');
+  const before = await surface.evaluate((canvas) => canvas.toDataURL());
+  await page.mouse.move(24, 200);
+  await page.mouse.move(page.viewportSize().width - 24, 300);
+  await page.waitForTimeout(180);
+  assert.equal(await surface.evaluate((canvas) => canvas.toDataURL()), before);
+  assert.deepEqual(await stage.locator('.signal-finance-facts dd > span').allTextContents(), [
+    '366,373,098.93',
+    '26,197,123.70',
+  ]);
+  await noOverflow(page, `${name} reduced-motion signal stage`);
+  await capture(page, `${name}-signal-reduced`);
+  check(
+    `${name}: reduced-motion company-information stage remains static with exact labeled historical amounts`
+  );
+}
 async function evidenceAndProcess(page, name) {
   await scrollScene(page, '.showcase-evidence');
   await noOverflow(page, `${name} evidence heading`);
   await capture(page, `${name}-evidence-heading`);
-  await scrollScene(page, '.showcase-evidence-stage', 120);
+  await signalChannels(page, name);
+  await scrollScene(page, '.showcase-original-lab-stage', 120);
   await page.waitForFunction(() =>
     Array.from(document.querySelectorAll('.showcase-source-sheet img')).every(
       (image) => image.complete && image.naturalWidth > 0
@@ -417,14 +640,13 @@ async function openContext({
   });
   await page.waitForFunction(() => {
     const scene = document.querySelector('[data-hero-ready="true"]');
-    const prism = scene?.querySelector('img');
+    const surface = scene?.querySelector('canvas');
     const description = document.querySelector('.showcase-description');
     return (
       scene &&
-      Number(getComputedStyle(scene).opacity) > 0.9999 &&
-      prism?.getAttribute('src')?.endsWith('/optical-prism.webp') &&
-      prism.complete &&
-      prism.naturalWidth > 0 &&
+      surface &&
+      surface.width > 0 &&
+      surface.height > 0 &&
       description &&
       Number(getComputedStyle(description).opacity) > 0.99
     );
@@ -483,6 +705,7 @@ try {
     const field = document.querySelector('.showcase-search textarea');
     return field?.value === '松原安全' && document.activeElement === field;
   });
+  await companyCandidates(page, 'lite-desktop-zh');
   await input.fill('');
   check('Sample company button fills and focuses the editable draft without submission');
   const year = page.locator('.showcase-search-meta .select-trigger');
@@ -515,6 +738,7 @@ try {
   await menu.waitFor({ state: 'hidden' });
   assert.equal(await trigger.evaluate((element) => document.activeElement === element), true);
   check('Full-screen menu keyboard open, focus preview, Escape and focus restoration');
+  await readingCardRoutes(page);
   await evidenceAndProcess(page, 'lite-desktop-zh');
   await page.locator('.showcase-source-sheet').click();
   const source = page.locator('.showcase-source-dialog');
@@ -581,6 +805,7 @@ try {
   await submitLabelFits(reduced.page, 'reduced-motion mobile');
   await capture(reduced.page, 'lite-mobile-zh-reduced-motion');
   await staticOptics(reduced.page, '375px reduced motion');
+  await staticSignalStage(reduced.page, '375px reduced motion');
   check('375px reduced-motion entry remains visible and editable');
   await reduced.context.close();
   const englishDesktop = await openContext({ locale: 'en' });
@@ -591,6 +816,19 @@ try {
   await capture(englishDesktop.page, 'lite-desktop-en-light');
   check('1440px English entry retains the complete canonical headline');
   await englishDesktop.context.close();
+  const medium = await openContext({ locale: 'en', width: 900, height: 1024 });
+  await noOverflow(medium.page, '900px English Lite');
+  await headerControlsFit(medium.page, '900px English Lite');
+  await headlineFits(medium.page, '900px English Lite');
+  await scrollScene(medium.page, '.showcase-signal-stage', 110);
+  await financeAmountsFit(medium.page, '900px English signal stage');
+  await capture(medium.page, 'lite-900-en-signal-finance');
+  await medium.page.locator('.signal-scene-controls button').nth(1).focus();
+  await medium.page.keyboard.press('Enter');
+  await medium.page.locator('.signal-finance-scene[data-finance-view="difference"]').waitFor();
+  await noOverflow(medium.page, '900px English financial difference');
+  await capture(medium.page, 'lite-900-en-signal-difference');
+  await medium.context.close();
   const narrow = await openContext({
     locale: 'en',
     width: 320,
@@ -603,6 +841,9 @@ try {
   await submitLabelFits(narrow.page, '320px English Lite');
   await capture(narrow.page, 'lite-320-en-light');
   await staticOptics(narrow.page, '320px reduced motion');
+  await narrow.page.locator('.showcase-examples button').filter({ hasText: '松原安全' }).click();
+  await companyCandidates(narrow.page, 'lite-320-en-light');
+  await narrow.page.locator('.showcase-search textarea').fill('');
   await emptyRecentReports(narrow.page, 'lite-320-en-light');
   const narrowTrigger = narrow.page.locator('.showcase-menu-trigger');
   await narrowTrigger.focus();

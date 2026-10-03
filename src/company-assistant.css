@@ -526,6 +526,21 @@
     height: 36px;
   }
 }
+@media (max-width: 440px) {
+  .company-assistant-trigger[data-experience='lite'] {
+    width: 56px;
+    height: 74px;
+  }
+  .company-assistant-trigger[data-experience='lite'] > .assistant-character {
+    width: 48px;
+    height: 48px;
+  }
+  .company-assistant-panel[data-experience='lite'] {
+    --assistant-panel-gap: 86px;
+    --assistant-panel-offset: 122px;
+  }
+}
+
 @media (max-height: 500px) {
   .company-assistant-panel,
   .company-assistant-panel:has(.company-assistant-empty) {

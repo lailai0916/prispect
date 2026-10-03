@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUpRight,
+  FileSearch,
+  Layers,
+  MessageCircle,
+  TrendingUp,
+} from 'lucide-react';
 import { productTagline } from '../../shared/product-terms';
 import { Dialog } from '../components';
 import { useApp } from '../context';
@@ -8,9 +16,11 @@ import { useShowcaseMotion } from './useShowcaseMotion';
 import { HeroField } from './HeroField';
 import { ShowcaseSearch } from './ShowcaseSearch';
 import { FlowPreview } from './FlowPreview';
+import { ShowcaseSignalStage } from './ShowcaseSignalStage';
 import './showcase.css';
 import './showcase-v2.css';
 import './showcase-v3.css';
+import './showcase-v4.css';
 
 function displayAmount(value: string, english: boolean) {
   return new Intl.NumberFormat(english ? 'en-US' : 'zh-CN', {
@@ -69,6 +79,10 @@ export function ShowcaseLanding({
   const [sourceOpen, setSourceOpen] = useState(false);
   const [activePreview, setActivePreview] = useState(0);
   const [scanPosition, setScanPosition] = useState(52);
+  const [reading, setReading] = useState<{
+    channel: 'finance' | 'public' | 'reputation' | 'original';
+    revision: number;
+  }>({ channel: 'finance', revision: 0 });
   useShowcaseMotion(root, locale);
   useEffect(() => {
     let frame = 0;
@@ -110,25 +124,27 @@ export function ShowcaseLanding({
       ),
     },
     {
-      title: t('追依据', 'Trace the evidence'),
+      title: t('读懂档案', 'Read the dossier'),
       detail: t(
-        '回到来源，再提出值得继续核对的问题。',
-        'Return to the source and ask what needs investigating next.'
+        '判断、数字和原文连在一起，再问下一步。',
+        'Connect findings, figures and sources, then ask what comes next.'
       ),
     },
   ];
   return (
-    <div ref={root} className="showcase-home" data-locale={locale}>
+    <div ref={root} className="showcase-home showcase-home-v4" data-locale={locale}>
       <section className="showcase-hero" aria-labelledby="showcase-title">
-        <HeroField />
-        <div className="showcase-orbit-labels" aria-hidden="true">
-          <span>BEYOND THE NUMBERS</span>
-          <span>{t('财务 / 来源 / 线索', 'FINANCIALS / SOURCES / LEADS')}</span>
+        <HeroField artwork={false} />
+        <div className="showcase-constellation" aria-hidden="true">
+          <span className="showcase-constellation-note">FINANCIALS</span>
+          <span className="showcase-constellation-note">PUBLIC RECORDS</span>
+          <span className="showcase-constellation-note">FOLLOW THE SOURCE</span>
+          <span className="showcase-constellation-note">ASK THE NEXT QUESTION</span>
         </div>
         <div className="showcase-hero-copy">
           <p className="showcase-hero-kicker">
             <span>PRISPECT / LITE</span>
-            <span>{t('透过数字，看清公司', 'LOOK THROUGH THE NUMBERS')}</span>
+            <span>{t('看清一家公司的入口', 'YOUR WAY INTO A COMPANY')}</span>
           </p>
           <h1 id="showcase-title" className="showcase-title" aria-label={t(...productTagline)}>
             {titleLines.map((line, index) => (
@@ -145,11 +161,56 @@ export function ShowcaseLanding({
           </h1>
           <p className="showcase-description">
             {t(
-              '查询公司，看懂关键数字，追溯每一份依据。',
-              'Find a company. Read the numbers. Trace every source.'
+              '在交付金钱与信任之前，先看清那家公司。',
+              'Before committing money and trust, understand the company.'
             )}
           </p>
           <ShowcaseSearch query={query} connectionError={connectionError} />
+          <div
+            className="showcase-reading-rail"
+            aria-label={t('你可以从这些问题开始阅读', 'Questions to start your reading')}
+          >
+            {[
+              [
+                TrendingUp,
+                t('财务', 'FINANCIALS'),
+                t('钱真的回来了吗？', 'Does profit become cash?'),
+              ],
+              [
+                Layers,
+                t('信用线索', 'PUBLIC RECORDS'),
+                t('公开记录说了什么？', 'What do public records say?'),
+              ],
+              [FileSearch, t('风险', 'RISK'), t('什么仍需要核对？', 'What still needs checking?')],
+              [
+                MessageCircle,
+                t('口碑', 'REPUTATION'),
+                t('谁在说，依据在哪？', 'Who says so, and why?'),
+              ],
+            ].map(([Icon, label, question], index) => {
+              const Symbol = Icon as typeof TrendingUp;
+              return (
+                <a
+                  href="#showcase-evidence"
+                  className="showcase-reading-card"
+                  key={String(label)}
+                  onClick={() =>
+                    setReading((previous) => ({
+                      channel: (['finance', 'public', 'finance', 'reputation'] as const)[index],
+                      revision: previous.revision + 1,
+                    }))
+                  }
+                >
+                  <span>
+                    <Symbol size={17} aria-hidden="true" />
+                    {String(label)}
+                  </span>
+                  <strong>{String(question)}</strong>
+                  <ArrowUpRight size={16} aria-hidden="true" />
+                </a>
+              );
+            })}
+          </div>
         </div>
         <a className="showcase-scroll-link" href="#showcase-evidence">
           <ArrowDown size={23} aria-hidden="true" />
@@ -180,21 +241,44 @@ export function ShowcaseLanding({
         <div className="showcase-evidence-heading">
           <span className="showcase-eyebrow">01 / {t('从原文开始', 'BEGIN WITH THE SOURCE')}</span>
           <h2 id="showcase-evidence-title" className="showcase-reveal">
-            {t('让数字，', 'Let the numbers')}
+            {t('线索散落各处。', 'The clues are scattered.')}
             <br />
-            {t('有迹可循。', 'leave a trail.')}
+            {t('把它们连起来。', 'Connect them.')}
           </h2>
           <p>
             {t(
-              '纸面上的利润，与经营中收到的现金，可以是两回事。',
-              'Profit on paper and cash from operations can tell different stories.'
+              '从财务、公开记录到口碑，换一个问题，就多看见一层。',
+              'From financials to public records and reputation, a different question reveals another layer.'
             )}
           </p>
         </div>
         <div className="showcase-evidence-stage">
-          <span className="showcase-evidence-watermark" aria-hidden="true">
-            SOURCE
+          <ShowcaseSignalStage
+            key={reading.revision}
+            initialChannel={reading.channel}
+            onOpenSource={() => setSourceOpen(true)}
+          />
+        </div>
+      </section>
+      <section className="showcase-original-lab" aria-labelledby="showcase-original-lab-title">
+        <div className="showcase-original-lab-copy">
+          <span className="showcase-eyebrow">
+            {t('把原文拿在手里', 'PUT THE ORIGINAL IN YOUR HANDS')}
           </span>
+          <h2 id="showcase-original-lab-title" className="showcase-reveal">
+            {t('一滑，透过纸面。', 'Slide through the page.')}
+          </h2>
+          <p>
+            {t(
+              '这两页真实年报，记录了同一家公司的利润与经营现金。拖动查看，再回到完整原文核对。',
+              'These two actual report pages record the same company’s profit and operating cash. Slide to explore, then check the full original.'
+            )}
+          </p>
+          <p className="showcase-original-scope">
+            {t(...landingExample.notices.sample)} · {t(...landingExample.notices.scope)}
+          </p>
+        </div>
+        <div className="showcase-original-lab-stage showcase-evidence-stage">
           <div
             className="showcase-source-scanner"
             style={{ '--scan-position': `${scanPosition}%` } as CSSProperties}
@@ -248,44 +332,6 @@ export function ShowcaseLanding({
             </label>
             <p id="showcase-scan-note" className="showcase-scan-note">
               {t('两页独立原文，行位置不对应。', 'Separate original pages; rows do not align.')}
-            </p>
-          </div>
-          <div className="showcase-evidence-values">
-            <p className="showcase-source-scope">
-              {t(...landingExample.notices.sample)}
-              <br />
-              {t(...landingExample.notices.scope)}
-            </p>
-            <dl>
-              <div>
-                <dt>{t('合并净利润', 'Consolidated net profit')}</dt>
-                <dd>
-                  {displayAmount(landingExample.summary.profit, english)}
-                  <small>CNY</small>
-                </dd>
-              </div>
-              <div>
-                <dt>{t('经营现金净额', 'Operating cash flow')}</dt>
-                <dd>
-                  {displayAmount(landingExample.summary.cash, english)}
-                  <small>CNY</small>
-                </dd>
-              </div>
-            </dl>
-            <p className="showcase-observation">{t(...landingExample.summary.label)}</p>
-            <button
-              type="button"
-              className="showcase-text-link"
-              onClick={() => setSourceOpen(true)}
-            >
-              {t('回到原文核对', 'Check the original')}
-              <ArrowUpRight size={17} aria-hidden="true" />
-            </button>
-            <p className="showcase-evidence-note">
-              {t(
-                '金额反差提出问题，不直接证明经营原因。',
-                'The difference raises questions; it does not establish a cause.'
-              )}
             </p>
           </div>
         </div>

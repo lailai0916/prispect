@@ -64,7 +64,21 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
             );
           }
           entrance.from(all('.showcase-description'), { y: 28, opacity: 0, duration: 0.75 }, 0.42);
-          const orbitLabels = all('.showcase-orbit-labels > *');
+          const readingCards = all('.showcase-reading-card');
+          if (readingCards.length)
+            entrance.from(
+              readingCards,
+              {
+                y: (index) => 24 + index * 6,
+                rotationY: -18,
+                opacity: 0,
+                duration: 0.75,
+                stagger: 0.08,
+                clearProps: 'transform',
+              },
+              0.8
+            );
+          const orbitLabels = all('.showcase-constellation > *, .showcase-orbit-labels > *');
           if (orbitLabels.length) {
             entrance.from(orbitLabels, { y: 24, opacity: 0, duration: 0.8, stagger: 0.12 }, 0.7);
           }
@@ -142,7 +156,8 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
 
           // The document peels into view, then drifts past the exact figures beside it.
           const sourceSheet = one('.showcase-source-sheet');
-          const evidenceStage = one('.showcase-evidence-stage');
+          const evidenceStage =
+            one('.showcase-original-lab-stage') || one('.showcase-evidence-stage');
           if (sourceSheet && evidenceStage) {
             gsap.fromTo(
               sourceSheet,
@@ -170,9 +185,10 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
               }
             );
           }
-          const values = one('.showcase-evidence-values');
+          // The interactive stage owns its channel motion; avoid a second nested amount mask.
+          const values = one('.showcase-evidence-values:not(.showcase-signal-stage)');
           if (values) {
-            gsap.from(all('.showcase-evidence-values > *'), {
+            gsap.from(all('.showcase-evidence-values:not(.showcase-signal-stage) > *'), {
               y: 38,
               clipPath: 'inset(100% 0% 0% 0%)',
               opacity: 0,
