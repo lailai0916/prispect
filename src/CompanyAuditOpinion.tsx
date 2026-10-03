@@ -36,7 +36,7 @@ export function CompanyAuditOpinion({
           : t('未取得', 'Not retrieved');
   const scopeStatus = (value: 'matched' | 'unconfirmed' | 'conflict') =>
     value === 'matched'
-      ? t('与本次查询一致', 'Matches this review')
+      ? t('与本次研究一致', 'Matches this research')
       : value === 'conflict'
         ? t('范围不符', 'Scope differs')
         : t('尚未确认', 'Unconfirmed');
@@ -51,8 +51,8 @@ export function CompanyAuditOpinion({
       {!result ? (
         <p className="field-note">
           {t(
-            '这次历史查询未保存审计意见检索记录。新建公司核查可读取所选年报。',
-            'This older run has no saved audit-opinion lookup. Start a new company review to read the selected annual report.'
+            '这份历史研究记录未保存审计意见检索结果。新建研究可读取所选年报。',
+            'This older research record has no saved audit-opinion lookup. Start new research to read the selected annual report.'
           )}
         </p>
       ) : result.status === 'pending' ? (

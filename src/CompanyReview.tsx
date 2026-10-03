@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { ArrowRight, ChevronDown, FileSearch, LoaderCircle } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import { companyPath } from '../shared/company-workspace';
@@ -30,7 +31,7 @@ export function CompanyReview({ run }: { run: CompanyResearchRun }) {
   const originalState = active
     ? t('原件读取中', 'Reading originals')
     : run.status === 'adopted'
-      ? t('材料已采用', 'Evidence adopted')
+      ? t('原件已采用', 'Original adopted')
       : run.preview
         ? t('候选待确认', 'Candidates need confirmation')
         : t('原件待补齐', 'Originals incomplete');
@@ -77,7 +78,7 @@ export function CompanyReview({ run }: { run: CompanyResearchRun }) {
         </a>
         {saved && (
           <a className="text-link" href={'/tasks/' + saved.id}>
-            {t('已保存的原件报告', 'Saved original-evidence report')}
+            {t(...productTerms.reviewReport)}
             <ArrowRight size={13} />
           </a>
         )}

@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import type {
   AnalysisTask,
   EvidenceRef,
@@ -217,7 +218,7 @@ export function buildReviewChecklist(task: AnalysisTask, locale: Locale): string
         );
   const lines = [
     `# ${t('析光 · 询证清单', 'Prispect · Review checklist')}`,
-    `${t('工作底稿', 'Working paper')}: ${escapeMarkdown(task.title)}`,
+    `${t(...productTerms.reviewReport)}: ${escapeMarkdown(task.title)}`,
     `${t('公司', 'Company')}: ${escapeMarkdown(report?.company || task.company)}`,
     `${t('用途', 'Purpose')}: ${purposeLabel}`,
     ...(!task.purpose
@@ -248,8 +249,8 @@ export function buildReviewChecklist(task: AnalysisTask, locale: Locale): string
     lines.push(
       `## ${t('报告状态', 'Report status')}`,
       t(
-        '此工作底稿尚无已保存报告，未生成询证清单。',
-        'This working paper has no saved report; no review questions were generated.'
+        '此财报核查尚无已保存核查报告，未生成询证清单。',
+        'This financial review has no saved review report; no review questions were generated.'
       )
     );
     return `${lines.join('\n\n')}\n`;

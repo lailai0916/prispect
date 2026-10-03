@@ -27,7 +27,7 @@ export function assertCompanyResearchSupported(
     throw new ApiFault(
       400,
       'COMPANY_MARKET_UNSUPPORTED',
-      '当前仅支持A股上市公司研究，美股研究暂未开放；已保存的查询记录仍可查看。'
+      '当前仅支持A股上市公司研究，美股研究暂未开放；已保存的研究记录仍可查看。'
     );
 }
 

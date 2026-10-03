@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
@@ -47,7 +48,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
       ? [
           {
             id: 'query',
-            label: t('新建研究', 'New research'),
+            label: t(...productTerms.newResearch),
             path: '/query',
             icon: Plus,
             group,
@@ -55,7 +56,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
           },
           {
             id: 'research',
-            label: t('研究库', 'Research library'),
+            label: t(...productTerms.researchLibrary),
             path: '/research',
             icon: Building2,
             group,
@@ -63,35 +64,35 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
           },
           {
             id: 'workspace',
-            label: t('财报核查', 'Financial reviews'),
+            label: t(...productTerms.financialReviews),
             path: '/workspace',
             icon: FileText,
             group,
           },
           {
             id: 'materials',
-            label: t('材料', 'Materials'),
+            label: t(...productTerms.materials),
             path: '/materials',
             icon: FolderOpen,
             group,
           },
           {
             id: 'decisions',
-            label: t('付款与交接', 'Payments and handovers'),
+            label: t(...productTerms.paymentsAndHandovers),
             path: '/decisions',
             icon: ListChecks,
             group,
           },
           {
             id: 'compare',
-            label: t('核查比较', 'Compare reviews'),
+            label: t(...productTerms.compareReviews),
             path: '/compare',
             icon: Columns3,
             group,
           },
           {
             id: 'account',
-            label: t('账号设置', 'Account settings'),
+            label: t(...productTerms.accountSettings),
             path: '/account',
             icon: UserRound,
             group,
@@ -116,7 +117,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
         detail: `${record.input.securityCode || ''} · ${record.input.year}`,
         path: companyPath(record.id),
         icon: Building2,
-        group: t('企业记录', 'Company records'),
+        group: t(...productTerms.researchRecords),
       }));
     const reports: Destination[] = [...(workspace?.tasks || [])]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
@@ -126,7 +127,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
         detail: `${task.company} · ${task.year}`,
         path: `/tasks/${task.id}`,
         icon: FileText,
-        group: t('核查报告', 'Review reports'),
+        group: t(...productTerms.reviewReports),
       }));
     const materials: Destination[] = (workspace?.materials || []).map((material) => ({
       id: `material-${material.id}`,
@@ -134,7 +135,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
       detail: material.company,
       path: `/materials?material=${encodeURIComponent(material.id)}`,
       icon: FolderOpen,
-      group: t('材料', 'Materials'),
+      group: t(...productTerms.materials),
     }));
     const terms = query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
     return [pages, companies, reports, materials].flatMap((items, index) =>

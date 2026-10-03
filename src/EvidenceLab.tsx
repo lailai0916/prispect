@@ -43,10 +43,10 @@ export type EvidenceLabProps = {
 
 type Connection = { id: string; path: string };
 const stages = [
-  { kind: 'fact', label: ['原文事实', 'Source facts'] },
+  { kind: 'fact', label: ['来源字段', 'Source fields'] },
   { kind: 'calculation', label: ['计算关系', 'Calculations'] },
   { kind: 'hypothesis', label: ['待检验解释', 'Explanations to test'] },
-  { kind: 'material', label: ['所需材料', 'Required records'] },
+  { kind: 'material', label: ['所需材料', 'Required materials'] },
 ] as const;
 
 function sourceHref(source: LabSource): string | undefined {
@@ -255,7 +255,9 @@ export function EvidenceLab({
       ? t('原文摘录', 'Source excerpt')
       : source.sourceQuality === 'web'
         ? t('网页字段', 'Web field')
-        : t('标题线索', 'Headline lead');
+        : source.sourceQuality === 'opinion'
+          ? t('公开讨论 · 未核实观点', 'Public discussion · unverified opinion')
+          : t('标题线索', 'Headline lead');
   const clueText = (clue: ChallengeClue) =>
     clue.text[locale === 'en' ? 'en' : 'zh'].replace(
       /\{\{metric:([^{}]+)\}\}/g,
@@ -294,7 +296,7 @@ export function EvidenceLab({
           disabled={!onStartResearch || researchInapplicable}
         >
           <FileSearch size={14} />
-          {t('查询公司并挑战', 'Look up a company to challenge')}
+          {t('开始公司研究', 'Start company research')}
         </button>
       )}
       <p>
@@ -311,7 +313,7 @@ export function EvidenceLab({
             : onChallenge
               ? t(
                   '定向寻找支持与反向线索；没有材料的部分继续保留缺口。',
-                  'Search for supporting and counter clues. Unobtained records remain gaps.'
+                  'Search for supporting and counter clues. Unobtained materials remain gaps.'
                 )
               : example
                 ? t(
@@ -319,8 +321,8 @@ export function EvidenceLab({
                     'This is a public-report example; targeted research has not run.'
                   )
                 : t(
-                    '此处只进行依据试验；定向补查需另查询公开公司。',
-                    'This view is an evidence trial. Look up a public company separately for targeted research.'
+                    '此处只进行依据试验；定向补查需先进入公司研究。',
+                    'This view is an evidence trial. Start company research to investigate the explanation.'
                   )}
       </p>
     </div>
@@ -491,7 +493,7 @@ export function EvidenceLab({
             {selected?.kind === 'material'
               ? t(
                   '这是一项材料请求；尚未取得该材料。关联公开线索不能替代它。',
-                  'This is a record request. Related public clues do not replace the unobtained record.'
+                  'This is a material request. Related public clues do not replace the unobtained material.'
                 )
               : t(
                   '当前节点没有可定位的来源，不能据此确认解释。',
@@ -522,7 +524,7 @@ export function EvidenceLab({
                 }}
               >
                 <FileSearch size={12} />
-                {t('查看依据', 'Inspect evidence')}
+                {t('查看依据', 'View evidence')}
               </button>
             </li>
           ))}
@@ -541,13 +543,13 @@ export function EvidenceLab({
   return (
     <section
       className={'evidence-lab' + (compact ? ' evidence-lab-compact' : '')}
-      aria-label={t('企业证据实验室', 'Company evidence lab')}
+      aria-label={t('证据实验室', 'Evidence lab')}
       data-testid="evidence-lab"
     >
       <header className="lab-header">
         <div>
           <FlaskConical size={16} />
-          <h2>{t('企业证据实验室', 'Company evidence lab')}</h2>
+          <h2>{t('证据实验室', 'Evidence lab')}</h2>
         </div>
         <span>
           {graph.company} · {graph.year} · {t('合并口径', 'Consolidated')}
@@ -716,7 +718,7 @@ export function EvidenceLab({
       <button className="lab-mobile-inspect" onClick={() => setInspectorOpen(true)}>
         <FileSearch size={14} />
         <span>{inspectorTitle}</span>
-        {t('查看依据', 'Inspect')}
+        {t('查看依据', 'View evidence')}
         <ArrowRight size={13} />
       </button>
       <footer className="lab-footer">
@@ -744,7 +746,7 @@ export function EvidenceLab({
               {researchLoading
                 ? t('补查中', 'Researching')
                 : challenge.status === 'failed'
-                  ? t('未完成', 'Not completed')
+                  ? t('未完成', 'Incomplete')
                   : t('本轮结果', 'Run result')}
             </span>
           </div>
@@ -791,7 +793,7 @@ export function EvidenceLab({
                           ? t('执行中', 'Running')
                           : step.status === 'completed'
                             ? t('完成', 'Completed')
-                            : t('未完成', 'Not completed')}
+                            : t('未完成', 'Incomplete')}
                       </span>
                       {step.summary && <p>{step.summary}</p>}
                     </div>

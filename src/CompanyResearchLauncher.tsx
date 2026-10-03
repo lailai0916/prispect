@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { ArrowUpRight, FileText, HandCoins, Wallet } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useApp } from './context';
@@ -17,11 +18,11 @@ export function CompanyResearchLauncher({
   return (
     <section className="research-launcher" aria-labelledby="research-entry-title">
       <header className="research-entry-heading">
-        <h1 id="research-entry-title">{t('企业研究', 'Company research')}</h1>
+        <h1 id="research-entry-title">{t(...productTerms.companyResearch)}</h1>
         <p>
           {t(
-            '输入公司名称或证券代码，核对主体后查看分析报告。',
-            'Enter a company name or ticker. Confirm the entity, then open its analysis.'
+            '输入公司名称或证券代码，核对主体后查看研究报告。',
+            'Enter a company name or ticker. Confirm the entity, then open its research report.'
           )}
         </p>
       </header>
@@ -41,12 +42,12 @@ export function CompanyResearchLauncher({
         </a>
         <a href="/decisions?new=external">
           <HandCoins size={14} />
-          {t('核对预付款', 'Review a prepayment')}
+          {t(...productTerms.beforePayment)}
           <ArrowUpRight size={12} />
         </a>
         <a href="/decisions?new=handover">
           <Wallet size={14} />
-          {t('接手核查', 'Company handover')}
+          {t(...productTerms.handoverReview)}
           <ArrowUpRight size={12} />
         </a>
       </nav>

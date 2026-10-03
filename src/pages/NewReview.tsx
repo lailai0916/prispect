@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { Dialog as DialogPrimitive } from '@base-ui/react/dialog';
@@ -242,10 +243,10 @@ export function NewReview({ query }: { query: URLSearchParams }) {
         </p>
       )}
       <PageHeading
-        title={t('新建财报核查', 'New financial review')}
+        title={t(...productTerms.newFinancialReview)}
         description={t(
           '先选材料，再确认主体与年度。',
-          'Choose evidence, then confirm the company and financial year.'
+          'Choose materials, then confirm the company and financial year.'
         )}
       />
       <div className="financial-create-layout">
@@ -253,12 +254,12 @@ export function NewReview({ query }: { query: URLSearchParams }) {
           <div className="form-section-heading">
             <span className={`section-number ${selectedIds.length ? 'step-filled' : ''}`}>
               {selectedIds.length ? (
-                <Check size={13} aria-label={t('已选择材料', 'Evidence selected')} />
+                <Check size={13} aria-label={t('已选择材料', 'Materials selected')} />
               ) : (
                 '1'
               )}
             </span>
-            <h2>{t('选择材料', 'Choose evidence')}</h2>
+            <h2>{t('选择材料', 'Choose materials')}</h2>
             <span className="field-note" role="status">
               {selectedIds.length} {t('份已选', 'selected')}
             </span>
@@ -269,7 +270,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
               onClick={() => materialImport.setOpen(true)}
             >
               <Upload size={16} />
-              {t('上传材料', 'Upload evidence')}
+              {t('上传材料', 'Upload materials')}
             </button>
             <button className="text-link" onClick={() => navigate(`/company?purpose=${purpose}`)}>
               {t('查找公开年报', 'Find public annual reports')}
@@ -302,7 +303,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
           ) : (
             <div className="financial-no-source">
               <FileText size={24} />
-              <h3>{t('还没有材料', 'No evidence yet')}</h3>
+              <h3>{t('还没有材料', 'No materials yet')}</h3>
               <p>
                 {t(
                   '上传文本型 PDF、JSON 或 CSV，预览后确认金额与口径。',
@@ -325,7 +326,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
                 onChange={(event) => setCompany(event.target.value)}
                 maxLength={200}
                 required
-                placeholder={t('与材料主体一致', 'Match the entity in the evidence')}
+                placeholder={t('与材料主体一致', 'Match the entity in the material')}
               />
             </label>
             <label className="form-field">
@@ -393,7 +394,7 @@ export function NewReview({ query }: { query: URLSearchParams }) {
             </button>
             {!selectedIds.length && (
               <span className="field-note">
-                {t('先选择或上传材料', 'Choose or upload evidence first')}
+                {t('先选择或上传材料', 'Choose or upload materials first')}
               </span>
             )}
           </div>
@@ -466,7 +467,7 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
         </p>
       )}
       <PageHeading
-        title={t('材料', 'Evidence')}
+        title={t(...productTerms.materials)}
         description={t(
           '查看来源、原文件与已确认的指标。',
           'Inspect sources, original files and confirmed metrics.'
@@ -604,7 +605,7 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
                     }
                   >
                     <Eye size={16} />
-                    {t('查看原文', 'View evidence')}
+                    {t('查看原文', 'View original')}
                   </button>
                   {material.uploadId && (
                     <a
@@ -623,7 +624,7 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
                       href={material.sourceUrl}
                       target="_blank"
                       rel="noreferrer"
-                      title={t('公开原件', 'Public source')}
+                      title={t('打开来源链接', 'Open source link')}
                     >
                       <ExternalLink size={17} />
                     </a>
@@ -634,8 +635,8 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
                     title={
                       used
                         ? t(
-                            '材料已被任务引用，请先删除相关任务',
-                            'Used by a review; delete dependent reviews first'
+                            '材料已被财报核查引用，请先删除相关财报核查',
+                            'Used by a financial review; delete dependent financial reviews first'
                           )
                         : t('删除材料', 'Delete material')
                     }
@@ -1180,8 +1181,8 @@ export function MaterialImporter({
             {!preview.material.observations.length && (
               <p className="field-note">
                 {t(
-                  '文本材料：保存提供的原文，不生成财务观测。用于决定依据时仍需核对主体、日期和字段；财务核查缺少指标会停止计算。',
-                  'Text material: saves supplied text without creating financial observations. Decision evidence still requires entity, date and field checks; financial calculations stop when metrics are missing.'
+                  '文本材料：保存提供的原文，不生成财务观测。用于核查事项依据时仍需核对主体、日期和字段；财报核查缺少指标会停止计算。',
+                  'Text material: saves supplied text without creating financial observations. Review-item evidence still requires entity, date and field checks; financial calculations stop when metrics are missing.'
                 )}
               </p>
             )}

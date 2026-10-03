@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { useMemo, useState } from 'react';
 import { ArrowRight, Building2, Plus, RefreshCw, Search, X } from 'lucide-react';
 import type { CompanyRecordSummary } from '../../shared/company-workspace';
@@ -11,18 +12,18 @@ import '../research-library.css';
 
 function recordState(record: CompanyRecordSummary) {
   if (record.informationGap) return ['主体待确认', 'Entity needs confirmation'] as const;
-  if (record.deletionBlocked) return ['处理中', 'In progress'] as const;
-  if (record.result?.stale) return ['历史分析', 'Previous analysis'] as const;
+  if (record.deletionBlocked) return ['处理中', 'Processing'] as const;
+  if (record.result?.stale) return ['分析待更新', 'Analysis outdated'] as const;
   if (record.assessmentStatus === 'failed') return ['分析未完成', 'Analysis interrupted'] as const;
   if (record.result)
     return record.result.modelStatus === 'completed'
       ? (['分析已保存', 'Analysis saved'] as const)
-      : (['规则筛选', 'Rule-based screening'] as const);
+      : (['规则分析', 'Rule-based analysis'] as const);
   if (record.status === 'adopted') return ['原件已采用', 'Original adopted'] as const;
-  if (record.status === 'completed') return ['候选待核对', 'Candidates to check'] as const;
-  if (record.status === 'failed' || record.status === 'cancelled')
-    return ['查询未完成', 'Lookup interrupted'] as const;
-  return ['研究记录', 'Research record'] as const;
+  if (record.status === 'ready') return ['候选待确认', 'Candidates need confirmation'] as const;
+  if (record.status === 'cancelled') return ['已取消', 'Cancelled'] as const;
+  if (record.status === 'failed') return ['原件未完成', 'Original interrupted'] as const;
+  return productTerms.researchRecord;
 }
 
 export function ResearchLibraryPage() {
@@ -52,14 +53,14 @@ export function ResearchLibraryPage() {
   return (
     <div className="research-library">
       <PageHeading
-        title={t('研究库', 'Research library')}
+        title={t(...productTerms.researchLibrary)}
         description={t(
-          '已保存的企业、分析与核查记录。',
-          'Saved companies, analyses and verification records.'
+          '已保存的研究报告、公开资料与研究记录。',
+          'Saved research reports, public sources and research records.'
         )}
         action={
           <button className="button button-primary" onClick={() => navigate('/query')}>
-            <Plus size={15} /> {t('新建研究', 'New research')}
+            <Plus size={15} /> {t(...productTerms.newResearch)}
           </button>
         }
       />
@@ -92,7 +93,7 @@ export function ResearchLibraryPage() {
           >
             <option value="all">{t('全部记录', 'All records')}</option>
             <option value="saved">{t('有分析结果', 'With analysis')}</option>
-            <option value="active">{t('处理中', 'In progress')}</option>
+            <option value="active">{t('处理中', 'Processing')}</option>
             <option value="follow-up">{t('需要跟进', 'Needs follow-up')}</option>
           </Select>
         </label>
@@ -109,7 +110,7 @@ export function ResearchLibraryPage() {
         <div className="research-library-error" role="alert">
           <span>{error}</span>
           <button className="button button-secondary" onClick={() => void reload()}>
-            {t('重新读取', 'Retry')}
+            {t('重新读取', 'Reload')}
           </button>
         </div>
       )}
@@ -137,7 +138,7 @@ export function ResearchLibraryPage() {
                     <Tag>{t(recordState(record)[0], recordState(record)[1])}</Tag>
                   </div>
                   <p className="research-library-meta">
-                    {record.input.securityCode || t('主体待匹配', 'Entity unmatched')} ·{' '}
+                    {record.input.securityCode || t('主体待确认', 'Entity needs confirmation')} ·{' '}
                     {record.input.year}
                     {record.result && (
                       <>
@@ -163,8 +164,8 @@ export function ResearchLibraryPage() {
                           : t('规则财务筛选', 'Rule-based financial screening')
                       }
                       aria-label={t(
-                        `规则评级 ${record.result.grade}`,
-                        `Rule-based grade ${record.result.grade}`
+                        `财务评级 ${record.result.grade}`,
+                        `Financial grade ${record.result.grade}`
                       )}
                     >
                       {record.result.grade}
@@ -194,15 +195,15 @@ export function ResearchLibraryPage() {
                   'Try another company name or change the filter.'
                 )
               : t(
-                  '查询一家企业后，分析结果与来源会保存在这里。',
-                  'Look up a company to save its analysis and sources here.'
+                  '新建研究后，研究报告与来源会保存在这里。',
+                  'Start research to save the company’s research report and sources here.'
                 )}
           </p>
           <button
             className="button button-secondary"
             onClick={() => (records.length ? (setQuery(''), setFilter('all')) : navigate('/query'))}
           >
-            {records.length ? t('重置筛选', 'Reset filters') : t('查询企业', 'Look up a company')}
+            {records.length ? t('重置筛选', 'Reset filters') : t(...productTerms.newResearch)}
           </button>
         </div>
       )}

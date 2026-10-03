@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import QRCode from 'react-qr-code';
@@ -714,7 +715,7 @@ export function AccountPage() {
     <div className="account-page">
       <header className="account-page-header">
         <div>
-          <h1>{t('账号设置', 'Account settings')}</h1>
+          <h1>{t(...productTerms.accountSettings)}</h1>
           <p className="account-muted">
             {t(
               '管理个人信息、登录方式与私人工作区。',
@@ -1310,7 +1311,7 @@ export function AccountPage() {
                 title={t('通行密钥', 'Passkeys')}
                 description={t(
                   '用设备锁屏、生物识别或安全密钥登录。登记前需重新验证现有账号。',
-                  'Sign in with a device lock, biometrics or security key. Reauthenticate before registering.'
+                  'Log in with a device lock, biometrics or security key. Reauthenticate before registering.'
                 )}
               >
                 <div className="account-form">
@@ -1404,7 +1405,7 @@ export function AccountPage() {
                 title={t('设备会话', 'Device sessions')}
                 description={t(
                   '查看已登录设备，可单独退出会话。',
-                  'View signed-in devices and sign out individual sessions.'
+                  'View logged-in devices and log out individual sessions.'
                 )}
               >
                 {sessionsLoading ? (
@@ -1454,9 +1455,9 @@ export function AccountPage() {
                         disabled={pending}
                         onClick={() =>
                           confirm({
-                            title: t('退出此会话？', 'Sign out this session?'),
+                            title: t('退出此会话？', 'Log out this session?'),
                             text: session.current
-                              ? t('此操作会退出当前设备。', 'This signs out your current device.')
+                              ? t('此操作会退出当前设备。', 'This logs out your current device.')
                               : t(
                                   '该设备下一次访问私人工作区时需要重新登录。',
                                   'The device will need to log in again before accessing the workspace.'
@@ -1483,7 +1484,7 @@ export function AccountPage() {
                           })
                         }
                       >
-                        {t('退出', 'Sign out')}
+                        {t('退出此会话', 'Log out this session')}
                       </button>
                     </li>
                   ))}
@@ -1504,8 +1505,8 @@ export function AccountPage() {
                   <ShieldCheck size={18} />
                   <p>
                     {t(
-                      '账号资料、身份验证密钥和决定中的私人输入不会发送到分析模型。公开企业查询与企业问答会自动使用 AI 分析取得的公开资料；详细说明见隐私政策。',
-                      'Account details, authentication secrets and private decision inputs are not sent to analysis models. Company retrieval and questions automatically use AI to analyze retrieved public information. See the privacy policy for details.'
+                      '账号资料、身份验证密钥和核查事项中的私人输入不会发送到分析模型。公司研究与企业问答会自动使用 AI 分析取得的公开资料；详细说明见隐私政策。',
+                      'Account details, authentication secrets and private review-item inputs are not sent to analysis models. Company research and company questions automatically use AI to analyze retrieved public information. See the privacy policy for details.'
                     )}
                   </p>
                 </div>
@@ -1517,7 +1518,7 @@ export function AccountPage() {
                 </p>
               </Section>
               <Section
-                title={t('清空工作区', 'Clear workspace')}
+                title={t(...productTerms.clearMyWorkspace)}
                 description={t(
                   '这是删除操作。账号、头像和登录因素会保留，工作区内容会清空。',
                   'This deletes workspace content. Your account, avatar and sign-in factors remain.'
@@ -1525,8 +1526,8 @@ export function AccountPage() {
               >
                 <p className="account-muted">
                   {t(
-                    '将删除本账号的核查事项及全部版本、企业查询、财报核查、跟进状态、上传材料和保留原件，不会影响其他账号。请先导出需要保留的报告和材料。',
-                    'This removes your decisions and all revisions, company retrievals, financial reviews, follow-up states, uploaded materials and retained originals. Other accounts are unaffected. Export anything you need first.'
+                    '将删除本账号的核查事项及全部版本、研究记录、财报核查、跟进状态、上传材料和保留原件，不会影响其他账号。请先导出需要保留的报告和材料。',
+                    'This removes your review items and all revisions, research records, financial reviews, follow-up states, uploaded materials and retained originals. Other accounts are unaffected. Export anything you need first.'
                   )}
                 </p>
                 <button
@@ -1536,8 +1537,8 @@ export function AccountPage() {
                     confirm({
                       title: t('清空你的全部工作区内容？', 'Clear all your workspace content?'),
                       text: t(
-                        '上传原件与全部决定版本将被删除，此页面无法撤销。账号与安全设置保留。',
-                        'Uploaded originals and all decision revisions will be deleted. This page cannot undo the action. Account and security settings remain.'
+                        '上传原件与全部核查事项版本将被删除，此页面无法撤销。账号与安全设置保留。',
+                        'Uploaded originals and all review-item revisions will be deleted. This page cannot undo the action. Account and security settings remain.'
                       ),
                       action: async () => {
                         await post('/reset', { confirm: 'RESET_DEMO' });
@@ -1547,7 +1548,7 @@ export function AccountPage() {
                   }
                 >
                   <Trash2 size={16} />
-                  {t('清空我的工作区', 'Clear my workspace')}
+                  {t(...productTerms.clearMyWorkspace)}
                 </button>
               </Section>
             </>

@@ -1,9 +1,4 @@
-import {
-  DOCUMENT_DATE,
-  DOCUMENT_VERSION,
-  type BilingualText,
-  type ProductDocument,
-} from './document';
+import { DOCUMENT_VERSION, type BilingualText, type ProductDocument } from './document';
 
 // Page names are shared by navigation, document headings and browser titles.
 // Keep this separate from document bodies so the app shell stays lightweight.
@@ -25,7 +20,7 @@ export const documentMetadata = {
     title: documentTitles['/docs/about'],
     description: ['产品用途、功能与适用范围。', 'Product purpose, features and scope.'],
     version: DOCUMENT_VERSION,
-    updatedAt: DOCUMENT_DATE,
+    updatedAt: '2026-10-03',
   },
   '/docs/guide': {
     title: documentTitles['/docs/guide'],
@@ -43,7 +38,7 @@ export const documentMetadata = {
       'Calculations, evidence requirements and analysis limits.',
     ],
     version: DOCUMENT_VERSION,
-    updatedAt: DOCUMENT_DATE,
+    updatedAt: '2026-10-03',
   },
   '/docs/privacy': {
     title: documentTitles['/docs/privacy'],
@@ -58,7 +53,7 @@ export const documentMetadata = {
       'Service scope, account use and responsibilities.',
     ],
     version: DOCUMENT_VERSION,
-    updatedAt: DOCUMENT_DATE,
+    updatedAt: '2026-10-03',
   },
   '/docs/copyright': {
     title: documentTitles['/docs/copyright'],
@@ -67,7 +62,7 @@ export const documentMetadata = {
       'Code licensing, third-party content and material rights.',
     ],
     version: DOCUMENT_VERSION,
-    updatedAt: DOCUMENT_DATE,
+    updatedAt: '2026-10-03',
   },
 } as const satisfies Record<
   DocumentPath,

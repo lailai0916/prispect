@@ -45,15 +45,17 @@ const errorMessages: Record<string, string> = {
   CASE_NOT_FOUND: 'The selected public example was not found.',
   MATERIAL_IN_USE:
     'This material is used by a review. Export or remove dependent reviews before deleting it.',
-  MATERIAL_NOT_FOUND: 'The selected material no longer exists. Refresh your evidence library.',
+  MATERIAL_NOT_FOUND: 'The selected material no longer exists. Refresh the Materials page.',
   MATERIAL_LIMIT:
     'Your workspace has reached its 100-material limit. Remove unused materials first.',
-  TASK_LIMIT: 'Your workspace has reached its 200-review limit. Remove old reviews first.',
-  TASK_BUSY: 'Other reviews are running. Please wait before starting another.',
-  TASK_RUNNING: 'A review is still running. Wait for completion before this action.',
-  TASK_IN_USE: 'A saved decision version references this review. Keep the report for that history.',
-  TASK_NOT_FOUND: 'This review was not found. It may have been deleted.',
-  REPORT_NOT_READY: 'This report has not finished. Wait for completion before this action.',
+  TASK_LIMIT:
+    'Your workspace has reached its 200-financial-review limit. Remove old financial reviews first.',
+  TASK_BUSY: 'Other financial reviews are running. Please wait before starting another.',
+  TASK_RUNNING: 'A financial review is still running. Wait for completion before this action.',
+  TASK_IN_USE:
+    'A saved review item version references this financial review. Keep the review report for that history.',
+  TASK_NOT_FOUND: 'This financial review was not found. It may have been deleted.',
+  REPORT_NOT_READY: 'This review report is not ready. Wait for completion before this action.',
   TASK_EXPORT_CHANGED: 'The report has changed. Reload the report before exporting it again.',
   INVALID_EXPORT_FORMAT: 'Choose HTML or JSON for the report export.',
   INVALID_FORMAT: 'Choose JSON or CSV for the input template.',
@@ -101,22 +103,23 @@ const errorMessages: Record<string, string> = {
   COMPANY_CANCELLED: 'The retrieval was cancelled before completion.',
   COMPANY_NOT_RUNNING: 'No step is currently running. Reload to view the latest result.',
   COMPANY_STALE_REVISION: 'The retrieval version has changed. Reload before resuming.',
-  COMPANY_NOT_RECOVERABLE: 'This retrieval cannot resume from a checkpoint. Start a new search.',
+  COMPANY_NOT_RECOVERABLE:
+    'This research record cannot resume from a checkpoint. Start new research.',
   COMPANY_IDEMPOTENCY_CONFLICT:
-    'This request key is already used for different input. Start a new search.',
-  COMPANY_REQUEST_KEY: 'The request identifier is invalid. Start a new search.',
+    'This request key is already used for different input. Start new research.',
+  COMPANY_REQUEST_KEY: 'The request identifier is invalid. Start new research.',
   COMPANY_REQUEST_KEY_REUSED:
-    'This request key is already used for a different company or year. Start a new search.',
+    'This request key is already used for a different company or year. Start new research.',
   COMPANY_CHECKPOINT_EXPIRED:
-    'The saved retrieval checkpoint expired. Start a new search; your history has been retained.',
+    'The saved retrieval checkpoint expired. Start new research; your research records have been retained.',
   COMPANY_PUBLISHING: 'The retrieval has completed and is being saved. Check the result shortly.',
   INDUSTRY_SUBJECT_CONFLICT:
     'The industry result did not match the selected company or annual period.',
   INVALID_COMPANY_RUN:
     'Check the selected company identity and year. Retrieval covers 2010 through the latest completed calendar year.',
-  COMPANY_RUN_NOT_FOUND: 'This retrieval record was not found in your account.',
+  COMPANY_RUN_NOT_FOUND: 'This research record was not found in your account.',
   COMPANY_RUN_LIMIT:
-    'Your account has 30 retrieval records. Delete an old record before starting another.',
+    'Your account has 30 research records. Delete an old record before starting another.',
   COMPANY_AGENT_BUSY: 'An evidence retrieval or save is in progress. Retry after it finishes.',
   COMPANY_REPORT_UNAVAILABLE: 'This retrieval has no retained downloadable original.',
   COMPANY_PREVIEW_NOT_READY: 'The original and candidate input are not ready for confirmation.',
@@ -129,29 +132,30 @@ const errorMessages: Record<string, string> = {
     'The evidence previously adopted from this run was removed. Retrieve it again.',
   INVALID_CONTEXT:
     'Check the scenario date, follow-up notes and cash amounts. Amounts must be nonnegative, with at most two decimal places.',
-  DECISION_NOT_FOUND: 'This decision was not found in your account.',
+  DECISION_NOT_FOUND: 'This review item was not found in your account.',
   DECISION_VERSION_NOT_FOUND: 'The selected input version was not found.',
   INVALID_REVISION: 'Select a valid version number.',
   DECISION_REVISION_CONFLICT:
     'A newer version exists. Reload before saving; your changes have not overwritten it.',
-  DECISION_VERSION_LIMIT: 'This decision has reached its 100-version limit.',
-  DECISION_EVIDENCE_LIMIT: 'This decision has reached its 50-evidence-record limit.',
-  DECISION_LIMIT: 'Your account has reached its 50-decision limit.',
+  DECISION_VERSION_LIMIT: 'This review item has reached its 100-version limit.',
+  DECISION_EVIDENCE_LIMIT: 'This review item has reached its 50-evidence-record limit.',
+  DECISION_LIMIT: 'Your account has reached its 50-review-item limit.',
   INVALID_DECISION:
-    'Check the decision fields, dates and cash amounts. Amounts need at most two decimal places; blank fields remain unknown.',
-  INVALID_DECISION_PATCH: 'Reload this decision before saving its complete updated inputs.',
+    'Check the review item fields, dates and cash amounts. Amounts need at most two decimal places; blank fields remain unknown.',
+  INVALID_DECISION_PATCH: 'Reload this review item before saving its complete updated inputs.',
   INVALID_DECISION_EVIDENCE: 'Check the evidence entity, date, source, text and supplied fields.',
   EVIDENCE_REFERENCE_MISMATCH:
     'The observation or page does not belong to the selected material. The original binding has not been changed.',
-  DECISION_EVIDENCE_NOT_FOUND: 'This evidence record was not found in the current decision.',
+  DECISION_EVIDENCE_NOT_FOUND: 'This evidence record was not found in the current review item.',
   INVALID_DECISION_RESTORE: 'Select an existing revision to restore as a new version.',
-  INVALID_EVIDENCE_STATE: 'Reload the decision before changing this evidence record’s state.',
+  INVALID_EVIDENCE_STATE: 'Reload the review item before changing this evidence record’s state.',
   INVALID_EVIDENCE_SCOPE:
     'Provide a valid entity, covered date and scope-correction reason (up to 1,000 characters).',
   EVIDENCE_SCOPE_NOT_LOCATED:
     'The corrected entity or date was not located in the linked saved text. Original text and amounts have not changed.',
   EVIDENCE_SCOPE_UNCHANGED: 'The entity and covered date have not changed.',
-  INVALID_TASK: 'Review input is invalid. Check the company, year, and selected materials.',
+  INVALID_TASK:
+    'Financial review input is invalid. Check the company, year and selected materials.',
   INVALID_MATERIAL:
     'The material has invalid fields. Check values, units, periods, and statement scopes.',
   DUPLICATE_OBSERVATION: 'Each observation in a material needs a unique identifier.',

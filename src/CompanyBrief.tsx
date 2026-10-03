@@ -284,7 +284,7 @@ export function CompanyBrief({
                   (!fact.value ? 'company-brief-unavailable' : '')
                 }
               >
-                {fact.value || t('未取得', 'Unavailable')}
+                {fact.value || t('未取得', 'Not retrieved')}
               </dd>
             </div>
           ))}

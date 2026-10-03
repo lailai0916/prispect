@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { useEffect, useState } from 'react';
 import { ArrowRight, Check, ChevronDown, FileSearch, LoaderCircle, Minus } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
@@ -8,13 +9,15 @@ import {
   type CompanyResearchViewState,
 } from '../shared/company-research-view';
 import { companyReviewSummary } from '../shared/company-review';
-import { companyPath } from '../shared/company-workspace';
+import { companyPath, companySections } from '../shared/company-workspace';
 import { CompanyAssessmentEvidence } from './CompanyAssessment';
 import { CompanyContextEvidence } from './CompanyContextViews';
 import { CompanyReview } from './CompanyReview';
 import { useApp } from './context';
 import { date, money } from './format';
 import './research-report.css';
+
+const [, coverageZh, coverageEn] = companySections.find(([key]) => key === 'coverage')!;
 
 const stateLabels: Record<CompanyResearchViewState, AssessmentText> = {
   'not-started': ['尚无记录', 'Not recorded'],
@@ -209,10 +212,10 @@ export function CompanyResearchReport({
               type="button"
               className={'research-grade research-grade-' + assessment.grade.toLowerCase()}
               title={gradeTitle}
-              aria-label={t('查看财务筛选依据', 'View financial screening evidence')}
+              aria-label={t('查看财务评级依据', 'View financial grade evidence')}
               onClick={() => openCompanyReportSection('company-full-report')}
             >
-              <span>{t('财务筛选', 'Financial screen')}</span>
+              <span>{t(...productTerms.financialGrade)}</span>
               <strong>
                 {assessment.grade === 'NR' ? t('暂不评级', 'Not rated') : assessment.grade}
               </strong>
@@ -230,7 +233,7 @@ export function CompanyResearchReport({
             {brief.mode === 'model'
               ? t('资料分析', 'Source analysis')
               : brief.mode === 'rules'
-                ? t('规则结果', 'Rule results')
+                ? t('规则分析', 'Rule-based analysis')
                 : t('判断待形成', 'Analysis pending')}
           </span>
           {basis(t('分析摘要', 'Analysis summary'), brief.summary)}
@@ -423,7 +426,7 @@ export function CompanyResearchReport({
             <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
           )}
           <a className="text-link" href={companyPath(run.id, 'coverage')}>
-            {t('范围与缺口', 'Scope and gaps')}
+            {t(coverageZh, coverageEn)}
             <ArrowRight size={12} />
           </a>
         </div>

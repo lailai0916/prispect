@@ -513,7 +513,7 @@ export function installCompanyContextRoutes(
                 snapshot.securityCode !== run.input.securityCode ||
                 snapshot.orgId !== run.input.orgId
               )
-                throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '概览主体与查询记录不一致');
+                throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '概览主体与研究记录不一致');
               run.context = snapshot;
               run.identity ||= identity;
               await store.persist();
@@ -523,7 +523,7 @@ export function installCompanyContextRoutes(
             snapshot.securityCode !== run.input.securityCode ||
             snapshot.orgId !== run.input.orgId
           )
-            throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '概览主体与查询记录不一致');
+            throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '概览主体与研究记录不一致');
           if (!current(store, run, revision)) return;
           run.context = snapshot;
           run.contextStatus = 'ready';

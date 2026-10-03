@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowUpRight, FileSearch, Info } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
+import { companySections } from '../shared/company-workspace';
 import type {
   CompanyContextSnapshot,
   CompanyContextPeriod,
@@ -20,6 +21,8 @@ import {
 import { Dialog, Tag } from './components';
 import { useApp, type Translate } from './context';
 import { date, money } from './format';
+
+const [, disclosuresZh, disclosuresEn] = companySections.find(([key]) => key === 'disclosures')!;
 
 export function CompanyContextEvidence({
   row,
@@ -73,7 +76,7 @@ export function CompanyContextEvidence({
                       <td>{period.period}</td>
                       <td>{t(...contextFieldLabels[field])}</td>
                       <td>{money(period.amounts[field], locale, false)}</td>
-                      <td>{period.fieldSources[field] || t('未取得', 'Unavailable')}</td>
+                      <td>{period.fieldSources[field] || t('未取得', 'Not retrieved')}</td>
                     </tr>
                   ))
                 )}
@@ -532,7 +535,7 @@ export function CompanyProfileView({ snapshot }: { snapshot: CompanyContextSnaps
           {Object.entries(labels).map(([key, label]) => (
             <div key={key}>
               <dt>{t(...label)}</dt>
-              <dd>{snapshot.profile[key] || t('未取得', 'Unavailable')}</dd>
+              <dd>{snapshot.profile[key] || t('未取得', 'Not retrieved')}</dd>
             </div>
           ))}
         </dl>
@@ -759,7 +762,7 @@ export function CompanyCoverageView({
       t('年度财务', 'Annual financials'),
       snapshot.financials.some((row) => row.annual)
         ? t('已取得网页字段', 'Web fields retrieved')
-        : t('未取得', 'Unavailable'),
+        : t('未取得', 'Not retrieved'),
       t(
         '字段与来源比对，原件核查单独进行',
         'Fields and source comparison; originals checked separately'
@@ -769,13 +772,13 @@ export function CompanyCoverageView({
       t('最新定期报告', 'Latest periodic report'),
       snapshot.financials.some((row) => !row.annual)
         ? t('已取得', 'Retrieved')
-        : t('未取得', 'Unavailable'),
+        : t('未取得', 'Not retrieved'),
       t('累计期间，通常未经审计', 'Cumulative period, usually unaudited'),
     ],
     [
       t('年报原件与附注', 'Annual originals and notes'),
       run.status === 'adopted'
-        ? t('原件材料已确认采用', 'Original evidence adopted')
+        ? t('原件已采用', 'Original adopted')
         : run.preview
           ? t('已有候选，待确认采用', 'Candidates awaiting confirmation')
           : t('尚未形成候选', 'No candidates yet'),
@@ -785,7 +788,7 @@ export function CompanyCoverageView({
       ),
     ],
     [
-      t('公告线索', 'Disclosures'),
+      t(disclosuresZh, disclosuresEn),
       sourceStateLabel(
         snapshot.sources.find((source) => source.id === 'cninfo-disclosures')?.status || 'unknown',
         t
@@ -799,7 +802,7 @@ export function CompanyCoverageView({
       t('公司资料与股东', 'Company profile and shareholders'),
       snapshot.profile.orgName
         ? t('已取得公开资料', 'Public profile retrieved')
-        : t('未取得', 'Unavailable'),
+        : t('未取得', 'Not retrieved'),
       t(
         '资料更新时间未知，不等同实时登记或股权穿透',
         'Unknown update date; not real-time registration or ownership tracing'

@@ -28,7 +28,7 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
   const records = (store: WorkspaceStore) => (store.state.decisions ||= []);
   const byId = (store: WorkspaceStore, id: string) => {
     const item = records(store).find((record) => record.id === id);
-    if (!item) throw new ApiFault(404, 'DECISION_NOT_FOUND', '未找到当前账号的决定');
+    if (!item) throw new ApiFault(404, 'DECISION_NOT_FOUND', '未找到当前账号的核查事项');
     return item;
   };
   const head = (record: DecisionCase) =>
@@ -69,7 +69,7 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
   };
   const ownedTask = (store: WorkspaceStore, taskId: string | null) => {
     if (taskId && !store.state.tasks.some((task) => task.id === taskId))
-      throw new ApiFault(404, 'TASK_NOT_FOUND', '未找到当前账号的财报任务');
+      throw new ApiFault(404, 'TASK_NOT_FOUND', '未找到当前账号的财报核查');
   };
   const baseSchema = z.object({ baseRevision: z.number().int().min(1) });
   const serialized = async <T>(store: WorkspaceStore, operation: () => Promise<T>): Promise<T> => {
@@ -92,10 +92,10 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
       throw new ApiFault(
         409,
         'DECISION_REVISION_CONFLICT',
-        '决定已有新版本，请重新读取后再保存；未覆盖他人修改'
+        '核查事项已有新版本，请重新读取后再保存；未覆盖他人修改'
       );
     if (record.versions.length >= 100)
-      throw new ApiFault(429, 'DECISION_VERSION_LIMIT', '每个决定最多100个输入版本');
+      throw new ApiFault(429, 'DECISION_VERSION_LIMIT', '每个核查事项最多100个输入版本');
     const next = structuredClone(record);
     const now = new Date().toISOString();
     const version: DecisionVersion = {
@@ -157,7 +157,7 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
       ownedTask(store, input.reportTaskId);
       const result = await serialized(store, async () => {
         if (records(store).length >= 50)
-          throw new ApiFault(429, 'DECISION_LIMIT', '当前账号最多50个决定');
+          throw new ApiFault(429, 'DECISION_LIMIT', '当前账号最多50个核查事项');
         const now = new Date().toISOString();
         const version: DecisionVersion = {
           revision: 1,
@@ -248,7 +248,7 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
             'evidence-added',
             (version) => {
               if (version.evidence.length >= 50)
-                throw new ApiFault(429, 'DECISION_EVIDENCE_LIMIT', '每个决定最多50条证据记录');
+                throw new ApiFault(429, 'DECISION_EVIDENCE_LIMIT', '每个核查事项最多50条证据记录');
               version.evidence.push({
                 ...evidence,
                 id: randomUUID(),
@@ -287,7 +287,11 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
                 (record) => record.id === req.params.evidenceId
               );
               if (!evidence)
-                throw new ApiFault(404, 'DECISION_EVIDENCE_NOT_FOUND', '未找到该决定的记录');
+                throw new ApiFault(
+                  404,
+                  'DECISION_EVIDENCE_NOT_FOUND',
+                  '未找到该核查事项的证据记录'
+                );
               evidence.state = parsed.data.state;
             }
           )
@@ -324,7 +328,11 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
             (version) => {
               const index = version.evidence.findIndex((record) => record.id === evidenceId);
               if (index < 0)
-                throw new ApiFault(404, 'DECISION_EVIDENCE_NOT_FOUND', '未找到该决定的记录');
+                throw new ApiFault(
+                  404,
+                  'DECISION_EVIDENCE_NOT_FOUND',
+                  '未找到该核查事项的证据记录'
+                );
               version.evidence[index] = correctEvidenceScope(
                 version.evidence[index]!,
                 { entity: parsed.data.entity, asOf: parsed.data.asOf },

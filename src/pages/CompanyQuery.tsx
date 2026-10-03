@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useEffect, useRef, useState } from 'react';
 import { Settings2, LoaderCircle, Search } from 'lucide-react';
@@ -89,7 +90,7 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
     <div className="company-query-page query-create-page">
       <div className="query-create-content">
         <header className="query-create-heading">
-          <h1>{t('新建研究', 'New research')}</h1>
+          <h1>{t(...productTerms.newResearch)}</h1>
         </header>
         <div className="query-create-search">
           <Search size={18} className="query-create-search-icon" aria-hidden="true" />

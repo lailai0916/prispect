@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useState } from 'react';
 import {
@@ -118,7 +119,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
   return (
     <div className="compare-page">
       <PageHeading
-        title={t('核查对比', 'Compare reviews')}
+        title={t(...productTerms.compareReviews)}
         description={t(
           '比较两份已保存核查采用的材料、金额与计算结果。',
           'Compare the evidence, amounts and calculations in two saved reviews.'
@@ -162,7 +163,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
         >
           <div className="compare-selectors">
             <label className="form-field">
-              <span>{t('基准任务', 'Baseline review')}</span>
+              <span>{t('基准核查', 'Baseline financial review')}</span>
               <Select
                 value={left?.id || ''}
                 onValueChange={(selectedValue) => setLeftId(selectedValue)}
@@ -176,7 +177,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
             </label>
             <span className="compare-versus">↔</span>
             <label className="form-field">
-              <span>{t('对照任务', 'Comparison review')}</span>
+              <span>{t('对照核查', 'Comparison financial review')}</span>
               <Select
                 value={right?.id || ''}
                 onValueChange={(selectedValue) => setRightId(selectedValue)}
@@ -215,8 +216,8 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   <CircleAlert size={19} />
                   <p>
                     {t(
-                      '两侧是同一份任务，请选择另一份核查。',
-                      'Both selections are the same review. Choose another task.'
+                      '两侧是同一份财报核查，请选择另一份核查。',
+                      'Both selections are the same review. Choose another financial review.'
                     )}
                   </p>
                 </div>
@@ -273,7 +274,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                           <span>{task.company}</span>
                           <strong>{task.title}</strong>
                           <a href={`/tasks/${task.id}`} className="text-link">
-                            {t('打开报告', 'Open report')}
+                            {t('打开核查报告', 'Open review report')}
                             <ArrowUpRight size={15} />
                           </a>
                         </th>

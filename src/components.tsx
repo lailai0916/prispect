@@ -348,7 +348,7 @@ export function EvidenceObservation({ observation: obs }: { observation: Observa
         {obs.scope === 'consolidated'
           ? t('合并', 'Consolidated')
           : obs.scope === 'parent'
-            ? t('母公司', 'Parent')
+            ? t('母公司', 'Parent company')
             : t('范围待确认', 'Unconfirmed scope')}{' '}
         ·{' '}
         {obs.period === 'annual'

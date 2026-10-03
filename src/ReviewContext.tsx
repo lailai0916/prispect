@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { useEffect, useImperativeHandle, useState, type FormEvent, type Ref } from 'react';
 import { ArrowRight, ArrowUpRight, Check, FileText, Save } from 'lucide-react';
 import type {
@@ -19,8 +20,8 @@ import { CashStressLab } from './CashStressLab';
 
 export function purposeName(purpose: ReviewPurpose | undefined, t: Translate) {
   return purpose === 'handover'
-    ? t('接手经营核查', 'Operating handover')
-    : t('交款前核查', 'Before committing funds');
+    ? t(...productTerms.handoverReview)
+    : t(...productTerms.beforePayment);
 }
 
 function scopeItems(
@@ -242,7 +243,7 @@ export function ReviewContext({
           <li>
             <span className="path-number">1</span>
             <div>
-              <h3>{t('所用资料', 'Materials used')}</h3>
+              <h3>{t('所用材料', 'Materials used')}</h3>
               <p>
                 {task.company} · {report.year} {t('年度', 'FY')} · {report.snapshot.length}{' '}
                 {t('份材料', 'materials')}
@@ -425,7 +426,7 @@ export function ReviewContext({
               ? t('未保存', 'Unsaved')
               : saved || items.some((item) => task.contextNotes?.[item.key])
                 ? t('已保存', 'Saved')
-                : t('尚未保存', 'Not saved')}
+                : t('未保存', 'Unsaved')}
           </span>
         </div>
         <p className="context-note">
@@ -590,7 +591,7 @@ export function CashWorksheet({ task }: { task: AnalysisTask }) {
               ? t('已保存', 'Saved')
               : task.cashPlan?.updatedAt
                 ? `${t('保存于', 'Saved')} ${date(task.cashPlan.updatedAt, locale)}`
-                : t('尚未保存', 'Not saved')}
+                : t('未保存', 'Unsaved')}
         </span>
       </div>
       <p className="context-note">
@@ -708,8 +709,8 @@ export function CashWorksheet({ task }: { task: AnalysisTask }) {
               confirm({
                 title: t('删除这份工作表？', 'Delete this worksheet?'),
                 text: t(
-                  '本任务保存的人工现金假设将删除，年度核查与材料保留。',
-                  'This deletes the saved user-entered cash assumptions. The annual review and its materials remain.'
+                  '这份财报核查保存的人工现金假设将删除，核查报告与材料保留。',
+                  'This deletes the cash assumptions saved with this financial review. The review report and materials remain.'
                 ),
                 action: async () => {
                   await api(`/tasks/${task.id}/context`, {

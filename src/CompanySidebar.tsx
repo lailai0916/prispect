@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   Building2,
@@ -126,7 +127,7 @@ export function CompanySidebar({
           }
           return true;
         },
-        t('查询记录已删除', 'Query record deleted')
+        t('研究记录已删除', 'Research record deleted')
       );
     } finally {
       pendingDeletes.current.delete(key);
@@ -166,8 +167,8 @@ export function CompanySidebar({
         </section>
       )}
       {tools}
-      <section className="sidebar-companies" aria-label={t('已载入企业', 'Loaded companies')}>
-        <span className="sidebar-group-label">{t('已载入企业', 'Loaded companies')}</span>
+      <section className="sidebar-companies" aria-label={t(...productTerms.loadedCompanies)}>
+        <span className="sidebar-group-label">{t(...productTerms.loadedCompanies)}</span>
         <div
           className="sidebar-company-list"
           ref={list}
@@ -190,7 +191,10 @@ export function CompanySidebar({
           )}
           {!loading && !error && !companies.length && (
             <p className="sidebar-history-state">
-              {t('查询后，企业会保存在这里。', 'Companies appear here after a search.')}
+              {t(
+                '新建研究后，企业会保存在这里。',
+                'Companies appear here after starting research.'
+              )}
             </p>
           )}
           {companies.map((run) => {
@@ -199,8 +203,8 @@ export function CompanySidebar({
             const running =
               run.deletionBlocked || run.status === 'queued' || run.status === 'running';
             const deleteLabel = t(
-              `删除 ${run.name} 的 ${run.input.year} 年查询记录`,
-              `Delete query for ${run.name}, ${run.input.year}`
+              `删除 ${run.name} 的 ${run.input.year} 年研究记录`,
+              `Delete research record for ${run.name}, ${run.input.year}`
             );
             return (
               <div

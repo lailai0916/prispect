@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import {
   Activity,
@@ -336,21 +337,21 @@ export function App() {
     )
       return;
     const titles: Record<string, string> = {
-      '/query': t('新建研究', 'New research'),
-      '/research': t('研究库', 'Research library'),
-      '/company': t('公司核查', 'Company review'),
-      '/workspace': t('财报核查', 'Financial reviews'),
-      '/materials': t('材料', 'Materials'),
-      '/account': t('账号设置', 'Account settings'),
-      '/decisions': t('核查事项', 'Reviews'),
-      '/new': t('新建财报核查', 'New financial review'),
-      '/compare': t('核查比较', 'Compare reviews'),
+      '/query': t(...productTerms.newResearch),
+      '/research': t(...productTerms.researchLibrary),
+      '/company': t(...productTerms.companyResearch),
+      '/workspace': t(...productTerms.financialReviews),
+      '/materials': t(...productTerms.materials),
+      '/account': t(...productTerms.accountSettings),
+      '/decisions': t(...productTerms.paymentsAndHandovers),
+      '/new': t(...productTerms.newFinancialReview),
+      '/compare': t(...productTerms.compareReviews),
       '/login': t('登录', 'Log in'),
       '/register': t('创建账号', 'Create account'),
     };
     const title = route.startsWith('/tasks/')
       ? workspace?.tasks.find((task) => route.split('?')[0] === `/tasks/${task.id}`)?.title ||
-        t('核查报告', 'Review report')
+        t(...productTerms.reviewReport)
       : titles[route.split('?')[0]];
     document.title = title ? `${title} · ${t('析光', 'Prispect')}` : t('析光 Prispect', 'Prispect');
   }, [t, route, workspace]);
@@ -383,13 +384,13 @@ export function App() {
     busy: pending > 0,
   };
   const primaryNavigation = [
-    ['/research', t('研究库', 'Research library'), Building2],
-    ['/materials', t('材料', 'Materials'), FolderOpen],
-    ['/decisions', t('付款与交接', 'Payments and handovers'), ListChecks],
+    ['/research', t(...productTerms.researchLibrary), Building2],
+    ['/materials', t(...productTerms.materials), FolderOpen],
+    ['/decisions', t(...productTerms.paymentsAndHandovers), ListChecks],
   ] as const;
   const secondaryNavigation = [
-    ['/workspace', t('财报核查', 'Financial reviews'), Activity],
-    ['/compare', t('核查比较', 'Compare reviews'), Columns3],
+    ['/workspace', t(...productTerms.financialReviews), Activity],
+    ['/compare', t(...productTerms.compareReviews), Columns3],
   ] as const;
   const navigation = [...primaryNavigation, ...secondaryNavigation];
   const sessionAvailable = loaded && !loadError;
@@ -397,21 +398,21 @@ export function App() {
     sessionAvailable && user && !['/login', '/register', '/docs', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
-    ? t('财报核查', 'Financial review')
+    ? t(...productTerms.financialReviews)
     : page === '/new'
-      ? t('新建财报核查', 'New financial review')
+      ? t(...productTerms.newFinancialReview)
       : page === '/account'
-        ? t('账号', 'Account')
+        ? t(...productTerms.accountSettings)
         : documentationRoute
           ? t(...documentationTitle)
           : page === '/company'
-            ? t('企业研究', 'Company research')
+            ? t(...productTerms.companyResearch)
             : page === '/' || page === '/query'
-              ? t('新建研究', 'New research')
+              ? t(...productTerms.newResearch)
               : navigation.find(([path]) => path === page)?.[1];
   const accountItems = [
     {
-      label: t('账号设置', 'Account settings'),
+      label: t(...productTerms.accountSettings),
       icon: <UserRound size={16} />,
       onSelect: () => navigate('/account'),
     },
@@ -466,24 +467,24 @@ export function App() {
         onClose={() => setMenuOpen(false)}
         tools={
           <ActionMenu
-            label={t('核查工具', 'Review tools')}
+            label={t(...productTerms.reviewTools)}
             className="sidebar-tools"
             align="start"
             items={[
               {
-                label: t('财报工作台', 'Financial workbench'),
+                label: t(...productTerms.financialReviews),
                 icon: <Activity size={16} />,
                 onSelect: () => navigate('/workspace'),
               },
               {
-                label: t('核查比较', 'Compare reviews'),
+                label: t(...productTerms.compareReviews),
                 icon: <Columns3 size={16} />,
                 onSelect: () => navigate('/compare'),
               },
             ]}
           >
             <ListChecks size={16} />
-            <span>{t('核查工具', 'Review tools')}</span>
+            <span>{t(...productTerms.reviewTools)}</span>
             <ChevronDown size={13} />
           </ActionMenu>
         }
@@ -618,7 +619,7 @@ export function App() {
                   onClick={() => navigate('/query')}
                 >
                   <Plus size={16} />
-                  {t('新建研究', 'New research')}
+                  {t(...productTerms.newResearch)}
                 </button>
                 {renderNavigation()}
               </aside>
@@ -630,7 +631,7 @@ export function App() {
                   onClick={() => navigate('/query')}
                 >
                   <Plus size={16} />
-                  {t('新建研究', 'New research')}
+                  {t(...productTerms.newResearch)}
                 </button>
                 {renderNavigation()}
               </NavigationPanel>

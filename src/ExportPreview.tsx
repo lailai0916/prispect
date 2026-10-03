@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { useEffect, useRef, useState } from 'react';
 import { Check, Download, FileText, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { AnalysisTask } from '../shared/contracts';
@@ -32,7 +33,8 @@ export function taskExportSource(
 ): ExportSource {
   return {
     id: format,
-    label: format === 'html' ? (locale === 'en' ? 'Report · HTML' : '核查报告 · HTML') : 'JSON',
+    label:
+      format === 'html' ? `${productTerms.reviewReport[locale === 'en' ? 1 : 0]} · HTML` : 'JSON',
     filename: exportFilename(`${task.company}-${task.year}-${task.title}`, format),
     mimeType: format === 'html' ? 'text/html;charset=utf-8' : 'application/json;charset=utf-8',
     preview: format === 'html' ? 'html' : 'text',
@@ -214,7 +216,7 @@ export function ExportPreview({
               }}
             >
               <RefreshCw size={15} />
-              {t('更新报告后再导出', 'Refresh the review before exporting')}
+              {t('更新核查报告后再导出', 'Refresh the review report before exporting')}
             </button>
           ) : (
             <button
@@ -222,7 +224,7 @@ export function ExportPreview({
               onClick={() => setAttempt((value) => value + 1)}
             >
               <RefreshCw size={15} />
-              {t('重新读取', 'Retry loading')}
+              {t('重新读取', 'Reload')}
             </button>
           )}
         </div>
@@ -238,7 +240,7 @@ export function ExportPreview({
       ) : html !== null ? (
         <iframe
           className="export-preview-html"
-          title={t('核查报告文件预览', 'Report file preview')}
+          title={t('核查报告文件预览', 'Review report file preview')}
           sandbox=""
           referrerPolicy="no-referrer"
           srcDoc={html}

@@ -37,7 +37,7 @@ export class AssistantErrorBoundary extends Component<Props, State> {
           }}
         >
           <RefreshCw size={14} aria-hidden="true" />
-          {t('重试', 'Try again')}
+          {t('重试', 'Retry')}
         </button>
       </aside>
     );

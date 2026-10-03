@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { useState } from 'react';
 import { ArrowRight, ArrowUpRight, Copy, Columns3, Plus, Trash2 } from 'lucide-react';
 import type { AnalysisTask, CreateTaskInput } from '../../shared/contracts';
@@ -54,11 +55,11 @@ export function WorkspacePage() {
   return (
     <div className="reviews-page">
       <PageHeading
-        title={t('财报核查', 'Financial reviews')}
+        title={t(...productTerms.financialReviews)}
         action={
           <button className="button button-primary" onClick={() => navigate('/new')}>
             <Plus size={16} />
-            {t('新建核查', 'New review')}
+            {t(...productTerms.newFinancialReview)}
           </button>
         }
       />
@@ -124,14 +125,14 @@ export function WorkspacePage() {
             ) : (
               <div className="empty-state-actions">
                 <button className="button button-primary" onClick={() => navigate('/company')}>
-                  {t('查询公司', 'Look up a company')}
+                  {t('开始公司研究', 'Start company research')}
                   <ArrowRight size={15} />
                 </button>
                 <button
                   className="button button-secondary"
                   onClick={() => navigate('/new?case=custom')}
                 >
-                  {t('导入材料', 'Import materials')}
+                  {t('导入材料', 'Import material')}
                 </button>
               </div>
             )
@@ -200,7 +201,7 @@ export function WorkspacePage() {
                             },
                           },
                           {
-                            label: t('比较核查', 'Compare reviews'),
+                            label: t(...productTerms.compareReviews),
                             icon: <Columns3 size={15} />,
                             disabled: task.status !== 'completed',
                             onSelect: () => navigate(`/compare?left=${task.id}`),
@@ -214,8 +215,8 @@ export function WorkspacePage() {
                               confirm({
                                 title: t('删除这份核查？', 'Delete this review?'),
                                 text: t(
-                                  '任务、报告与问题完成记录将移除，原材料保留。',
-                                  'This removes the review, report, and follow-up statuses. Source materials remain.'
+                                  '这份财报核查、核查报告与跟进状态将移除，原材料保留。',
+                                  'This removes the financial review, review report, and follow-up states. Source materials remain.'
                                 ),
                                 action: async () => {
                                   await api(`/tasks/${task.id}`, { method: 'DELETE' });

@@ -50,7 +50,7 @@ export function installCompanyRoutes(
   const records = (store: WorkspaceStore) => (store.state.companyRuns ||= []);
   const byId = (store: WorkspaceStore, id: string) => {
     const run = records(store).find((item) => item.id === id);
-    if (!run) throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '未找到当前账号的企业查询');
+    if (!run) throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '未找到当前账号的研究记录');
     return run;
   };
   // Context and challenge routes are installed after these routes. Historical
@@ -111,7 +111,7 @@ export function installCompanyRoutes(
         try {
           if (!isCurrent()) return;
           if (controller.signal.aborted)
-            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次公开查询已取消');
+            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次原件检索已取消');
           run.status = 'running';
           run.updatedAt = new Date().toISOString();
           await store.persist();
@@ -152,7 +152,7 @@ export function installCompanyRoutes(
           graphCompleted = true;
           if (!isCurrent()) return;
           if (controller.signal.aborted)
-            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次公开查询已取消');
+            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次原件检索已取消');
           if (output.preview && output.buffer) {
             const prior = run.preview?.material;
             let uploadId: string | undefined;
@@ -189,7 +189,7 @@ export function installCompanyRoutes(
           }
           if (!isCurrent()) return;
           if (controller.signal.aborted)
-            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次公开查询已取消');
+            throw new ApiFault(499, 'COMPANY_CANCELLED', '本次原件检索已取消');
           // Once the short final commit begins, cancellation cannot truthfully stop
           // the already-completed graph. Keep the runner lock until persistence ends.
           publishing.add(run.id);
@@ -214,7 +214,7 @@ export function installCompanyRoutes(
             ? '本次执行已中止；可以恢复已保存的公开步骤。'
             : error instanceof ApiFault
               ? error.message
-              : '公开证据查询未完成；可以恢复，或自行导入材料。';
+              : '原件核查未完成；可以恢复核查，或自行导入材料。';
           if (run.agent) {
             run.agent.recoverable =
               graphCompleted || run.agent.recoverable || controller.signal.aborted;
@@ -249,12 +249,16 @@ export function installCompanyRoutes(
       const run = byId(store, String(req.params.id));
       const body = z.object({ revision: z.number().int().positive() }).strict().safeParse(req.body);
       if (!body.success || body.data.revision !== run.agent?.revision)
-        throw new ApiFault(409, 'COMPANY_STALE_REVISION', '查询版本已变化，请刷新后取消');
+        throw new ApiFault(409, 'COMPANY_STALE_REVISION', '研究记录版本已变化，请刷新后取消');
       if (publishing.has(run.id))
-        throw new ApiFault(409, 'COMPANY_PUBLISHING', '查询步骤已完成，正在保存结果；请稍后查看');
+        throw new ApiFault(
+          409,
+          'COMPANY_PUBLISHING',
+          '研究步骤已完成，正在保存研究记录；请稍后查看'
+        );
       const controller = controllers.get(run.id);
       if (!controller || !active.has(run.id))
-        throw new ApiFault(409, 'COMPANY_NOT_RUNNING', '本次查询没有正在运行的步骤');
+        throw new ApiFault(409, 'COMPANY_NOT_RUNNING', '本次研究没有正在运行的步骤');
       run.agent ||= initialCompanyGraphProgress();
       run.agent.cancelRequested = true;
       run.agent.cancelledAt = new Date().toISOString();
@@ -272,11 +276,11 @@ export function installCompanyRoutes(
       assertCompanyResearchSupported(run.input.securityCode, run.identity?.exchange);
       const body = z.object({ revision: z.number().int().positive() }).strict().safeParse(req.body);
       if (!body.success || body.data.revision !== run.agent?.revision)
-        throw new ApiFault(409, 'COMPANY_STALE_REVISION', '查询版本已变化，请刷新后恢复');
+        throw new ApiFault(409, 'COMPANY_STALE_REVISION', '研究记录版本已变化，请刷新后恢复');
       if (run.status !== 'failed' || !run.agent.recoverable || run.adoptedMaterialId)
-        throw new ApiFault(409, 'COMPANY_NOT_RECOVERABLE', '本次结果不支持断点恢复，请新建查询');
+        throw new ApiFault(409, 'COMPANY_NOT_RECOVERABLE', '本次结果不支持断点恢复，请新建研究');
       if (active.size >= 2 || busy(store))
-        throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公开证据Agent正在查询，请稍后重试');
+        throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公司研究正在进行，请稍后重试');
       if (Date.now() - Date.parse(run.createdAt) > 24 * 60 * 60 * 1000) {
         await rm(path.join(store.dataDir, 'company-agent', run.id), {
           recursive: true,
@@ -287,7 +291,7 @@ export function installCompanyRoutes(
         throw new ApiFault(
           409,
           'COMPANY_CHECKPOINT_EXPIRED',
-          '断点原件已过期，请新建公开查询；历史记录保留'
+          '断点原件已过期，请新建研究；研究记录保留'
         );
       }
       options.auth.rateLimit(
@@ -327,7 +331,7 @@ export function installCompanyRoutes(
     wrap(async (req, res) => {
       const input = schema.safeParse(req.body);
       if (!input.success)
-        throw new ApiFault(400, 'INVALID_COMPANY_RUN', '公司代码、标识、年度或查询选项无效');
+        throw new ApiFault(400, 'INVALID_COMPANY_RUN', '公司代码、标识、年度或研究选项无效');
       assertCompanyResearchSupported(input.data.securityCode);
       const store = res.locals.store as WorkspaceStore;
       const requestKey = req.get('Idempotency-Key');
@@ -347,9 +351,9 @@ export function installCompanyRoutes(
         return;
       }
       if (records(store).length >= 30)
-        throw new ApiFault(429, 'COMPANY_RUN_LIMIT', '最多保留30份公开查询，请整理历史后重试');
+        throw new ApiFault(429, 'COMPANY_RUN_LIMIT', '最多保留30份研究记录，请整理历史后重试');
       if (active.size >= 2 || busy(store))
-        throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公开证据Agent正在查询，请稍后重试');
+        throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公司研究正在进行，请稍后重试');
       options.auth.rateLimit(
         `company-run:${(res.locals.auth as AuthContext).user.id}`,
         12,
@@ -418,7 +422,7 @@ export function installCompanyRoutes(
           res.json({ material, run });
           return;
         }
-        throw new ApiFault(409, 'ADOPTED_MATERIAL_REMOVED', '此前采用的材料已删除，请重新查询');
+        throw new ApiFault(409, 'ADOPTED_MATERIAL_REMOVED', '此前采用的材料已删除，请新建研究');
       }
       if (run.status !== 'ready' || !run.preview?.material.uploadId)
         throw new ApiFault(409, 'COMPANY_PREVIEW_NOT_READY', '原件和候选输入尚未准备好');
@@ -464,7 +468,7 @@ export function installCompanyRoutes(
           throw new ApiFault(
             409,
             'COMPANY_UPLOAD_BOUND',
-            '本次原件已被另一份材料采用，请从工作区继续，或重新查询'
+            '本次原件已被另一份材料采用，请从工作区继续，或新建研究'
           );
         run.adoptedMaterialId = recovered.id;
         run.status = 'adopted';
@@ -505,7 +509,7 @@ export function installCompanyRoutes(
       const store = res.locals.store as WorkspaceStore;
       const run = byId(store, String(req.params.id));
       if (deletionBlocked(run))
-        throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '查询或保存中不能删除');
+        throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '研究或保存中不能删除研究记录');
       const index = records(store).indexOf(run);
       const before = records(store)[index - 1];
       const after = records(store)[index + 1];

@@ -17,8 +17,8 @@ export const privacyDocument: ProductDocument = {
           'For personal-information or data-processing questions, contact lailai0x394@gmail.com. External disclosure sites, model services and other external pages also apply their own rules. This policy does not replace their privacy notices.',
         ],
         [
-          '账号登录和私人工作区需要必要的身份与服务信息；头像、简介、组织和附加安全方式可按需填写或使用。AI 自动参与公司查询、财报核查和企业问答，具体处理范围见本政策的“AI 解读与对外发送”。',
-          'Account access and private workspaces need identity and service information. Avatars, biographies, organization details and additional sign-in methods are optional. AI is an automatic part of company lookup, financial reviews and company questions; see “AI interpretation and external processing” for its scope.',
+          '账号登录和私人工作区需要必要的身份与服务信息；头像、简介、组织和附加安全方式可按需填写或使用。AI 自动参与公司研究、财报核查和企业问答，具体处理范围见本政策的“AI 解读与对外发送”。',
+          'Account access and private workspaces need identity and service information. Avatars, biographies, organization details and additional sign-in methods are optional. AI is an automatic part of company research, financial reviews and company questions; see “AI interpretation and external processing” for its scope.',
         ],
       ],
     },
@@ -94,21 +94,21 @@ export const privacyDocument: ProductDocument = {
             ],
           ],
           [
-            ['公开公司查询', 'Public company lookup'],
+            ['公司研究：原件检索', 'Company research: original retrieval'],
             [
               '输入的查询词、所选主体与证券代码、年度、用途、公开公告及年报、原件哈希、候选字段、执行与错误记录、模型处理状态和返回结果。',
               'Entered search terms, selected identity and security code, year, purpose, public announcements and annual reports, original hashes, candidate fields, execution and error records, model-processing status and results.',
             ],
             [
-              '检索官方披露资料、确认主体、读取原件、形成候选、记录覆盖范围，并在允许时恢复中断的查询。',
-              'Retrieve official disclosures, confirm identity, read originals, create candidates, record coverage, and resume an interrupted lookup when available.',
+              '检索官方披露资料、确认主体、读取原件、形成候选、记录覆盖范围，并在允许时恢复中断的研究。',
+              'Retrieve official disclosures, confirm identity, read originals, create candidates, record coverage, and resume interrupted research when available.',
             ],
           ],
           [
-            ['公开公司研究', 'Public-company research'],
+            ['公司研究：公开资料分析', 'Company research: public-source analysis'],
             [
-              '所选公司与年度、你填写的研究目标、公开财务与同行资料、公告、新闻和公开讨论的标题、日期、来源及已取得的节选，行情与报价时间、实际研究步骤和读取范围、规则分数与分析评级、模型判断、缺口及生成时间。',
-              'Selected company and year, your research goal, public financial and peer data, disclosure/news/public-discussion titles, dates, sources and retrieved excerpts, quotes and quote times, actual research steps and reading scope, rule scores and analysis grades, model judgments, gaps and generation times.',
+              '所选公司与年度、你填写的研究目标、公开财务与同行资料、公告、新闻和公开讨论的标题、日期、来源及已取得的节选，行情与报价时间、实际研究步骤和读取范围、规则分数与财务评级、模型判断、缺口及生成时间。',
+              'Selected company and year, your research goal, public financial and peer data, disclosure/news/public-discussion titles, dates, sources and retrieved excerpts, quotes and quote times, actual research steps and reading scope, rule scores and financial grades, model judgments, gaps and generation times.',
             ],
             [
               '自动分析公开资料，按研究目标补查，并保存有来源的判断、风险、后续核查与实际处理状态。',
@@ -175,8 +175,8 @@ export const privacyDocument: ProductDocument = {
       emphasis: true,
       paragraphs: [
         [
-          'AI 是公司查询、财报核查和企业问答的默认处理环节，无需单独启用，也不提供关闭选项。提交相应查询或问题时，系统会按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统会保留信息缺口或规则结果，并如实记录模型未完成的状态。析光助手的本地使用帮助不调用外部模型。',
-          'AI is an automatic part of company lookup, financial reviews and company questions, with no separate enable or disable option. Submitting a query or question sends data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model service retain evidence gaps or rules-based results with the model’s actual incomplete status. Local product help in the Prispect assistant does not call an external model.',
+          'AI 是公司研究、财报核查和企业问答的默认处理环节，无需单独启用，也不提供关闭选项。提交相应研究或问题时，系统会按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统会保留信息缺口或规则结果，并如实记录模型未完成的状态。析光助手的本地使用帮助不调用外部模型。',
+          'AI is an automatic part of company research, financial reviews and company questions, with no separate enable or disable option. Submitting research or a question sends data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model service retain evidence gaps or rules-based results with the model’s actual incomplete status. Local product help in the Prispect assistant does not call an external model.',
         ],
         [
           '企业证据实验室的本地撤回与恢复选择不上传，也不发送给模型。明确点击“挑战这个解释”后，服务端按已匹配公司的年度与固定解释补查，并可向模型发送相关公开字段、已知来源、已读短摘录和公开检索结果；不发送本地试验状态、上传预览、私人备注、账号资料或私人现金计划。挑战目标、实际步骤与结果随公司记录保存。',
@@ -191,7 +191,7 @@ export const privacyDocument: ProductDocument = {
         ],
         rows: [
           [
-            ['公开公司查询', 'Public company lookup'],
+            ['公司研究：原件检索', 'Company research: original retrieval'],
             [
               '所查询主体的公开信息、公开公告标题与来源、候选页及短表格文字、已读公开附注和公告短摘录、已采用的财务指标与规则线索。',
               'Public company information, public announcement titles and sources, candidate pages and short table text, excerpts from public notes and announcements, and accepted financial metrics and rules-based signals.',
@@ -246,16 +246,16 @@ export const privacyDocument: ProductDocument = {
           'AI requests currently pass through the external TokenFlux.dev API. Use of this API does not establish that a particular model developer directly receives the data.',
         ],
         [
-          '我们尚未完成对该服务的运营主体、下游接收方、保存区域、保存期限、训练用途与合同保障的核验，不承诺其不保存、不训练或仅在境内处理。请不要在研究目标、外发摘录或企业问题中放入个人敏感信息、商业秘密或无权提供的资料。AI 处理是相应功能的一部分；不能接受上述处理范围时，请勿提交该类查询、研究、核查或问题。',
-          'We have not completed verification of this service’s operating entity, downstream recipients, storage regions, retention, training use or contractual safeguards. We do not promise zero retention, no training or processing only within mainland China. Keep sensitive personal information, trade secrets and unauthorized material out of research goals, externally sent excerpts and company questions. AI processing is part of these features. Do not submit the relevant lookup, research, review or question if you cannot accept this processing scope.',
+          '我们尚未完成对该服务的运营主体、下游接收方、保存区域、保存期限、训练用途与合同保障的核验，不承诺其不保存、不训练或仅在境内处理。请不要在研究目标、外发摘录或企业问题中放入个人敏感信息、商业秘密或无权提供的资料。AI 处理是相应功能的一部分；不能接受上述处理范围时，请勿提交该类研究、核查或问题。',
+          'We have not completed verification of this service’s operating entity, downstream recipients, storage regions, retention, training use or contractual safeguards. We do not promise zero retention, no training or processing only within mainland China. Keep sensitive personal information, trade secrets and unauthorized material out of research goals, externally sent excerpts and company questions. AI processing is part of these features. Do not submit the relevant research, review or question if you cannot accept this processing scope.',
         ],
         [
-          '外发摘录没有自动脱敏功能。公开披露、媒体文章和帖子正文也可能含有人员姓名等个人信息；公开可访问不等于可以任意使用。公开讨论不采集发帖者的账号资料、头像或身份属性，但正文中自行写出的信息仍可能出现在节选中。我们不以私人核查事项或现金计划训练自有模型，也没有把这些私人输入接入公开查询模型。',
-          'Externally sent excerpts are not automatically redacted. Public disclosures, media articles and post text may contain names or other personal information; public availability does not permit unrestricted use. Public-discussion collection excludes poster account profiles, avatars and identity attributes, but information written in post text may still appear in excerpts. We do not train our own models on private reviews or cash plans, and those private inputs are not connected to the public lookup model.',
+          '外发摘录没有自动脱敏功能。公开披露、媒体文章和帖子正文也可能含有人员姓名等个人信息；公开可访问不等于可以任意使用。公开讨论不采集发帖者的账号资料、头像或身份属性，但正文中自行写出的信息仍可能出现在节选中。我们不以私人核查事项或现金计划训练自有模型，也没有把这些私人输入接入公开公司研究模型。',
+          'Externally sent excerpts are not automatically redacted. Public disclosures, media articles and post text may contain names or other personal information; public availability does not permit unrestricted use. Public-discussion collection excludes poster account profiles, avatars and identity attributes, but information written in post text may still appear in excerpts. We do not train our own models on private reviews or cash plans, and those private inputs are not connected to the public company-research model.',
         ],
         [
-          'AI 不提供单独关闭选项。查询运行中取消，可停止后续步骤，但不能追回已经发送的数据。规则报告与返回的解释分别保存；核查来源标识、格式或数值不代表已认证解释的含义，也不会自动决定是否付款。',
-          'There is no separate switch to disable AI. Cancelling a running lookup can stop subsequent steps, but cannot recall data already sent. Rules reports and returned explanations are retained separately. Checking source identifiers, format or numbers does not authenticate an interpretation’s meaning or automatically decide a payment.',
+          'AI 不提供单独关闭选项。原件检索运行中取消，可停止后续步骤，但不能追回已经发送的数据。规则报告与返回的解释分别保存；核查来源标识、格式或数值不代表已认证解释的含义，也不会自动决定是否付款。',
+          'There is no separate switch to disable AI. Cancelling original retrieval while it is running can stop subsequent steps, but cannot recall data already sent. Rules reports and returned explanations are retained separately. Checking source identifiers, format or numbers does not authenticate an interpretation’s meaning or automatically decide a payment.',
         ],
       ],
       links: [
@@ -270,15 +270,15 @@ export const privacyDocument: ProductDocument = {
       title: ['外部服务与访问', 'External services and access'],
       paragraphs: [
         [
-          '公司分析通过东方财富、新浪与巨潮公开来源读取财务、同行、企业资料、新闻、公告、公开股吧帖子及行情。目录与正文节选的读取范围分别保存，来源失败时保留未取得状态。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按账号保存，删除查询时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
-          'Company analysis retrieves financials, peers, issuer profiles, news, disclosures, public Guba posts and quotes from Eastmoney, Sina and CNINFO public sources. Catalog and body-excerpt scope are retained separately; source failures remain unavailable. Company records, public snapshots, research goals and steps, analyses, source comparisons and up to fifty answers are stored per account and removed with the query. Public research and company questions exclude account identifiers, private materials, payment plans and security credentials from model requests.',
+          '公司研究通过东方财富、新浪与巨潮公开来源读取财务、同行、企业资料、新闻、公告、公开股吧帖子及行情。目录与正文节选的读取范围分别保存，来源失败时保留未取得状态。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按账号保存，删除研究记录时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
+          'Company research retrieves financials, peers, issuer profiles, news, disclosures, public Guba posts and quotes from Eastmoney, Sina and CNINFO public sources. Catalog and body-excerpt scope are retained separately; source failures remain unavailable. Company records, public snapshots, research goals and steps, analyses, source comparisons and up to fifty answers are stored per account and removed with the research record. Public research and company questions exclude account identifiers, private materials, payment plans and security credentials from model requests.',
         ],
         [
-          '公司查询把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',
-          'Company lookup sends your entered search terms and selected security code, entity identifier, year and other retrieval parameters to CNINFO’s public-disclosure service. Enter only a company name or security code in company search; avoid private transactions, personal names, account details or other unnecessary information.',
+          '公司研究的原件检索把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',
+          'Original retrieval in company research sends your entered search terms and selected security code, entity identifier, year and other retrieval parameters to CNINFO’s public-disclosure service. Enter only a company name or security code in company search; avoid private transactions, personal names, account details or other unnecessary information.',
         ],
         [
-          '历史财务图表另向东方财富公开网页数据接口发送选定证券代码、交易所与财务表类别，取得公开字段，再筛选本次选择的年度及以前最多六个年度的年报记录。此步骤不发送私人事项、上传材料、现金计划、场景备注或析光账号资料，也不要求你配置东方财富账户或密钥。查询记录保存取得的字段、抓取时间与响应哈希；这些接口字段不会自动成为已确认的年报材料。',
+          '历史财务图表另向东方财富公开网页数据接口发送选定证券代码、交易所与财务表类别，取得公开字段，再筛选本次选择的年度及以前最多六个年度的年报记录。此步骤不发送私人事项、上传材料、现金计划、场景备注或析光账号资料，也不要求你配置东方财富账户或密钥。研究记录保存取得的字段、抓取时间与响应哈希；这些接口字段不会自动成为已确认的年报材料。',
           'Historical charts separately send the selected security code, exchange and financial-table category to Eastmoney’s public website data service, then retain up to six annual periods ending with the year selected for this run. This step does not send private cases, uploaded materials, cash plans, context notes or Prispect account details, and requires no Eastmoney account or API key. Research records retain returned fields, retrieval times and response hashes. These web fields do not automatically become confirmed annual-report evidence.',
         ],
         [
@@ -334,24 +334,27 @@ export const privacyDocument: ProductDocument = {
             ],
           ],
           [
-            ['查询断点与公开原件缓存', 'Lookup checkpoints and public-source cache'],
             [
-              '完成查询后清理临时断点缓存；失败且可恢复的查询在创建后 24 小时过期，按清理触发移除缓存。已经保留的预览原件、候选和执行记录遵循其各自保存范围。',
-              'Temporary checkpoint caches are cleaned after completion. Failed recoverable lookups expire 24 hours after creation and their caches are removed when cleanup runs. Retained preview originals, candidates and execution records follow their own retention rules.',
+              '原件检索断点与公开原件缓存',
+              'Original-retrieval checkpoints and public-source cache',
+            ],
+            [
+              '原件检索完成后清理临时断点缓存；失败且可恢复的原件检索在创建后 24 小时过期，按清理触发移除缓存。已经保留的预览原件、候选和执行记录遵循其各自保存范围。',
+              'Temporary checkpoint caches are cleaned after completion. Failed recoverable original retrievals expire 24 hours after creation and their caches are removed when cleanup runs. Retained preview originals, candidates and execution records follow their own retention rules.',
             ],
           ],
           [
             ['已确认材料与核查历史', 'Confirmed materials and review history'],
             [
-              '当前没有按固定天数自动删除，保留到你按可用方式删除、清空工作区，或经核验处理的数据删除请求。材料被报告或任何核查版本引用时，单独删除会被阻止。',
-              'No fixed-day automatic deletion is currently applied. They remain until deletion through available controls, workspace clearing or a verified data-deletion request. Individual deletion of a material is blocked while a report or any review version references it.',
+              '当前没有按固定天数自动删除，保留到你按可用方式删除、使用“清空我的工作区”，或经核验处理的数据删除请求。材料被报告或任何核查版本引用时，单独删除会被阻止。',
+              'No fixed-day automatic deletion is currently applied. They remain until deletion through available controls, Clear my workspace or a verified data-deletion request. Individual deletion of a material is blocked while a report or any review version references it.',
             ],
           ],
           [
             ['账号、安全与支持记录', 'Account, security and support records'],
             [
-              '账号和启用的安全资料不随工作区清空删除。会话有有效期，持续使用可能续期；退出或撤销会话后不能继续使用该会话登录。会话过期、请求完成或限流窗口结束不等于所有历史记录立即从数据库清除。',
-              'Clearing a workspace does not delete the account or enabled security information. Sessions expire and may renew through continued use; sign-out or revocation prevents further sign-in with that session. Expiry, request completion or the end of a rate-limit window does not mean every historical database record is immediately removed.',
+              '“清空我的工作区”不删除账号和启用的安全资料。会话有有效期，持续使用可能续期；退出或撤销会话后不能继续使用该会话登录。会话过期、请求完成或限流窗口结束不等于所有历史记录立即从数据库清除。',
+              'Clear my workspace does not delete the account or enabled security information. Sessions expire and may renew through continued use; sign-out or revocation prevents further sign-in with that session. Expiry, request completion or the end of a rate-limit window does not mean every historical database record is immediately removed.',
             ],
           ],
           [
@@ -365,12 +368,12 @@ export const privacyDocument: ProductDocument = {
       },
       paragraphs: [
         [
-          '账号页的“清空我的工作区”删除本账号的核查事项和全部版本、公司查询、财报核查、跟进状态、上传材料及保留原件；账号、头像和登录因素保留，不影响其他账号。该操作在页面内无法撤销，请先保存需要保留的导出或原件。',
-          '“Clear my workspace” removes this account’s reviews and all versions, company lookups, financial reviews, follow-up states, uploaded materials and retained originals. It keeps the account, avatar and sign-in factors and does not affect other accounts. The page cannot undo this action; save needed exports or originals first.',
+          '账号页的“清空我的工作区”删除本账号的核查事项和全部版本、研究记录、财报核查、跟进状态、上传材料及保留原件；账号、头像和登录因素保留，不影响其他账号。该操作在页面内无法撤销，请先保存需要保留的导出或原件。',
+          '“Clear my workspace” removes this account’s review items and all versions, research records, financial reviews, follow-up states, uploaded materials and retained originals. It keeps the account, avatar and sign-in factors and does not affect other accounts. The page cannot undo this action; save needed exports or originals first.',
         ],
         [
-          '撤回一条证据是停止其当前依赖计算，不是删除全部历史记录；删除查询记录也不自动删除已经采用的材料和报告。停止后续 AI 请求同样不删除第三方已经收到的信息。',
-          'Withdrawing evidence stops its current dependent calculation; it does not delete all history. Deleting a lookup record does not automatically delete adopted materials or reports. Stopping future AI requests likewise does not remove information already received by a third party.',
+          '撤回一条证据是停止其当前依赖计算，不是删除全部历史记录；删除研究记录也不自动删除已经采用的材料和报告。停止后续 AI 请求同样不删除第三方已经收到的信息。',
+          'Withdrawing evidence stops its current dependent calculation; it does not delete all history. Deleting a research record does not automatically delete adopted materials or reports. Stopping future AI requests likewise does not remove information already received by a third party.',
         ],
       ],
     },
@@ -387,16 +390,16 @@ export const privacyDocument: ProductDocument = {
           'Input corrections, evidence withdrawals, scope corrections and version restoration retain the corresponding review history; they do not directly modify or delete earlier versions. To remove history or reduce server retention, use available deletion or clearing controls, or contact us with the requested scope.',
         ],
         [
-          '对于页面未提供的查阅、复制、更正、删除、限制处理或账号删除请求，可以通过联系邮箱提出。当前没有页面内自动账号注销按钮或全部账号数据一键导出功能；“清空工作区”不等于账号注销。',
-          'Contact us for access, copying, correction, deletion, restriction or account-deletion requests not available through the pages. There is currently no automatic account-deletion button or one-click export of all account data. Clearing a workspace does not close an account.',
+          '对于页面未提供的查阅、复制、更正、删除、限制处理或账号删除请求，可以通过联系邮箱提出。当前没有页面内自动账号注销按钮或全部账号数据一键导出功能；“清空我的工作区”不等于账号注销。',
+          'Contact us for access, copying, correction, deletion, restriction or account-deletion requests not available through the pages. There is currently no automatic account-deletion button or one-click export of all account data. Clear my workspace does not close an account.',
         ],
         [
           '请说明涉及的账号、数据类别、希望采取的动作和可回复的渠道。我们会在必要范围核验请求身份与权限，并按适用法律处理或说明不能满足的原因。不要为核验发送密码、恢复码或不必要的身份证明。',
           'Specify the account, data categories, requested action and a reply channel. We will verify identity and authority only as necessary, and handle the request under applicable law or explain why it cannot be met. Do not send passwords, recovery codes or unnecessary identity documents.',
         ],
         [
-          'AI 是相应查询、核查和企业问答的自动处理环节，页面不提供单独关闭选项。你可以停止使用这些功能；运行中取消查询，可停止后续步骤。已经发送的数据、完成的处理和历史结果不会因此自动消失。依法需要留存或技术上暂时难以删除的数据，应限制用途并继续采取必要保护措施。对处理答复有异议，可以再次联系我们或依法向有权机关反映。',
-          'AI is an automatic part of the relevant lookup, review and company-question features, with no separate disable switch. You may stop using these features. Cancel a running lookup to stop subsequent steps. Data already sent, completed processing and historical results do not automatically disappear. Data that must legally be retained or cannot yet be technically deleted should have its use restricted and remain protected. You may contact us again about a response or raise the matter with a competent authority under applicable law.',
+          'AI 是相应公司研究、财报核查和企业问答的自动处理环节，页面不提供单独关闭选项。你可以停止使用这些功能；原件检索运行中取消，可停止后续步骤。已经发送的数据、完成的处理和历史结果不会因此自动消失。依法需要留存或技术上暂时难以删除的数据，应限制用途并继续采取必要保护措施。对处理答复有异议，可以再次联系我们或依法向有权机关反映。',
+          'AI is an automatic part of the relevant company-research, financial-review and company-question features, with no separate disable switch. You may stop using these features. Cancel original retrieval while it is running to stop subsequent steps. Data already sent, completed processing and historical results do not automatically disappear. Data that must legally be retained or cannot yet be technically deleted should have its use restricted and remain protected. You may contact us again about a response or raise the matter with a competent authority under applicable law.',
         ],
       ],
       links: [

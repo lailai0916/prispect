@@ -1,3 +1,5 @@
+import { productTerms } from '../../shared/product-terms';
+import { documentTitles } from '../content/document-navigation';
 import { useId, useRef, useState } from 'react';
 import {
   Activity,
@@ -69,8 +71,8 @@ export function TaskPage({ id }: { id: string }) {
       <EmptyState
         title={t('未找到这份核查', 'Review not found')}
         text={t(
-          '任务可能已被删除，或工作区暂未同步。',
-          'The task may have been deleted, or the workspace is not synced yet.'
+          '财报核查可能已被删除，或工作区暂未同步。',
+          'The financial review may have been deleted, or the workspace is not synced yet.'
         )}
         action={
           <div className="inline-actions">
@@ -93,9 +95,9 @@ export function TaskPage({ id }: { id: string }) {
   return (
     <div className="review-report-page">
       <div className="breadcrumb">
-        <a href="/workspace">{t('财报核查', 'Financial reviews')}</a>
+        <a href="/workspace">{t(...productTerms.financialReviews)}</a>
         <ChevronRight size={14} />
-        <span>{t('核查报告', 'Review')}</span>
+        <span>{t(...productTerms.reviewReport)}</span>
         <code>{task.id.slice(0, 8)}</code>
       </div>
       <PageHeading
@@ -110,10 +112,10 @@ export function TaskPage({ id }: { id: string }) {
                   {t('调整证据', 'Adjust evidence')}
                 </button>
                 <ActionMenu
-                  label={t('报告操作', 'Report actions')}
+                  label={t('核查报告操作', 'Review report actions')}
                   items={[
                     {
-                      label: t('预览核查报告（HTML）', 'Preview report (HTML)'),
+                      label: t('预览核查报告（HTML）', 'Preview review report (HTML)'),
                       icon: <Download size={15} />,
                       onSelect: () => setExportFormat('html'),
                     },
@@ -128,7 +130,7 @@ export function TaskPage({ id }: { id: string }) {
                       onSelect: () => setExportFormat('json'),
                     },
                     {
-                      label: t('打印报告', 'Print report'),
+                      label: t('打印核查报告', 'Print review report'),
                       icon: <Printer size={15} />,
                       onSelect: () => window.print(),
                     },
@@ -147,7 +149,7 @@ export function TaskPage({ id }: { id: string }) {
             {t('本次人工移除：', 'Excluded for this review:')}{' '}
             {task.excludedMetrics.map((key) => metricName(key, locale)).join(' / ')}。
             {t(
-              '仅限制本次使用的指标，不表示公司未披露；原任务和原件保留。',
+              '仅限制本次使用的指标，不表示公司未披露；原财报核查和原件保留。',
               'Only the inputs used in this run are restricted. This does not imply non-disclosure; original reviews and sources remain.'
             )}
           </p>
@@ -198,8 +200,8 @@ export function TaskPage({ id }: { id: string }) {
       ) : (
         <div className="inline-error">
           {t(
-            '任务已完成但报告缺失，请重试处理。',
-            'The task completed but no report is available. Please retry.'
+            '财报核查已处理完成，但核查报告缺失，请重试处理。',
+            'The financial review finished processing, but no review report is available. Please retry.'
           )}
           <button className="button button-secondary" disabled={busy} onClick={retry}>
             {t('重试', 'Retry')}
@@ -408,7 +410,7 @@ export function ReportView({
                       className="text-link"
                       onClick={() => showEvidence(issue.sourceRefs, report)}
                     >
-                      {t('查看原文', 'View source')}
+                      {t('查看原文', 'View original')}
                       <ArrowUpRight size={12} />
                     </button>
                   )}
@@ -1106,7 +1108,7 @@ export function ReportView({
                   </button>
                   <Tag tone="green">
                     {report.questions.filter((question) => question.status === 'done').length}/
-                    {report.questions.length} {t('已完成', 'done')}
+                    {report.questions.length} {t('跟进完成', 'follow-up done')}
                   </Tag>
                 </div>
               </div>
@@ -1124,7 +1126,7 @@ export function ReportView({
                   >
                     <label className="question-checkbox">
                       <input
-                        aria-label={`${t('标记完成', 'Mark complete')}: ${t(question.text, translateRule(question.text))}`}
+                        aria-label={`${t('标记跟进完成', 'Mark follow-up done')}: ${t(question.text, translateRule(question.text))}`}
                         type="checkbox"
                         checked={question.status === 'done'}
                         disabled={busy}
@@ -1277,10 +1279,10 @@ export function ReportView({
                   onClick={() => navigate(`/compare?left=${task.id}`)}
                 >
                   <Columns3 size={16} />
-                  {t('与历史任务比较', 'Compare with history')}
+                  {t('与历史财报核查比较', 'Compare with historical financial reviews')}
                 </button>
                 <a href="/docs/methodology" className="text-link">
-                  {t('阅读方法说明', 'Read the methodology')}
+                  {t(...documentTitles['/docs/methodology'])}
                   <ArrowUpRight size={15} />
                 </a>
               </div>
@@ -1593,7 +1595,7 @@ export function CashBridge({ steps, report }: { steps: BridgeStep[]; report: Rep
                   className={`chart-bar-group ${index === activeIndex ? 'is-active' : ''} ${index === selectedIndex ? 'is-selected' : ''}`}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${label} ${money(step.value, locale, false)} CNY. ${t('查看原文', 'View source')}`}
+                  aria-label={`${label} ${money(step.value, locale, false)} CNY. ${t('查看原文', 'View original')}`}
                   onMouseEnter={() => setActiveIndex(index)}
                   onFocus={() => {
                     setActiveIndex(index);
@@ -1696,7 +1698,7 @@ export function CashBridge({ steps, report }: { steps: BridgeStep[]; report: Rep
                 {report.year} ·{' '}
                 {source?.page != null
                   ? `${t('PDF 页', 'PDF p.')} ${source.page}`
-                  : t('页码未提供', 'Page not provided')}
+                  : t('页码未提供', 'Page not supplied')}
                 {selected.sourceRefs.length > 1
                   ? ` · ${selected.sourceRefs.length} ${t('条来源', 'sources')}`
                   : ''}
@@ -2147,8 +2149,8 @@ export function StressDialog({
       )}
       <p>
         {t(
-          '修改本次采用的指标，另存新的核查。原任务和原件保留。',
-          'Change the metrics used and save a new review. Original reviews and sources remain.'
+          '修改本次采用的指标，另存新的财报核查。原财报核查和原件保留。',
+          'Change the metrics used and save a new financial review. Original financial reviews and sources remain.'
         )}
       </p>
       <div className="stress-option-group">

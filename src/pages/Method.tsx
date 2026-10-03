@@ -1,5 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { useApp } from '../context';
+import { productTerms } from '../../shared/product-terms';
+import { documentTitles } from '../content/document-navigation';
 
 export const methodSections = [
   { id: 'scope', title: ['核查范围', 'Review scope'] },
@@ -161,10 +163,12 @@ export function MethodContent() {
           )}
         </p>
         <details>
-          <summary>{t('公开企业查询如何处理', 'How public company research works')}</summary>
+          <summary>
+            {t('公司研究如何处理公开原件', 'How company research handles public originals')}
+          </summary>
           <p>
             {t(
-              '从巨潮披露源确认 A 股主体，再并行核对指定年度年报、相关附注和选定的近期公告原件。核对主体、原件哈希、表格范围与单位，按具体财务信号有限补查。检索步骤、来源与停止原因保存在查询记录。无匹配只表示当前披露源未找到；公告标题不等于已证明风险，选定全文也不代表完整风险调查。',
+              '从巨潮披露源确认 A 股主体，再并行核对指定年度年报、相关附注和选定的近期公告原件。核对主体、原件哈希、表格范围与单位，按具体财务信号有限补查。检索步骤、来源与停止原因保存在研究记录。无匹配只表示当前披露源未找到；公告标题不等于已证明风险，选定全文也不代表完整风险调查。',
               'Confirm an A-share identity in CNINFO disclosures, then check the requested annual report, related notes and selected recent announcement originals in parallel. Checks cover identity, file hash, statement scope and units; specific financial signals guide bounded follow-up. Records retain actual tool events, sources and stop reasons. No match means this source returned no candidate. Titles do not prove risk, and reading selected originals is not a comprehensive risk investigation.'
             )}
           </p>
@@ -207,21 +211,21 @@ export function MethodContent() {
         <h2>{t('数据管理', 'Data management')}</h2>
         <p>
           {t(
-            '材料、查询和任务属于当前账号；需要保留的报告请先导出。',
-            'Evidence, searches and tasks belong to this account. Export reports you need to keep.'
+            '材料、研究记录和核查记录属于当前账号；需要保留的报告请先导出。',
+            'Materials, research records and review records belong to this account. Export reports you need to keep.'
           )}
         </p>
         <details>
-          <summary>{t('清空工作区的范围', 'What clearing your workspace removes')}</summary>
+          <summary>{t('“清空我的工作区”的范围', 'What Clear my workspace removes')}</summary>
           <p>
             {t(
-              '清空工作区会删除本账号的付款任务与全部版本、企业查询、财报核查、跟进状态和上传材料。不可撤销，不影响其他账号。',
-              'Clearing removes this account’s payment tasks and all versions, company searches, financial reviews, follow-up statuses and uploaded evidence. It cannot be undone and does not affect other accounts.'
+              '“清空我的工作区”会删除本账号的核查事项与全部版本、研究记录、财报核查、跟进状态和上传材料。不可撤销，不影响其他账号。',
+              'Clear my workspace removes this account’s review items and all versions, research records, financial reviews, follow-up statuses and uploaded evidence. It cannot be undone and does not affect other accounts.'
             )}
           </p>
           <div className="inline-actions">
             <button className="button button-primary" onClick={() => navigate('/new')}>
-              {t('新建核查', 'New review')}
+              {t(...productTerms.newFinancialReview)}
               <ArrowRight size={16} />
             </button>
             {user && (
@@ -236,7 +240,7 @@ export function MethodContent() {
       <section className="document-section" id="method-privacy">
         <h2>{t('数据与隐私', 'Data and privacy')}</h2>
         <a className="text-link" href="/docs/privacy">
-          {t('阅读完整隐私政策', 'Read the full privacy policy')}
+          {t(...documentTitles['/docs/privacy'])}
           <ArrowRight size={14} />
         </a>
         <p>{t('本产品由析光团队运营。', 'This product is operated by the Prispect team.')}</p>
@@ -258,8 +262,8 @@ export function MethodContent() {
           <h3>{t('文件与记录', 'Files and records')}</h3>
           <p>
             {t(
-              '确认保存的材料、原始上传文件、任务、场景备注、收付款工作表与跟进状态保留至删除相应记录或重置工作区。未确认的上传预览，以及可恢复失败查询的临时断点和公开原件缓存，在24小时后过期，后续访问时清理；历史查询记录保留。不是定时准点删除。',
-              'Confirmed materials, original uploads, reviews, notes, cash worksheets and follow-up states remain until deletion or workspace reset. Unconfirmed uploads and temporary checkpoints/public-file caches for recoverable failed research expire after 24 hours and are cleaned on subsequent access. Historical research records remain. Cleanup is not guaranteed at an exact scheduled time.'
+              '确认保存的材料、原始上传文件、核查记录、场景备注、收付款工作表与跟进状态保留至删除相应记录或使用“清空我的工作区”。未确认的上传预览，以及可恢复失败研究的临时断点和公开原件缓存，在24小时后过期，后续访问时清理；历史研究记录保留。不是定时准点删除。',
+              'Confirmed materials, original uploads, review records, notes, cash worksheets and follow-up states remain until deletion or Clear my workspace. Unconfirmed uploads and temporary checkpoints/public-file caches for recoverable failed research expire after 24 hours and are cleaned on subsequent access. Historical research records remain. Cleanup is not guaranteed at an exact scheduled time.'
             )}
           </p>
           <h3>{t('访问', 'Access')}</h3>
@@ -274,8 +278,8 @@ export function MethodContent() {
           <summary>{t('第三方数据处理', 'Third-party data processing')}</summary>
           <p>
             {t(
-              'AI 自动参与公司查询、财报核查和企业问答。具体数据处理范围、外部服务与保存规则见隐私政策。',
-              'AI is an automatic part of company lookup, financial reviews and company questions. See the privacy policy for data-processing scope, external services and retention.'
+              'AI 自动参与公司研究、财报核查和企业问答。具体数据处理范围、外部服务与保存规则见隐私政策。',
+              'AI is an automatic part of company research, financial reviews and company questions. See the privacy policy for data-processing scope, external services and retention.'
             )}
           </p>
           <a className="text-link" href="/docs/privacy?section=ai">

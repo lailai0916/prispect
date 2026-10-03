@@ -329,7 +329,7 @@ export function CompanyAssessment({
       <details className="assessment-details assessment-methodology">
         <summary>
           <ChevronDown size={14} />
-          {t('评级方法与阈值', 'Grade methodology and thresholds')}
+          {t('财务评级方法与阈值', 'Financial grade methodology and thresholds')}
         </summary>
         {ASSESSMENT_METHODOLOGY.map((paragraph, index) => (
           <p key={index}>{t(...paragraph)}</p>

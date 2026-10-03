@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import {
   useCallback,
   useEffect,
@@ -330,9 +331,9 @@ export function StartInput({
   }, [owner, textOwner, text, mode, companyOnly, compatibleDraft]);
   const choices = [
     { id: 'auto' as const, label: t('自动识别', 'Automatic'), Icon: Sparkles },
-    { id: 'company' as const, label: t('公司查询', 'Company research'), Icon: Building2 },
-    { id: 'external' as const, label: t('核对预付款', 'Review a prepayment'), Icon: HandCoins },
-    { id: 'handover' as const, label: t('接手公司', 'Company handover'), Icon: Wallet },
+    { id: 'company' as const, label: t(...productTerms.companyResearch), Icon: Building2 },
+    { id: 'external' as const, label: t(...productTerms.beforePayment), Icon: HandCoins },
+    { id: 'handover' as const, label: t(...productTerms.handoverReview), Icon: Wallet },
   ];
   const selected = choices.find((item) => item.id === mode)!;
   const submit = (event: FormEvent) => {
@@ -400,7 +401,7 @@ export function StartInput({
           : mode === 'company'
             ? t('公司名称或证券代码', 'Company name or security code')
             : mode === 'handover'
-              ? t('接手核查', 'Company handover review')
+              ? t(...productTerms.handoverReview)
               : t('付款事项', 'Payment matter')}
       </label>
       <textarea
@@ -514,7 +515,7 @@ export function StartInput({
         {companyOnly && (
           <span className="start-mode">
             <Building2 size={15} />
-            {t('公司查询', 'Company research')}
+            {t(...productTerms.companyResearch)}
           </span>
         )}
         {toolbar}
@@ -525,10 +526,10 @@ export function StartInput({
         <button
           type="submit"
           className="start-submit"
-          aria-label={t('开始核查', 'Start review')}
+          aria-label={companyOnly ? t('开始研究', 'Start research') : t('继续', 'Continue')}
           disabled={disabled || !text.trim()}
         >
-          <span>{companyOnly ? t('开始研究', 'Research') : t('继续', 'Continue')}</span>
+          <span>{companyOnly ? t('开始研究', 'Start research') : t('继续', 'Continue')}</span>
           <ArrowRight size={16} />
         </button>
       </div>

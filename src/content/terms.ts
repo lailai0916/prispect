@@ -29,8 +29,8 @@ export const termsDocument: ProductDocument = {
       ],
       bullets: [
         [
-          '公开企业研究：自动读取财务历史、同行、公告与新闻，按你可选的研究目标继续补查，给出六维判断、分析评级、风险与后续核查。公开研究与待确认的年报候选分别保留，不自动采用候选。',
-          'Public-company research automatically reviews financial history, peers, disclosures and news, with further research guided by an optional goal. It provides six-dimensional judgments, an analysis grade, risks and next checks. Public research remains separate from unconfirmed annual-report candidates and does not automatically adopt them.',
+          '公司研究：自动读取财务历史、同行、公告与新闻，按你可选的研究目标继续补查，给出六维判断、财务评级、风险与后续核查。公开研究与待确认的年报候选分别保留，不自动采用候选。',
+          'Company research automatically reviews financial history, peers, disclosures and news, with further research guided by an optional goal. It provides six-dimensional judgments, a financial grade, risks and next checks. Public research remains separate from unconfirmed annual-report candidates and does not automatically adopt them.',
         ],
         [
           '财报核查：按同期间、同主体与合并范围核对利润和经营现金；必要材料缺失或冲突时，暂停相关计算。',
@@ -89,8 +89,8 @@ export const termsDocument: ProductDocument = {
       title: ['5. 数据处理与 AI', '5. Data processing and AI'],
       paragraphs: [
         [
-          'AI 自动参与公司查询、公开研究、财报核查和企业问答，无需单独启用，也不提供关闭选项。自定义研究目标会与公开资料一起发送给模型，请勿填写私人信息。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
-          'AI is an automatic part of company lookup, public research, financial reviews and company questions, with no separate enable or disable option. Custom research goals are sent to the model with public information; do not include private information. The privacy policy describes processing scope, external services and record retention.',
+          'AI 自动参与公司研究中的原件检索与公开资料分析、财报核查和企业问答，无需单独启用，也不提供关闭选项。自定义研究目标会与公开资料一起发送给模型，请勿填写私人信息。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
+          'AI is an automatic part of original retrieval and public-source analysis in company research, financial reviews and company questions, with no separate enable or disable option. Custom research goals are sent to the model with public information; do not include private information. The privacy policy describes processing scope, external services and record retention.',
         ],
         [
           '阅读或接受本协议不替代依法需要的数据使用告知与同意。你可以停止使用相应功能；已发生的数据处理及后续保留，依照隐私政策与适用法律处理。',
@@ -131,8 +131,8 @@ export const termsDocument: ProductDocument = {
           'Keep plans, assumptions, counterparty statements and actual records separate. Unreceived refunds do not reduce actual exposure; annual operating cash is not current cash. Scenario balances are calculations under supplied conditions, not forecasts. Resolve missing or conflicting evidence first.',
         ],
         [
-          '析光分析评级是所选年度合并财务的公开筛选方法，不属于评级机构的信用等级。盈利成长、经营现金、偿付杠杆与营运占用各占综合分的 25%；一个核心维度低于 40 分，最终等级最高 C，两个及以上最高 D，均分不变。关键数据缺失或冲突时暂不评级，同行与事件不机械扣分。方法与阈值在报告中公开，不代表已验证未来风险。',
-          'Prispect analysis grades are a public screening method for selected-year consolidated financials, not credit-agency ratings. Profitability, operating cash, solvency and working-capital pressure each contribute 25% of the score. One core dimension below 40 caps the grade at C; two or more cap it at D, retaining the arithmetic score. Missing or conflicting key data withholds the grade; peers and events do not automatically deduct points. Reports disclose the method and thresholds, which do not establish future risk.',
+          '析光财务评级是所选年度合并财务的公开筛选方法，不属于评级机构的信用等级。盈利成长、经营现金、偿付杠杆与营运占用各占综合分的 25%；一个核心维度低于 40 分，最终等级最高 C，两个及以上最高 D，均分不变。关键数据缺失或冲突时暂不评级，同行与事件不机械扣分。方法与阈值在报告中公开，不代表已验证未来风险。',
+          'Prispect financial grades are a public screening method for selected-year consolidated financials, not credit-agency ratings. Profitability, operating cash, solvency and working-capital pressure each contribute 25% of the score. One core dimension below 40 caps the grade at C; two or more cap it at D, retaining the arithmetic score. Missing or conflicting key data withholds the grade; peers and events do not automatically deduct points. Reports disclose the method and thresholds, which do not establish future risk.',
         ],
         [
           '析光不托管资金、不执行付款，不提供存款保障、投资建议或专业审计意见。AI 判断可能遗漏或误读，引用存在不证明解释正确；模型未完成时保留规则结果和实际状态。重要资金或合同决定应结合原件、当前记录及必要的专业意见，不能只依赖本服务。',
@@ -166,8 +166,8 @@ export const termsDocument: ProductDocument = {
       title: ['9. 导出、清空与停止使用', '9. Export, clearing and stopping use'],
       paragraphs: [
         [
-          '你可以停止使用，并按可用功能导出所需报告与材料。账号页的清空工作数据操作会删除本账号的核查事项及版本、企业查询、财报核查、跟进记录、材料和保留原件，账号与安全设置仍保留。请先备份，清空后页面无法撤销。',
-          'You may stop using the service and export the reports and materials supported by available features. Clearing working data on the account page deletes this account’s cases and versions, company research, financial reviews, follow-up records, materials and retained originals. The account and security settings remain. Back up first; the page cannot undo clearing.',
+          '你可以停止使用，并按可用功能导出所需报告与材料。账号页的“清空我的工作区”会删除本账号的核查事项及版本、研究记录、财报核查、跟进记录、材料和保留原件，账号与安全设置仍保留。请先备份，清空后页面无法撤销。',
+          'You may stop using the service and export the reports and materials supported by available features. Clear my workspace on the account page deletes this account’s review items and versions, research records, financial reviews, follow-up records, materials and retained originals. The account and security settings remain. Back up first; the page cannot undo clearing.',
         ],
         [
           '停止使用或退出登录不自动删除账号与工作数据。关于账号、个人信息权利或其他无法自行完成的请求，请通过本页联系方式联系析光；具体保留规则见隐私政策。',

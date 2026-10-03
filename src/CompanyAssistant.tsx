@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { Select } from './Select';
 import { useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import { ArrowUp, BookOpen, LoaderCircle, MessageCircle, RefreshCw, X } from 'lucide-react';
@@ -153,7 +154,7 @@ export function CompanyAssistant({ route }: { route: string }) {
     const text = /查询|搜索|开始|search|start|query/i.test(question)
       ? t(
           '登录后点击“新建研究”，输入公司名称或证券代码，确认候选企业。报告会展示公开资料分析，年报原件在后台继续核查。',
-          'Sign in, open New research, and enter a company name or security code. Confirm the entity to see public-source analysis while originals are checked in the background.'
+          'Log in, open New research, and enter a company name or security code. Confirm the entity to see public-source analysis while originals are checked in the background.'
         )
       : /来源|数据|出处|缺失|source|data|missing/i.test(question)
         ? t(
@@ -162,17 +163,17 @@ export function CompanyAssistant({ route }: { route: string }) {
           )
         : /材料|导入|付款|交接|工具|import|material|payment|handover|tool/i.test(question)
           ? t(
-              '侧边栏“核查工具”中保留财报工作台、材料中心、付款与交接、核查比较。材料可以先预览，确认后再保存和核查。',
-              'Review tools contains the financial workbench, Materials, Payments and handovers, and Compare reviews. Preview evidence before confirming and saving it.'
+              '侧边栏提供材料和付款与交接；“核查工具”中有财报核查和核查比较。材料可以先预览，确认后再保存和核查。',
+              'The sidebar provides Materials and Payments and handovers; Review tools contains Financial reviews and Compare reviews. Preview materials before confirming and saving them.'
             )
           : /问答|企业|公司|口径|规则|模型|company|question|model|profit|rules/i.test(question)
             ? t(
-                '选择上方“企业问答”和已载入企业，即可由 AI 结合企业公开资料回答，回答和引用保存在该企业记录中。',
-                'Choose Company questions and a loaded company above. AI answers using the company’s public evidence; answers and citations stay with that company record.'
+                '选择上方“企业问答”和已载入企业，即可由 AI 结合企业公开资料回答，回答和引用保存在该研究记录中。',
+                'Choose Company questions and a loaded company above. AI answers using the company’s public evidence; answers and citations stay with that research record.'
               )
             : t(
-                '我可以介绍公司查询、数据来源、核查工具和企业问答的使用方法。具体企业财务问题，请切换“企业问答”并选择已载入企业；更多说明见使用文档。',
-                'I can explain company search, sources, review tools and company questions. For financial questions, choose Company questions and a loaded company. See the documentation for more help.'
+                '我可以介绍公司研究、数据来源、核查工具和企业问答的使用方法。具体企业财务问题，请切换“企业问答”并选择已载入企业；更多说明见使用指南。',
+                'I can explain company research, sources, review tools and company questions. For financial questions, choose Company questions and a loaded company. See the user guide for more help.'
               );
     setHelpAnswers((previous) => [...previous, { question, text }].slice(-20));
     setHelpQuestion('');
@@ -245,7 +246,7 @@ export function CompanyAssistant({ route }: { route: string }) {
             aria-pressed={mode === 'company'}
             onClick={() => setMode('company')}
           >
-            {t('企业问答', 'Company questions')}
+            {t(...productTerms.companyQuestions)}
           </button>
           <button
             type="button"
@@ -298,8 +299,10 @@ export function CompanyAssistant({ route }: { route: string }) {
                       current?.changeBasis(next);
                     }}
                   >
-                    <option value="parent">{t('归母净利润', 'Attributable profit')}</option>
-                    <option value="consolidated">{t('合并净利润', 'Consolidated profit')}</option>
+                    <option value="parent">{t('归母净利润', 'Attributable net profit')}</option>
+                    <option value="consolidated">
+                      {t('合并净利润', 'Consolidated net profit')}
+                    </option>
                   </Select>
                 </div>
               )}
@@ -343,7 +346,9 @@ export function CompanyAssistant({ route }: { route: string }) {
                         )}
                   </p>
                   <a href={selected ? companyPath(selected) : '/query'}>
-                    {t('打开公司查询', 'Open company query')}
+                    {selected
+                      ? t('查看研究报告', 'View research report')
+                      : t(...productTerms.newResearch)}
                   </a>
                 </div>
               )}
@@ -353,10 +358,10 @@ export function CompanyAssistant({ route }: { route: string }) {
               <p>
                 {t(
                   '登录后，可以查询企业并继续已保存的问答。使用帮助无需登录。',
-                  'Sign in to query companies and continue saved answers. Product help is available without signing in.'
+                  'Log in to research companies and continue saved answers. Product help is available without logging in.'
                 )}
               </p>
-              <a href="/login">{t('登录', 'Sign in')}</a>
+              <a href="/login">{t('登录', 'Log in')}</a>
               <button className="text-link" onClick={() => setMode('help')}>
                 {t('查看使用帮助', 'Open product help')}
               </button>

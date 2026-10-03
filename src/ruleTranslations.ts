@@ -44,7 +44,7 @@ const rules: Record<string, string> = {
   '实际调用模型，检查引用 ID 与格式；含义需人工复核。':
     'Calling the model and checking citation IDs and format. Meaning still needs human review.',
   '实际调用可选模型，检查引用 ID 与格式；含义需人工复核。':
-    'Calling the optional model and checking citation IDs and format. Meaning still needs human review.',
+    'Calling the configured model and checking citation IDs and format. Meaning still needs human review.',
   '模型输出的引用 ID 与格式已检查；解释含义需人工复核。':
     'Model citation IDs and format have been checked. The explanation’s meaning still needs human review.',
   '输入存在冲突，未调用模型；规则报告完整保留。':
@@ -175,7 +175,7 @@ const rules: Record<string, string> = {
   '未满足现金桥条件，已停止没有依据的归因。':
     'Bridge requirements are not met. Unsupported attribution has stopped.',
   '实际调用可选模型，校验引用后保留解释。':
-    'Calling the configured optional model and validating its citations.',
+    'Calling the configured model and validating its citations.',
   '未配置模型，采用确定性规则解释与询证问题。':
     'No model configured. Deterministic rules supply explanations and evidence requests.',
   '模型未完成；规则报告完整保留。': 'Model call incomplete; the deterministic report is retained.',
@@ -188,6 +188,11 @@ const rules: Record<string, string> = {
   '输入口径、数值或现金桥核对存在冲突。保留可单独采用的金额与原始来源，暂停依赖冲突证据的解释；差额不直接证明经营风险。':
     'Input scope, amounts or bridge reconciliation conflict. Independently admissible amounts and original sources remain visible. Explanations dependent on conflicting evidence stop; the difference alone does not establish operating risk.',
   本次公开查询已取消: 'This public retrieval was cancelled.',
+  本次原件检索已取消: 'This original-document retrieval was cancelled.',
+  '原件核查未完成；可以恢复核查，或自行导入材料。':
+    'The original-report review did not complete. Resume the review or import materials.',
+  '财报核查处理或保存失败，请检查工作区后重试。':
+    'The financial review could not be processed or saved. Check the workspace and retry.',
   公开查询已中止: 'Public retrieval was stopped.',
   确认上市主体: 'Confirm the listed company',
   检索完整年报: 'Retrieve the full annual report',
@@ -229,15 +234,15 @@ const rules: Record<string, string> = {
   读取真实PDF页与文本: 'Read PDF pages and text',
   提取候选并运行确定性核验: 'Extract candidates and run deterministic checks',
   有限重试公开证据页规划: 'Retry public-evidence page selection',
-  模型选择公开证据核查页: 'Select public-evidence pages with the optional model',
+  模型选择公开证据核查页: 'Select public-evidence pages with the configured model',
   重新验证模型选中的原件页: 'Recheck model-selected original pages',
   模型解释公开核查证据: 'Model interpretation of public evidence',
   公开证据模型: 'Public-evidence model',
   '解释同年度合并可采用字段及短摘录。':
     'Interpret admissible same-year consolidated fields and short excerpts.',
   '解释已取得的公开候选页与字段。': 'Interpret retrieved public candidate pages and fields.',
-  可选模型解释公开核查证据: 'Optional model explanation of public evidence',
-  可选公开证据模型: 'Optional public-evidence model',
+  可选模型解释公开核查证据: 'Model explanation of public evidence',
+  可选公开证据模型: 'Public-evidence model',
   '仅使用精确代码与机构ID绑定的公告。':
     'Use disclosures tied to the exact security code and organization ID.',
   '指定年度没有全本时停止，不换成其他年份。':

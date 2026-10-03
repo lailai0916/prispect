@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useContext, useEffect, useRef, useState, Suspense } from 'react';
 import {
@@ -218,10 +219,10 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const remove = () =>
     run &&
     confirm({
-      title: t('删除企业记录？', 'Delete company record?'),
+      title: t('删除研究记录？', 'Delete research record?'),
       text: t(
-        '删除本次查询和问答；已采用的材料保留在材料中心。',
-        'Delete this query and its answers. Adopted evidence remains in Materials.'
+        '删除这份研究记录及问答；已采用的材料仍保留。',
+        'Delete this research record and its answers. Adopted evidence is retained.'
       ),
       action: async () => {
         const signal = request.current?.signal;
@@ -289,8 +290,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           value={basis}
           onValueChange={(selectedValue) => setBasis(selectedValue as CompanyReadingBasis)}
         >
-          <option value="parent">{t('归母净利润', 'Attributable profit')}</option>
-          <option value="consolidated">{t('合并净利润', 'Consolidated profit')}</option>
+          <option value="parent">{t('归母净利润', 'Attributable net profit')}</option>
+          <option value="consolidated">{t('合并净利润', 'Consolidated net profit')}</option>
         </Select>
       </label>
     </div>
@@ -303,7 +304,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         <div>
           <p className="context-eyebrow">
             {section === 'overview' && !pausedMarket
-              ? t('分析报告', 'Analysis report')
+              ? t(...productTerms.researchReport)
               : run.informationGap?.name ||
                 run.identity?.companyName ||
                 snapshot?.companyName ||
@@ -319,7 +320,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </h1>
           <p className="context-data-note">
             {section !== 'overview' && (
-              <>{run.input.securityCode || t('主体待定位', 'Entity unconfirmed')} · </>
+              <>{run.input.securityCode || t('主体待确认', 'Entity needs confirmation')} · </>
             )}
             {run.input.year}{' '}
             {section === 'overview' && !pausedMarket
@@ -358,7 +359,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               run.assessmentStatus === 'loading' ||
               run.challenge?.status === 'loading'
             }
-            aria-label={t('删除企业记录', 'Delete company record')}
+            aria-label={t('删除研究记录', 'Delete research record')}
             onClick={remove}
           >
             <Trash2 size={15} />
@@ -380,7 +381,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             {active
               ? t('年报原件正在后台核查', 'Original reports are being checked in the background')
               : run.status === 'adopted'
-                ? t('原件材料已确认采用', 'Original evidence adopted')
+                ? t('原件已采用', 'Original adopted')
                 : run.preview
                   ? t(
                       '已取得原件候选，等待逐项确认',

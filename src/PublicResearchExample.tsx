@@ -1,3 +1,4 @@
+import { documentTitles } from './content/document-navigation';
 import { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { buildExampleEvidenceLab } from '../shared/evidence-lab';
@@ -23,7 +24,7 @@ export function PublicResearchExample() {
           </p>
         </div>
         <a href="/docs/methodology">
-          {t('方法与范围', 'Methods and scope')}
+          {t(...documentTitles['/docs/methodology'])}
           <ArrowUpRight size={13} />
         </a>
       </header>

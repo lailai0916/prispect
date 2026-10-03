@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { createContext, useContext, useEffect, useState, type FormEvent } from 'react';
 import {
@@ -241,7 +242,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       ...input,
       title:
         input.title.trim() ||
-        `${input.transactionEntity.trim()} · ${input.purpose === 'external' ? t('预付款', 'Prepayment') : t('接手核查', 'Handover review')}`.slice(
+        `${input.transactionEntity.trim()} · ${input.purpose === 'external' ? t('预付款', 'Prepayment') : t(...productTerms.handoverReview)}`.slice(
           0,
           200
         ),
@@ -260,7 +261,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               }),
             })
           : post<DecisionDetail>('/decisions', normalized),
-      t('事项已保存', 'Review saved')
+      t('核查事项已保存', 'Review item saved')
     );
     if (result) {
       setDetail(result);
@@ -392,7 +393,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
   return (
     <div className="decisions-page">
       <PageHeading
-        title={t('核查事项', 'Reviews')}
+        title={t(...productTerms.paymentsAndHandovers)}
         description={t(
           '从财务发现出发，核对相关材料和当前安排。',
           'Follow financial findings into evidence and current arrangements.'
@@ -404,11 +405,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               onClick={() => navigate('/decisions?new=external')}
             >
               <Plus size={15} />
-              {t('新建事项', 'New review')}
+              {t('新建核查事项', 'New review item')}
             </button>
           ) : id ? (
             <button className="text-link" onClick={() => navigate('/decisions')}>
-              {t('全部事项', 'All reviews')}
+              {t('全部核查事项', 'All review items')}
             </button>
           ) : undefined
         }
@@ -424,7 +425,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       {loading && (
         <div className="loading-page">
           <LoaderCircle className="spinner" />
-          {t('读取任务…', 'Loading task…')}
+          {t('正在读取核查事项…', 'Loading review item…')}
         </div>
       )}
       {!id && !isNew && (
@@ -435,14 +436,14 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 className="button button-secondary"
                 onClick={() => navigate('/decisions?new=external')}
               >
-                {t('付款前核对', 'Before payment')}
+                {t(...productTerms.beforePayment)}
                 <ArrowRight size={15} />
               </button>
               <button
                 className="button button-secondary"
                 onClick={() => navigate('/decisions?new=handover')}
               >
-                {t('接手核查', 'Company handover')}
+                {t(...productTerms.handoverReview)}
                 <ArrowRight size={15} />
               </button>
             </div>
@@ -463,7 +464,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               : !error &&
                 !loading && (
                   <EmptyState
-                    title={t('暂无核查事项', 'No reviews yet')}
+                    title={t('暂无核查事项', 'No review items yet')}
                     icon={<ListChecks size={25} strokeWidth={1.4} />}
                     text={t(
                       '付款前核对签约、收款与履约约定；接手核查现有财务问题和收付款安排。',
@@ -475,14 +476,14 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                           className="button button-primary"
                           onClick={() => navigate('/decisions?new=external')}
                         >
-                          {t('付款前核对', 'Before payment')}
+                          {t(...productTerms.beforePayment)}
                           <ArrowRight size={15} />
                         </button>
                         <button
                           className="button button-secondary"
                           onClick={() => navigate('/decisions?new=handover')}
                         >
-                          {t('接手核查', 'Company handover')}
+                          {t(...productTerms.handoverReview)}
                         </button>
                       </div>
                     }
@@ -495,7 +496,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
         <form className="decision-input-form" onSubmit={save}>
           <fieldset className="decision-save-fields" disabled={busy}>
             <fieldset className="new-purpose">
-              <legend>{t('事项类型', 'Review type')}</legend>
+              <legend>{t('核查事项类型', 'Review item type')}</legend>
               <div className="purpose-options">
                 {(['external', 'handover'] as const).map((value) => (
                   <label
@@ -510,8 +511,8 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                     />
                     <strong>
                       {value === 'external'
-                        ? t('付款前核对', 'Before payment')
-                        : t('接手核查', 'Company handover')}
+                        ? t(...productTerms.beforePayment)
+                        : t(...productTerms.handoverReview)}
                     </strong>
                   </label>
                 ))}
@@ -565,7 +566,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
             <label className="form-field">
               <span>
                 {t(
-                  '任务说明或对方原话（可选）',
+                  '事项说明或对方原话（可选）',
                   'Your description or counterparty’s words (optional)'
                 )}
               </span>
@@ -601,21 +602,21 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 )}
               </p>
               <label className="form-field">
-                <span>{t('事项名称（可选）', 'Name (optional)')}</span>
+                <span>{t('核查事项名称（可选）', 'Review item name (optional)')}</span>
                 <input
                   maxLength={200}
                   value={input.title}
                   onChange={(e) => setInput({ ...input, title: e.target.value })}
-                  placeholder={t('按公司和决定自动命名', 'Named from the company and decision')}
+                  placeholder={t('按公司和事项自动命名', 'Named from the company and review item')}
                 />
               </label>
               <DecisionInputs input={input} onChange={setInput} />
               <details className="decision-financial-binding">
                 <summary>
-                  {t('关联历史财务核查（可选）', 'Link a historical financial review (optional)')}
+                  {t('关联历史财报核查（可选）', 'Link a historical financial review (optional)')}
                 </summary>
                 <label className="form-field">
-                  <span>{t('选择本账号核查', 'Select your review')}</span>
+                  <span>{t('选择本账号的财报核查', 'Select your financial review')}</span>
                   <Select
                     value={input.reportTaskId || ''}
                     onValueChange={(selectedValue) =>
@@ -662,7 +663,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
             </div>
             <p className="field-note">
               {t(
-                '留空为未知，0须明确填写。任务说明和材料记录仅保存在本账号，不发送到外部模型。',
+                '留空为未知，0须明确填写。事项说明和材料记录仅保存在本账号，不发送到外部模型。',
                 'Blank means unknown; enter zero explicitly. Descriptions and evidence stay in your account and are not sent to an external model.'
               )}
             </p>
@@ -680,7 +681,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               </p>
             </div>
             <ActionMenu
-              label={t('事项操作', 'Review actions')}
+              label={t('核查事项操作', 'Review item actions')}
               items={[
                 {
                   label: t('预览并导出这个版本', 'Preview and export this version'),
@@ -699,13 +700,16 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               ]}
             />
           </div>
-          <nav className="decision-local-nav" aria-label={t('事项内容', 'Review sections')}>
+          <nav
+            className="decision-local-nav"
+            aria-label={t('核查事项内容', 'Review item sections')}
+          >
             {(
               [
                 ['overview', t('下一步', 'Next step')],
                 ['scenarios', t('方案比较', 'Compare options')],
                 ['conditions', t('条件', 'Conditions')],
-                ['evidence', t('材料', 'Evidence')],
+                ['evidence', t(...productTerms.materials)],
                 ['history', t('版本', 'Versions')],
               ] as const
             ).map(([value, label]) => (
@@ -791,7 +795,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
           <div id="decision-panel-overview" hidden={section !== 'overview'}>
             {detail.version.input.promise && (
               <details className="decision-description">
-                <summary>{t('任务说明 · 用户提供', 'Description · supplied by you')}</summary>
+                <summary>{t('事项说明 · 用户提供', 'Description · supplied by you')}</summary>
                 <p>{detail.version.input.promise}</p>
               </details>
             )}
@@ -799,14 +803,17 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               <section className="decision-research-context">
                 <div className="decision-research-heading">
                   <span className="field-note">
-                    {t('关联财务研究 · 当前报告', 'Related research · current report')} ·{' '}
-                    {relatedReport.company} · {relatedReport.year}
+                    {t(
+                      '关联财报核查 · 当前核查报告',
+                      'Linked financial review · current review report'
+                    )}{' '}
+                    · {relatedReport.company} · {relatedReport.year}
                   </span>
                   <button
                     className="text-link"
                     onClick={() => navigate(`/tasks/${relatedTask.id}`)}
                   >
-                    {t('查看报告', 'Open report')} <ArrowUpRight size={14} />
+                    {t('查看核查报告', 'Open review report')} <ArrowUpRight size={14} />
                   </button>
                 </div>
                 {relatedFinding ? (
@@ -841,16 +848,16 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 {readOnly && (
                   <p className="field-note">
                     {t(
-                      '关联任务当前报告独立于此历史输入版本。',
-                      'The linked task’s current report is separate from this historical input version.'
+                      '关联财报核查的当前核查报告独立于此历史输入版本。',
+                      'The linked financial review’s current review report is separate from this historical input version.'
                     )}
                   </p>
                 )}
                 <p className="field-note decision-research-scope">
                   {relatedReport.company.trim() !== detail.version.input.transactionEntity.trim()
                     ? t(
-                        `研究主体为${relatedReport.company}，事项主体为${detail.version.input.transactionEntity}；两者尚未确认一致。`,
-                        `The research concerns ${relatedReport.company}; this review concerns ${detail.version.input.transactionEntity}. They are not confirmed to be the same entity.`
+                        `财报核查主体为${relatedReport.company}，事项主体为${detail.version.input.transactionEntity}；两者尚未确认一致。`,
+                        `The financial review concerns ${relatedReport.company}; this review item concerns ${detail.version.input.transactionEntity}. They are not confirmed to be the same entity.`
                       )
                     : t(
                         '历史披露用于提出核查问题；当前现金、交易主体和条款需各自提供依据。',
@@ -1170,7 +1177,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               ) : (
                 <div className="decision-empty-evidence">
                   <FileText size={24} />
-                  <h4>{t('尚未提供材料', 'No evidence yet')}</h4>
+                  <h4>{t('尚未提供材料', 'No materials yet')}</h4>
                   <p>
                     {t(
                       '输入金额只用于情景测算。添加记录后，核对适用主体、日期和原文。',
@@ -1190,7 +1197,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                   href={`/tasks/${detail.version.input.reportTaskId}`}
                 >
                   <FileText size={15} />
-                  {t('打开关联财务核查', 'Open linked financial review')}
+                  {t('打开关联财报核查', 'Open linked financial review')}
                 </a>
               ) : (
                 <p className="field-note">
@@ -1204,7 +1211,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 className="text-link"
                 onClick={() => navigate(`/company?purpose=${detail.version.input.purpose}`)}
               >
-                {t('查询公司公开资料', 'Look up company disclosures')}
+                {t('开始公司研究', 'Start company research')}
                 <ArrowUpRight size={14} />
               </button>
             </details>
@@ -1259,7 +1266,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       )}
       {exportSnapshot && exportSnapshot.ownerId === user?.id && (
         <ExportPreview
-          title={t('导出事项版本', 'Export review version')}
+          title={t('导出核查事项版本', 'Export review item version')}
           snapshotKey={`${exportSnapshot.detail.decision.id}:${exportSnapshot.detail.version.revision}`}
           sources={[
             {
@@ -2294,7 +2301,7 @@ function EvidenceDialog({
     setEvidence({ ...evidence, values: { ...evidence.values, ...patch } });
   return (
     <Dialog
-      title={t('记录决定依据', 'Record decision evidence')}
+      title={t('记录核查事项依据', 'Record review item evidence')}
       onClose={onClose}
       closeDisabled={busy}
     >
@@ -2309,7 +2316,7 @@ function EvidenceDialog({
         <fieldset className="decision-save-fields" disabled={busy}>
           <div className="decision-form-grid">
             <label className="form-field">
-              <span>{t('材料用途', 'Evidence slot')}</span>
+              <span>{t('材料用途', 'Material purpose')}</span>
               <Select
                 value={evidence.slot}
                 onValueChange={(selectedValue) =>

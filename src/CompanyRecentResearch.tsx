@@ -20,13 +20,15 @@ export function CompanyRecentResearch() {
       record.status === 'running'
     )
       return t('处理中', 'Processing');
-    if (record.informationGap) return t('主体待确认', 'Entity unmatched');
+    if (record.informationGap) return t('主体待确认', 'Entity needs confirmation');
     if (record.assessmentStatus === 'failed') return t('分析未完成', 'Analysis interrupted');
     if (record.contextStatus === 'failed') return t('资料不完整', 'Sources incomplete');
     if (record.status === 'failed') return t('原件未完成', 'Original interrupted');
     if (record.result?.stale) return t('分析待更新', 'Analysis outdated');
     if (record.result)
-      return record.result.modelStatus === 'completed' ? null : t('规则分析', 'Rule analysis');
+      return record.result.modelStatus === 'completed'
+        ? null
+        : t('规则分析', 'Rule-based analysis');
     return t('未完成', 'Incomplete');
   };
   return (
@@ -47,7 +49,7 @@ export function CompanyRecentResearch() {
           <p role="alert">{error}</p>
           <button className="button button-secondary" onClick={() => void reload()}>
             <RefreshCw size={13} />
-            {t('重新读取', 'Retry')}
+            {t('重新读取', 'Reload')}
           </button>
         </div>
       ) : (
@@ -59,7 +61,7 @@ export function CompanyRecentResearch() {
                 <span className="research-record-name">
                   <strong>{record.name}</strong>
                   <small>
-                    {record.input.securityCode || t('主体待匹配', 'Entity unmatched')} ·{' '}
+                    {record.input.securityCode || t('主体待确认', 'Entity needs confirmation')} ·{' '}
                     {record.input.year}
                   </small>
                 </span>

@@ -117,7 +117,7 @@ export class WorkspaceStore {
       this.state.companyRuns ||= [];
       this.state.decisions ||= [];
       if (!Array.isArray(this.state.decisions)) throw new Error('决定记录格式无效');
-      if (!Array.isArray(this.state.companyRuns)) throw new Error('企业查询记录格式无效');
+      if (!Array.isArray(this.state.companyRuns)) throw new Error('研究记录格式无效');
       for (const run of this.state.companyRuns) {
         if (run.challenge?.status === 'loading') {
           run.challenge.status = 'failed';

@@ -276,7 +276,7 @@ export function deriveCompanyResearchProgress(
     'not-started': ['研究尚未开始', 'Research has not started'],
     running: ['研究进行中', 'Research in progress'],
     completed: ['分析已完成', 'Analysis complete'],
-    partial: ['分析与资料限制', 'Analysis with source limitations'],
+    partial: ['部分研究结果', 'Partial research results'],
     failed: ['本次研究未完成', 'This research did not complete'],
   };
   const finishedReport =
@@ -430,8 +430,8 @@ export function deriveCompanyResearchBrief(run: CompanyResearchRun): CompanyRese
     ]);
   else if (assessment?.model.status === 'not-called')
     warnings.push([
-      'AI 尚未返回分析，当前展示规则结果。',
-      'AI analysis is not yet available; rule results are shown.',
+      '本次尚未调用 AI，当前展示规则结果。',
+      'AI was not called for this analysis; rule results are shown.',
     ]);
   else if (assessment?.model.warning)
     warnings.push(

@@ -224,8 +224,8 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 'Enter a 6-digit authenticator code or a one-time recovery code.'
               )
             : t(
-                '你的材料与决定保存在独立的私人工作区。',
-                'Your materials and decisions stay in your private workspace.'
+                '你的材料与核查事项保存在独立的私人工作区。',
+                'Your materials and review items stay in your private workspace.'
               )}
         </p>
         {challenge ? (

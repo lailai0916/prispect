@@ -56,9 +56,9 @@ test('HTML and Markdown withhold old mixed-currency analysis while preserving ra
   assert.ok(!section(html, '现金桥').includes('366373098.93'));
   assert.ok(!section(html, '解释与依据').includes('cash-gap'));
   assert.ok(!section(html, '解释与依据').includes('424.24'));
-  assert.match(section(html, '模型解释'), /解释已完成/);
-  assert.match(section(html, '模型解释'), /recorded-provider · recorded-model/);
-  assert.match(section(html, '模型解释'), /暂不展示；原执行状态与完整记录保留/);
+  assert.match(section(html, 'AI 解读'), /AI 解读已完成/);
+  assert.match(section(html, 'AI 解读'), /recorded-provider · recorded-model/);
+  assert.match(section(html, 'AI 解读'), /暂不展示；原执行状态与完整记录保留/);
   assert.ok(!html.includes(report.model.text!));
   assert.match(section(html, '币种与单位核对'), /366373098\.93<\/td><td>美元 · USD/);
   assert.ok(section(html, '来源与输入快照').includes('366373098.93'));
@@ -151,7 +151,7 @@ test('valid CNY exports preserve amount calculations, source references and reco
   assert.ok(!html.includes('<h2>币种与单位核对</h2>'));
   assert.match(section(html, '指标与计算'), /现金利润比<\/td><td class="amount">7\.15/);
   assert.ok(section(html, '现金桥').includes('366373098.93'));
-  assert.ok(section(html, '模型解释').includes('Saved CNY interpretation.'));
+  assert.ok(section(html, 'AI 解读').includes('Saved CNY interpretation.'));
   assert.ok(buildReviewChecklist(task, 'en').includes('Saved triggering fact'));
   assert.equal(JSON.stringify(task), original);
 });

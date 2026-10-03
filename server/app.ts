@@ -138,7 +138,7 @@ export async function createApp(options: AppOptions = {}) {
     };
   const taskById = (id: string, store: WorkspaceStore) => {
     const task = store.state.tasks.find((item) => item.id === id);
-    if (!task) throw new ApiFault(404, 'TASK_NOT_FOUND', '未找到核查任务');
+    if (!task) throw new ApiFault(404, 'TASK_NOT_FOUND', '未找到财报核查');
     return task;
   };
   const run = async (taskId: string, store: WorkspaceStore) => {
@@ -201,7 +201,7 @@ export async function createApp(options: AppOptions = {}) {
       await changeStage(4, 'completed', '核查报告已持久保存，可重开与导出。');
     } catch {
       task.status = 'failed';
-      task.error = '任务处理或保存失败，请检查本机工作区后重试。';
+      task.error = '财报核查处理或保存失败，请检查工作区后重试。';
       task.updatedAt = new Date().toISOString();
       const stage = task.stages.find((item) => item.status === 'running');
       if (stage) {
@@ -596,18 +596,14 @@ export async function createApp(options: AppOptions = {}) {
       try {
         await access(filename);
       } catch {
-        throw new ApiFault(
-          404,
-          'SOURCE_NOT_DOWNLOADED',
-          '本机尚未下载原件；请打开公开原件链接或执行来源下载脚本'
-        );
+        throw new ApiFault(404, 'SOURCE_NOT_DOWNLOADED', '暂未保留这份原件，请打开来源链接。');
       }
       const bytes = await readFile(filename);
       if (createHash('sha256').update(bytes).digest('hex') !== source.sha256)
         throw new ApiFault(
           409,
           'SOURCE_HASH_MISMATCH',
-          '本机原件哈希与已核验清单不同，未发送文件；请恢复已核验原件'
+          '保留原件的哈希与来源记录不一致，暂时无法提供文件。'
         );
       res.type('pdf').send(bytes);
     })
@@ -618,16 +614,20 @@ export async function createApp(options: AppOptions = {}) {
       const store = res.locals.store as WorkspaceStore;
       auth.rateLimit(`tasks:${(res.locals.auth as AuthContext).user.id}`, 60, 60 * 60 * 1000);
       if (store.state.tasks.length >= 200)
-        throw new ApiFault(429, 'TASK_LIMIT', '个人工作区最多 200 份任务，请整理历史后重试');
+        throw new ApiFault(429, 'TASK_LIMIT', '个人工作区最多 200 份财报核查，请整理历史后重试');
       if (
         store.state.tasks.filter((task) => task.status === 'queued' || task.status === 'running')
           .length >= 2 ||
         running.size + scheduled.size >= 4
       )
-        throw new ApiFault(429, 'TASK_BUSY', '正在执行的任务较多，请稍后重试');
+        throw new ApiFault(429, 'TASK_BUSY', '正在处理的财报核查较多，请稍后重试');
       const parsed = taskInputSchema.safeParse(req.body);
       if (!parsed.success)
-        throw new ApiFault(400, 'INVALID_TASK', parsed.error.issues[0]?.message || '任务参数无效');
+        throw new ApiFault(
+          400,
+          'INVALID_TASK',
+          parsed.error.issues[0]?.message || '财报核查输入无效'
+        );
       const input: CreateTaskInput = parsed.data;
       const materials = input.materialIds.map((id) => {
         const material = store.state.materials.find((item) => item.id === id);
@@ -672,9 +672,9 @@ export async function createApp(options: AppOptions = {}) {
           .length >= 2 ||
         running.size + scheduled.size >= 4
       )
-        throw new ApiFault(429, 'TASK_BUSY', '正在执行的任务较多，请稍后重试');
+        throw new ApiFault(429, 'TASK_BUSY', '正在处理的财报核查较多，请稍后重试');
       if (running.has(task.id) || task.status === 'queued')
-        throw new ApiFault(409, 'TASK_RUNNING', '任务正在执行，请等待结束');
+        throw new ApiFault(409, 'TASK_RUNNING', '财报核查正在处理，请等待结束');
       task.status = 'queued';
       task.useModel = true;
       task.error = undefined;
@@ -737,13 +737,17 @@ export async function createApp(options: AppOptions = {}) {
       const store = res.locals.store as WorkspaceStore;
       const task = taskById(String(req.params.id), res.locals.store as WorkspaceStore);
       if (running.has(task.id) || task.status === 'queued')
-        throw new ApiFault(409, 'TASK_RUNNING', '执行中的任务不能删除');
+        throw new ApiFault(409, 'TASK_RUNNING', '正在处理的财报核查不能删除');
       if (
         (store.state.decisions || []).some((decision) =>
           decision.versions.some((version) => version.input.reportTaskId === task.id)
         )
       )
-        throw new ApiFault(409, 'TASK_IN_USE', '决定历史版本仍引用这份财报任务，请保留报告');
+        throw new ApiFault(
+          409,
+          'TASK_IN_USE',
+          '核查事项的历史版本仍引用这份财报核查，请保留核查报告'
+        );
       store.state.tasks = store.state.tasks.filter((item) => item.id !== task.id);
       delete store.state.inputs[task.id];
       await store.persist();
@@ -781,9 +785,13 @@ export async function createApp(options: AppOptions = {}) {
       if (req.body?.confirm !== 'RESET_DEMO')
         throw new ApiFault(400, 'CONFIRM_REQUIRED', '重置需明确确认 RESET_DEMO');
       if (store.state.tasks.some((task) => running.has(task.id) || scheduled.has(task.id)))
-        throw new ApiFault(409, 'TASK_RUNNING', '存在执行中的任务，暂时不能重置');
+        throw new ApiFault(409, 'TASK_RUNNING', '存在正在处理的财报核查，暂时不能清空工作区');
       if (company.busy(store) || companyContext.busy(store) || companyChallenge.busy(store))
-        throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '公开证据查询或保存中，暂时不能重置');
+        throw new ApiFault(
+          409,
+          'COMPANY_AGENT_BUSY',
+          '公司研究或研究记录保存中，暂时不能清空工作区'
+        );
       await store.reset();
       res.json(store.workspace(provider));
     })
@@ -861,7 +869,7 @@ export async function createApp(options: AppOptions = {}) {
       res.status(413).json({ error: '结构化请求超过 2MB 限制', code: 'BODY_TOO_LARGE' });
       return;
     }
-    res.status(500).json({ error: '本机服务处理失败，请检查工作区后重试', code: 'INTERNAL_ERROR' });
+    res.status(500).json({ error: '服务暂未完成此请求，请稍后重试', code: 'INTERNAL_ERROR' });
   };
   app.use(errorHandler);
   return {

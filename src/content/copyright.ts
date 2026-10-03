@@ -1,5 +1,5 @@
 import type { ProductDocument } from './document';
-import { documentMetadata } from './document-navigation';
+import { documentMetadata, documentTitles } from './document-navigation';
 
 export const copyrightDocument: ProductDocument = {
   ...documentMetadata['/docs/copyright'],
@@ -109,10 +109,10 @@ export const copyrightDocument: ProductDocument = {
       ],
       links: [
         {
-          label: ['材料使用与服务约定', 'Terms for materials and service use'],
+          label: documentTitles['/docs/terms'],
           href: '/docs/terms',
         },
-        { label: ['私人数据处理', 'Private-data processing'], href: '/docs/privacy' },
+        { label: documentTitles['/docs/privacy'], href: '/docs/privacy' },
       ],
     },
     {
