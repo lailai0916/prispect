@@ -699,7 +699,7 @@ export function App() {
                 </nav>
               )}
               <div className="header-actions">
-                {business && (
+                {(business || documentationRoute) && (
                   <Hint label={t(...documentationTitle)}>
                     <a className="icon-button" href="/docs" aria-label={t(...documentationTitle)}>
                       <BookOpen size={17} />

@@ -669,6 +669,7 @@ pre {
 .sidebar-bottom {
   margin-top: auto;
   padding-top: 24px;
+  border-top: 1px solid var(--line);
 }
 .sidebar-method {
   font-size: var(--text-ui);
