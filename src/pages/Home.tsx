@@ -12,9 +12,15 @@ const CashScenarioPreview = lazyPage(
   (module) => module.CashScenarioPreview
 );
 
-export function Home() {
+export function Home({ exampleOnly = false }: { exampleOnly?: boolean }) {
   const { t, user } = useApp();
   const [cashOpen, setCashOpen] = useState(false);
+  if (exampleOnly)
+    return (
+      <div className="home-landing research-entry-page">
+        <PublicResearchExample />
+      </div>
+    );
   return (
     <div className="home-landing research-entry-page">
       <CompanyResearchLauncher

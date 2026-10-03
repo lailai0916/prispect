@@ -682,10 +682,14 @@ export function App() {
                   ) : !loaded ? (
                     <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
                   ) : page === '/' ? (
-                    user ? (
+                    user && new URLSearchParams(route.split('?')[1]).get('example') !== '1' ? (
                       <CompanyQueryPage />
                     ) : (
-                      <Home />
+                      <Home
+                        exampleOnly={
+                          new URLSearchParams(route.split('?')[1]).get('example') === '1'
+                        }
+                      />
                     )
                   ) : page === '/login' || page === '/register' || !user || !workspace ? (
                     <AuthPage
