@@ -81,8 +81,9 @@ export function ShowcaseLanding({
   const [scanPosition, setScanPosition] = useState(52);
   const [reading, setReading] = useState<{
     channel: 'finance' | 'public' | 'reputation' | 'original';
+    scene: 0 | 1 | 2;
     revision: number;
-  }>({ channel: 'finance', revision: 0 });
+  }>({ channel: 'finance', scene: 0, revision: 0 });
   useShowcaseMotion(root, locale);
   useEffect(() => {
     let frame = 0;
@@ -197,6 +198,7 @@ export function ShowcaseLanding({
                   onClick={() =>
                     setReading((previous) => ({
                       channel: (['finance', 'public', 'finance', 'reputation'] as const)[index],
+                      scene: index === 2 ? 1 : 0,
                       revision: previous.revision + 1,
                     }))
                   }
@@ -256,6 +258,7 @@ export function ShowcaseLanding({
           <ShowcaseSignalStage
             key={reading.revision}
             initialChannel={reading.channel}
+            initialScene={reading.scene}
             onOpenSource={() => setSourceOpen(true)}
           />
         </div>

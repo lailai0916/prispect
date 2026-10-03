@@ -205,6 +205,18 @@ const errorMessages: Record<string, string> = {
 export function requestErrorText(error: unknown, locale: string): string {
   if (error instanceof RequestError && locale === 'en' && errorMessages[error.code])
     return errorMessages[error.code];
+  // Browser fetch failures use these complete messages. Do not swallow unrelated
+  // TypeErrors, dynamic-import failures, or explicitly named cancellation errors.
+  if (
+    error instanceof TypeError &&
+    error.name === 'TypeError' &&
+    ['Failed to fetch', 'Load failed', 'NetworkError when attempting to fetch resource.'].includes(
+      error.message
+    )
+  )
+    return locale === 'en'
+      ? 'The network request did not complete. Check your connection and try again.'
+      : '网络请求未完成，请检查网络连接后重试。';
   return error instanceof Error ? error.message : String(error);
 }
 

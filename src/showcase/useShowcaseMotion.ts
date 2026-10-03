@@ -11,6 +11,30 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
     () => {
       const container = root.current;
       if (!container) return;
+      const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let priorReducedMotion = motionPreference.matches;
+      let motionScroll: { x: number; y: number; href: string } | null = null;
+      const mediaEvents = gsap as typeof gsap & {
+        addEventListener(event: 'matchMediaInit' | 'matchMedia', callback: () => void): void;
+        removeEventListener(event: 'matchMediaInit' | 'matchMedia', callback: () => void): void;
+      };
+      const recordMotionScroll = () => {
+        const reducedMotion = motionPreference.matches;
+        if (reducedMotion === priorReducedMotion) return;
+        priorReducedMotion = reducedMotion;
+        motionScroll = container.isConnected
+          ? { x: window.scrollX, y: window.scrollY, href: window.location.href }
+          : null;
+      };
+      const restoreMotionScroll = () => {
+        const position = motionScroll;
+        motionScroll = null;
+        if (!position || !container.isConnected || position.href !== window.location.href) return;
+        // This listener follows ScrollTrigger's refresh, within the same media-change event.
+        window.scrollTo({ left: position.x, top: position.y, behavior: 'instant' });
+      };
+      mediaEvents.addEventListener('matchMediaInit', recordMotionScroll);
+      mediaEvents.addEventListener('matchMedia', restoreMotionScroll);
       const media = gsap.matchMedia();
       media.add(
         {
@@ -399,6 +423,31 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
           };
         }
       );
+      // CSS has its own animation clock; the GSAP entrance pause does not stop it.
+      const marquee = container.querySelector<HTMLElement>('.showcase-marquee-track');
+      const priorMarqueeState = marquee?.style.getPropertyValue('animation-play-state') || '';
+      const priorMarqueePriority = marquee?.style.getPropertyPriority('animation-play-state') || '';
+      let marqueeInView = false;
+      let marqueeDisposed = false;
+      const reconcileMarquee = () => {
+        if (marqueeDisposed) return;
+        marquee?.style.setProperty(
+          'animation-play-state',
+          document.hidden || !marqueeInView ? 'paused' : priorMarqueeState || 'running',
+          priorMarqueePriority
+        );
+      };
+      const marqueeObserver = marquee
+        ? new IntersectionObserver(([entry]) => {
+            marqueeInView = entry.isIntersecting;
+            reconcileMarquee();
+          })
+        : null;
+      if (marquee) {
+        reconcileMarquee();
+        marqueeObserver?.observe(marquee.closest('.showcase-marquee') || marquee);
+        document.addEventListener('visibilitychange', reconcileMarquee);
+      }
       let frame = 0;
       const resize = new ResizeObserver(() => {
         cancelAnimationFrame(frame);
@@ -408,8 +457,23 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
       });
       resize.observe(container);
       return () => {
+        marqueeDisposed = true;
+        motionScroll = null;
+        mediaEvents.removeEventListener('matchMediaInit', recordMotionScroll);
+        mediaEvents.removeEventListener('matchMedia', restoreMotionScroll);
         cancelAnimationFrame(frame);
         resize.disconnect();
+        marqueeObserver?.disconnect();
+        document.removeEventListener('visibilitychange', reconcileMarquee);
+        if (marquee) {
+          if (priorMarqueeState)
+            marquee.style.setProperty(
+              'animation-play-state',
+              priorMarqueeState,
+              priorMarqueePriority
+            );
+          else marquee.style.removeProperty('animation-play-state');
+        }
         media.revert();
       };
     },

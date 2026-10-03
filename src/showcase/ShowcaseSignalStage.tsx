@@ -230,13 +230,15 @@ function OriginalPanel({ onOpenSource }: { onOpenSource: () => void }) {
 export function ShowcaseSignalStage({
   onOpenSource,
   initialChannel = 'finance',
+  initialScene = 0,
 }: {
   onOpenSource: () => void;
   initialChannel?: Channel;
+  initialScene?: 0 | 1 | 2;
 }) {
   const { t, locale } = useApp();
   const [channel, setChannel] = useState<Channel>(initialChannel);
-  const [scene, setScene] = useState(0);
+  const [scene, setScene] = useState<number>(initialScene);
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const id = useId();
   const english = locale === 'en';
@@ -248,7 +250,9 @@ export function ShowcaseSignalStage({
   ];
   const question =
     channel === 'finance'
-      ? t('账面上的利润，留下了多少现金？', 'How much profit became operating cash?')
+      ? scene === 1
+        ? t('利润与现金的差距，还需要核对什么？', 'What needs checking behind the profit–cash gap?')
+        : t('账面上的利润，留下了多少现金？', 'How much profit became operating cash?')
       : channel === 'public'
         ? t('一条公开记录，指向什么问题？', 'What question does a public record raise?')
         : channel === 'reputation'

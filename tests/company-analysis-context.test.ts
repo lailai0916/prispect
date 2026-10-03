@@ -2,7 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import { deriveCompanyAssessment, type AssessmentEvidence } from '../shared/company-assessment.js';
-import { contextAmountFields, type CompanyNews } from '../shared/company-workspace.js';
+import {
+  contextAmountFields,
+  type CompanyDisclosure,
+  type CompanyNews,
+  type CompanySourceReceipt,
+} from '../shared/company-workspace.js';
 import { buildAssessmentPublicPayload } from '../server/company-assessment.js';
 import {
   normalizePublicText,
@@ -72,6 +77,47 @@ function company(): CompanyResearchRun {
       warnings: [],
     },
   };
+}
+
+function literalCompressionFixture(quoteLength = 2000) {
+  const run = company();
+  const ending = '合成限定：尚未确认资金关系。';
+  const quote = '合成摘录正文。'.repeat(400).slice(0, quoteLength - ending.length) + ending;
+  const note = '合成来源读取范围说明。'.repeat(140) + '合成记录结尾：本次只有有限读取。';
+  const disclosure: CompanyDisclosure = {
+    id: 'literal-disclosure',
+    title: '合成原文边界研究',
+    date: '2026-04-01',
+    url: 'https://static.cninfo.com.cn/finalpage/2026-04-01/1234567890.pdf',
+    sources: [{ provider: '巨潮资讯', url: 'https://www.cninfo.com.cn/' }],
+    category: 'annual',
+    attention: 'high',
+    matched: '',
+    meaning: '合成原文节选，未取得全文。',
+    nextQuestion: '哪些事实尚未确认？',
+    excerpt: {
+      quote,
+      page: 2,
+      pagesRead: 3,
+      url: 'https://static.cninfo.com.cn/finalpage/2026-04-01/1234567890.pdf',
+      sha256: 'd'.repeat(64),
+    },
+  };
+  const source: CompanySourceReceipt = {
+    id: 'literal-note',
+    provider: '巨潮资讯',
+    dimension: '公开财务来源',
+    url: 'https://www.cninfo.com.cn/literal-note',
+    status: 'available',
+    fetchedAt: acquiredAt,
+    latestDate: '2025-12-31',
+    count: 2,
+    note,
+    responseHashes: ['e'.repeat(64)],
+  };
+  run.context!.announcements = [disclosure];
+  run.context!.sources = [source];
+  return { run, disclosure, source, quote, note };
 }
 
 test('same acquired text keeps a tail counter explanation and its scope while the old prefix loses both', () => {
@@ -202,6 +248,192 @@ test('public metadata deduplicates exact repeated quote text with references whi
   assert.equal(payload.sourceQuality[0]!.note, quote);
   assert.equal(payload.sourceQuality[1]!.noteReference, 'sourceQuality.source-1.note');
   assert.equal(JSON.stringify(payload).split(quote).length - 1, 1);
+});
+
+test('long same-source literals are sent once without extending the saved reading scope or mutating records', async (t) => {
+  for (const length of [1500, 2000, 2400, 2600]) {
+    await t.test(`${length}-character acquired disclosure`, () => {
+      const { run, disclosure, source, quote, note } = literalCompressionFixture(length);
+      Object.assign(run, { privateNote: 'PRIVATE_NOTE', preview: { text: 'PRIVATE_UPLOAD' } });
+      const before = structuredClone(run),
+        seed = deriveCompanyAssessment(run),
+        seedBefore = structuredClone(seed),
+        payload = buildAssessmentPublicPayload(run, seed);
+      assert.ok('announcements' in payload);
+      const document = payload.announcements[0]!,
+        evidence = payload.screen.evidence.find(
+          (item) => item.id === `disclosure-${disclosure.id}`
+        )!,
+        sourceEvidence = payload.screen.evidence.find((item) => item.id === `source-${source.id}`)!;
+      const retainedQuote = quote.slice(0, 2400);
+      assert.equal(document.excerpt!.quote, retainedQuote);
+      assert.equal(JSON.stringify(payload).split(retainedQuote).length - 1, 1);
+      assert.equal(evidence.quote, undefined);
+      assert.equal(evidence.quoteReference, `announcements.${disclosure.id}.excerpt.quote`);
+      assert.equal(evidence.url, disclosure.excerpt!.url);
+      assert.equal(evidence.period, disclosure.date);
+      assert.equal(evidence.page, disclosure.excerpt!.page);
+      assert.equal(evidence.kind, 'disclosure');
+      assert.equal(evidence.sourceQuality, 'excerpt');
+      assert.deepEqual(document.sources, disclosure.sources);
+      assert.deepEqual(document.excerpt, { ...disclosure.excerpt, quote: retainedQuote });
+      assert.equal(document.date, disclosure.date);
+      assert.equal(JSON.stringify(payload).split(note).length - 1, 1);
+      assert.equal(sourceEvidence.quote, undefined);
+      assert.equal(sourceEvidence.quoteReference, `sourceQuality.${source.id}.note`);
+      assert.equal(sourceEvidence.url, source.url);
+      assert.equal(sourceEvidence.sourceQuality, 'web');
+      const { noteReference, ...sourceMetadata } = payload.sourceQuality[0]!;
+      assert.equal(noteReference, undefined);
+      assert.deepEqual(sourceMetadata, source);
+      assert.doesNotMatch(JSON.stringify(payload), /PRIVATE_|private-run-id-not-forwarded/);
+      assert.deepEqual(run, before);
+      assert.deepEqual(seed, seedBefore);
+      assert.deepEqual(
+        payload.screen.evidence.map((item) => item.id),
+        seed.evidence.map((item) => item.id)
+      );
+    });
+  }
+});
+
+test('a disclosure outside the saved evidence catalog retains its original shorter model reading scope', () => {
+  const { run, disclosure } = literalCompressionFixture();
+  run.context!.announcements = Array.from({ length: 24 }, (_, index) => ({
+    ...structuredClone(disclosure),
+    id: `scope-disclosure-${String(index).padStart(2, '0')}`,
+    date: `2026-04-${String(index + 1).padStart(2, '0')}`,
+    url: `https://static.cninfo.com.cn/finalpage/2026-04-01/${1234567890 + index}.pdf`,
+    excerpt: {
+      ...disclosure.excerpt!,
+      quote: `${String(index).padStart(2, '0')}：${disclosure.excerpt!.quote}`,
+      url: `https://static.cninfo.com.cn/finalpage/2026-04-01/${1234567890 + index}.pdf`,
+    },
+  }));
+  const seed = deriveCompanyAssessment(run),
+    catalogIds = new Set(seed.evidence.map((item) => item.id)),
+    before = structuredClone(run),
+    payload = buildAssessmentPublicPayload(run, seed);
+  assert.ok('announcements' in payload);
+  assert.equal(payload.announcements.length, 24);
+  const excluded = payload.announcements.filter((row) => !catalogIds.has(`disclosure-${row.id}`));
+  assert.equal(excluded.length, 4);
+  for (const row of payload.announcements) {
+    const original = run.context!.announcements.find((item) => item.id === row.id)!;
+    assert.equal(
+      row.excerpt!.quote,
+      original.excerpt!.quote.slice(0, catalogIds.has(`disclosure-${row.id}`) ? 2400 : 1500)
+    );
+  }
+  assert.deepEqual(run, before);
+});
+
+test('similar or ambiguous source identity cannot replace a saved literal with another reading scope', async (t) => {
+  await t.test(
+    'distinct sources sharing the saved prefix retain both different full endings',
+    () => {
+      const { run, source, note } = literalCompressionFixture();
+      const otherSource = {
+        ...source,
+        id: 'another-literal-note',
+        url: 'https://www.cninfo.com.cn/another-literal-note',
+        note: note.slice(0, 1000) + '另一合成来源明确未完成原文核验。',
+      };
+      run.context!.sources.push(otherSource);
+      const before = structuredClone(run),
+        seed = deriveCompanyAssessment(run),
+        payload = buildAssessmentPublicPayload(run, seed);
+      assert.ok('sourceQuality' in payload);
+      assert.equal(
+        seed.evidence.find((row) => row.id === `source-${source.id}`)!.quote,
+        seed.evidence.find((row) => row.id === `source-${otherSource.id}`)!.quote
+      );
+      for (const actual of [source, otherSource]) {
+        const row: AssessmentEvidence & { quoteReference?: string } = payload.screen.evidence.find(
+          (item) => item.id === `source-${actual.id}`
+        )!;
+        assert.equal(row.quote, undefined);
+        assert.equal(row.quoteReference, `sourceQuality.${actual.id}.note`);
+        assert.equal(JSON.stringify(payload).split(actual.note).length - 1, 1);
+        assert.equal(
+          payload.sourceQuality.find((item) => item.id === actual.id)!.note,
+          actual.note
+        );
+      }
+      assert.deepEqual(run, before);
+    }
+  );
+  const disclosureChanges = {
+    id: (item: AssessmentEvidence) => {
+      item.id = 'disclosure-another';
+    },
+    kind: (item: AssessmentEvidence) => {
+      item.kind = 'profile';
+    },
+    quality: (item: AssessmentEvidence) => {
+      item.sourceQuality = 'headline';
+    },
+    url: (item: AssessmentEvidence) => {
+      item.url = 'https://www.cninfo.com.cn/another.pdf';
+    },
+    page: (item: AssessmentEvidence) => {
+      item.page = 3;
+    },
+    date: (item: AssessmentEvidence) => {
+      item.period = '2025-04-01';
+    },
+    text: (item: AssessmentEvidence) => {
+      item.quote = '不同原文。' + item.quote;
+    },
+  };
+  for (const [name, change] of Object.entries(disclosureChanges)) {
+    await t.test(`disclosure ${name} differs`, () => {
+      const { run, disclosure } = literalCompressionFixture(),
+        seed = deriveCompanyAssessment(run),
+        item = seed.evidence.find((row) => row.id === `disclosure-${disclosure.id}`)!;
+      change(item);
+      const before = structuredClone(seed),
+        payload = buildAssessmentPublicPayload(run, seed);
+      assert.ok('announcements' in payload);
+      assert.equal(
+        payload.announcements[0]!.excerpt!.quote,
+        disclosure.excerpt!.quote.slice(0, 1500)
+      );
+      const retained = payload.screen.evidence.find((row) => row.id === item.id)!;
+      assert.equal(retained.quote, item.quote);
+      assert.equal(retained.quoteReference, undefined);
+      assert.deepEqual(seed, before);
+    });
+  }
+  for (const mismatch of [
+    'url',
+    'quality',
+    'text',
+    'duplicate-source-id',
+    'duplicate-evidence-id',
+  ]) {
+    await t.test(`source note ${mismatch}`, () => {
+      const { run, source, note } = literalCompressionFixture(),
+        seed = deriveCompanyAssessment(run),
+        item = seed.evidence.find((row) => row.id === `source-${source.id}`)!;
+      if (mismatch === 'url') item.url = 'https://www.cninfo.com.cn/other-note';
+      if (mismatch === 'quality') item.sourceQuality = 'excerpt';
+      if (mismatch === 'text') item.quote = '不同原文。' + item.quote;
+      if (mismatch === 'duplicate-source-id')
+        run.context!.sources.push({ ...source, note: note + '另一份实际记录的限定。' });
+      if (mismatch === 'duplicate-evidence-id') seed.evidence.push({ ...item });
+      const before = structuredClone(seed),
+        runBefore = structuredClone(run),
+        payload = buildAssessmentPublicPayload(run, seed);
+      assert.ok('sourceQuality' in payload);
+      const retained = payload.screen.evidence.find((row) => row.id === item.id)!;
+      assert.equal(retained.quote, item.quote);
+      assert.equal(retained.quoteReference, undefined);
+      assert.equal(payload.sourceQuality[0]!.note, note);
+      assert.deepEqual(seed, before);
+      assert.deepEqual(run, runBefore);
+    });
+  }
 });
 
 test('an eighty-character budget preserves the full legal denial rather than its leading however', () => {

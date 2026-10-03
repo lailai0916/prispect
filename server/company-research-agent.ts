@@ -19,10 +19,7 @@ import {
 } from './company-context-sources.js';
 import type { retrieveIndustrySnapshot } from './company-industry.js';
 import { readCompanyPdf } from './company-extraction.js';
-import {
-  buildAssessmentPublicPayload as buildRichPublicPayload,
-  modelEvidenceCatalog,
-} from './company-assessment.js';
+import { buildAssessmentPublicPayload as buildRichPublicPayload } from './company-assessment.js';
 import {
   collectCompanyPublicSignals,
   readKnownPublicNews,
@@ -578,12 +575,12 @@ export async function runCompanyResearchAgent(
   };
   const publicInput = () => {
     // Rich details and the shared screen describe the same assessment. Send it once.
-    const { screen: _duplicateScreen, ...publicDetails } = buildRichPublicPayload(working);
+    const { screen: packedScreen, ...publicDetails } = buildRichPublicPayload(working);
     const screen = buildAssessmentPublicPayload(working);
     return {
       ...publicDetails,
       ...screen,
-      evidence: modelEvidenceCatalog(screen.evidence),
+      evidence: packedScreen.evidence,
       researchGoal:
         (working as CompanyResearchRun & { assessmentFocus?: string }).assessmentFocus?.slice(
           0,

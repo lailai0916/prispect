@@ -25,8 +25,12 @@ export const guideDocument: ProductDocument = {
         ],
         rows: [
           [
-            ['了解一家公司的公开财务资料', 'Understand public company financials'],
-            productTerms.companyResearch,
+            ['先看懂一家公司的公开线索', 'Start understanding a company’s public evidence'],
+            ['Lite 首页', 'Lite home'],
+          ],
+          [
+            ['系统核对财务、走势与同行', 'Inspect financials, trends and peers'],
+            ['Pro 公司研究', 'Pro company research'],
           ],
           [
             [
@@ -49,14 +53,37 @@ export const guideDocument: ProductDocument = {
         ],
       },
       links: [
-        { label: productTerms.companyResearch, href: '/query' },
+        { label: ['Lite 首页', 'Lite home'], href: '/' },
+        { label: ['Pro 公司研究', 'Pro company research'], href: '/query' },
         { label: productTerms.paymentsAndHandovers, href: '/decisions' },
         { label: productTerms.materials, href: '/materials' },
       ],
     },
     {
+      id: 'experience',
+      title: ['Lite 与 Pro', 'Lite and Pro'],
+      paragraphs: [
+        [
+          'Lite 从首页搜索开始。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。结果分为摘要、数字、线索调查和下一问：先读已取得资料支持的判断，再展开完整分析。首页的历史示例用于说明阅读方法，保留原公司、年度与出处。',
+          'Lite starts with search on the home page. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Results follow Summary, Figures, Evidence questions and Next questions: begin with judgments supported by acquired sources, then expand the complete analysis. Historical examples on the home page explain the reading method and retain their original company, year and sources.',
+        ],
+        [
+          '在线索调查中选择一个问题，沿着判断、金额与原文查看依据；带“追到依据”的金额可打开对应来源。来源保留已有的期间、页码与节选，也可回看引用它的判断。类型筛选与翻页只整理已取得材料；展开完整档案或打印时，正文和全部来源仍保留。推荐问题承接当前企业、年度和显示口径，资料缺失或报告未完成时会明确说明。',
+          'Select an evidence question and follow its judgment, figures and original excerpts. Figures marked Trace the source open their own references. Sources retain recorded periods, pages and excerpts, with links back to the judgments citing them. Type filters and pages organize acquired materials only. The complete dossier and print view retain the full narrative and source list. Recommended questions keep the current company, year and displayed basis; missing materials and unfinished reports are labeled.',
+        ],
+        [
+          'Pro 从独立公司研究入口进入，使用侧边栏查看研究报告、财务走势、行业对比等专业页面。企业页的 Lite／Pro 切换沿用同一份研究记录，不新建查询或重新采集；已经开始的后台分析按原状态继续。未生成 AI 报告时，仍可核对已取得的金额和规则观察；生成失败保留已有报告及其原生成日期。',
+          'Pro has a separate research entry and sidebar for Research report, Financial trends, Industry comparison and other detailed pages. Switching Lite/Pro on a company page retains the same research record without creating a query or acquiring sources again; existing background analysis continues in its current state. Before an AI report is available, acquired amounts and rule observations remain readable. A failed generation retains any saved report and its original generation date.',
+        ],
+      ],
+      links: [
+        { label: ['打开 Lite', 'Open Lite'], href: '/' },
+        { label: ['打开 Pro', 'Open Pro'], href: '/query' },
+      ],
+    },
+    {
       id: 'company',
-      title: ['公司研究与确认候选', 'Company research and candidate confirmation'],
+      title: ['Pro 公司研究与确认候选', 'Pro company research and candidate confirmation'],
       bullets: [
         [
           '进入“新建研究”，输入公司名称或证券代码，确认披露主体后进入研究报告。先取得年度金额、经营现金与规则观察，点击“数据与计算”核对字段、公式和来源。资料保存后，可用的 AI 服务在后台继续分析公开资料；你可以继续阅读数据，完成后点击“查看 AI 报告”。原件核查仍需单独开始，不会自动采用候选。入口保留当前账号或访客的输入草稿。',

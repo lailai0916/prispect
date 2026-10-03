@@ -467,6 +467,97 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
     run.identity?.shortName ||
     run.input.securityCode;
   const summary = reportDocument.summary;
+  const hasNumbers =
+    overview.state === 'available' &&
+    annual !== null &&
+    fields.some((field) => annual.amounts[field] !== null);
+  const readingStatus = (() => {
+    if (reportDocument.withheldReason === 'scope')
+      return {
+        label: t('保存报告的范围需要核对', 'The saved report scope needs checking'),
+        detail: t(
+          '暂不采用与当前主体、年度或快照不匹配的报告判断和引用。',
+          'Findings and references that do not match the current entity, year or snapshot are withheld.'
+        ),
+      };
+    if (report && progress.previousReportAvailable)
+      return {
+        label:
+          progress.state === 'running'
+            ? t(
+                `正在更新，当前阅读 ${date(report.generatedAt, locale)} 保存的报告。`,
+                `Research is updating. You are reading the report saved at ${date(report.generatedAt, locale)}.`
+              )
+            : progress.state === 'failed'
+              ? t(
+                  `本次更新未完成，仍保留 ${date(report.generatedAt, locale)} 的报告。`,
+                  `The update did not complete. The report saved at ${date(report.generatedAt, locale)} is retained.`
+                )
+              : t(
+                  `当前阅读 ${date(report.generatedAt, locale)} 保存的上一份报告。`,
+                  `You are reading the previous report saved at ${date(report.generatedAt, locale)}.`
+                ),
+        detail: t(
+          `报告判断仍依据 ${date(report.snapshotFetchedAt, locale)} 的资料快照。`,
+          `Its judgments still use the source snapshot from ${date(report.snapshotFetchedAt, locale)}.`
+        ),
+      };
+    if (!report && !hasNumbers)
+      return {
+        label:
+          progress.state === 'running'
+            ? t('正在取得公开资料', 'Retrieving public sources')
+            : progress.state === 'failed'
+              ? t('资料读取未完成', 'Source retrieval did not complete')
+              : t('尚无可用报告', 'No report is available yet'),
+        detail: t(
+          '当前尚无可用的财务数据，先保留判断。',
+          'No usable financial data is available yet. A judgment remains unavailable.'
+        ),
+      };
+    if (!report)
+      return {
+        label:
+          progress.state === 'running'
+            ? t(
+                '研究进行中，先核对已有数字',
+                'Research is running; check the acquired figures first'
+              )
+            : progress.state === 'failed'
+              ? t(
+                  '本次报告未完成，已有数字仍可核对',
+                  'The report did not complete; acquired figures remain available'
+                )
+              : t('先从已取得的数字开始', 'Start with the acquired figures'),
+        detail: t(
+          '已取得的公开数字与对应来源可以继续查看；缺少依据的部分保持未知。',
+          'Acquired public figures and their recorded sources remain readable. Unsupported conclusions stay unknown.'
+        ),
+      };
+    if (reportDocument.mode === 'rules')
+      return {
+        label: t(
+          '当前是根据已有数字形成的规则结果',
+          'These are rule results from the acquired figures'
+        ),
+        detail: t(
+          'AI 分析尚未形成，先核对数字和来源，再作判断。',
+          'An AI analysis is not available. Check the figures and sources before deciding.'
+        ),
+      };
+    if (progress.state === 'partial')
+      return {
+        label: t(...progress.label),
+        detail: brief.warnings[0]
+          ? t(...brief.warnings[0])
+          : t(
+              '已有资料可继续阅读，尚未取得或核实的内容保持未知。',
+              'Acquired materials remain readable. Missing or unverified information stays unknown.'
+            ),
+      };
+    return null;
+  })();
+  const statusNumbersLink = hasNumbers && (!report || reportDocument.mode === 'rules');
   const summarySegments = summary
     ? reportSummarySegments(summary.text[language], [
         ...reportDocument.summaryHighlights[language],
@@ -792,14 +883,43 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 </dd>
               </div>
             </dl>
+            {readingStatus && (
+              <div
+                className="lite-reading-status"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+                data-state={progress.state}
+                data-snapshot={progress.snapshot}
+                data-report-generation={report?.generatedAt}
+              >
+                <strong>{readingStatus.label}</strong>
+                <p>{readingStatus.detail}</p>
+                {statusNumbersLink && (
+                  <a href="#lite-numbers">
+                    {t('先看已取得的数字', 'Check the acquired figures first')}
+                    <ArrowDown size={13} aria-hidden="true" />
+                  </a>
+                )}
+              </div>
+            )}
             <p className="lite-result-label">
-              {reportDocument.mode === 'model'
-                ? t('AI 核心判断', 'AI core judgment')
-                : report
-                  ? t('规则结果', 'Rule results')
-                  : t('已取得数据的财务观察', 'Financial observations from acquired data')}{' '}
-              ·{' '}
-              {report ? t('合并口径', 'Consolidated basis') : t(...contextFieldLabels[profitField])}
+              {!report && !hasNumbers
+                ? t('尚无可用报告', 'No report is available yet')
+                : reportDocument.mode === 'model'
+                  ? t('AI 核心判断', 'AI core judgment')
+                  : report
+                    ? t('规则结果', 'Rule results')
+                    : t('已取得数据的财务观察', 'Financial observations from acquired data')}
+              {(report || hasNumbers) && (
+                <>
+                  {' '}
+                  ·{' '}
+                  {report
+                    ? t('合并口径', 'Consolidated basis')
+                    : t(...contextFieldLabels[profitField])}
+                </>
+              )}
             </p>
             <h2 className="lite-headline">{headline}</h2>
             {summary ? (
@@ -817,8 +937,12 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 {ruleLead
                   ? t(...ruleLead.detail)
                   : t(
-                      '已取得的资料在下面。缺少资料的部分，暂不作推断。',
-                      'Acquired data appears below. Fields without evidence remain unknown.'
+                      hasNumbers
+                        ? '已取得的资料在下面。缺少资料的部分，暂不作推断。'
+                        : '尚无可用的财务资料，暂不作推断。',
+                      hasNumbers
+                        ? 'Acquired data appears below. Fields without evidence remain unknown.'
+                        : 'No usable financial materials are available yet. No judgment is made.'
                     )}
               </p>
             )}
@@ -893,10 +1017,10 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           <section className="lite-report-highlight" data-report-section="findings">
             <div className="lite-report-card-heading">
               <Check size={20} aria-hidden="true" />
-              <h3>{t('已确认的重点', 'What the evidence supports')}</h3>
+              <h3>{t('已有依据的重点', 'Source-backed highlights')}</h3>
             </div>
             {reportDocument.findings.length > 0 ? (
-              reportItems(reportDocument.findings, t('已确认的重点', 'Evidence-supported findings'))
+              reportItems(reportDocument.findings, t('已有依据的重点', 'Source-backed highlights'))
             ) : (
               <p className="lite-report-empty">
                 {t(

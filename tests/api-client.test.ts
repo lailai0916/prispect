@@ -77,3 +77,64 @@ test('API failures retain readable errors when a proxy returns null, invalid JSO
     return true;
   });
 });
+
+test('known native browser fetch failures receive a clear localized message', () => {
+  for (const message of [
+    'Failed to fetch',
+    'Load failed',
+    'NetworkError when attempting to fetch resource.',
+  ]) {
+    const error = new TypeError(message);
+    assert.equal(requestErrorText(error, 'zh-Hans'), '网络请求未完成，请检查网络连接后重试。');
+    assert.equal(
+      requestErrorText(error, 'en'),
+      'The network request did not complete. Check your connection and try again.'
+    );
+  }
+});
+
+test('network copy does not hide programming errors, asset failures or cancellation', () => {
+  const errors = [
+    new TypeError("Cannot read properties of undefined (reading 'id')"),
+    new TypeError('Failed to fetch dynamically imported module: /assets/page.js'),
+    new TypeError('Load failed while rendering the report'),
+    new Error('Failed to fetch'),
+    new DOMException('Failed to fetch', 'AbortError'),
+    new DOMException('Load failed', 'TimeoutError'),
+    Object.assign(new TypeError('Failed to fetch'), { name: 'AbortError' }),
+  ];
+  for (const error of errors)
+    for (const locale of ['zh-Hans', 'en'])
+      assert.equal(requestErrorText(error, locale), error.message);
+});
+
+test('server error codes and source-failure explanations remain distinct from browser network failures', () => {
+  const sourceError = new RequestError(
+    '公开来源未响应，已保留现有资料。',
+    'COMPANY_SOURCE_UNAVAILABLE'
+  );
+  assert.equal(requestErrorText(sourceError, 'zh-Hans'), sourceError.message);
+  assert.equal(
+    requestErrorText(sourceError, 'en'),
+    'The official source did not respond after retry. Retry later or import the original yourself.'
+  );
+  const serverError = new RequestError('Failed to fetch', 'CUSTOM_UPSTREAM_FAILURE');
+  assert.equal(requestErrorText(serverError, 'zh-Hans'), 'Failed to fetch');
+  assert.equal(requestErrorText(serverError, 'en'), 'Failed to fetch');
+});
+
+test('formatting a fetch failure does not retry or change the request error', async (t) => {
+  const failure = new TypeError('Failed to fetch');
+  const fetch = t.mock.method(globalThis, 'fetch', async () => {
+    throw failure;
+  });
+  await assert.rejects(api('/company-search?query=test'), (error: unknown) => {
+    assert.equal(error, failure);
+    assert.equal(
+      requestErrorText(error, 'en'),
+      'The network request did not complete. Check your connection and try again.'
+    );
+    return true;
+  });
+  assert.equal(fetch.mock.callCount(), 1);
+});

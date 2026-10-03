@@ -378,6 +378,9 @@ function fitPublicModelInput<
 function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
   const snapshot = run.context!;
   const metrics = new Map(seed.metrics.map((metric) => [metric.id, metric]));
+  const evidenceById = new Map<string, AssessmentEvidence | null>();
+  for (const source of seed.evidence)
+    evidenceById.set(source.id, evidenceById.has(source.id) ? null : source);
   const availableRows = snapshot.financials
     .filter((row) => row.annual && /^20\d{2}-12-31$/.test(row.period))
     .filter((row) => Number(row.period.slice(0, 4)) <= run.input.year)
@@ -435,26 +438,41 @@ function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
       return rank(b) - rank(a) || b.date.localeCompare(a.date);
     })
     .slice(0, 24)
-    .map(({ id, title, date, url, attention, category, sources, excerpt }) => ({
-      id,
-      title,
-      date,
-      url,
-      attention,
-      category,
-      sources: sources.map((source) => ({ provider: source.provider, url: source.url })),
-      ...(excerpt
-        ? {
-            excerpt: {
-              page: excerpt.page,
-              quote: excerpt.quote.slice(0, 1500),
-              url: excerpt.url,
-              sha256: excerpt.sha256,
-              pagesRead: excerpt.pagesRead,
-            },
-          }
-        : {}),
-    }));
+    .map(({ id, title, date, url, attention, category, sources, excerpt }) => {
+      const source = evidenceById.get(`disclosure-${id}`);
+      // Reuse the longer literal already sent in the same source's assessment catalog.
+      // Announcements outside that catalog retain their existing excerpt limit.
+      const catalogQuote =
+        excerpt &&
+        source?.kind === 'disclosure' &&
+        source.sourceQuality === 'excerpt' &&
+        source.url === excerpt.url &&
+        source.page === excerpt.page &&
+        source.period === date &&
+        source.quote === excerpt.quote.slice(0, 2400)
+          ? source.quote
+          : undefined;
+      return {
+        id,
+        title,
+        date,
+        url,
+        attention,
+        category,
+        sources: sources.map((source) => ({ provider: source.provider, url: source.url })),
+        ...(excerpt
+          ? {
+              excerpt: {
+                page: excerpt.page,
+                quote: catalogQuote || excerpt.quote.slice(0, 1500),
+                url: excerpt.url,
+                sha256: excerpt.sha256,
+                pagesRead: excerpt.pagesRead,
+              },
+            }
+          : {}),
+      };
+    });
   const period = `${run.input.year}-12-31`;
   const industry = run.industry?.[period];
   const completeIndustry =
@@ -472,6 +490,10 @@ function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
       });
   }
   const repeatedNotes = new Map<string, string>();
+  const sourceIdCounts = new Map<string, number>();
+  for (const source of snapshot.sources)
+    sourceIdCounts.set(source.id, (sourceIdCounts.get(source.id) || 0) + 1);
+  const fullSourceNotes = new Map<string, string>();
   const sourceQuality = snapshot.sources.map(
     ({
       id,
@@ -491,6 +513,14 @@ function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
         text: note,
         reference: `sourceQuality.${reference || id}.note`,
       });
+      const source = evidenceById.get(`source-${id}`);
+      if (
+        sourceIdCounts.get(id) === 1 &&
+        source?.sourceQuality === 'web' &&
+        source.url === url &&
+        source.quote === note.slice(0, 1000)
+      )
+        fullSourceNotes.set(source.id, note);
       return {
         id,
         provider,
@@ -506,7 +536,15 @@ function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
       };
     }
   );
-  const evidence = modelEvidenceCatalog(seed.evidence, providedQuotes);
+  // Only a same-ID literal projection of this acquired note can reuse its full text.
+  // Stored assessment excerpts remain untouched; mismatched quotes stay independent.
+  const evidence = modelEvidenceCatalog(
+    seed.evidence.map((source) => {
+      const note = fullSourceNotes.get(source.id);
+      return note === undefined ? source : { ...source, quote: note };
+    }),
+    providedQuotes
+  );
   const sourceFamilyNotes = new Map(
     sourceQuality
       .filter((source) => source.note && source.note.length >= 80)

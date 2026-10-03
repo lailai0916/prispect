@@ -246,6 +246,33 @@
   .showcase-flow-device p {
     font-size: 11px;
   }
+  .showcase-navigation .dialog-header {
+    background: var(--showcase-paper);
+  }
+  .showcase-navigation-preview {
+    height: auto;
+    min-height: 0;
+  }
+  .showcase-navigation-preview > .showcase-menu-route {
+    display: none;
+    position: relative;
+    inset: auto;
+    padding: 20px;
+    transform: none;
+    transition: none;
+  }
+  .showcase-navigation-preview > .showcase-menu-route.is-active {
+    display: block;
+  }
+  .showcase-navigation-preview > .showcase-menu-route > strong {
+    max-width: 100%;
+    font-size: clamp(25px, 8vw, 35px);
+    overflow-wrap: anywhere;
+  }
+  .showcase-navigation-preview > p {
+    position: static;
+    margin: 16px 0 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .showcase-chapter-preview > .showcase-flow-device,

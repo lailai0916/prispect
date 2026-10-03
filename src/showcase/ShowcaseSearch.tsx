@@ -140,7 +140,7 @@ export function ShowcaseSearch({
         <span className="showcase-search-key" aria-hidden="true">
           <kbd>↵</kbd> {t('查询', 'Search')}
         </span>
-        <a href="/query">
+        <a href={`/query?year=${year}`}>
           {t('进入 Pro', 'Open Pro')}
           <ArrowUpRight size={16} aria-hidden="true" />
         </a>

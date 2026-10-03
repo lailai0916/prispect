@@ -46,6 +46,41 @@
 .lite-research-v4 .lite-summary {
   color: #d2dcef;
 }
+.lite-research-v4 .lite-reading-status {
+  margin: 0 0 22px;
+  padding: 12px 14px;
+  border-left: 2px solid #a9c8ff;
+  background: #a9c8ff0c;
+  color: #dce8fa;
+  overflow-wrap: anywhere;
+}
+.lite-reading-status > strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+}
+.lite-reading-status > p {
+  margin: 5px 0 0;
+  color: #bdcbe0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.lite-reading-status > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin-top: 5px;
+  color: #ceff70;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.lite-reading-status > a:focus-visible {
+  outline: 2px solid #ceff70;
+  outline-offset: 4px;
+}
 .lite-research-v4 .lite-intro-actions > a {
   padding: 14px 18px;
   border: 1px solid #ceff70;
@@ -273,6 +308,15 @@
     display: none !important;
   }
   .lite-research-v4 .lite-metric-chips-description {
+    display: none;
+  }
+  .lite-research-v4 .lite-reading-status,
+  .lite-research-v4 .lite-reading-status > p {
+    color: #222;
+    background: transparent;
+    border-color: #777;
+  }
+  .lite-research-v4 .lite-reading-status > a {
     display: none;
   }
   .lite-source-register-detail > summary {

@@ -137,6 +137,23 @@
   outline: 2px solid #d5fd73;
   outline-offset: 3px;
 }
+.lite-metric-chip-more-sources > summary {
+  width: fit-content;
+  min-height: 32px;
+  padding-block: 8px;
+  color: #c8d8ee;
+  font-size: 11px;
+  cursor: pointer;
+}
+.lite-metric-chip-more-sources > summary:focus-visible {
+  outline: 2px solid #d5fd73;
+  outline-offset: 3px;
+}
+.lite-metric-chip-more-sources > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
 .lite-metric-chip-print-url {
   display: none;
 }
@@ -220,16 +237,21 @@
   }
   .lite-metric-chip-action,
   .lite-metric-chip::after,
-  .lite-metric-chips-more summary {
+  .lite-metric-chips-more summary,
+  .lite-metric-chip-more-sources > summary {
     display: none;
   }
   .lite-metric-chip-print-url {
     display: inline;
   }
-  .lite-metric-chips-more::details-content {
+  .lite-metric-chips-more::details-content,
+  .lite-metric-chip-more-sources::details-content {
     content-visibility: visible !important;
   }
   .lite-metric-chips-more > .lite-metric-chips-row {
     display: block !important;
+  }
+  .lite-metric-chip-more-sources > div {
+    display: flex !important;
   }
 }

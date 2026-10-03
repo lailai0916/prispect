@@ -896,6 +896,67 @@ test('an optional diagnostic callback failure cannot turn a model failure into a
   assert.ok(!JSON.stringify(result.steps).includes('private-'));
 });
 
+test('planning keeps exact source catalog references without reintroducing long acquired literals', async () => {
+  const run = company();
+  run.industry = { '2025-12-31': industry() };
+  const note = '来源说明：'.repeat(220) + '来源范围末尾，未取得的资料仍然未知。';
+  run.context!.sources[0]!.note = note;
+  const announcement = run.context!.announcements[0]!;
+  announcement.excerpt = {
+    quote: '已取得公告的真实摘录。'.repeat(220) + '不同事项不能互换主体。',
+    page: 2,
+    pagesRead: 3,
+    url: announcement.url,
+    sha256: 'c'.repeat(64),
+  };
+  Object.assign(run, { privateNote: secrets[0], preview: { secret: secrets[4] } });
+  const before = structuredClone(run);
+  const expected = richPublicPayload(run);
+  let requests = 0;
+  const result = await runCompanyResearchAgent(
+    run,
+    config(async (_url, init) => {
+      requests++;
+      const request = JSON.parse(String(init?.body));
+      const initial = JSON.parse(request.messages[1].content);
+      assert.equal(initial.screen, undefined);
+      assert.equal(initial.securityCode, '300893');
+      assert.equal(initial.year, 2025);
+      assert.equal(initial.basis, 'consolidated');
+      assert.equal(initial.grade, expected.screen.grade);
+      assert.equal(initial.score, expected.screen.score);
+      assert.deepEqual(initial.metrics, expected.screen.metrics);
+      assert.deepEqual(initial.evidence, expected.screen.evidence);
+      assert.deepEqual(
+        initial.evidence.map((source: { id: string }) => source.id),
+        expected.screen.evidence.map((source) => source.id)
+      );
+      const packed = JSON.stringify(initial);
+      assert.equal(packed.split(note.slice(0, 1000)).length - 1, 1);
+      assert.equal(packed.split(announcement.excerpt!.quote.slice(0, 1500)).length - 1, 1);
+      assert.equal(
+        initial.evidence.find((source: { id: string }) => source.id === 'source-financial-source')
+          .quoteReference,
+        'sourceQuality.financial-source.note'
+      );
+      assert.equal(
+        initial.evidence.find((source: { id: string }) => source.id === 'disclosure-cninfo-12345')
+          .quoteReference,
+        'announcements.cninfo-12345.excerpt.quote'
+      );
+      assert.ok(Buffer.byteLength(String(init?.body)) < 1_000_000);
+      for (const secret of [...secrets, 'private-key-sentinel'])
+        assert.ok(!String(init?.body).includes(secret));
+      return done();
+    }),
+    { industry: async () => industry() }
+  );
+  assert.equal(requests, 1);
+  assert.equal(result.modelCalls, 1);
+  assert.equal(result.toolCalls, 0);
+  assert.deepEqual(run, before);
+});
+
 test('a large six-year, 530-disclosure public snapshot reaches all three planning turns without repeating full context', async () => {
   const run = company(),
     snapshot = run.context!;

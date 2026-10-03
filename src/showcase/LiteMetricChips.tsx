@@ -131,6 +131,22 @@ export function LiteMetricChips({
       title: [metric.label[language], value, scope, formula].filter(Boolean).join(' · '),
       style: { '--metric-index': Math.min(index, 6) } as CSSProperties,
     };
+    const sourceLink = (source: (typeof sources)[number]) => (
+      <a
+        key={source.id}
+        href={assessmentSourceHref(source.url, knownSourcePage(source.page))}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-source-id={source.id}
+      >
+        {source.label}
+        {knownSourcePage(source.page) ? ` · ${t('页', 'p.')} ${source.page}` : ''}
+        <span className="lite-metric-chip-print-url">
+          {' '}
+          · {assessmentSourceHref(source.url, knownSourcePage(source.page))}
+        </span>
+      </a>
+    );
     return (
       <div className="lite-metric-chip-entry" key={metric.id}>
         {canInspect ? (
@@ -155,24 +171,19 @@ export function LiteMetricChips({
         <span id={`${descriptionId}-formula-${index}`} className="lite-metric-chip-formula">
           {formula}
         </span>
-        <span className="lite-metric-chip-source-links">
-          {sources.map((source) => (
-            <a
-              key={source.id}
-              href={assessmentSourceHref(source.url, knownSourcePage(source.page))}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-source-id={source.id}
-            >
-              {source.label}
-              {knownSourcePage(source.page) ? ` · ${t('页', 'p.')} ${source.page}` : ''}
-              <span className="lite-metric-chip-print-url">
-                {' '}
-                · {assessmentSourceHref(source.url, knownSourcePage(source.page))}
-              </span>
-            </a>
-          ))}
-        </span>
+        <div className="lite-metric-chip-source-links">
+          {sources.slice(0, 2).map(sourceLink)}
+          {sources.length > 2 && (
+            <details className="lite-metric-chip-more-sources">
+              <summary>
+                {t('展开其余 ', 'Show the remaining ')}
+                {sources.length - 2}
+                {t(' 条来源', ' sources')}
+              </summary>
+              <div>{sources.slice(2).map(sourceLink)}</div>
+            </details>
+          )}
+        </div>
       </div>
     );
   };

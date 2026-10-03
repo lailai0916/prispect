@@ -170,6 +170,35 @@ test('negative values beyond floating-point integer precision and zero remain ex
   );
 });
 
+test('a large real-source relationship stays progressively readable without losing citations', () => {
+  const { document, judgment } = fixture(1);
+  document.references = Array.from({ length: 123 }, (_, index) => ({
+    ...document.references[0]!,
+    id: `synthetic-peer-source-${index}`,
+    kind: 'industry' as const,
+    label: `Synthetic same-year peer ${index}`,
+    url: `https://example.invalid/peer-${index}`,
+  }));
+  const ids = document.references.map((source) => source.id);
+  document.facts[0]!.evidenceIds = [...ids];
+  judgment.evidenceIds = [...ids];
+  const before = structuredClone({ document, judgment });
+  const $ = render(document, judgment);
+  assert.equal($('.lite-metric-chip-source-links > a').length, 2);
+  const disclosure = $('.lite-metric-chip-more-sources');
+  assert.equal(disclosure.attr('open'), undefined);
+  assert.equal(disclosure.find('summary').text(), 'Show the remaining 121 sources');
+  assert.equal(disclosure.find('[data-source-id]').length, 121);
+  assert.deepEqual(
+    $('[data-source-id]')
+      .map((_, node) => $(node).attr('data-source-id'))
+      .get(),
+    ids
+  );
+  assert.deepEqual($('.lite-metric-chip').attr('data-evidence-ids')!.split(' '), ids);
+  assert.deepEqual({ document, judgment }, before);
+});
+
 test('the selected annual year leads the preview while historical metrics remain fully readable', () => {
   const { document, judgment } = fixture(9);
   document.facts.forEach((metric, index) => {
