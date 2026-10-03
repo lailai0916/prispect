@@ -60,6 +60,7 @@ import {
   type DocumentPath,
 } from './content/document-navigation';
 import { CompanySidebar } from './CompanySidebar';
+import { ResearchNavigationPanel } from './ResearchNavigationPanel';
 import { CompanyRecordsProvider } from './CompanyRecordsContext';
 import { CompanyHeaderContext } from './CompanyHeaderContext';
 import { CommandMenu } from './CommandMenu';
@@ -67,6 +68,7 @@ import { PageLoading, ToastNotice, usePageEntrance } from './Experience';
 import './polish.css';
 import './company-workspace.css';
 import './research-shell.css';
+import './company-navigation.css';
 import { CompanyAssistantContext, type AssistantCompany } from './company-assistant-context';
 const CompanyAssistant = lazyPage(
   () => import('./CompanyAssistant'),
@@ -74,15 +76,7 @@ const CompanyAssistant = lazyPage(
 );
 
 import { AppContext, type AppContextValue, type Translate, type ConfirmRequest } from './context';
-import {
-  Logo,
-  EmptyState,
-  Dialog,
-  EvidenceDrawer,
-  ActionMenu,
-  NavigationPanel,
-  Hint,
-} from './components';
+import { Logo, EmptyState, Dialog, EvidenceDrawer, ActionMenu, Hint } from './components';
 const Home = lazyPage(
   () => import('./pages/Home'),
   (module) => module.Home
@@ -137,13 +131,13 @@ const DocsHome = lazyPage(
 );
 const publicPages = ['/', '/query', '/company', '/docs', '/login', '/register', ...documentPaths];
 
-function pageResource(path: string, signedIn: boolean) {
+function pageResource(path: string) {
   const page = path.split('?')[0];
   if (documentPaths.includes(page as DocumentPath)) return DocumentationPage;
   if (page.startsWith('/tasks/')) return TaskPage;
   switch (page) {
     case '/':
-      return signedIn ? CompanyQueryPage : Home;
+      return Home;
     case '/docs':
       return DocsHome;
     case '/query':
@@ -214,6 +208,17 @@ export function App() {
   } | null>(null);
   const [evidence, setEvidence] = useState<{ refs: EvidenceRef[]; report?: Report } | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigationHover = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const navigationTrigger = useRef<HTMLButtonElement | null>(null);
+  const cancelNavigationHover = useCallback(() => {
+    if (navigationHover.current) clearTimeout(navigationHover.current);
+    navigationHover.current = null;
+  }, []);
+  useEffect(() => {
+    setMenuOpen(false);
+    cancelNavigationHover();
+    return cancelNavigationHover;
+  }, [user?.id, route, cancelNavigationHover]);
   const [commandOpen, setCommandOpen] = useState(false);
   const [assistantCompany, setAssistantCompany] = useState<AssistantCompany | null>(null);
   const refreshGeneration = useRef(0);
@@ -225,14 +230,18 @@ export function App() {
     if (company.owner === committedOwner.current) setAssistantCompany(company);
   }, []);
   const t: Translate = useCallback((zh, en) => (locale === 'en' ? en : zh), [locale]);
-  const navigate = useCallback((path: string, options?: { replace?: boolean }) => {
-    const previous = readBrowserRoute();
-    if (!writeBrowserRoute(path, options?.replace)) return;
-    const next = readBrowserRoute();
-    navigationTarget.current = next === previous ? null : next;
-    if (next === previous) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    setMenuOpen(false);
-  }, []);
+  const navigate = useCallback(
+    (path: string, options?: { replace?: boolean }) => {
+      cancelNavigationHover();
+      const previous = readBrowserRoute();
+      if (!writeBrowserRoute(path, options?.replace)) return;
+      const next = readBrowserRoute();
+      navigationTarget.current = next === previous ? null : next;
+      if (next === previous) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      setMenuOpen(false);
+    },
+    [cancelNavigationHover]
+  );
   useLayoutEffect(() => {
     committedRoute.current = route;
     committedEntry.current = entryId;
@@ -417,7 +426,7 @@ export function App() {
         return;
       const path = appLinkPath(link.getAttribute('href')!, location.origin);
       if (path)
-        void pageResource(path, committedAccount.current)
+        void pageResource(path)
           ?.preload()
           .catch(() => {});
     };
@@ -588,7 +597,7 @@ export function App() {
     sessionAvailable &&
       user &&
       (!protectedPage || accountUser) &&
-      (page !== '/' || accountUser) &&
+      !(page === '/' && new URLSearchParams(route.split('?')[1]).get('view') === 'story') &&
       !['/login', '/register', '/docs', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
@@ -687,7 +696,9 @@ export function App() {
             publish: publishAssistantCompany,
           }}
         >
-          <div className={`app-shell ${business ? 'business-shell' : 'public-shell'}`}>
+          <div
+            className={`app-shell ${business ? 'business-shell report-first-shell' : 'public-shell'}`}
+          >
             <header className="site-header">
               <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
                 <Logo />
@@ -785,31 +796,50 @@ export function App() {
               )}
             </header>
             {business && (
-              <aside className="workspace-sidebar">
-                <a className="sidebar-brand" href="/" aria-label={t('析光首页', 'Prispect home')}>
-                  <Logo />
-                </a>
+              <aside
+                className="research-navigation-rail"
+                aria-label={t('研究导航', 'Research navigation')}
+              >
                 <button
-                  className="button button-secondary sidebar-create"
-                  onClick={() => navigate('/query')}
+                  ref={navigationTrigger}
+                  className="icon-button research-navigation-trigger"
+                  type="button"
+                  aria-label={t('打开研究导航', 'Open research navigation')}
+                  aria-haspopup="dialog"
+                  aria-expanded={menuOpen}
+                  onClick={() => {
+                    cancelNavigationHover();
+                    setMenuOpen(true);
+                  }}
+                  onPointerEnter={(event) => {
+                    if (event.pointerType !== 'mouse' || menuOpen) return;
+                    cancelNavigationHover();
+                    navigationHover.current = setTimeout(() => {
+                      navigationHover.current = null;
+                      navigationTrigger.current?.focus({ preventScroll: true });
+                      setMenuOpen(true);
+                    }, 220);
+                  }}
+                  onPointerLeave={cancelNavigationHover}
                 >
-                  <Plus size={16} />
-                  {t(...productTerms.newResearch)}
+                  <Menu size={21} aria-hidden="true" />
                 </button>
-                {renderNavigation()}
+                <Hint label={t(...productTerms.newResearch)}>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => navigate('/query')}
+                    aria-label={t(...productTerms.newResearch)}
+                  >
+                    <Plus size={21} aria-hidden="true" />
+                  </button>
+                </Hint>
               </aside>
             )}
             {business && menuOpen && (
-              <NavigationPanel title={t('析光', 'Prispect')} onClose={() => setMenuOpen(false)}>
-                <button
-                  className="button button-secondary sidebar-create"
-                  onClick={() => navigate('/query')}
-                >
-                  <Plus size={16} />
-                  {t(...productTerms.newResearch)}
-                </button>
+              <ResearchNavigationPanel onClose={() => setMenuOpen(false)}>
                 {renderNavigation()}
-              </NavigationPanel>
+              </ResearchNavigationPanel>
             )}
             <main
               key={user?.id || 'anonymous'}
@@ -853,11 +883,7 @@ export function App() {
                   ) : !loaded ? (
                     <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
                   ) : page === '/' ? (
-                    accountUser ? (
-                      <CompanyQueryPage />
-                    ) : (
-                      <Home />
-                    )
+                    <Home query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/login' ||
                     page === '/register' ||
                     !user ||

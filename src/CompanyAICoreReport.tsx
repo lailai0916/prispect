@@ -1,6 +1,7 @@
 import { ArrowUpRight, FileSearch, MessageCircle } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type { AssessmentJudgment } from '../shared/company-assessment';
+import type { CompanyReadingBasis } from '../shared/company-analysis';
 import { companyReportCore } from '../shared/company-report-summary';
 import { deriveCompanyResearchProgress } from '../shared/company-research-view';
 import {
@@ -15,10 +16,12 @@ import { date } from './format';
 export function CompanyAICoreReport({
   run,
   disabled = false,
+  basis = 'consolidated',
   onInspect,
 }: {
   run: CompanyResearchRun;
   disabled?: boolean;
+  basis?: CompanyReadingBasis;
   onInspect?: (judgment: AssessmentJudgment) => void;
 }) {
   const { t, locale, user } = useApp();
@@ -34,7 +37,7 @@ export function CompanyAICoreReport({
       owner: user.id,
       runId: run.id,
       question,
-      basis: 'consolidated',
+      basis,
       ...(run.assessment ? { reportGeneratedAt: run.assessment.generatedAt } : {}),
     };
     window.dispatchEvent(new CustomEvent(OPEN_COMPANY_ASSISTANT_EVENT, { detail }));
@@ -54,6 +57,9 @@ export function CompanyAICoreReport({
             <span className="company-ai-core-mode">
               {core.model ? t('AI 分析', 'AI analysis') : t('规则结果', 'Rule results')}
             </span>
+          )}
+          {core.summary && (
+            <span className="company-ai-core-basis">{t('合并口径', 'Consolidated basis')}</span>
           )}
         </div>
         {assessment && (

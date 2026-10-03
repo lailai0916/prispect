@@ -22,34 +22,80 @@ const context: AppContextValue = {
   busy: false,
 };
 
-test('initial loading and empty routes retain all fixed items as real disabled controls', () => {
-  for (const route of ['/query', '/research', '/materials', '/company?run=unverified']) {
-    const markup = renderToStaticMarkup(
-      createElement(
-        AppContext.Provider,
-        { value: context },
+test('initial loading and empty routes retain seven visible destinations as real disabled controls', () => {
+  const routes = [
+    '/query',
+    '/research',
+    '/materials',
+    '/company?run=unverified',
+    '/company?run=unverified&section=financial',
+    '/company?run=unverified&section=evidence',
+  ];
+  for (const locale of ['zh-Hans', 'en'] as const) {
+    for (const route of routes) {
+      const translated = {
+        ...context,
+        locale,
+        t: (zh: string, en: string) => (locale === 'en' ? en : zh),
+      };
+      const markup = renderToStaticMarkup(
         createElement(
-          CompanyRecordsProvider,
-          null,
-          createElement(CompanySidebar, { route, onClose: () => {} })
+          AppContext.Provider,
+          { value: translated },
+          createElement(
+            CompanyRecordsProvider,
+            null,
+            createElement(CompanySidebar, { route, onClose: () => {} })
+          )
         )
-      )
-    );
-    const $ = load(markup);
-    const menu = $('.company-sidebar-navigation');
-    assert.deepEqual(
-      menu
-        .children()
-        .toArray()
-        .map((element) => $(element).text()),
-      ['研究报告', '财务走势', '行业对比', '公告线索', '扩展核查', '数据覆盖', '来源比对'],
-      route
-    );
-    assert.equal(menu.find('button:disabled').length, 7, route);
-    assert.equal(menu.find('[href]').length, 0, route);
-    assert.equal($('.sidebar-company-context > .sidebar-group-label').length, 0, route);
-    assert.equal($('.sidebar-company-context').text().includes('企业研究'), false, route);
-    assert.equal($('.sidebar-tools-group').length, 0, route);
-    assert.equal($('.sidebar-company-list').text().includes('正在读取'), true, route);
+      );
+      const $ = load(markup);
+      const menu = $('.company-navigation-links');
+      assert.deepEqual(
+        menu
+          .find('.company-navigation-link-copy > span')
+          .toArray()
+          .map((element) => $(element).text()),
+        locale === 'en'
+          ? [
+              'Research report',
+              'Financial trends',
+              'Industry comparison',
+              'Disclosure leads',
+              'Extended checks',
+              'Data coverage',
+              'Source comparison',
+            ]
+          : ['研究报告', '财务走势', '行业对比', '公告线索', '扩展核查', '数据覆盖', '来源比对'],
+        route
+      );
+      assert.equal(menu.find('button:disabled').length, 7, route);
+      assert.equal(menu.find('[href]').length, 0, route);
+      assert.equal(menu.find('.company-navigation-link').length, 7, route);
+      assert.equal(menu.closest('details').length, 0, route);
+      assert.equal($('.company-navigation-destinations > .sidebar-group-label').length, 0, route);
+      assert.equal(
+        $('.company-navigation-destinations').text().includes('Company questions'),
+        false,
+        route
+      );
+      assert.equal($('.sidebar-tools-group').length, 0, route);
+      assert.equal(
+        $('.sidebar-company-list')
+          .text()
+          .includes(locale === 'en' ? 'Loading' : '正在读取'),
+        true,
+        route
+      );
+      assert.equal($('.company-navigation-preview').length, 1, route);
+      assert.equal($('.company-navigation-preview [href]').length, 0, route);
+      assert.equal(
+        $('.company-navigation-preview')
+          .text()
+          .includes(locale === 'en' ? 'Start research' : '新建研究后'),
+        true,
+        route
+      );
+    }
   }
 });

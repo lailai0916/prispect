@@ -1,0 +1,144 @@
+.report-first-shell {
+  --sidebar: 72px;
+}
+.report-first-shell > .site-header {
+  grid-column: 1 / -1;
+  z-index: 46;
+}
+.report-first-shell > .site-header > .brand-link {
+  display: inline-flex;
+}
+.report-first-shell > .site-header > .header-context {
+  padding-left: 18px;
+  border-left: 1px solid var(--line);
+}
+.report-first-shell > .main-home {
+  grid-column: 2;
+  width: 100%;
+}
+.research-navigation-rail {
+  position: fixed;
+  inset: var(--site-header-height) auto 0 0;
+  width: var(--sidebar);
+  padding: 22px 12px;
+  border-right: 1px solid var(--line-soft);
+  background: var(--paper);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  z-index: 45;
+}
+.research-navigation-rail .icon-button {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  color: var(--muted);
+}
+.research-navigation-rail .research-navigation-trigger {
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.research-navigation-rail .research-navigation-trigger:hover {
+  border-color: var(--ink);
+  background: var(--hover);
+}
+.dialog.research-navigation-popup {
+  width: min(calc(100vw - 40px), 1360px);
+  height: min(calc(100dvh - 40px), 980px);
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 22px;
+  overflow: hidden;
+  transition:
+    opacity 220ms ease,
+    scale 220ms ease;
+}
+.research-navigation-popup .dialog-header {
+  min-height: 64px;
+  padding: 16px 28px;
+  flex-shrink: 0;
+}
+.research-navigation-popup .dialog-header h2 {
+  font-size: var(--text-ui);
+  font-weight: 500;
+  color: var(--muted);
+}
+.research-navigation-popup .dialog-body {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 20px 36px 24px;
+}
+.research-navigation-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  margin: 0 0 16px;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.research-navigation-new > svg:last-child {
+  margin-left: 12px;
+  color: var(--muted);
+}
+.research-navigation-popup .sidebar-bottom {
+  margin-top: 24px;
+  padding-top: 16px;
+  width: 100%;
+  border-top: 1px solid var(--line);
+}
+.research-navigation-popup .sidebar-account {
+  width: min(100%, 330px);
+  padding-inline: 0;
+}
+@media (max-width: 980px) {
+  .report-first-shell {
+    --sidebar: 0px;
+  }
+  .research-navigation-rail {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .dialog.research-navigation-popup {
+    left: 0;
+    top: 0;
+    transform: none;
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: 0;
+  }
+  .dialog.research-navigation-popup[data-starting-style],
+  .dialog.research-navigation-popup[data-ending-style] {
+    scale: 1;
+  }
+  .research-navigation-popup .dialog-header {
+    padding-inline: 20px;
+  }
+  .research-navigation-popup .dialog-body {
+    padding: 16px 20px 24px;
+  }
+  .research-navigation-new {
+    min-height: 44px;
+    margin-bottom: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dialog.research-navigation-popup {
+    transition: none;
+  }
+}
+@media print {
+  .research-navigation-rail {
+    display: none !important;
+  }
+}

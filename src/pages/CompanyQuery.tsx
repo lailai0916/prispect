@@ -1,17 +1,18 @@
 import { Select } from '../Select';
 import { useEffect, useRef, useState } from 'react';
-import { Settings2, LoaderCircle, Search } from 'lucide-react';
-import type { CompanyIdentity, CompanyResearchRun, ReviewPurpose } from '../../shared/contracts';
+import { ArrowUpRight, LoaderCircle, Search } from 'lucide-react';
+import type { CompanyIdentity, CompanyResearchRun } from '../../shared/contracts';
 import { companyPath } from '../../shared/company-workspace';
 import { findReusableCompanyRun } from '../../shared/company-run-reuse';
 import { StartInput } from '../StartInput';
-import { Dialog, Logo } from '../components';
+import { Logo } from '../components';
 import { useApp } from '../context';
 import { api, requestErrorText } from '../api';
 import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
 import { clearComposerDraft } from '../start-draft';
 import { useCompanyRecords } from '../CompanyRecordsContext';
 import { findCachedCompanyRun } from '../company-run-cache';
+import { productTagline } from '../../shared/product-terms';
 import '../home.css';
 import '../query.css';
 
@@ -25,8 +26,7 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
       ? requestedYear
       : latest
   );
-  const [purpose, setPurpose] = useState<ReviewPurpose>('external');
-  const [options, setOptions] = useState(false);
+  const purpose = 'external' as const;
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const controller = useRef<AbortController | null>(null);
@@ -105,44 +105,64 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
     }
   };
   return (
-    <div className="company-query-page query-create-page" aria-busy={recordsLoading || creating}>
+    <div
+      className="company-query-page query-create-page"
+      data-locale={locale}
+      aria-busy={!user || creating}
+    >
       <div className="query-create-content">
         <header className="query-create-heading query-create-brand">
           <Logo />
         </header>
+        <h1 className="query-create-title" aria-label={t(...productTagline)}>
+          {locale === 'en' ? (
+            productTagline[1]
+          ) : (
+            <>
+              <span>{productTagline[0].slice(0, 6)}</span>
+              <span>{productTagline[0].slice(6)}</span>
+            </>
+          )}
+        </h1>
         <div className="query-create-search">
-          <Search size={18} className="query-create-search-icon" aria-hidden="true" />
+          <Search size={20} className="query-create-search-icon" aria-hidden="true" />
           <StartInput
             key={`${user?.id || 'anonymous'}:${query?.get('query') || 'new-company'}`}
             initialText={query?.get('query') || undefined}
             compact
             companyOnly
-            disabled={creating}
+            disabled={creating || !user}
             onCompanyChoice={(identity) => void begin(identity)}
             onInformationGap={(name) => void begin(undefined, name)}
           />
         </div>
         <div className="query-create-meta">
-          <button
-            className="query-create-options"
-            type="button"
-            disabled={creating}
-            aria-label={t(`研究设置，${year} 年度`, `Research settings, annual ${year}`)}
-            aria-haspopup="dialog"
-            onClick={() => setOptions(true)}
+          <Select
+            className="query-create-year"
+            value={year}
+            disabled={creating || !user}
+            aria-label={t('选择年报年度', 'Choose annual-report year')}
+            onValueChange={(selectedValue) => setYear(Number(selectedValue))}
           >
-            <Settings2 size={13} aria-hidden="true" />
-            {t(`${year} 年度`, `Annual ${year}`)}
-            <span aria-hidden="true">·</span>
-            {purpose === 'external'
-              ? t('外部付款', 'External payment')
-              : t('内部交接', 'Internal handover')}
-          </button>
+            {Array.from({ length: latest - 2010 + 1 }, (_, index) => latest - index).map(
+              (value) => (
+                <option key={value} value={value}>
+                  {t(`${value} 年报`, `Annual ${value}`)}
+                </option>
+              )
+            )}
+          </Select>
         </div>
+        {!user && (
+          <p className="query-create-feedback" role="status">
+            <LoaderCircle size={14} className="spinner" aria-hidden="true" />
+            {t('正在准备查询…', 'Preparing company search…')}
+          </p>
+        )}
         {creating && (
           <p className="query-create-feedback" role="status">
             <LoaderCircle size={14} className="spinner" aria-hidden="true" />
-            {t('正在打开研究记录…', 'Opening the research record…')}
+            {t('正在打开财务报告…', 'Opening the financial report…')}
           </p>
         )}
         {error && (
@@ -151,43 +171,10 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
           </p>
         )}
       </div>
-      {options && (
-        <Dialog title={t('研究设置', 'Research settings')} onClose={() => setOptions(false)}>
-          <div className="query-options-form">
-            <label className="field-label">
-              {t('分析年度', 'Analysis year')}
-              <Select
-                value={year}
-                onValueChange={(selectedValue) => setYear(Number(selectedValue))}
-              >
-                {Array.from({ length: latest - 2010 + 1 }, (_, index) => latest - index).map(
-                  (value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  )
-                )}
-              </Select>
-            </label>
-            <label className="field-label">
-              {t('核查目的', 'Review purpose')}
-              <Select
-                value={purpose}
-                onValueChange={(selectedValue) => setPurpose(selectedValue as ReviewPurpose)}
-              >
-                <option value="external">{t('外部付款', 'External payment')}</option>
-                <option value="handover">{t('内部交接', 'Internal handover')}</option>
-              </Select>
-            </label>
-
-            <div className="dialog-actions">
-              <button className="button button-primary" onClick={() => setOptions(false)}>
-                {t('完成', 'Done')}
-              </button>
-            </div>
-          </div>
-        </Dialog>
-      )}
+      <a className="query-create-story" href="/?view=story">
+        {t('认识析光', 'Meet Prispect')}
+        <ArrowUpRight size={13} aria-hidden="true" />
+      </a>
     </div>
   );
 }
