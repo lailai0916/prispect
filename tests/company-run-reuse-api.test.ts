@@ -15,6 +15,8 @@ async function fixture() {
   let calls = 0;
   let gate: Promise<void> | undefined;
   let release!: () => void;
+  let started = Promise.resolve();
+  let markStarted = () => {};
   const application = await createApp({
     root: process.cwd(),
     dataDir: directory,
@@ -29,6 +31,7 @@ async function fixture() {
       }),
       runCompanyResearch: async (scope) => {
         calls++;
+        markStarted();
         if (gate) await gate;
         return {
           identity: {
@@ -88,9 +91,28 @@ async function fixture() {
     call,
     calls: () => calls,
     hold: () => {
+      started = new Promise<void>((resolve) => {
+        markStarted = resolve;
+      });
       gate = new Promise<void>((resolve) => {
         release = resolve;
       });
+    },
+    waitForStart: async () => {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          started,
+          new Promise<never>((_resolve, reject) => {
+            timer = setTimeout(
+              () => reject(Error('Research did not start within its test deadline')),
+              5000
+            );
+          }),
+        ]);
+      } finally {
+        clearTimeout(timer);
+      }
     },
     release: () => {
       release?.();
@@ -117,6 +139,9 @@ test('opt-in repeat search reuses own record during active work, at limits, with
     const created = (await first.json()) as CompanyResearchRun & { reused?: boolean };
     assert.equal(created.reused, undefined);
     assert.equal('reuseExisting' in created.input, false);
+    // HTTP202 reserves the job before its first durable progress write finishes.
+    // Wait for provider entry rather than assuming concurrent disk timing.
+    await f.waitForStart();
     const repeat = await f.call(alice, '/company-runs', { ...input, reuseExisting: true });
     assert.equal(repeat.status, 200);
     const reused = (await repeat.json()) as CompanyResearchRun & { reused?: boolean };

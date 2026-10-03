@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { readPdfIsolated } from './pdf-parser.js';
+import { officialPdfTextCache } from './official-pdf-cache.js';
 import type {
   CompanyAnnouncement,
   CompanyCandidatePreview,
@@ -28,11 +29,14 @@ export interface CompanyPdfText {
 }
 export async function readCompanyPdf(
   buffer: Buffer,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options: { sourceUrl?: string } = {}
 ): Promise<CompanyPdfText> {
   if (!buffer.subarray(0, 5).equals(Buffer.from('%PDF-')))
     throw new ApiFault(400, 'COMPANY_INVALID_PDF', '原件没有PDF标记');
   try {
+    if (options.sourceUrl)
+      return await officialPdfTextCache.read(buffer, options.sourceUrl, signal);
     const text = await readPdfIsolated(buffer, signal, 'official');
     return {
       pages: text.pages,

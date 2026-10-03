@@ -55,6 +55,8 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     fail = false,
     release: (() => void) | undefined;
   const questionChoices: boolean[] = [];
+  const contextRefreshChoices: (boolean | undefined)[] = [];
+  const researchRefreshChoices: (boolean | undefined)[] = [];
   const gate = () =>
     new Promise<void>((resolve) => {
       release = resolve;
@@ -87,6 +89,7 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
       }),
       context: async (_identity, options) => {
         calls++;
+        contextRefreshChoices.push(options?.bypassCache);
         await gate();
         if (fail) throw Error('provider failed');
         const value = snapshot();
@@ -97,8 +100,10 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
         throw Error('not available');
       },
       // Account/context behavior is isolated from the separately tested full public collector.
-      research: (run, model, options) =>
-        runCompanyResearchAgent(run, model, { ...options, collectPublicSignals: false }),
+      research: (run, model, options) => {
+        researchRefreshChoices.push(options.bypassCache);
+        return runCompanyResearchAgent(run, model, { ...options, collectPublicSignals: false });
+      },
       question: async (run, q, basis, useModel, model) => {
         questionChoices.push(useModel);
         return answerCompanyQuestion(run, q, basis, useModel, model);
@@ -207,6 +212,11 @@ test('C context jobs are deduplicated, tenant-scoped, durable and keep earlier d
     assert.equal(failed.contextStatus, 'failed');
     assert.equal(failed.context?.fetchedAt, ready.context?.fetchedAt);
     assert.equal(failed.questions?.length, 3);
+    assert.deepEqual(contextRefreshChoices, [false, true]);
+    assert.deepEqual(researchRefreshChoices, [false]);
+    assert.equal((await call(`/company-runs/${run.id}/assessment`, { refresh: true })).status, 202);
+    await app.waitForIdle();
+    assert.deepEqual(researchRefreshChoices, [false, true]);
     const gap = await call('/company-gaps', {
       name: '未上市制造公司',
       year: 2025,

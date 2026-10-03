@@ -147,7 +147,7 @@ function CompanyEvidenceLabSession({
     };
   }, [canRead, endpoint, version]);
 
-  const startChallenge = async (target: CompanyChallengeTarget) => {
+  const startChallenge = async (target: CompanyChallengeTarget, refresh = false) => {
     if (disabled || locked.current) return;
     locked.current = true;
     setSubmitting(true);
@@ -157,7 +157,7 @@ function CompanyEvidenceLabSession({
     try {
       const response = await api<ChallengeResponse>(endpoint, {
         method: 'POST',
-        body: JSON.stringify({ target }),
+        body: JSON.stringify({ target, ...(refresh ? { refresh: true } : {}) }),
         signal: AbortSignal.any([lifetime.signal, AbortSignal.timeout(REQUEST_TIMEOUT)]),
       });
       if (lifetime.signal.aborted) return;
@@ -289,6 +289,7 @@ function CompanyEvidenceLabSession({
         challenge={challenge}
         challengeDisabled={disabled}
         onChallenge={(target: CompanyChallengeTarget) => void startChallenge(target)}
+        onRefreshChallenge={(target: CompanyChallengeTarget) => void startChallenge(target, true)}
       />
     </div>
   );

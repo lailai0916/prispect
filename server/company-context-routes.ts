@@ -1,6 +1,12 @@
 import type express from 'express';
 import { z } from 'zod';
 import { createHash, randomUUID } from 'node:crypto';
+import { assistantPublicRun } from './assistant.js';
+import {
+  OwnerAnswerCache,
+  ownerAnswerCacheKey,
+  bypassOwnerAnswerCache,
+} from './owner-answer-cache.js';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import type { AuthStore, AuthContext } from './auth.js';
 import type { WorkspaceStore } from './store.js';
@@ -38,6 +44,7 @@ export function installCompanyContextRoutes(
     question: answerCompanyQuestion,
   };
   const jobs = new Map<string, Promise<void>>();
+  const questionCache = new OwnerAnswerCache();
   const sourceJobs = new Set<string>();
   const assessmentJobs = new Map<string, Promise<void>>();
   const assessmentControllers = new Map<string, AbortController>();
@@ -99,7 +106,11 @@ export function installCompanyContextRoutes(
     informationGap: run.informationGap ? structuredClone(run.informationGap) : undefined,
     assessmentFocus: run.assessmentFocus,
   });
-  const scheduleAssessment = async (store: WorkspaceStore, run: CompanyResearchRun) => {
+  const scheduleAssessment = async (
+    store: WorkspaceStore,
+    run: CompanyResearchRun,
+    bypassCache = false
+  ) => {
     const ownerKey = runKey(store, run);
     await waitForCancellation(store, run);
     if (!run.context || run.informationGap || assessmentJobs.has(ownerKey)) return;
@@ -141,6 +152,7 @@ export function installCompanyContextRoutes(
           {
             industry: service.industry,
             signal: controller.signal,
+            bypassCache,
             onStep: async (step) => {
               await waitForCancellation(store, run);
               if (!stillCurrent()) return;
@@ -537,6 +549,7 @@ export function installCompanyContextRoutes(
           if (!current(store, run, revision) || controller.signal.aborted) return;
           const snapshot = await service.context(identity, {
             signal: controller.signal,
+            bypassCache: body.data.refresh,
             onSnapshot: async (snapshot) => {
               await waitForCancellation(store, run);
               if (!current(store, run, revision) || controller.signal.aborted) return;
@@ -566,7 +579,7 @@ export function installCompanyContextRoutes(
           await waitForCancellation(store, run);
           if (!current(store, run, revision) || controller.signal.aborted) return;
           if (jobs.get(ownerKey) === job) sourceJobs.delete(ownerKey);
-          await scheduleAssessment(store, run).catch(async () => {
+          await scheduleAssessment(store, run, body.data.refresh).catch(async () => {
             if (!current(store, run, revision) || controller.signal.aborted) return;
             run.assessmentStatus = 'failed';
             run.assessmentError = '综合研究尚未开始，可以在报告中重试；公开数据已保留。';
@@ -766,7 +779,7 @@ export function installCompanyContextRoutes(
       }
       try {
         limits(res, 'company-assessment', 12);
-        await scheduleAssessment(store, run);
+        await scheduleAssessment(store, run, body.data.refresh);
       } catch (error) {
         run.assessmentFocus = previousFocus;
         throw error;
@@ -802,7 +815,9 @@ export function installCompanyContextRoutes(
       limits(res, 'company-industry', 20);
       sourceJobs.add(key);
       try {
-        const snapshot = await service.industry(run.input.securityCode, body.data.period);
+        const snapshot = await service.industry(run.input.securityCode, body.data.period, {
+          bypassCache: body.data.refresh,
+        });
         if (
           snapshot.securityCode !== run.input.securityCode ||
           snapshot.period !== body.data.period
@@ -835,6 +850,7 @@ export function installCompanyContextRoutes(
           question: z.string().trim().min(1).max(500),
           basis: z.enum(['parent', 'consolidated']),
           useModel: modelEnabledSchema,
+          refresh: z.boolean().default(false),
         })
         .strict()
         .safeParse(req.body);
@@ -848,22 +864,60 @@ export function installCompanyContextRoutes(
       if (!run.context)
         throw new ApiFault(409, 'CONTEXT_NOT_READY', '企业概览尚未取得，请先读取数据');
       const expected = run.context;
+      const workspace = store.state;
+      const publicQuestionRun = assistantPublicRun(run);
+      const questionKey = () =>
+        ownerAnswerCacheKey({
+          owner: store.dataDir,
+          namespace: 'company-question',
+          question: body.data.question,
+          basis: body.data.basis,
+          publicBasis: assistantPublicRun(run),
+          model: options.model,
+        });
+      const expectedKey = questionKey();
+      const bypass = bypassOwnerAnswerCache(body.data.question, body.data.refresh);
+      if (!bypass) {
+        const cached = questionCache.get(store.dataDir, expectedKey, run);
+        if (cached) {
+          res.json(cached);
+          return;
+        }
+      }
       limits(res, 'company-question', 30);
-      const answer = await service.question(
-        structuredClone(run),
-        body.data.question,
-        body.data.basis,
-        body.data.useModel,
-        options.model
-      );
-      if (!store.state.companyRuns?.includes(run))
-        throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '企业记录已移除');
-      if (run.context !== expected)
-        throw new ApiFault(409, 'CONTEXT_STALE', '回答期间数据已更新，请按新快照重新提问');
-      (run.questions ||= []).push(answer);
-      run.questions = run.questions.slice(-50);
-      await store.persist();
-      res.json(answer);
+      if (bypass) questionCache.invalidate(store.dataDir, expectedKey, run);
+      const reservation = questionCache.reserve(store.dataDir, expectedKey);
+      try {
+        const answer = await service.question(
+          publicQuestionRun,
+          body.data.question,
+          body.data.basis,
+          body.data.useModel,
+          options.model
+        );
+        if (!store.state.companyRuns?.includes(run))
+          throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '企业记录已移除');
+        if (store.state !== workspace || run.context !== expected || questionKey() !== expectedKey)
+          throw new ApiFault(409, 'CONTEXT_STALE', '回答期间数据已更新，请按新快照重新提问');
+        const previousAnswers = run.questions;
+        run.questions = [...(previousAnswers || []), answer].slice(-50);
+        try {
+          await store.persist();
+        } catch (error) {
+          run.questions = previousAnswers;
+          throw error;
+        }
+        if (
+          !bypassOwnerAnswerCache(body.data.question) &&
+          store.state === workspace &&
+          store.state.companyRuns?.includes(run) &&
+          questionKey() === expectedKey
+        )
+          questionCache.set(store.dataDir, expectedKey, answer, run, reservation);
+        res.json(answer);
+      } finally {
+        questionCache.release(reservation);
+      }
     })
   );
   return {

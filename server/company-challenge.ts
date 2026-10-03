@@ -631,6 +631,7 @@ export async function challengeCompanyExplanation(
   options: CompanyChallengeService & {
     onStep?: (step: AssessmentResearchStep) => Promise<void>;
     signal?: AbortSignal;
+    bypassCache?: boolean;
   } = {}
 ): Promise<CompanyChallengeResult> {
   const publicRun = publicChallengeRun(run, target);
@@ -661,6 +662,7 @@ export async function challengeCompanyExplanation(
     initialCalls,
     onStep: options.onStep,
     signal: options.signal,
+    bypassCache: options.bypassCache,
     ...(options.fetch ? { fetch: options.fetch } : {}),
   });
   options.signal?.throwIfAborted();

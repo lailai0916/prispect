@@ -1282,3 +1282,32 @@ test('review agenda uses real same-scope metrics, keeps conflict hypotheses empt
   run.context!.orgId = 'another-issuer';
   assert.deepEqual(buildCompanyResearchAgenda(run).officialChecks, []);
 });
+
+test('explicit research refresh replaces saved peer samples once and propagates the public cache bypass', async () => {
+  const run = company();
+  run.industry = { '2025-12-31': industry() };
+  const choices: (boolean | undefined)[] = [];
+  const refreshed = await runCompanyResearchAgent(
+    run,
+    {},
+    {
+      bypassCache: true,
+      industry: async (code, period, dependencies) => {
+        choices.push(dependencies?.bypassCache);
+        return industry(code, period);
+      },
+    }
+  );
+  assert.deepEqual(choices, [true]);
+  assert.equal(refreshed.toolCalls, 1);
+  assert.equal(refreshed.steps.find((step) => step.tool === 'fetch_industry')?.status, 'completed');
+  await runCompanyResearchAgent(
+    refreshed.run,
+    {},
+    {
+      industry: async () => {
+        throw Error('a completed fresh peer cohort must remain reusable within the new scope');
+      },
+    }
+  );
+});

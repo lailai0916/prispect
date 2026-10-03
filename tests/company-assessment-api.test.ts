@@ -1357,7 +1357,7 @@ test('peer updates and analysis exclude each other while both allow saved peer r
     });
     assert.equal(blockedIndustry.status, 409);
     assert.equal((await blockedIndustry.json()).code, 'ASSESSMENT_BUSY');
-    assert.equal(industryCalls, 1);
+    assert.equal(industryCalls, 2, 'explicit assessment refresh also rereads public peers');
     modelGate.resolve();
     await h.app.waitForIdle();
     gateIndustry = true;
@@ -1365,7 +1365,7 @@ test('peer updates and analysis exclude each other while both allow saved peer r
       period: '2025-12-31',
       refresh: true,
     });
-    await waitUntil(() => industryCalls === 2);
+    await waitUntil(() => industryCalls === 3);
     const blockedModel = await h.call(`/company-runs/${run.id}/assessment`, { refresh: true });
     assert.equal(blockedModel.status, 409);
     assert.equal((await blockedModel.json()).code, 'ASSESSMENT_SOURCE_BUSY');
@@ -1384,7 +1384,7 @@ test('peer updates and analysis exclude each other while both allow saved peer r
     );
     await h.app.waitForIdle();
     assert.equal(modelCalls, 3);
-    assert.equal(industryCalls, 2);
+    assert.equal(industryCalls, 4);
     assert.equal((await h.getRun(run.id)).assessmentStatus, 'ready');
   } finally {
     modelGate.resolve();

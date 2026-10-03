@@ -8,6 +8,8 @@ export interface AssistantRequest {
   previousRunId?: string;
   basis?: CompanyReadingBasis;
   previousQuestions?: string[];
+  /** Ask again using fresh sources rather than a saved answer. */
+  refresh?: boolean;
 }
 
 export interface AssistantAnswer extends CompanyQuestionAnswer {

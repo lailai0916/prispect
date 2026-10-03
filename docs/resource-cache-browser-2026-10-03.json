@@ -1,0 +1,95 @@
+{
+  "kind": "actual React/Express walkthrough, synthetic issuer and challenge results, no public/model requests",
+  "startedAt": "2026-10-03T10:36:33.395Z",
+  "checks": [
+    {
+      "name": "first expansion produces a completed challenge with a manual-refresh action",
+      "pass": true
+    },
+    {
+      "name": "first inventory-pressure produces a completed challenge with a manual-refresh action",
+      "pass": true
+    },
+    {
+      "name": "first collection-pressure produces a completed challenge with a manual-refresh action",
+      "pass": true
+    },
+    {
+      "name": "switch back to expansion restores the existing target immediately with HTTP200 and cached:true",
+      "pass": true,
+      "generatedAt": "2026-10-03T10:36:35.017Z"
+    },
+    {
+      "name": "manual research-again sends refresh:true and produces a new generatedAt",
+      "pass": true
+    },
+    {
+      "name": "manual refresh retains shared neutral styling and is usable in both themes and at390px without page overflow",
+      "pass": true,
+      "widths": {
+        "viewport": 390,
+        "document": 375
+      }
+    }
+  ],
+  "pageErrors": [],
+  "external": [],
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": "{\"target\":\"expansion\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": "{\"target\":\"inventory-pressure\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": "{\"target\":\"collection-pressure\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": "{\"target\":\"expansion\"}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": "{\"target\":\"expansion\",\"refresh\":true}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/company-runs/ec113e86-6905-422b-9a05-02823d3ffa8c/challenge",
+      "body": null
+    }
+  ],
+  "finishedAt": "2026-10-03T10:36:39.119Z"
+}

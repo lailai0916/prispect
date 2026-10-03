@@ -359,6 +359,10 @@ export async function readKnownPublicNews(
   try {
     const response = await options.reader.read(url, { signal: options.signal }, 1_500_000);
     source.responseHashes.push(response.sha256);
+    source.fetchedAt =
+      source.responseHashes.length === 1 || response.fetchedAt < source.fetchedAt
+        ? response.fetchedAt
+        : source.fetchedAt;
     const $ = load(response.body.toString('utf8'));
     $('script,style,iframe,form').remove();
     const title = $('h1').first().text().trim() || $('title').text().trim();
@@ -392,6 +396,7 @@ export async function readKnownPublicNews(
     source.note = `实际读取已取得目录中的媒体页面，保留最多4000字节选；HTML响应哈希可复核，媒体报道不等同官方确认。`;
     return { news, source };
   } catch {
+    options.reader.invalidateResponses(source.responseHashes, url);
     throw new PublicBodyFailure(source, 'news');
   }
 }
@@ -411,6 +416,10 @@ export async function readKnownPublicPost(
   try {
     const response = await options.reader.read(url, { signal: options.signal }, 1_500_000);
     source.responseHashes.push(response.sha256);
+    source.fetchedAt =
+      source.responseHashes.length === 1 || response.fetchedAt < source.fetchedAt
+        ? response.fetchedAt
+        : source.fetchedAt;
     const data = readEmbeddedPublicJson(response.body.toString('utf8'), 'post_article');
     if (
       textValue(data.post_id) !== candidate.id.replace(/^guba-/, '') ||
@@ -440,6 +449,7 @@ export async function readKnownPublicPost(
       '实际读取已取得帖子ID的公开正文，保留最多4000字；包含用户或转载者陈述，未核实观点，未读取评论、图片或视频。';
     return { discussion, source };
   } catch {
+    options.reader.invalidateResponses(source.responseHashes, url);
     throw new PublicBodyFailure(source, 'post');
   }
 }
@@ -493,6 +503,7 @@ export async function collectCompanyPublicSignals(
     return true;
   };
   const fail = (section: 'news' | 'discussions', source: CompanySourceReceipt) => {
+    options.reader.invalidateResponses(source.responseHashes, source.url);
     source.note =
       '本次公开请求或主体/格式校验未完成；已有有效来源保留，不能据此认定没有新闻或讨论。';
     coverage[section].stopReason =
@@ -529,6 +540,10 @@ export async function collectCompanyPublicSignals(
     try {
       const response = await options.reader.json(url.href, { signal: options.signal });
       source.responseHashes.push(response.sha256);
+      source.fetchedAt =
+        source.responseHashes.length === 1 || response.fetchedAt < source.fetchedAt
+          ? response.fetchedAt
+          : source.fetchedAt;
       const raw = objectValue(response.value.result).cmsArticleWebOld;
       if (!Array.isArray(raw)) throw Error('PUBLIC_NEWS_FORMAT');
       const rows = arrayValue(raw).slice(0, 30);
@@ -596,6 +611,10 @@ export async function collectCompanyPublicSignals(
     try {
       const response = await options.reader.read(url.href, { signal: options.signal });
       source.responseHashes.push(response.sha256);
+      source.fetchedAt =
+        source.responseHashes.length === 1 || response.fetchedAt < source.fetchedAt
+          ? response.fetchedAt
+          : source.fetchedAt;
       const utf8 = response.body.toString('utf8'),
         $ = load(utf8.includes('\ufffd') ? new TextDecoder('gb18030').decode(response.body) : utf8);
       let raw = 0;
@@ -646,6 +665,10 @@ export async function collectCompanyPublicSignals(
     try {
       const response = await options.reader.read(url, { signal: options.signal }, 1_500_000);
       source.responseHashes.push(response.sha256);
+      source.fetchedAt =
+        source.responseHashes.length === 1 || response.fetchedAt < source.fetchedAt
+          ? response.fetchedAt
+          : source.fetchedAt;
       const data = readEmbeddedPublicJson(response.body.toString('utf8'), 'article_list');
       if (
         textValue(data.bar_code) !== run.input.securityCode ||
@@ -723,7 +746,9 @@ export async function collectCompanyPublicSignals(
     model: { requested: false, status: 'not-called' },
   };
   for (const row of chooseBodySamples(
-    news.filter((item) => !item.excerpt && newsBodyUrl(item.url)),
+    news.filter(
+      (item) => (options.reader.dependencies.bypassCache || !item.excerpt) && newsBodyUrl(item.url)
+    ),
     limits.newsBodies,
     (item) => item.media,
     (item) => `${item.title} ${item.digest}`
@@ -743,7 +768,7 @@ export async function collectCompanyPublicSignals(
     }
   }
   for (const row of chooseBodySamples(
-    discussions.filter((item) => !item.excerpt),
+    discussions.filter((item) => options.reader.dependencies.bypassCache || !item.excerpt),
     limits.discussionBodies,
     (item) => item.provider,
     (item) => item.title

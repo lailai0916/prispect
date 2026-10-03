@@ -248,6 +248,7 @@ export async function runCompanyResearchAgent(
     onStep?: (step: AssessmentResearchStep) => Promise<void>;
     signal?: AbortSignal;
     fetch?: typeof fetch;
+    bypassCache?: boolean;
     /** Server-only isolation option for callers testing an individual retrieval tool. */
     collectPublicSignals?: boolean;
     /** Fixed server-owned research actions; never sourced from client notes or trial state. */
@@ -270,6 +271,7 @@ export async function runCompanyResearchAgent(
     industryAttempted = false;
   let publicSignalsAttempted = false,
     marketAttempted = false;
+  let industryRefreshed = false;
   let reviewRequested = false;
   const attemptedDisclosureIds = new Set<string>();
   const requestCache = new Map<
@@ -288,13 +290,17 @@ export async function runCompanyResearchAgent(
     AbortSignal.timeout(limits.totalMs),
     ...(options.signal ? [options.signal] : []),
   ]);
-  const reader = new PublicCompanyReader({ fetch: options.fetch, signal }, limits.publicRequests);
+  const reader = new PublicCompanyReader(
+    { fetch: options.fetch, signal, bypassCache: options.bypassCache },
+    limits.publicRequests
+  );
   const period = `${working.input.year}-12-31`;
   const availableIndustry = () => {
     const value = working.industry?.[period];
     const fetchedAt = Date.parse(value?.fetchedAt || '');
     const age = Date.now() - fetchedAt;
     return (
+      (!options.bypassCache || industryRefreshed) &&
       value?.securityCode === working.input.securityCode &&
       value.period === period &&
       value.status === 'available' &&
@@ -554,7 +560,7 @@ export async function runCompanyResearchAgent(
                 );
             if (matches.length + archived.length !== 1) throw Error('AGENT_TOOL_UNKNOWN');
             const { row, index } = matches[0] || { row: archived[0]!, index: -1 };
-            if (readNewsMediaExcerpt(row)) {
+            if (!options.bypassCache && readNewsMediaExcerpt(row)) {
               if (index < 0) working.context!.news = [row, ...working.context!.news].slice(0, 180);
               result = {
                 news: row,
@@ -580,7 +586,10 @@ export async function runCompanyResearchAgent(
               (row) => row.id === value.id
             );
             if (matches.length !== 1) throw Error('AGENT_TOOL_UNKNOWN');
-            if (readDiscussionPostExcerpt(matches[0]!, working.input.securityCode)) {
+            if (
+              !options.bypassCache &&
+              readDiscussionPostExcerpt(matches[0]!, working.input.securityCode)
+            ) {
               result = {
                 discussion: matches[0],
                 reused: true,
@@ -645,11 +654,13 @@ export async function runCompanyResearchAgent(
           industryAttempted = true;
           const industry = await options.industry(working.input.securityCode, period, {
             signal,
+            bypassCache: options.bypassCache,
             ...(options.fetch ? { fetch: options.fetch } : {}),
           });
           if (industry.securityCode !== working.input.securityCode || industry.period !== period)
             throw Error('AGENT_INDUSTRY_MISMATCH');
           working.industry = { ...working.industry, [period]: industry };
+          industryRefreshed = true;
           result = industryResult(false);
           summary = `取得 ${industry.peerCount} 家同年度同行；${industry.status === 'available' ? '完整样本按指标检查有效数量。' : '部分表或有效样本不足，相关比较保留未知。'}`;
           break;
@@ -717,6 +728,10 @@ export async function runCompanyResearchAgent(
             url.searchParams.set('param', JSON.stringify(param));
             const response = await reader.json(url.href);
             source.responseHashes.push(response.sha256);
+            source.fetchedAt =
+              pagesRead === 0 || response.fetchedAt < source.fetchedAt
+                ? response.fetchedAt
+                : source.fetchedAt;
             const newsRows = objectValue(response.value.result).cmsArticleWebOld;
             if (!Array.isArray(newsRows)) throw Error('AGENT_NEWS_FORMAT');
             pagesRead++;
@@ -815,7 +830,7 @@ export async function runCompanyResearchAgent(
           if (rows.length !== 1) throw Error('AGENT_DISCLOSURE_UNKNOWN');
           const row = rows[0]!;
           const url = officialPdfUrl(row.url);
-          if (validCompanyResearchExcerpt(row)) {
+          if (!options.bypassCache && validCompanyResearchExcerpt(row)) {
             result = { ...disclosurePublicRow(row), reused: true };
             summary = '使用已取得的官方原文前三页摘录与文件哈希。';
             break;
@@ -826,7 +841,8 @@ export async function runCompanyResearchAgent(
           const pdfSignal = AbortSignal.any([signal, AbortSignal.timeout(45000)]);
           const response = await reader.read(url, { signal: pdfSignal }, 8_000_000);
           source.responseHashes.push(response.sha256);
-          const parsed = await readCompanyPdf(response.body, pdfSignal);
+          source.fetchedAt = response.fetchedAt;
+          const parsed = await readCompanyPdf(response.body, pdfSignal, { sourceUrl: url });
           const pages = parsed.pages.slice(0, 3);
           const page =
             pages.find((item) =>

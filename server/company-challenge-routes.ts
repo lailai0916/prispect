@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import {
   companyChallengeTargets,
+  type CompanyChallengeResult,
   type CompanyChallengeState,
   type CompanyChallengeTarget,
 } from '../shared/company-challenge.js';
@@ -48,6 +49,48 @@ export function installCompanyChallengeRoutes(
   const jobs = new Map<string, Promise<void>>(),
     controllers = new Map<string, AbortController>();
   const service = options.service || {};
+  const jobKey = (store: WorkspaceStore, run: CompanyResearchRun) =>
+    JSON.stringify([store.dataDir, run.id]);
+  const resultMatches = (
+    run: CompanyResearchRun,
+    target: CompanyChallengeTarget,
+    result: CompanyChallengeResult | undefined
+  ): result is CompanyChallengeResult =>
+    !!result &&
+    result.version === 1 &&
+    result.target === target &&
+    result.securityCode === run.input.securityCode &&
+    result.year === run.input.year &&
+    result.basis === 'consolidated' &&
+    result.snapshotFetchedAt === run.context?.fetchedAt &&
+    Array.isArray(result.research?.steps);
+  const readyResults = (run: CompanyResearchRun) => {
+    const results: NonNullable<CompanyResearchRun['challengeResults']> = {};
+    // Pick only the fixed targets, so malformed/legacy records cannot grow this cache.
+    for (const target of companyChallengeTargets) {
+      const entry = run.challengeResults?.[target];
+      if (
+        entry?.version === 1 &&
+        /^[a-f0-9]{64}$/.test(entry.inputHash) &&
+        entry.result?.version === 1 &&
+        entry.result.target === target
+      )
+        results[target] = entry;
+    }
+    const previous = run.challenge;
+    if (
+      previous?.status === 'ready' &&
+      companyChallengeTargets.includes(previous.target) &&
+      previous.inputHash === companyChallengeInputHash(run, previous.target) &&
+      resultMatches(run, previous.target, previous.result)
+    )
+      results[previous.target] = {
+        version: 1,
+        inputHash: previous.inputHash,
+        result: structuredClone(previous.result),
+      };
+    return results;
+  };
   const byId = (res: express.Response, id: string) => {
     const store = res.locals.store as WorkspaceStore;
     const run = store.state.companyRuns?.find((item) => item.id === id);
@@ -74,11 +117,15 @@ export function installCompanyChallengeRoutes(
   const schedule = async (
     store: WorkspaceStore,
     run: CompanyResearchRun,
-    target: CompanyChallengeTarget
+    target: CompanyChallengeTarget,
+    refresh: boolean
   ) => {
     if (jobs.size >= 2)
       throw new ApiFault(429, 'CHALLENGE_CAPACITY', '已有解释补查在执行，请稍后重试');
     const previous = run.challenge;
+    const previousResults = run.challengeResults;
+    const retainedResults = readyResults(run);
+    const key = jobKey(store, run);
     const inputHash = companyChallengeInputHash(run, target);
     const revision = (previous?.revision || 0) + 1;
     const controller = new AbortController();
@@ -97,7 +144,9 @@ export function installCompanyChallengeRoutes(
     const stillCurrent = () =>
       exists() && state.status === 'loading' && !controller.signal.aborted && snapshotCurrent();
     run.challenge = state;
-    controllers.set(run.id, controller);
+    // Retain a legacy single result before switching targets, even if the new job fails.
+    if (Object.keys(retainedResults).length) run.challengeResults = retainedResults;
+    controllers.set(key, controller);
     let start!: () => void;
     const gate = new Promise<void>((resolve) => (start = resolve));
     const job = gate.then(async () => {
@@ -111,6 +160,7 @@ export function installCompanyChallengeRoutes(
             research: service.research,
             industry: service.industry,
             fetch: service.fetch,
+            bypassCache: refresh,
             signal: controller.signal,
             onStep: async (step) => {
               if (!stillCurrent()) {
@@ -126,24 +176,27 @@ export function installCompanyChallengeRoutes(
           }
         );
         if (!stillCurrent()) return;
-        if (
-          result.target !== target ||
-          result.securityCode !== run.input.securityCode ||
-          result.year !== run.input.year ||
-          result.basis !== 'consolidated' ||
-          result.snapshotFetchedAt !== run.context?.fetchedAt
-        )
+        if (!resultMatches(run, target, result))
           throw new ApiFault(422, 'CHALLENGE_SCOPE', '解释补查结果与本次主体、年度或快照不一致');
         const previousResult = state.result;
+        const previousTrace = state.trace;
+        const beforePublication = run.challengeResults;
+        const nextResults = readyResults(run);
         state.result = result;
         state.trace = result.research.steps;
         state.status = 'ready';
         state.error = undefined;
+        run.challengeResults = {
+          ...nextResults,
+          [target]: { version: 1, inputHash, result: structuredClone(result) },
+        };
         try {
           await store.persist();
         } catch (error) {
           state.result = previousResult;
+          state.trace = previousTrace;
           state.status = 'failed';
+          run.challengeResults = beforePublication;
           throw error;
         }
       } catch (error) {
@@ -166,19 +219,20 @@ export function installCompanyChallengeRoutes(
           state.trace = failRunningSteps(state.trace, state.error);
           await store.persist().catch(() => undefined);
         }
-        jobs.delete(run.id);
-        if (controllers.get(run.id) === controller) controllers.delete(run.id);
+        if (jobs.get(key) === job) jobs.delete(key);
+        if (controllers.get(key) === controller) controllers.delete(key);
       }
     });
-    jobs.set(run.id, job);
+    jobs.set(key, job);
     try {
       await store.persist();
       start();
     } catch (error) {
       run.challenge = previous;
+      run.challengeResults = previousResults;
       controller.abort();
-      jobs.delete(run.id);
-      controllers.delete(run.id);
+      if (jobs.get(key) === job) jobs.delete(key);
+      if (controllers.get(key) === controller) controllers.delete(key);
       start();
       throw error;
     }
@@ -212,7 +266,7 @@ export function installCompanyChallengeRoutes(
         );
       if (!companyChallengeScopeValid(run))
         throw new ApiFault(422, 'CHALLENGE_SCOPE', '尚未取得匹配主体的公开资料，不能补查这个解释');
-      if (jobs.has(run.id)) {
+      if (jobs.has(jobKey(store, run))) {
         if (run.challenge?.status !== 'loading' || run.challenge.target !== body.data.target)
           throw new ApiFault(409, 'CHALLENGE_BUSY', '当前补查仍在执行或取消中，请完成后更换解释');
         res.status(202).json(envelope(run));
@@ -224,9 +278,39 @@ export function installCompanyChallengeRoutes(
         run.challenge?.status === 'ready' &&
         run.challenge.target === body.data.target &&
         run.challenge.inputHash === inputHash &&
-        run.challenge.result
+        resultMatches(run, body.data.target, run.challenge.result)
       ) {
-        res.json(envelope(run));
+        res.json({ ...envelope(run), cached: true });
+        return;
+      }
+      const cached = run.challengeResults?.[body.data.target];
+      if (
+        !body.data.refresh &&
+        cached?.version === 1 &&
+        cached.inputHash === inputHash &&
+        resultMatches(run, body.data.target, cached.result)
+      ) {
+        const previous = run.challenge;
+        const state: CompanyChallengeState = {
+          status: 'ready',
+          target: body.data.target,
+          revision: (previous?.revision || 0) + 1,
+          inputHash,
+          trace: structuredClone(cached.result.research.steps),
+          result: structuredClone(cached.result),
+        };
+        run.challenge = state;
+        try {
+          await store.persist();
+        } catch (error) {
+          if (run.challenge === state) run.challenge = previous;
+          throw error;
+        }
+        if (!store.state.companyRuns?.includes(run))
+          throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '未找到当前账号的企业记录');
+        if (run.challenge !== state || companyChallengeInputHash(run, state.target) !== inputHash)
+          throw new ApiFault(409, 'CHALLENGE_SOURCE_CHANGED', '公开资料已变化，请按新资料重新挑战');
+        res.json({ ...envelope(run), cached: true });
         return;
       }
       if (jobs.size >= 2)
@@ -236,7 +320,7 @@ export function installCompanyChallengeRoutes(
         6,
         3_600_000
       );
-      await schedule(store, run, body.data.target);
+      await schedule(store, run, body.data.target, body.data.refresh);
       res.status(202).json(envelope(run));
     })
   );
@@ -247,7 +331,7 @@ export function installCompanyChallengeRoutes(
         throw new ApiFault(400, 'CHALLENGE_INPUT', '取消请求参数无效');
       const { store, run } = byId(res, String(req.params.id));
       const state = run.challenge,
-        controller = controllers.get(run.id);
+        controller = controllers.get(jobKey(store, run));
       if (!state || state.status !== 'loading' || !controller) {
         res.json(envelope(run));
         return;
@@ -265,7 +349,7 @@ export function installCompanyChallengeRoutes(
   return {
     busy: (store: WorkspaceStore) =>
       store.state.companyRuns?.some(
-        (run) => run.challenge?.status === 'loading' || jobs.has(run.id)
+        (run) => run.challenge?.status === 'loading' || jobs.has(jobKey(store, run))
       ) || false,
     waitForIdle: async () => {
       await Promise.allSettled(jobs.values());
