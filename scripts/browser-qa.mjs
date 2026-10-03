@@ -182,6 +182,35 @@ async function scrollScene(page, selector, inset = 80) {
   }, inset);
   await page.waitForTimeout(1250);
 }
+async function emptyRecentReports(page, name) {
+  const trigger = page.locator('.showcase-history-toggle');
+  const writesBefore = receipt.researchWrites.length;
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  const history = page.locator('.showcase-search-history');
+  await history.waitFor();
+  await page.waitForFunction(() => {
+    const empty = document.querySelector('.showcase-history-empty');
+    return (
+      empty &&
+      /查过的公司会出现在这里|Your company reports will appear here/.test(empty.textContent)
+    );
+  });
+  assert.equal(await trigger.getAttribute('aria-expanded'), 'true');
+  assert.equal(await history.locator('a').count(), 0);
+  assert.equal(receipt.researchWrites.length, writesBefore);
+  await noOverflow(page, `${name} empty recent reports`);
+  await capture(page, `${name}-search-recent-empty`);
+  await trigger.focus();
+  await page.keyboard.press('Enter');
+  await history.waitFor({ state: 'hidden' });
+  assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+  assert.equal(await trigger.evaluate((element) => document.activeElement === element), true);
+  assert.equal(receipt.researchWrites.length, writesBefore);
+  check(
+    `${name}: keyboard recent-report toggle preserves empty owning guest state without research writes`
+  );
+}
 async function evidenceAndProcess(page, name) {
   await scrollScene(page, '.showcase-evidence');
   await noOverflow(page, `${name} evidence heading`);
@@ -235,26 +264,59 @@ async function evidenceAndProcess(page, name) {
   await capture(page, `${name}-process-heading`);
   await scrollScene(page, '.showcase-process-layout', 110);
   const chapters = page.locator('.showcase-chapters > button');
-  const expected = ['optical-prism.webp', 'page-191', 'page-190'];
-  for (let index = 0; index < expected.length; index++) {
+  for (let index = 0; index < 3; index++) {
     await chapters.nth(index).focus();
     await page.keyboard.press('Enter');
-    await page.waitForFunction((expected) => {
+    await page.waitForFunction((step) => {
       const active = document.querySelector('.showcase-chapters > button[aria-pressed="true"]');
-      const inline = active?.querySelector('img.showcase-chapter-inline-preview');
-      const image =
+      const inline = active?.querySelector(
+        '.showcase-chapter-inline-preview .showcase-flow-device'
+      );
+      const preview =
         matchMedia('(max-width: 600px)').matches && inline
           ? inline
-          : document.querySelector('.showcase-chapter-preview img.is-active');
-      return (
-        image?.getAttribute('src')?.includes(expected) && image.complete && image.naturalWidth > 0
-      );
-    }, expected[index]);
+          : document.querySelector('.showcase-chapter-preview .showcase-flow-device');
+      if (preview?.getAttribute('data-preview-step') !== String(step)) return false;
+      const image = preview.querySelector('img');
+      return !image || (image.complete && image.naturalWidth > 0);
+    }, index);
     assert.equal(await chapters.nth(index).getAttribute('aria-pressed'), 'true');
+    const preview = page.locator(
+      page.viewportSize().width <= 600
+        ? '.showcase-chapters > button[aria-pressed="true"] .showcase-flow-device'
+        : '.showcase-chapter-preview .showcase-flow-device'
+    );
+    assert.match(
+      await preview.locator('.showcase-flow-scope').innerText(),
+      /固定历史示例|Fixed historical example/
+    );
+    assert.equal(await preview.locator('img[src$="optical-prism.webp"]').count(), 0);
+    if (index === 0) {
+      assert.match(await preview.locator('.showcase-flow-match').innerText(), /300893/);
+      assert.match(await preview.innerText(), /先确认主体|Confirm the company/);
+    } else if (index === 1) {
+      const values = await preview.locator('.showcase-flow-value strong').allTextContents();
+      assert.deepEqual(values, ['366,373,098.93', '26,197,123.70']);
+      const widths = await preview
+        .locator('.showcase-flow-bar')
+        .evaluateAll((elements) =>
+          elements.map((element) => Number.parseFloat(element.style.width))
+        );
+      assert.equal(widths[0], 100);
+      // CSSOM serializes percentages with fewer digits than the underlying
+      // exact displayed amounts; keep the visual-ratio tolerance below 0.0001pp.
+      assert.ok(Math.abs(widths[1] / widths[0] - 26197123.7 / 366373098.93) < 1e-6);
+      assert.match(await preview.innerText(), /2025.*CNY/s);
+    } else {
+      assert.ok((await preview.locator('img').getAttribute('src')).includes('page-190'));
+      assert.match(await preview.innerText(), /p\.190–191/);
+    }
   }
   await noOverflow(page, `${name} process`);
   await capture(page, `${name}-process-evidence-preview`);
-  check(`${name}: each process chapter exposes its own correct loaded asset and pressed state`);
+  check(
+    `${name}: selected process chapters show labeled historical identity, exact same-scale figures and loaded originals`
+  );
 }
 async function capture(page, name) {
   const filename = `${name}.png`;
@@ -432,6 +494,7 @@ try {
   assert.notEqual(await year.innerText(), before);
   assert.equal((await year.innerText()).trim(), selectedYear.trim());
   check('Annual selection changes locally');
+  await emptyRecentReports(page, 'lite-desktop-zh');
   const trigger = page.locator('.showcase-menu-trigger');
   await trigger.focus();
   await page.keyboard.press('Enter');
@@ -439,12 +502,13 @@ try {
   await menu.waitFor();
   const menuPro = menu.locator('nav a').filter({ hasText: 'Pro' });
   await menuPro.focus();
-  await page.waitForFunction(() =>
-    document
-      .querySelector('.showcase-navigation-preview img.is-active')
-      ?.getAttribute('src')
-      ?.includes('page-191')
+  await page.waitForFunction(
+    () =>
+      document.querySelector('.showcase-menu-route.is-active')?.getAttribute('data-route') === 'pro'
   );
+  const routePreview = menu.locator('.showcase-menu-route.is-active');
+  assert.match(await routePreview.innerText(), /研究报告|Research report/);
+  assert.equal(await menu.locator('img[src$="optical-prism.webp"]').count(), 0);
   await noOverflow(page, 'desktop full-screen menu');
   await capture(page, 'lite-menu-zh-light');
   await page.keyboard.press('Escape');
@@ -539,6 +603,7 @@ try {
   await submitLabelFits(narrow.page, '320px English Lite');
   await capture(narrow.page, 'lite-320-en-light');
   await staticOptics(narrow.page, '320px reduced motion');
+  await emptyRecentReports(narrow.page, 'lite-320-en-light');
   const narrowTrigger = narrow.page.locator('.showcase-menu-trigger');
   await narrowTrigger.focus();
   await narrow.page.keyboard.press('Enter');

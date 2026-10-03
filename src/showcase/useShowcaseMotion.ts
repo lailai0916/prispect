@@ -28,13 +28,26 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
           const entrance = gsap.timeline({ defaults: { ease: 'power4.out' } });
 
           // Every letter settles at its native position before scroll choreography begins.
-          entrance.from(all('.showcase-letter'), {
+          entrance.from(all('[data-title-line="0"] .showcase-letter'), {
             yPercent: 145,
             rotationX: -80,
             transformOrigin: '50% 100%',
             duration: 1.12,
             stagger: { each: locale === 'en' ? 0.016 : 0.035, from: 'start' },
           });
+          // The second line arrives laterally, alternating direction rather than repeating the hinge.
+          entrance.from(
+            all('[data-title-line="1"] .showcase-letter'),
+            {
+              x: (index) => (index % 2 ? 1 : -1) * 34,
+              yPercent: (index) => (index % 2 ? -1 : 1) * 115,
+              rotation: (index) => (index % 2 ? 1 : -1) * 9,
+              opacity: 0,
+              duration: 0.85,
+              stagger: { each: locale === 'en' ? 0.012 : 0.045, from: 'center' },
+            },
+            0.2
+          );
           if (scene) {
             entrance.from(
               scene,

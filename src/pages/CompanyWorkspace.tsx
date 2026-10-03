@@ -52,7 +52,7 @@ import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyFinancialOverview } from '../CompanyFinancialOverview';
 import { CompanyAIResearchStatus } from '../CompanyAIResearchStatus';
-import { CompanyAICoreReport } from '../CompanyAICoreReport';
+import { CompanyReportDocument } from '../CompanyReportDocument';
 import { ResearchPlan } from '../ResearchPlan';
 import { CompanyPageIndex } from '../CompanyPageIndex';
 import { CompanyReadingSession } from '../CompanyReadingSession';
@@ -543,7 +543,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           )}
           <h1>
             {aiReport
-              ? t('AI 研究报告', 'AI research report')
+              ? t('研究报告', 'Research report')
               : section === 'overview'
                 ? run.informationGap?.name ||
                   run.identity?.shortName ||
@@ -730,29 +730,32 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             <ArrowLeft size={13} aria-hidden="true" />
             {t('返回财务数据', 'Back to financial data')}
           </a>
-          <CompanyAICoreReport
-            run={run}
-            disabled={!canWriteRun}
-            onInspect={(judgment) =>
-              user &&
-              run.assessment &&
-              setCoreEvidence({
-                owner: user.id,
-                runId: run.id,
-                generatedAt: run.assessment.generatedAt,
-                judgment,
-              })
-            }
-          />
           <section id="company-full-report">
-            <CompanyAssessment
-              key={'assessment-' + run.id}
+            <span id="company-ai-core-report" aria-hidden="true" />
+            <CompanyReportDocument
               run={run}
-              onRefresh={(focus) => void refreshAssessment(focus, Boolean(run.assessment))}
-              refreshing={assessmentUpdating}
-              readOnly={!canWriteRun}
+              basis="consolidated"
+              disabled={!canWriteRun}
+              onInspect={(judgment) =>
+                user &&
+                run.assessment &&
+                setCoreEvidence({
+                  owner: user.id,
+                  runId: run.id,
+                  generatedAt: run.assessment.generatedAt,
+                  judgment,
+                })
+              }
             />
           </section>
+          <CompanyAssessment
+            key={'assessment-' + run.id}
+            run={run}
+            onRefresh={(focus) => void refreshAssessment(focus, Boolean(run.assessment))}
+            refreshing={assessmentUpdating}
+            readOnly={!canWriteRun}
+            controlsOnly
+          />
           <details id="company-evidence-lab" className="company-review-details">
             <summary>
               <ChevronDown size={14} />
@@ -895,8 +898,12 @@ function pageAnchorItems(
 ): readonly (readonly [string, string, string])[] {
   if (aiReport)
     return [
-      ['company-ai-core-report', '核心判断', 'Core judgment'],
-      ['company-full-report', '详细分析', 'Detailed analysis'],
+      ['company-report-summary', '核心判断', 'Core judgment'],
+      ['company-report-findings', '关键发现', 'Key findings'],
+      ['company-report-unknowns', '待核查', 'Needs verification'],
+      ['company-report-dimensions', '详细分析', 'Detailed analysis'],
+      ['company-report-actions', '下一步', 'Next steps'],
+      ['company-report-references', '报告引用', 'Report references'],
       ['company-evidence-lab', '检验解释', 'Test an explanation'],
       ['company-research-framework', '核查计划', 'Research plan'],
       ['company-source-trust', '来源关系', 'Source relationships'],
@@ -940,6 +947,8 @@ function pageAnchorIds(
 ): string[] {
   return [
     ...pageAnchorItems(section, aiReport).map(([id]) => id),
+    'company-ai-core-report',
+    'company-full-report',
     'company-evidence-lab',
     'company-original-comparison',
   ];

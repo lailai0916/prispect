@@ -1,16 +1,16 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { ArrowDown, ArrowRight, ArrowUpRight, LoaderCircle, Search } from 'lucide-react';
+import { ArrowDown, ArrowRight, ArrowUpRight } from 'lucide-react';
 import { productTagline } from '../../shared/product-terms';
 import { Dialog } from '../components';
-import { Select } from '../Select';
-import { StartInput } from '../StartInput';
 import { useApp } from '../context';
-import { useCompanyQuery } from '../useCompanyQuery';
 import { landingExample } from '../cinematic/landing-content';
 import { useShowcaseMotion } from './useShowcaseMotion';
 import { HeroField } from './HeroField';
+import { ShowcaseSearch } from './ShowcaseSearch';
+import { FlowPreview } from './FlowPreview';
 import './showcase.css';
 import './showcase-v2.css';
+import './showcase-v3.css';
 
 function displayAmount(value: string, english: boolean) {
   return new Intl.NumberFormat(english ? 'en-US' : 'zh-CN', {
@@ -64,21 +64,11 @@ export function ShowcaseLanding({
   query?: URLSearchParams;
   connectionError?: string;
 }) {
-  const { t, locale, user, refresh, historyNavigation } = useApp();
-  const { year, setYear, latest, creating, error, begin } = useCompanyQuery(query, {
-    experience: 'lite',
-  });
+  const { t, locale, historyNavigation } = useApp();
   const root = useRef<HTMLDivElement>(null);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [activePreview, setActivePreview] = useState(0);
   const [scanPosition, setScanPosition] = useState(52);
-  const searchScope = JSON.stringify([user?.id || null, query?.get('query') || '']);
-  const [exampleDraft, setExampleDraft] = useState<{
-    text: string;
-    revision: number;
-    scope: string;
-  } | null>(null);
-  const activeExample = exampleDraft?.scope === searchScope ? exampleDraft : null;
   useShowcaseMotion(root, locale);
   useEffect(() => {
     let frame = 0;
@@ -111,9 +101,6 @@ export function ShowcaseLanding({
         '输入名称或代码，确认你要看的主体。',
         'Enter a name or code and confirm the company.'
       ),
-      image: '/showcase/optical-prism.webp',
-      width: 1254,
-      height: 1254,
     },
     {
       title: t('看数字', 'Read the numbers'),
@@ -121,9 +108,6 @@ export function ShowcaseLanding({
         '对照利润、经营现金和同年度财务记录。',
         'Compare profit, operating cash and same-year financial records.'
       ),
-      image: landingExample.source.crops[1].src,
-      width: landingExample.source.crops[1].width,
-      height: landingExample.source.crops[1].height,
     },
     {
       title: t('追依据', 'Trace the evidence'),
@@ -131,9 +115,6 @@ export function ShowcaseLanding({
         '回到来源，再提出值得继续核对的问题。',
         'Return to the source and ask what needs investigating next.'
       ),
-      image: landingExample.source.crops[0].src,
-      width: landingExample.source.crops[0].width,
-      height: landingExample.source.crops[0].height,
     },
   ];
   return (
@@ -168,99 +149,7 @@ export function ShowcaseLanding({
               'Find a company. Read the numbers. Trace every source.'
             )}
           </p>
-          <div
-            id="showcase-query"
-            className="showcase-search"
-            role="search"
-            aria-label={t('企业查询', 'Company search')}
-            tabIndex={-1}
-            aria-busy={creating || (!user && !connectionError)}
-          >
-            <Search className="showcase-search-icon" size={23} aria-hidden="true" />
-            <StartInput
-              key={`${searchScope}:${activeExample?.revision || 0}`}
-              compact
-              companyOnly
-              initialText={activeExample?.text || query?.get('query') || undefined}
-              disabled={!user || creating}
-              placeholder={t('输入 A 股公司名称或代码', 'Enter an A-share company name or code')}
-              submitLabel={t('开始查询', 'Search')}
-              onCompanyChoice={(identity) => void begin(identity)}
-              onInformationGap={(name) => void begin(undefined, name)}
-            />
-            <div className="showcase-search-meta">
-              <span>{t('支持 A 股上市公司', 'A-share listed companies')}</span>
-              <Select
-                value={year}
-                disabled={!user || creating}
-                aria-label={t('选择年报年度', 'Choose annual-report year')}
-                onValueChange={(value) => setYear(Number(value))}
-              >
-                {Array.from({ length: latest - 2010 + 1 }, (_, index) => latest - index).map(
-                  (value) => (
-                    <option key={value} value={value}>
-                      {t(`${value} 年报`, `Annual ${value}`)}
-                    </option>
-                  )
-                )}
-              </Select>
-              <a href="/query">
-                {t('进入 Pro', 'Open Pro')}
-                <ArrowUpRight size={16} aria-hidden="true" />
-              </a>
-            </div>
-            {(!user || creating) && !connectionError && (
-              <p className="showcase-search-feedback" role="status">
-                <LoaderCircle className="spinner" size={16} aria-hidden="true" />
-                {creating
-                  ? t('正在打开财务报告…', 'Opening the financial report…')
-                  : t('正在准备查询…', 'Preparing company search…')}
-              </p>
-            )}
-            {error && (
-              <p className="showcase-search-feedback" role="alert">
-                {error}
-              </p>
-            )}
-            {connectionError && (
-              <div className="showcase-search-feedback" role="alert">
-                <span>{connectionError}</span>
-                <button
-                  type="button"
-                  className="showcase-text-link"
-                  onClick={() => void refresh().catch(() => {})}
-                >
-                  {t('重新连接', 'Reconnect')}
-                  <ArrowRight size={15} aria-hidden="true" />
-                </button>
-              </div>
-            )}
-          </div>
-          <div className="showcase-examples">
-            <span>{t('试试查询', 'Try a company')}</span>
-            {['松原安全', '杭州银行'].map((name) => (
-              <button
-                type="button"
-                disabled={!user || creating}
-                key={name}
-                onClick={() => {
-                  setExampleDraft((draft) => ({
-                    text: name,
-                    revision: (draft?.revision || 0) + 1,
-                    scope: searchScope,
-                  }));
-                  requestAnimationFrame(() =>
-                    root.current
-                      ?.querySelector<HTMLTextAreaElement>('.showcase-search textarea')
-                      ?.focus({ preventScroll: true })
-                  );
-                }}
-              >
-                {name}
-                <ArrowUpRight size={13} aria-hidden="true" />
-              </button>
-            ))}
-          </div>
+          <ShowcaseSearch query={query} connectionError={connectionError} />
         </div>
         <a className="showcase-scroll-link" href="#showcase-evidence">
           <ArrowDown size={23} aria-hidden="true" />
@@ -432,15 +321,9 @@ export function ShowcaseLanding({
                   <strong>{chapter.title}</strong>
                   <span>{chapter.detail}</span>
                   {activePreview === index && (
-                    <img
-                      className="showcase-chapter-inline-preview"
-                      src={chapter.image}
-                      width={chapter.width}
-                      height={chapter.height}
-                      alt=""
-                      aria-hidden="true"
-                      loading="lazy"
-                    />
+                    <span className="showcase-chapter-inline-preview">
+                      <FlowPreview step={index} />
+                    </span>
                   )}
                 </span>
                 <ArrowUpRight size={25} aria-hidden="true" />
@@ -451,17 +334,7 @@ export function ShowcaseLanding({
             <span className="showcase-preview-caption">
               0{activePreview + 1} / {chapters[activePreview].title}
             </span>
-            {chapters.map((chapter, index) => (
-              <img
-                src={chapter.image}
-                key={chapter.title}
-                className={activePreview === index ? 'is-active' : ''}
-                width={chapter.width}
-                height={chapter.height}
-                alt=""
-                loading="lazy"
-              />
-            ))}
+            <FlowPreview key={activePreview} step={activePreview} />
           </div>
         </div>
       </section>

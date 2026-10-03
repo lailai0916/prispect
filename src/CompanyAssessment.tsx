@@ -97,11 +97,13 @@ export function CompanyAssessment({
   onRefresh,
   refreshing,
   readOnly = false,
+  controlsOnly = false,
 }: {
   run: CompanyResearchRun;
   onRefresh: (focus?: string) => void;
   refreshing: boolean;
   readOnly?: boolean;
+  controlsOnly?: boolean;
 }) {
   const { t, locale } = useApp();
   const [selected, setSelected] = useState<{ title: string; judgment: AssessmentJudgment } | null>(
@@ -111,6 +113,25 @@ export function CompanyAssessment({
   const loading = run.assessmentStatus === 'loading' || refreshing;
   useEffect(() => setSelected(null), [assessment?.generatedAt]);
   if (run.informationGap) return null;
+  if (controlsOnly)
+    return (
+      <section
+        className="company-report-research-controls"
+        aria-label={t('进一步研究', 'Research further')}
+      >
+        {assessment && (
+          <button
+            className="text-link assessment-refresh"
+            disabled={readOnly || loading || run.contextStatus === 'loading'}
+            onClick={() => !readOnly && onRefresh()}
+          >
+            {loading ? <LoaderCircle size={13} className="spinner" /> : <RefreshCw size={13} />}
+            {loading ? t('分析中', 'Analyzing') : t('重新分析', 'Reanalyze')}
+          </button>
+        )}
+        <AssessmentResearch run={run} loading={loading} onRequest={onRefresh} readOnly={readOnly} />
+      </section>
+    );
   if (!assessment || deriveCompanyResearchProgress(run).snapshot === 'mismatch')
     return (
       <section

@@ -1,3 +1,19 @@
+# Complete report and Lite search repair QA
+
+Date: 2026-10-04 (Asia/Shanghai).
+
+- Restored the saved narrative omitted by both report paths: strengths, risks, six dimensions, actions and change conditions. The new pure document retains the saved snapshot, rating and references. Synthetic completed reports are explicitly labeled; they verify layout and binding, not a successful real model call.
+- Replaced repeated prism placements in menus, process previews and Lite results with actual route, historical example, annual dossier and source-register presentations. The hero retains one decorative optical asset. Native search uses real candidates and owner-scoped recent reports.
+- Full `npm run check` passed 1024 tests, types, frozen research integrity, build and format. After browser fixes, typecheck and 19 report regressions passed again.
+- Actual entry checks passed 52 assertions / 23 screenshots. Desktop/narrow bilingual keyboard, reduced motion, menu, three distinct process devices, source scanner and recent-report empty states passed without research writes or browser errors.
+- Full synthetic-report browser acceptance passed 40 assertions / 29 screenshots, including Pro/Lite full paragraphs, targeted citations, safe literal text, saved-generation follow-ups, old snapshots, NR provisional consistency, 1440/390/320/300 layouts and complete print PDFs. Pro citation anchors now clear the real sticky index. Lite paper references include readable URLs, quotes and page metadata rather than only link annotations.
+- One genuine 300893/2025 acquisition with the execution environment proxy enabled returned seven financial periods. Four displayed annual amounts equal the saved public snapshot exactly; same-run Lite → cached Pro → Lite added no research write, source request or revision. This has no configured model. An initial local run without environment-proxy transport failed truthfully at issuer lookup; it was retained as failure evidence rather than counted as data acceptance.
+- Browser review found and fixed Pro English guest header overflow at 320/300px, source-anchor overlap, transparent search controls over bright hero art and missing Lite print reference text. No unresolved P0/P1/P2 remained in the exercised surfaces. Live model answers and unvisited legacy paths are outside this acceptance.
+
+Evidence: ignored `output/browser-qa/receipt.json`, `report-v3/receipt.json` plus PDFs/captures, and `lite-results/receipt.json`. New public-source studies are independent of these application fixtures; games have been excluded from further implementation at the user's direction.
+
+## Earlier optical iteration history
+
 # Lite optical redesign design QA
 
 Date: 2026-10-04 (Asia/Shanghai).

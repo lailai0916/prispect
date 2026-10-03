@@ -4,8 +4,9 @@ import { Dialog } from '../components';
 import { useApp } from '../context';
 import './showcase.css';
 import './showcase-v2.css';
+import './showcase-v3.css';
 
-/** The previews are local presentation assets, never live account data. */
+/** Route previews describe real destinations, without displaying invented company records. */
 export function ShowcaseNavigation({
   homeActive = true,
   proLink = '/query',
@@ -22,25 +23,34 @@ export function ShowcaseNavigation({
       href: '/',
       label: 'Lite',
       detail: t('从一家公司的名字开始。', 'Start with a company name.'),
-      image: '/showcase/optical-prism.webp',
-      width: 1254,
-      height: 1254,
+      route: 'lite',
+      headings: [
+        t('查公司', 'Find a company'),
+        t('看数字', 'Read the numbers'),
+        t('追依据', 'Trace the evidence'),
+      ],
     },
     {
       href: proLink,
       label: 'Pro',
       detail: t('查询企业，回到现有研究流程。', 'Search companies in the research workspace.'),
-      image: '/landing/songyuan-2025-page-191-crop.png',
-      width: 1032,
-      height: 495,
+      route: 'pro',
+      headings: [
+        t('研究报告', 'Research report'),
+        t('财务趋势', 'Financial trends'),
+        t('行业对比', 'Industry comparison'),
+      ],
     },
     {
       href: '/docs',
       label: t('文档', 'Documentation'),
       detail: t('了解用法、方法与数据范围。', 'Read the guide, methodology and coverage.'),
-      image: '/landing/songyuan-2025-page-190-crop.png',
-      width: 1032,
-      height: 665,
+      route: 'docs',
+      headings: [
+        t('开始使用', 'Getting started'),
+        t('研究方法', 'Methodology'),
+        t('数据范围', 'Data coverage'),
+      ],
     },
   ];
   return (
@@ -87,14 +97,21 @@ export function ShowcaseNavigation({
             </nav>
             <div className="showcase-navigation-preview" aria-hidden="true">
               {entries.map((entry, index) => (
-                <img
+                <div
                   key={entry.href}
-                  src={entry.image}
-                  alt=""
-                  width={entry.width}
-                  height={entry.height}
-                  className={preview === index ? 'is-active' : ''}
-                />
+                  data-route={entry.route}
+                  className={`showcase-menu-route${preview === index ? ' is-active' : ''}`}
+                >
+                  <span>0{index + 1} / PRISPECT</span>
+                  <strong>{entry.label}</strong>
+                  {entry.headings.map((heading, step) => (
+                    <span className="showcase-menu-route-step" key={heading}>
+                      <small>0{step + 1}</small>
+                      {heading}
+                      <ArrowUpRight size={16} />
+                    </span>
+                  ))}
+                </div>
               ))}
               <p>{entries[preview].detail}</p>
             </div>
