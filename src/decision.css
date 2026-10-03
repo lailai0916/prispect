@@ -689,7 +689,7 @@
   line-height: 1.8;
 }
 .decision-evidence-record {
-  padding: 8px 0;
+  padding: 8px 0 0;
 }
 .decision-evidence-record-heading,
 .decision-evidence-values {
@@ -761,12 +761,9 @@
 }
 .decision-evidence-form .dialog-actions,
 .decision-evidence-record .dialog-actions {
-  position: sticky;
-  bottom: 0;
-  background: var(--paper);
   border-top: 1px solid var(--line);
-  padding: 18px 0 20px;
-  margin: 0;
+  padding-top: 18px;
+  margin-top: 0;
   z-index: 2;
 }
 .decision-known-conflicts {
