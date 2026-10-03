@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { ArrowUpRight, FileSearch, Info } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type {
@@ -6,6 +6,7 @@ import type {
   CompanyContextPeriod,
   ContextAmountField,
   CompanyDisclosure,
+  CompanySourceComparison,
   PublicSourceState,
 } from '../shared/company-workspace';
 import {
@@ -17,9 +18,152 @@ import {
   companyCheckPriorities,
   type CompanyReadingBasis,
 } from '../shared/company-analysis';
+import {
+  companyEvidenceComparisons,
+  companyEvidenceSourceUrls,
+} from '../shared/company-source-evidence';
 import { Dialog, Tag } from './components';
 import { useApp, type Translate } from './context';
 import { date, money } from './format';
+
+function CompanySourceComparisons({
+  snapshot,
+  checks,
+  periods,
+  selectedRef,
+  compact = false,
+}: {
+  snapshot: CompanyContextSnapshot;
+  checks: CompanySourceComparison[];
+  periods: CompanyContextPeriod[];
+  selectedRef?: RefObject<HTMLElement | null>;
+  compact?: boolean;
+}) {
+  const { t, locale } = useApp();
+  if (compact)
+    return (
+      <div className="context-source-comparisons">
+        {checks.map((check, index) => {
+          const period = periods.find((candidate) => candidate.period === check.period);
+          return (
+            <article
+              className="context-source-comparison"
+              key={`${check.period}:${check.field}`}
+              data-period={check.period}
+              data-field={check.field}
+              ref={index === 0 ? selectedRef : undefined}
+              tabIndex={index === 0 && selectedRef ? -1 : undefined}
+            >
+              <header>
+                <div>
+                  <h4>{t(...contextFieldLabels[check.field])}</h4>
+                  <span>
+                    {check.period} · {t('元（CNY）', 'yuan (CNY)')}
+                  </span>
+                </div>
+                <Tag>
+                  {check.matches
+                    ? t('容差内一致', 'Within tolerance')
+                    : t('差异待核实', 'Difference to verify')}
+                </Tag>
+              </header>
+              <div className="context-source-comparison-values">
+                {(['primary', 'secondary'] as const).map((provider) => (
+                  <div key={provider} data-provider={provider}>
+                    <span>
+                      {provider === 'primary' ? t('东方财富', 'Eastmoney') : t('新浪财经', 'Sina')}
+                    </span>
+                    <strong>{money(check[provider], locale, false)}</strong>
+                    {companyEvidenceSourceUrls(snapshot, period, check.field, provider).map(
+                      (url, sourceIndex) => (
+                        <a
+                          key={url}
+                          className="text-link"
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t('打开来源', 'Open source')}
+                          {sourceIndex > 0 ? ` ${sourceIndex + 1}` : ''}
+                          <ArrowUpRight size={12} />
+                        </a>
+                      )
+                    )}
+                  </div>
+                ))}
+              </div>
+              <p className="context-source-comparison-difference">
+                <span>{t('差额（东方财富 − 新浪）', 'Difference (Eastmoney − Sina)')}</span>
+                <strong>{money(check.difference, locale, false)}</strong>
+              </p>
+            </article>
+          );
+        })}
+      </div>
+    );
+  return (
+    <div className="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>{t('报告期与科目', 'Period and field')}</th>
+            <th>{t('东方财富（元）', 'Eastmoney (yuan)')}</th>
+            <th>{t('新浪财经（元）', 'Sina (yuan)')}</th>
+            <th>{t('差额（元）', 'Difference (yuan)')}</th>
+            <th>{t('状态', 'Status')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {checks.map((check, index) => {
+            const period = periods.find((candidate) => candidate.period === check.period);
+            return (
+              <tr
+                key={`${check.period}:${check.field}`}
+                ref={
+                  index === 0 && selectedRef
+                    ? (node) => {
+                        selectedRef.current = node;
+                      }
+                    : undefined
+                }
+                tabIndex={index === 0 && selectedRef ? -1 : undefined}
+              >
+                <td>
+                  {t(...contextFieldLabels[check.field])}
+                  <small>{check.period}</small>
+                </td>
+                {(['primary', 'secondary'] as const).map((provider) => (
+                  <td key={provider}>
+                    {money(check[provider], locale, false)}
+                    {companyEvidenceSourceUrls(snapshot, period, check.field, provider).map(
+                      (url, sourceIndex) => (
+                        <small key={url}>
+                          <a className="text-link" href={url} target="_blank" rel="noreferrer">
+                            {t('打开来源', 'Open source')}
+                            {sourceIndex > 0 ? ` ${sourceIndex + 1}` : ''}
+                            <ArrowUpRight size={12} />
+                          </a>
+                        </small>
+                      )
+                    )}
+                  </td>
+                ))}
+                <td>{money(check.difference, locale, false)}</td>
+                <td>
+                  <Tag>
+                    {check.matches
+                      ? t('容差内一致', 'Within tolerance')
+                      : t('差异待核实', 'Difference to verify')}
+                  </Tag>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
 export function CompanyContextEvidence({
   row,
@@ -27,15 +171,24 @@ export function CompanyContextEvidence({
   children,
   periods,
   formula,
+  snapshot,
 }: {
   row: CompanyContextPeriod;
   fields: ContextAmountField[];
   children?: ReactNode;
   periods?: CompanyContextPeriod[];
   formula?: string;
+  snapshot?: CompanyContextSnapshot;
 }) {
   const { t, locale } = useApp(),
     [open, setOpen] = useState(false);
+  const selectedRef = useRef<HTMLElement>(null);
+  const selectedPeriods = periods || [row];
+  const checks = companyEvidenceComparisons(snapshot, selectedPeriods, fields);
+  const conflicts = checks.filter((check) => !check.matches);
+  useEffect(() => {
+    if (open) selectedRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [open]);
   return (
     <>
       <button type="button" className="context-evidence-button" onClick={() => setOpen(true)}>
@@ -44,10 +197,16 @@ export function CompanyContextEvidence({
       </button>
       {open && (
         <Dialog
-          title={t('网页字段与来源', 'Web fields and sources')}
+          title={t('字段与来源', 'Fields and sources')}
           onClose={() => setOpen(false)}
           variant="drawer"
+          initialFocus={selectedRef}
         >
+          {snapshot && (
+            <p>
+              <strong>{snapshot.companyName}</strong> · {snapshot.securityCode}
+            </p>
+          )}
           <p className="muted">
             {row.period} ·{' '}
             {t(
@@ -56,6 +215,33 @@ export function CompanyContextEvidence({
             )}
           </p>
           {formula && <p className="context-formula">{formula}</p>}
+          {conflicts.length > 0 && (
+            <p className="context-data-note" role="status">
+              <Info size={14} />
+              {t(
+                '相关字段存在来源差异，依赖这些字段的计算暂停；其他字段仍可核对。',
+                'Source differences withhold dependent calculations; other fields remain available to inspect.'
+              )}
+            </p>
+          )}
+          {snapshot && checks.length > 0 && (
+            <section>
+              <h3>{t('同报告期来源对照', 'Same-period source comparison')}</h3>
+              <p className="muted">
+                {t(
+                  '金额：元（CNY）· 科目口径见字段名称，报表范围需核对原件。',
+                  'Amounts: yuan (CNY). Field names distinguish profit bases; verify statement scope in the original.'
+                )}
+              </p>
+              <CompanySourceComparisons
+                snapshot={snapshot}
+                checks={checks}
+                periods={selectedPeriods}
+                selectedRef={selectedRef}
+                compact
+              />
+            </section>
+          )}
           <div className="table-scroll">
             <table>
               <thead>
@@ -67,15 +253,38 @@ export function CompanyContextEvidence({
                 </tr>
               </thead>
               <tbody>
-                {(periods || [row]).flatMap((period) =>
-                  fields.map((field) => (
-                    <tr key={`${period.period}:${field}`}>
-                      <td>{period.period}</td>
-                      <td>{t(...contextFieldLabels[field])}</td>
-                      <td>{money(period.amounts[field], locale, false)}</td>
-                      <td>{period.fieldSources[field] || t('未取得', 'Not retrieved')}</td>
-                    </tr>
-                  ))
+                {selectedPeriods.flatMap((period, periodIndex) =>
+                  fields.map((field, fieldIndex) => {
+                    const conflict = conflicts.find(
+                      (check) => check.period === period.period && check.field === field
+                    );
+                    const first = checks.length === 0 && periodIndex === 0 && fieldIndex === 0;
+                    return (
+                      <tr
+                        key={`${period.period}:${field}`}
+                        ref={
+                          first
+                            ? (node) => {
+                                selectedRef.current = node;
+                              }
+                            : undefined
+                        }
+                        tabIndex={first ? -1 : undefined}
+                      >
+                        <td>{period.period}</td>
+                        <td>{t(...contextFieldLabels[field])}</td>
+                        <td>{money(conflict?.primary ?? period.amounts[field], locale, false)}</td>
+                        <td>
+                          {conflict
+                            ? t(
+                                '东方财富原值 · 差异待核实',
+                                'Eastmoney original · difference to verify'
+                              )
+                            : period.fieldSources[field] || t('未取得', 'Not retrieved')}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
@@ -171,6 +380,7 @@ export function CompanyContextOverview({
             ))}
           </dl>
           <CompanyContextEvidence
+            snapshot={snapshot}
             row={interim}
             fields={['revenue', 'parentProfit', 'ocf', 'cash']}
           />
@@ -193,6 +403,7 @@ export function CompanyContextOverview({
           </small>
           {last && (
             <CompanyContextEvidence
+              snapshot={snapshot}
               row={last}
               fields={['revenue', 'netProfit', 'parentProfit', 'deductedProfit']}
             />
@@ -216,6 +427,7 @@ export function CompanyContextOverview({
           </strong>
           {last && (
             <CompanyContextEvidence
+              snapshot={snapshot}
               row={last}
               periods={analysis.annuals.slice(-3)}
               fields={[profitField, 'ocf', 'revenue']}
@@ -245,6 +457,7 @@ export function CompanyContextOverview({
           </strong>
           {last && (
             <CompanyContextEvidence
+              snapshot={snapshot}
               row={last}
               fields={['cash', 'shortLoan', 'currentPortionDebt']}
               formula={t(
@@ -447,6 +660,7 @@ export function CompanyContextOverview({
                     </td>
                     <td>
                       <CompanyContextEvidence
+                        snapshot={snapshot}
                         row={last}
                         fields={item.fields}
                         formula={item.formula}
@@ -675,36 +889,11 @@ export function CompanySourcesView({ snapshot }: { snapshot: CompanyContextSnaps
       <section className="context-section">
         <h2>{t('同报告期财务比对', 'Same-period financial comparison')}</h2>
         {snapshot.comparisons.length ? (
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  <th>{t('报告期', 'Period')}</th>
-                  <th>{t('科目', 'Field')}</th>
-                  <th>{t('东方财富（元）', 'Eastmoney (yuan)')}</th>
-                  <th>{t('新浪财经（元）', 'Sina (yuan)')}</th>
-                  <th>{t('差额（元）', 'Difference (yuan)')}</th>
-                  <th>{t('状态', 'Status')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {snapshot.comparisons.map((check) => (
-                  <tr key={`${check.period}:${check.field}`}>
-                    <td>{check.period}</td>
-                    <td>{t(...contextFieldLabels[check.field])}</td>
-                    <td>{money(check.primary, locale, false)}</td>
-                    <td>{money(check.secondary, locale, false)}</td>
-                    <td>{money(check.difference, locale, false)}</td>
-                    <td>
-                      {check.matches
-                        ? t('在比对容差内', 'Within comparison tolerance')
-                        : t('差异待核实', 'Difference to verify')}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <CompanySourceComparisons
+            snapshot={snapshot}
+            checks={snapshot.comparisons}
+            periods={snapshot.financials}
+          />
         ) : (
           <p className="muted">
             {t('本次没有可对齐的双来源金额。', 'No matching-period amounts from both sources.')}

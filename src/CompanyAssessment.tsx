@@ -13,6 +13,8 @@ import { date, money } from './format';
 import { deriveCompanyResearchProgress } from '../shared/company-research-view';
 import './company-assessment.css';
 import { ResearchGoalTemplates } from './ResearchPlan';
+import { SourceExcerptFocus } from './SourceExcerptFocus';
+import { assessmentSourceHref, knownSourcePage } from '../shared/source-excerpt-focus';
 
 const statusLabels: Record<AssessmentStatus, AssessmentText> = {
   strong: ['较强', 'Strong'],
@@ -22,17 +24,6 @@ const statusLabels: Record<AssessmentStatus, AssessmentText> = {
   unknown: ['数据不足', 'Insufficient data'],
   conflict: ['来源冲突', 'Source conflict'],
 };
-
-function sourceHref(url: string, page?: number): string | undefined {
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return;
-    if (page) parsed.hash = `page=${page}`;
-    return parsed.href;
-  } catch {
-    return;
-  }
-}
 
 function AssessmentResearch({
   run,
@@ -391,7 +382,8 @@ export function CompanyAssessmentEvidence({
         <h3>{t('对应来源', 'Supporting sources')}</h3>
         {selectedEvidence.length ? (
           selectedEvidence.map((evidence) => {
-            const href = sourceHref(evidence.url, evidence.page);
+            const page = knownSourcePage(evidence.page);
+            const href = assessmentSourceHref(evidence.url, page);
             return (
               <article key={evidence.id}>
                 <div>
@@ -424,11 +416,14 @@ export function CompanyAssessmentEvidence({
                         : evidence.sourceQuality === 'excerpt'
                           ? t('已取得原文节选', 'Source excerpt retrieved')
                           : t('公开网页字段', 'Public web fields')}
-                  {evidence.page ? ' · ' + t('第 ', 'Page ') + evidence.page + t(' 页', '') : ''}
+                  {page ? ' · ' + t('第 ', 'Page ') + page + t(' 页', '') : ''}
                 </p>
-                {evidence.quote && evidence.sourceQuality !== 'headline' && (
-                  <blockquote>{evidence.quote}</blockquote>
-                )}
+                <SourceExcerptFocus
+                  evidence={evidence}
+                  metrics={assessment.metrics}
+                  selectedMetricIds={judgment.metricIds}
+                  locale={locale}
+                />
                 {href && (
                   <a
                     className="assessment-source-url"

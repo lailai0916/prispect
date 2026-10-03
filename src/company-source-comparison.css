@@ -1,0 +1,75 @@
+.context-source-comparisons {
+  margin: 14px 0 20px;
+}
+.context-source-comparison {
+  padding: 16px 0;
+  border-block: 1px solid var(--line-soft);
+}
+.context-source-comparison + .context-source-comparison {
+  border-top: 0;
+}
+.context-source-comparison > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.context-source-comparison > header > div {
+  min-width: 0;
+}
+.context-source-comparison h4 {
+  margin: 0 0 4px;
+  font-size: var(--text-ui);
+  line-height: 1.6;
+  font-weight: 550;
+}
+.context-source-comparison > header > div > span,
+.context-source-comparison-values > div > span {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.6;
+}
+.context-source-comparison > header > .tag {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.context-source-comparison-values {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+.context-source-comparison-values > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.context-source-comparison-values strong,
+.context-source-comparison-difference strong {
+  font-size: var(--text-body);
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.context-source-comparison-values .text-link {
+  font-size: var(--text-meta);
+  line-height: 1.7;
+}
+.context-source-comparison-difference {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 12px;
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.7;
+}
+.context-source-comparison-difference strong {
+  color: var(--ink);
+  font-size: var(--text-secondary);
+}

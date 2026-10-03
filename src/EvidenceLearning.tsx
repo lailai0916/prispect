@@ -8,6 +8,7 @@ import {
   type EvidenceLearningResult,
 } from '../shared/evidence-learning';
 import type { EvidenceLabGraph, LabNode } from '../shared/evidence-lab';
+import { evidenceDependencyPath } from '../shared/evidence-dependency-paths';
 import type { AssessmentText } from '../shared/company-assessment';
 import { useApp } from './context';
 import { money } from './format';
@@ -238,8 +239,8 @@ function LearningSession({ graph }: { graph: EvidenceLabGraph }) {
             </h3>
             <p>
               {t(
-                `演练中撤回「${result.fact.label[0]}」，${result.pausedIds.length} 项结果暂停。`,
-                `Practice withdrawal of “${result.fact.label[1]}” pauses ${result.pausedIds.length} results.`
+                `撤回「${result.fact.label[0]}」：你预测 ${result.predictedIds.length} 项暂停，实际 ${result.pausedIds.length} 项。`,
+                `Withdraw “${result.fact.label[1]}”: you predicted ${result.predictedIds.length} paused results; the trial pauses ${result.pausedIds.length}.`
               )}
             </p>
             <div className="learning-comparison">
@@ -247,12 +248,30 @@ function LearningSession({ graph }: { graph: EvidenceLabGraph }) {
                 const after = resultById.get(before.id)!;
                 const paused = result.pausedIds.includes(before.id);
                 const predicted = result.predictedIds.includes(before.id);
+                const path = paused
+                  ? evidenceDependencyPath(result.baseline.nodes, result.fact.id, before.id)
+                  : null;
                 const dependencies = before.dependsOn
                   .map((id) => result.baseline.nodes.find((node) => node.id === id))
                   .filter((node): node is LabNode => !!node);
                 return (
-                  <article key={before.id} data-learning-state={after.state}>
+                  <article
+                    key={before.id}
+                    data-learning-state={after.state}
+                    data-learning-prediction={
+                      result.missedIds.includes(before.id)
+                        ? 'missed'
+                        : result.extraIds.includes(before.id)
+                          ? 'extra'
+                          : 'matched'
+                    }
+                  >
                     <strong>{t(...before.label)}</strong>
+                    {paused !== predicted && (
+                      <span className="learning-selection-feedback">
+                        {paused ? t('漏选', 'Missed') : t('多选', 'Extra selection')}
+                      </span>
+                    )}
                     <dl>
                       <div>
                         <dt>{t('你的预测', 'Your prediction')}</dt>
@@ -295,6 +314,18 @@ function LearningSession({ graph }: { graph: EvidenceLabGraph }) {
                               'It does not depend on the fact withdrawn in this practice.'
                             )}
                     </p>
+                    {path?.status === 'found' && (
+                      <details className="learning-dependency">
+                        <summary>{t('查看依赖路径', 'View dependency path')}</summary>
+                        <p>
+                          {path.nodeIds
+                            .map((id) =>
+                              t(...result.baseline.nodes.find((node) => node.id === id)!.label)
+                            )
+                            .join(' → ')}
+                        </p>
+                      </details>
+                    )}
                     {before.kind === 'hypothesis' && <p>{t(...before.detail)}</p>}
                   </article>
                 );

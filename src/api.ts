@@ -14,6 +14,8 @@ export class RequestError extends Error {
 }
 
 const errorMessages: Record<string, string> = {
+  RESEARCH_CANCEL_INPUT: 'Reload research status before cancelling this round.',
+  RESEARCH_CANCEL_STALE: 'The research round has changed. Reload its status before cancelling.',
   ASSISTANT_INPUT: 'Enter a question of up to 500 characters.',
   ASSISTANT_BUSY: 'The assistant is handling other questions. Please retry shortly.',
   ASSISTANT_TIMEOUT: 'The answer timed out. Please retry.',

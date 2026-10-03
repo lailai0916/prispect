@@ -2,6 +2,7 @@ import { useContext, useEffect, useId, useRef, useState, type FormEvent } from '
 import {
   ArrowUp,
   ArrowUpRight,
+  CornerDownLeft,
   LoaderCircle,
   MessageCircle,
   RefreshCw,
@@ -251,6 +252,19 @@ export function CompanyAssistant({ route }: { route: string }) {
     event.preventDefault();
     ask(draft, true);
   };
+  const fillSuggestion = (question: string) => {
+    const sessionOwner = latest.current.owner;
+    setConversation((previous) => {
+      if (previous.owner !== sessionOwner) return previous;
+      const nextDraft = previous.draft.trim()
+        ? previous.draft.includes(question)
+          ? previous.draft
+          : `${previous.draft}\n\n${question}`
+        : question;
+      return nextDraft.length > 500 ? previous : { ...previous, draft: nextDraft };
+    });
+    input.current?.focus();
+  };
   const suggestions = backgroundCompany
     ? [
         t(
@@ -327,9 +341,9 @@ export function CompanyAssistant({ route }: { route: string }) {
             <div className="company-assistant-empty">
               <div className="company-assistant-suggestions">
                 {suggestions.map((question) => (
-                  <button type="button" key={question} onClick={() => ask(question)}>
+                  <button type="button" key={question} onClick={() => fillSuggestion(question)}>
                     {question}
-                    <ArrowUpRight size={12} aria-hidden="true" />
+                    <CornerDownLeft size={12} aria-hidden="true" />
                   </button>
                 ))}
               </div>

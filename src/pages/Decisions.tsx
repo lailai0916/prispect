@@ -1,7 +1,15 @@
 import { productTerms } from '../../shared/product-terms';
 import { documentTitles } from '../content/document-navigation';
 import { Select } from '../Select';
-import { createContext, useContext, useEffect, useState, type FormEvent } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -44,7 +52,9 @@ import { DecisionChanges } from '../DecisionChanges';
 import { DecisionClaims, DecisionClaimsEditor } from '../DecisionClaims';
 import { DecisionEntityPath } from '../DecisionEntityPath';
 import { PaymentBoundary } from '../PaymentBoundary';
+import { UndeliveredExposureExplanation } from '../TermExplanation';
 import { renderDecisionExport } from '../../shared/decision-export';
+import { hasDecisionInputChanges } from '../../shared/decision-input-change';
 
 const EvidenceRecordContext = createContext<(id: string) => void>(() => {});
 
@@ -665,6 +675,11 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               </details>
             </details>
             <div className="decision-form-actions">
+              {detail && hasDecisionInputChanges(input, detail.version.input) && (
+                <span className="decision-input-change-hint" role="status">
+                  {t('输入已修改，保存后重算', 'Inputs changed · recalculates after saving')}
+                </span>
+              )}
               <button className="button button-primary" disabled={busy}>
                 <Check size={15} />
                 {id
@@ -1491,29 +1506,49 @@ function MoneyField({
   onChange,
   required = false,
   id,
+  explanation,
 }: {
   id?: string;
   label: string;
   value: string | null;
   onChange: (value: string | null) => void;
   required?: boolean;
+  explanation?: ReactNode;
 }) {
   const { t } = useApp();
+  const generatedId = useId();
+  const fieldId = id || generatedId;
+  const field = (
+    <input
+      id={fieldId}
+      required={required}
+      inputMode="decimal"
+      pattern="[0-9]{1,20}([.][0-9]{1,2})?"
+      placeholder={t('留空为未知', 'Blank = unknown')}
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
+    />
+  );
+  if (explanation)
+    return (
+      <div className="form-field">
+        <div className="decision-term-field-label">
+          <label htmlFor={fieldId}>
+            {label}
+            <small> CNY</small>
+          </label>
+          {explanation}
+        </div>
+        {field}
+      </div>
+    );
   return (
     <label className="form-field">
       <span>
         {label}
         <small> CNY</small>
       </span>
-      <input
-        id={id}
-        required={required}
-        inputMode="decimal"
-        pattern="[0-9]{1,20}([.][0-9]{1,2})?"
-        placeholder={t('留空为未知', 'Blank = unknown')}
-        value={value ?? ''}
-        onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
-      />
+      {field}
     </label>
   );
 }
@@ -1614,6 +1649,7 @@ function DecisionInputs({
         <MoneyField
           id="decision-exposure-limit"
           label={t('自设未交付暴露上限', 'Your undelivered-exposure limit')}
+          explanation={<UndeliveredExposureExplanation amounts={ext} />}
           value={ext.exposureLimit}
           onChange={(value) => updateExternal({ exposureLimit: value })}
         />
@@ -1805,7 +1841,16 @@ function DecisionScenarios({ detail }: { detail: DecisionDetail }) {
                   <dd>
                     <DecisionAmount value={option.proposedAmount} />
                   </dd>
-                  <dt>{t('本次付款后未交付暴露', 'Undelivered exposure after this payment')}</dt>
+                  <dt>
+                    {t('本次付款后未交付暴露', 'Undelivered exposure after this payment')}
+                    <UndeliveredExposureExplanation
+                      amounts={{
+                        ...detail.version.input.external!,
+                        proposedAmount: option.proposedAmount,
+                      }}
+                      result={option.exposure}
+                    />
+                  </dt>
                   <dd>
                     <DecisionAmount value={option.exposure} />
                   </dd>

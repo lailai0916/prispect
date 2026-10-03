@@ -1,4 +1,6 @@
 @import './financial-charts.css';
+@import './source-excerpt-focus.css';
+@import './company-source-comparison.css';
 
 .company-sidebar-navigation {
   flex: 0 0 auto;

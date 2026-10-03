@@ -24,6 +24,7 @@ import {
   type CompanyResearchViewState,
 } from '../shared/company-research-view';
 import { companyReviewSummary } from '../shared/company-review';
+import { companyResearchAvailability } from '../shared/company-research-availability';
 import { companyPath } from '../shared/company-workspace';
 import { CompanyAssessmentEvidence } from './CompanyAssessment';
 import { CompanyContextEvidence } from './CompanyContextViews';
@@ -88,17 +89,26 @@ export function openCompanyReportSection(id: string, focusInput = false, focusSe
 function CompanyResearchProgress({
   run,
   children,
+  onRetrySources,
+  onRetryAnalysis,
+  onCancel,
+  cancelling,
 }: {
   run: CompanyResearchRun;
   children?: ReactNode;
+  onRetrySources?: () => void;
+  onRetryAnalysis?: () => void;
+  onCancel?: () => void;
+  cancelling?: boolean;
 }) {
   const { t, locale } = useApp();
   const progress = deriveCompanyResearchProgress(run);
+  const available = companyResearchAvailability(run);
   const steps =
-    run.assessmentStatus === 'loading' || run.assessmentStatus === 'failed'
-      ? run.assessmentTrace || []
-      : run.contextStatus === 'loading'
-        ? []
+    run.contextStatus === 'loading'
+      ? []
+      : run.assessmentStatus === 'loading' || run.assessmentStatus === 'failed'
+        ? run.assessmentTrace || []
         : run.assessmentTrace || run.assessment?.research?.steps || [];
   return (
     <div className="research-process">
@@ -121,6 +131,63 @@ function CompanyResearchProgress({
           </li>
         ))}
       </ol>
+      {(available.active || available.failed) && (
+        <div className="research-availability" data-testid="research-availability">
+          <div className="research-availability-meta">
+            {available.sourceFetchedAt && available.hasSources && (
+              <span>
+                {t('已取得资料', 'Retrieved sources')} · {date(available.sourceFetchedAt, locale)}
+              </span>
+            )}
+            {available.reportSnapshotAt && progress.snapshot === 'previous' && (
+              <span>
+                {t('报告对应资料', 'Report snapshot')} · {date(available.reportSnapshotAt, locale)}
+              </span>
+            )}
+            {available.lastActivityAt && (
+              <span>
+                {t('最近研究记录', 'Latest research event')} ·{' '}
+                {date(available.lastActivityAt, locale)}
+              </span>
+            )}
+          </div>
+          <nav
+            className="research-availability-actions"
+            aria-label={t('继续研究', 'Continue research')}
+          >
+            {available.hasFinancials && (
+              <a className="text-link" href={companyPath(run.id, 'financial')}>
+                {t('查看财务资料', 'View financial data')}
+              </a>
+            )}
+            {available.hasSources && (
+              <a className="text-link" href={companyPath(run.id, 'sources')}>
+                {t('查看已取得资料', 'View retrieved sources')}
+              </a>
+            )}
+            {!available.active && run.contextStatus === 'failed' && onRetrySources && (
+              <button className="text-link" type="button" onClick={onRetrySources}>
+                {t('重试资料读取', 'Retry source retrieval')}
+              </button>
+            )}
+            {!available.active &&
+              run.assessmentStatus === 'failed' &&
+              run.contextStatus !== 'failed' &&
+              onRetryAnalysis && (
+                <button className="text-link" type="button" onClick={onRetryAnalysis}>
+                  {t('重新研究', 'Retry research')}
+                </button>
+              )}
+            {available.canCancel && onCancel && (
+              <button className="text-link" type="button" disabled={cancelling} onClick={onCancel}>
+                {cancelling
+                  ? t('正在取消…', 'Cancelling…')
+                  : t('取消本轮研究', 'Cancel this research')}
+              </button>
+            )}
+          </nav>
+        </div>
+      )}
       <details className="research-progress" id="company-research-process">
         <summary>
           <span className="research-progress-label" aria-live="polite" aria-atomic="true">
@@ -218,10 +285,16 @@ export function CompanyResearchReport({
   run,
   onRefresh,
   refreshing,
+  onRetrySources,
+  onCancel,
+  cancelling,
 }: {
   run: CompanyResearchRun;
   onRefresh: (focus?: string) => void;
   refreshing: boolean;
+  onRetrySources?: () => void;
+  onCancel?: () => void;
+  cancelling?: boolean;
 }) {
   const { t, locale } = useApp();
   const reportId = useId();
@@ -402,7 +475,11 @@ export function CompanyResearchReport({
                 {amounts.profit !== null && <small>{t('元', 'CNY')}</small>}
               </dd>
               {amounts.row && (
-                <CompanyContextEvidence row={amounts.row} fields={['netProfit']}>
+                <CompanyContextEvidence
+                  snapshot={run.context}
+                  row={amounts.row}
+                  fields={['netProfit']}
+                >
                   {t('查看来源', 'View sources')}
                 </CompanyContextEvidence>
               )}
@@ -419,7 +496,7 @@ export function CompanyResearchReport({
                 {amounts.cash !== null && <small>{t('元', 'CNY')}</small>}
               </dd>
               {amounts.row && (
-                <CompanyContextEvidence row={amounts.row} fields={['ocf']}>
+                <CompanyContextEvidence snapshot={run.context} row={amounts.row} fields={['ocf']}>
                   {t('查看来源', 'View sources')}
                 </CompanyContextEvidence>
               )}
@@ -434,6 +511,7 @@ export function CompanyResearchReport({
               <dd>{ratio}</dd>
               {amounts.row && (
                 <CompanyContextEvidence
+                  snapshot={run.context}
                   row={amounts.row}
                   fields={['netProfit', 'ocf']}
                   formula={t(
@@ -480,7 +558,13 @@ export function CompanyResearchReport({
             </p>
           )}
           <div className="research-process-strip">
-            <CompanyResearchProgress run={run}>
+            <CompanyResearchProgress
+              run={run}
+              onRetrySources={onRetrySources}
+              onRetryAnalysis={() => onRefresh()}
+              onCancel={onCancel}
+              cancelling={cancelling}
+            >
               {coverage.origin !== 'unavailable' && (
                 <div className="research-report-coverage">
                   <span>{t('本份分析覆盖', 'Scope of this analysis')}</span>

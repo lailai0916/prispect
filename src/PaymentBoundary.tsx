@@ -1,8 +1,13 @@
 import type { DecisionDetail } from '../shared/decision-contracts';
-import { derivePaymentBoundary, type PaymentBoundaryCalculation } from '../shared/payment-boundary';
+import {
+  derivePaymentBoundary,
+  type PaymentBoundaryCalculation,
+  type PaymentBoundaryInput,
+} from '../shared/payment-boundary';
 import { useApp, type Translate } from './context';
 import { money } from './format';
 import { Tag } from './components';
+import { UndeliveredExposureExplanation } from './TermExplanation';
 import './payment-boundary.css';
 
 function fieldLabel(field: string, t: Translate): string {
@@ -36,8 +41,10 @@ function fieldLabel(field: string, t: Translate): string {
 function BoundaryResult({
   result,
   records = false,
+  amounts,
 }: {
   result: PaymentBoundaryCalculation;
+  amounts: PaymentBoundaryInput;
   records?: boolean;
 }) {
   const { t, locale } = useApp();
@@ -109,7 +116,15 @@ function BoundaryResult({
       )}
       {result.currentExposure !== null && (
         <dl className="payment-boundary-values">
-          <dt>{t('新增付款前的未交付暴露', 'Undelivered exposure before another payment')}</dt>
+          <dt>
+            {t('新增付款前的未交付暴露', 'Undelivered exposure before another payment')}
+            <UndeliveredExposureExplanation
+              amounts={amounts}
+              result={result.currentExposure}
+              beforePayment
+              records={records}
+            />
+          </dt>
           <dd>{money(result.currentExposure, locale, false)} CNY</dd>
           <dt>{t('自设暴露空间', 'Headroom under your exposure limit')}</dt>
           <dd>{money(result.exposureHeadroom, locale, false)} CNY</dd>
@@ -141,8 +156,8 @@ export function PaymentBoundary({ detail }: { detail: DecisionDetail }) {
         )}
       </p>
       <div className="payment-boundary-columns">
-        <BoundaryResult result={view.assumptions} />
-        <BoundaryResult result={view.records} records />
+        <BoundaryResult result={view.assumptions} amounts={input} />
+        <BoundaryResult result={view.records} amounts={view.recordInput} records />
       </div>
       <p className="field-note">
         {t(

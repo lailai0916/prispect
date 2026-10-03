@@ -137,6 +137,21 @@
 .learning-comparison article > strong {
   font-weight: 550;
 }
+.learning-selection-feedback {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+.learning-dependency {
+  margin-top: 8px;
+  color: var(--muted);
+}
+.learning-dependency > summary {
+  cursor: pointer;
+}
+.learning-dependency > p {
+  color: var(--ink);
+}
 .learning-comparison dl {
   margin: 8px 0;
 }

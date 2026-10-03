@@ -41,6 +41,13 @@ export function installCompanyContextRoutes(
   const sourceJobs = new Set<string>();
   const assessmentJobs = new Map<string, Promise<void>>();
   const assessmentControllers = new Map<string, AbortController>();
+  const contextControllers = new Map<string, AbortController>();
+  const cancellations = new Map<string, Promise<void>>();
+  const runKey = (store: WorkspaceStore, run: CompanyResearchRun) =>
+    JSON.stringify([store.dataDir, run.id]);
+  const waitForCancellation = async (store: WorkspaceStore, run: CompanyResearchRun) => {
+    await cancellations.get(runKey(store, run));
+  };
   const limits = (res: express.Response, key: string, count: number) =>
     options.auth.rateLimit(`${key}:${(res.locals.auth as AuthContext).user.id}`, count, 3_600_000);
   const byId = (res: express.Response, id: string) => {
@@ -93,10 +100,12 @@ export function installCompanyContextRoutes(
     assessmentFocus: run.assessmentFocus,
   });
   const scheduleAssessment = async (store: WorkspaceStore, run: CompanyResearchRun) => {
-    if (!run.context || run.informationGap || assessmentJobs.has(run.id)) return;
-    if ([...sourceJobs].some((key) => key.startsWith(`${run.id}:industry:`)))
+    const ownerKey = runKey(store, run);
+    await waitForCancellation(store, run);
+    if (!run.context || run.informationGap || assessmentJobs.has(ownerKey)) return;
+    if ([...sourceJobs].some((key) => key.startsWith(`${ownerKey}:industry:`)))
       throw new ApiFault(409, 'ASSESSMENT_SOURCE_BUSY', '同行资料正在更新，请完成后开始研究');
-    const key = `${run.id}:assessment`;
+    const key = `${ownerKey}:assessment`;
     if (sourceJobs.size >= 3)
       throw new ApiFault(429, 'CONTEXT_BUSY', '已有研究任务在执行，请稍后重试');
     const expected = run.context;
@@ -118,12 +127,13 @@ export function installCompanyContextRoutes(
     run.assessmentRevision = revision;
     run.assessmentTrace = [];
     sourceJobs.add(key);
-    assessmentControllers.set(run.id, controller);
+    assessmentControllers.set(ownerKey, controller);
     // Reserve before persistence so simultaneous requests cannot double-run.
     let start!: () => void;
     const gate = new Promise<void>((resolve) => (start = resolve));
     const job = gate.then(async () => {
       try {
+        await waitForCancellation(store, run);
         if (!stillCurrent()) return;
         const researched = await (service.research || runCompanyResearchAgent)(
           publicRun(run),
@@ -132,6 +142,7 @@ export function installCompanyContextRoutes(
             industry: service.industry,
             signal: controller.signal,
             onStep: async (step) => {
+              await waitForCancellation(store, run);
               if (!stillCurrent()) return;
               const steps = run.assessmentTrace || [];
               const index = steps.findIndex((item) => item.id === step.id);
@@ -142,6 +153,7 @@ export function installCompanyContextRoutes(
             },
           }
         );
+        await waitForCancellation(store, run);
         if (!stillCurrent()) return;
         const synthesis = {
           id: `assessment-synthesis-${revision}`,
@@ -153,6 +165,8 @@ export function installCompanyContextRoutes(
         };
         run.assessmentTrace = [...researched.steps, synthesis];
         await store.persist();
+        await waitForCancellation(store, run);
+        if (!stillCurrent()) return;
         let reviewStartedAt: string | undefined;
         const result = await (service.assessment || analyzeCompanyWithModel)(
           researched.run,
@@ -160,6 +174,7 @@ export function installCompanyContextRoutes(
           controller.signal,
           {
             onReviewStart: async () => {
+              await waitForCancellation(store, run);
               if (!stillCurrent()) throw new ApiFault(409, 'ASSESSMENT_STALE', '公开快照已变化');
               reviewStartedAt = new Date().toISOString();
               run.assessmentTrace = [
@@ -183,6 +198,7 @@ export function installCompanyContextRoutes(
             },
           }
         );
+        await waitForCancellation(store, run);
         if (!stillCurrent()) return;
         if (
           result.year !== run.input.year ||
@@ -260,7 +276,8 @@ export function installCompanyContextRoutes(
           throw error;
         }
       } catch (error) {
-        if (!store.state.companyRuns?.includes(run) || run.assessmentRevision !== revision) return;
+        await waitForCancellation(store, run);
+        if (!stillCurrent()) return;
         run.assessmentStatus = 'failed';
         run.assessmentTrace = run.assessmentTrace?.map((step) =>
           step.status === 'running'
@@ -280,6 +297,7 @@ export function installCompanyContextRoutes(
               : '研究本次未完成；已有数据与上次报告保留，可以重试。';
         await store.persist().catch(() => undefined);
       } finally {
+        await waitForCancellation(store, run);
         if (
           store.state.companyRuns?.includes(run) &&
           run.assessmentRevision === revision &&
@@ -300,12 +318,15 @@ export function installCompanyContextRoutes(
           );
           await store.persist().catch(() => undefined);
         }
-        sourceJobs.delete(key);
-        assessmentJobs.delete(run.id);
-        if (assessmentControllers.get(run.id) === controller) assessmentControllers.delete(run.id);
+        if (assessmentJobs.get(ownerKey) === job) {
+          sourceJobs.delete(key);
+          assessmentJobs.delete(ownerKey);
+        }
+        if (assessmentControllers.get(ownerKey) === controller)
+          assessmentControllers.delete(ownerKey);
       }
     });
-    assessmentJobs.set(run.id, job);
+    assessmentJobs.set(ownerKey, job);
     try {
       await store.persist();
       start();
@@ -317,9 +338,12 @@ export function installCompanyContextRoutes(
         assessmentTrace: previous.trace,
       });
       controller.abort();
-      sourceJobs.delete(key);
-      assessmentJobs.delete(run.id);
-      assessmentControllers.delete(run.id);
+      if (assessmentJobs.get(ownerKey) === job) {
+        sourceJobs.delete(key);
+        assessmentJobs.delete(ownerKey);
+      }
+      if (assessmentControllers.get(ownerKey) === controller)
+        assessmentControllers.delete(ownerKey);
       start();
       throw error;
     }
@@ -458,7 +482,9 @@ export function installCompanyContextRoutes(
         res.json(run);
         return;
       }
-      if (jobs.has(run.id) || sourceJobs.has(run.id)) {
+      const ownerKey = runKey(store, run);
+      await waitForCancellation(store, run);
+      if (jobs.has(ownerKey) || sourceJobs.has(ownerKey)) {
         res.status(202).json(run);
         return;
       }
@@ -475,26 +501,27 @@ export function installCompanyContextRoutes(
         error: run.contextError,
         revision: run.contextRevision,
       };
-      assessmentControllers.get(run.id)?.abort();
-      sourceJobs.add(run.id);
+      assessmentControllers.get(ownerKey)?.abort();
+      const controller = new AbortController();
+      contextControllers.set(ownerKey, controller);
+      sourceJobs.add(ownerKey);
       run.contextStatus = 'loading';
       run.contextError = undefined;
       run.contextRevision = (run.contextRevision || 0) + 1;
       const revision = run.contextRevision;
-      try {
-        await store.persist();
-      } catch (error) {
-        run.contextStatus = previous.status;
-        run.contextError = previous.error;
-        run.contextRevision = previous.revision;
-        sourceJobs.delete(run.id);
-        throw error;
-      }
-      const job = (async () => {
+      let start!: () => void;
+      const gate = new Promise<void>((resolve) => (start = resolve));
+      const job = gate.then(async () => {
         try {
+          await waitForCancellation(store, run);
+          if (!current(store, run, revision) || controller.signal.aborted) return;
           let identity = run.identity;
           if (!identity) {
-            const response = await service.searchCompanies(run.input.securityCode);
+            const response = await service.searchCompanies(run.input.securityCode, {
+              signal: controller.signal,
+            });
+            await waitForCancellation(store, run);
+            if (!current(store, run, revision) || controller.signal.aborted) return;
             identity = response.candidates.find(
               (item) =>
                 item.securityCode === run.input.securityCode && item.orgId === run.input.orgId
@@ -506,38 +533,47 @@ export function installCompanyContextRoutes(
               'CONTEXT_IDENTITY',
               '无法定位该查询的证券主体，未使用相似名称替代'
             );
+          if (!current(store, run, revision) || controller.signal.aborted) return;
           const snapshot = await service.context(identity, {
+            signal: controller.signal,
             onSnapshot: async (snapshot) => {
-              if (!current(store, run, revision)) return;
+              await waitForCancellation(store, run);
+              if (!current(store, run, revision) || controller.signal.aborted) return;
               if (
                 snapshot.securityCode !== run.input.securityCode ||
                 snapshot.orgId !== run.input.orgId
               )
                 throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '概览主体与研究记录不一致');
-              run.context = snapshot;
+              run.context = structuredClone(snapshot);
               run.identity ||= identity;
               await store.persist();
             },
           });
+          await waitForCancellation(store, run);
+          if (!current(store, run, revision) || controller.signal.aborted) return;
           if (
             snapshot.securityCode !== run.input.securityCode ||
             snapshot.orgId !== run.input.orgId
           )
             throw new ApiFault(422, 'CONTEXT_SUBJECT_CONFLICT', '概览主体与研究记录不一致');
-          if (!current(store, run, revision)) return;
-          run.context = snapshot;
+          if (!current(store, run, revision) || controller.signal.aborted) return;
+          run.context = structuredClone(snapshot);
           run.contextStatus = 'ready';
           run.contextError = undefined;
           run.identity ||= identity;
           await store.persist();
-          sourceJobs.delete(run.id);
+          await waitForCancellation(store, run);
+          if (!current(store, run, revision) || controller.signal.aborted) return;
+          if (jobs.get(ownerKey) === job) sourceJobs.delete(ownerKey);
           await scheduleAssessment(store, run).catch(async () => {
+            if (!current(store, run, revision) || controller.signal.aborted) return;
             run.assessmentStatus = 'failed';
             run.assessmentError = '综合研究尚未开始，可以在报告中重试；公开数据已保留。';
             await store.persist().catch(() => undefined);
           });
         } catch (error) {
-          if (!current(store, run, revision)) return;
+          await waitForCancellation(store, run);
+          if (!current(store, run, revision) || controller.signal.aborted) return;
           run.contextStatus = 'failed';
           run.contextError =
             error instanceof ApiFault
@@ -545,12 +581,150 @@ export function installCompanyContextRoutes(
               : '企业公开数据本次未完成；已有快照保留，可重试更新';
           await store.persist().catch(() => undefined);
         } finally {
-          sourceJobs.delete(run.id);
-          jobs.delete(run.id);
+          if (jobs.get(ownerKey) === job) {
+            sourceJobs.delete(ownerKey);
+            jobs.delete(ownerKey);
+          }
+          if (contextControllers.get(ownerKey) === controller) contextControllers.delete(ownerKey);
         }
-      })();
-      jobs.set(run.id, job);
+      });
+      jobs.set(ownerKey, job);
+      try {
+        await store.persist();
+        start();
+      } catch (error) {
+        run.contextStatus = previous.status;
+        run.contextError = previous.error;
+        run.contextRevision = previous.revision;
+        controller.abort();
+        if (jobs.get(ownerKey) === job) {
+          jobs.delete(ownerKey);
+          sourceJobs.delete(ownerKey);
+        }
+        if (contextControllers.get(ownerKey) === controller) contextControllers.delete(ownerKey);
+        start();
+        throw error;
+      }
       res.status(202).json(structuredClone(run));
+    })
+  );
+  app.post(
+    '/api/company-runs/:id/research/cancel',
+    wrap(async (req, res) => {
+      const body = z
+        .object({
+          contextRevision: z.number().int().nonnegative().optional(),
+          assessmentRevision: z.number().int().nonnegative().optional(),
+        })
+        .strict()
+        .refine(
+          (value) => value.contextRevision !== undefined || value.assessmentRevision !== undefined
+        )
+        .safeParse(req.body);
+      if (!body.success)
+        throw new ApiFault(400, 'RESEARCH_CANCEL_INPUT', '请选择本轮正在执行的研究');
+      const { store, run } = byId(res, String(req.params.id));
+      const ownerKey = runKey(store, run);
+      await waitForCancellation(store, run);
+      if (
+        (body.data.contextRevision !== undefined &&
+          body.data.contextRevision !== (run.contextRevision || 0)) ||
+        (body.data.assessmentRevision !== undefined &&
+          body.data.assessmentRevision !== (run.assessmentRevision || 0))
+      )
+        throw new ApiFault(409, 'RESEARCH_CANCEL_STALE', '研究已进入新一轮，请刷新后再操作');
+      const contextController = contextControllers.get(ownerKey);
+      const assessmentController = assessmentControllers.get(ownerKey);
+      const cancelContext =
+        body.data.contextRevision !== undefined &&
+        run.contextStatus === 'loading' &&
+        Boolean(contextController && jobs.has(ownerKey));
+      const cancelAssessment =
+        body.data.assessmentRevision !== undefined &&
+        run.assessmentStatus === 'loading' &&
+        Boolean(assessmentController && assessmentJobs.has(ownerKey));
+      if (!cancelContext && !cancelAssessment) {
+        res.json(structuredClone(run));
+        return;
+      }
+      const contextJob = jobs.get(ownerKey);
+      const assessmentJob = assessmentJobs.get(ownerKey);
+      const previous = {
+        contextStatus: run.contextStatus,
+        contextError: run.contextError,
+        contextRevision: run.contextRevision,
+        assessmentStatus: run.assessmentStatus,
+        assessmentError: run.assessmentError,
+        assessmentRevision: run.assessmentRevision,
+        assessmentTrace: run.assessmentTrace,
+        updatedAt: run.updatedAt,
+      };
+      let finish!: () => void;
+      const transaction = new Promise<void>((resolve) => (finish = resolve));
+      cancellations.set(ownerKey, transaction);
+      const now = new Date().toISOString();
+      if (cancelContext) {
+        run.contextRevision = (run.contextRevision || 0) + 1;
+        run.contextStatus = 'failed';
+        run.contextError = '本轮资料读取已取消，已取得资料保留。';
+      }
+      if (cancelAssessment) {
+        run.assessmentRevision = (run.assessmentRevision || 0) + 1;
+        run.assessmentStatus = 'failed';
+        run.assessmentError = '本轮综合研究已取消，已取得资料保留。';
+        run.assessmentTrace = (run.assessmentTrace || []).map((step) =>
+          step.status === 'running'
+            ? {
+                ...step,
+                status: 'failed',
+                finishedAt: now,
+                summary: '本轮研究已取消，这一步未完成；已取得资料保留。',
+              }
+            : step
+        );
+      }
+      run.updatedAt = now;
+      try {
+        // Persist the invalidating revisions before aborting or releasing reservations.
+        // Callbacks wait for this transaction so a failed write can restore a live job.
+        await store.persist();
+      } catch (error) {
+        Object.assign(run, previous);
+        // Another account-local operation may have queued a save of the transient
+        // cancelled fields. Write the restored state after those saves before
+        // releasing callbacks, while retaining that operation's unrelated edits.
+        try {
+          await store.persist();
+        } catch (restoreError) {
+          throw new AggregateError(
+            [error, restoreError],
+            'Cancellation and restored-state persistence both failed.'
+          );
+        }
+        throw error;
+      } finally {
+        if (cancellations.get(ownerKey) === transaction) cancellations.delete(ownerKey);
+        finish();
+      }
+      if (cancelContext) {
+        contextController!.abort();
+        if (jobs.get(ownerKey) === contextJob) {
+          jobs.delete(ownerKey);
+          sourceJobs.delete(ownerKey);
+        }
+        if (contextControllers.get(ownerKey) === contextController)
+          contextControllers.delete(ownerKey);
+      }
+      if (cancelAssessment) {
+        assessmentController!.abort();
+        if (assessmentJobs.get(ownerKey) === assessmentJob) {
+          assessmentJobs.delete(ownerKey);
+          sourceJobs.delete(`${ownerKey}:assessment`);
+        }
+        if (assessmentControllers.get(ownerKey) === assessmentController)
+          assessmentControllers.delete(ownerKey);
+      }
+      res.json(structuredClone(run));
     })
   );
   app.post(
@@ -570,7 +744,9 @@ export function installCompanyContextRoutes(
         throw new ApiFault(409, 'CONTEXT_NOT_READY', '公开资料仍在读取，请稍后开始研究');
       if (run.informationGap)
         throw new ApiFault(422, 'ASSESSMENT_SCOPE', '尚未定位支持的上市主体，请补充主体资料');
-      if (assessmentJobs.has(run.id)) {
+      const ownerKey = runKey(store, run);
+      await waitForCancellation(store, run);
+      if (assessmentJobs.has(ownerKey)) {
         if (body.data.focus !== undefined && body.data.focus !== (run.assessmentFocus || ''))
           throw new ApiFault(409, 'ASSESSMENT_BUSY', '当前研究正在执行，请完成后更换研究目标');
         res.status(202).json(structuredClone(run));
@@ -609,7 +785,7 @@ export function installCompanyContextRoutes(
         .safeParse(req.body);
       if (!body.success) throw new ApiFault(400, 'INDUSTRY_INPUT', '请选择完整年报报告期');
       const { store, run } = byId(res, String(req.params.id)),
-        key = `${run.id}:industry:${body.data.period}`;
+        key = `${runKey(store, run)}:industry:${body.data.period}`;
       if (run.informationGap)
         throw new ApiFault(422, 'INDUSTRY_SCOPE', '尚未定位上市主体，行业对比不可用');
       const old = run.industry?.[body.data.period],
@@ -618,7 +794,7 @@ export function installCompanyContextRoutes(
         res.json({ snapshot: old, stale: false, cached: true });
         return;
       }
-      if (assessmentJobs.has(run.id))
+      if (assessmentJobs.has(runKey(store, run)))
         throw new ApiFault(409, 'ASSESSMENT_BUSY', '公司研究正在执行，完成后可更新同行资料');
       if (sourceJobs.has(key) || sourceJobs.size >= 3)
         throw new ApiFault(429, 'CONTEXT_BUSY', '行业来源正在读取，请稍后重试');
@@ -695,7 +871,9 @@ export function installCompanyContextRoutes(
         (run) =>
           run.contextStatus === 'loading' ||
           run.assessmentStatus === 'loading' ||
-          [...sourceJobs].some((key) => key === run.id || key.startsWith(`${run.id}:`))
+          [...sourceJobs].some(
+            (key) => key === runKey(store, run) || key.startsWith(`${runKey(store, run)}:`)
+          )
       ) || false,
     waitForIdle: async () => {
       await Promise.allSettled(jobs.values());

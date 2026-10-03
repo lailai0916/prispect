@@ -18,8 +18,9 @@ import {
   resolveCompanyLocation,
 } from '../../shared/company-workspace';
 import type { CompanyReadingBasis } from '../../shared/company-analysis';
+import { companyResearchAvailability } from '../../shared/company-research-availability';
 import { useApp } from '../context';
-import { api, requestErrorText } from '../api';
+import { api, RequestError, requestErrorText } from '../api';
 import { date } from '../format';
 import { COMPANY_RECORDS_EVENT } from '../company-record-events';
 import { useCompanyRecords } from '../CompanyRecordsContext';
@@ -50,6 +51,7 @@ const OriginalReview = lazyPage(
 
 const researchSupported = (run: CompanyResearchRun) =>
   /^\d{6}$/.test(run.input.securityCode) && run.identity?.exchange !== 'us';
+type ResearchRequestKind = 'status' | 'sources' | 'analysis' | 'cancel';
 
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const { t, locale, navigate, confirm, user } = useApp();
@@ -61,27 +63,42 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     query.get('focus')
   );
   const [run, setRun] = useState<CompanyResearchRun | null>(null);
-  const [error, setError] = useState('');
+  const [failure, setFailure] = useState<{ kind: ResearchRequestKind; text: string } | null>(null);
+  const error = failure?.text || '';
+  const errorKind = failure?.kind || 'status';
   const [version, setVersion] = useState(0);
   const [basis, setBasis] = useState<CompanyReadingBasis>('consolidated');
   const [updating, setUpdating] = useState(false);
   const [assessmentUpdating, setAssessmentUpdating] = useState(false);
+  const [cancellingResearch, setCancellingResearch] = useState(false);
   const request = useRef<AbortController | null>(null);
+  const cancelOperation = useRef<symbol | null>(null);
   const assessmentRequested = useRef(new Set<string>());
+  const clearResolvedFailure = (next: CompanyResearchRun) =>
+    setFailure((previous) =>
+      previous?.kind === 'status' ||
+      (previous?.kind === 'cancel' && !companyResearchAvailability(next).active)
+        ? null
+        : previous
+    );
+  useEffect(() => setFailure(null), [id, user?.id]);
   useEffect(() => {
     if (!id) return;
     const controller = new AbortController();
     request.current = controller;
+    cancelOperation.current = null;
+    setCancellingResearch(false);
     let timer: ReturnType<typeof setTimeout>;
     let contextRequested = false;
     const load = async () => {
+      let kind: ResearchRequestKind = 'status';
       try {
         let next = await api<CompanyResearchRun>(`/company-runs/${encodeURIComponent(id)}`, {
           signal: controller.signal,
         });
         if (controller.signal.aborted) return;
         setRun(next);
-        setError('');
+        clearResolvedFailure(next);
         if (
           section === 'overview' &&
           !contextRequested &&
@@ -92,6 +109,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           next.contextStatus !== 'failed'
         ) {
           contextRequested = true;
+          kind = 'sources';
           next = await api<CompanyResearchRun>(`/company-runs/${encodeURIComponent(id)}/context`, {
             method: 'POST',
             body: '{}',
@@ -113,6 +131,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         ) {
           assessmentRequested.current.add(assessmentKey);
           setRun(next);
+          kind = 'analysis';
           next = await api<CompanyResearchRun>(
             `/company-runs/${encodeURIComponent(id)}/assessment`,
             {
@@ -124,7 +143,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         }
         if (controller.signal.aborted) return;
         setRun(next);
-        setError('');
+        clearResolvedFailure(next);
         window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
         if (
           next.status === 'queued' ||
@@ -134,7 +153,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         )
           timer = setTimeout(() => void load(), 1500);
       } catch (cause) {
-        if (!controller.signal.aborted) setError(requestErrorText(cause, locale));
+        if (!controller.signal.aborted) {
+          setFailure({ kind, text: requestErrorText(cause, locale) });
+        }
       }
     };
     void load();
@@ -142,7 +163,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [id, locale, version]);
+  }, [id, locale, version, user?.id]);
   useEffect(() => {
     const update = (event: Event) => {
       if (event instanceof CustomEvent && event.detail === id) setVersion((value) => value + 1);
@@ -199,6 +220,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     if (!run || !researchSupported(run) || updating) return;
     const signal = request.current?.signal;
     setUpdating(true);
+    setFailure(null);
     try {
       const next = await api<CompanyResearchRun>(`/company-runs/${run.id}/context`, {
         method: 'POST',
@@ -210,7 +232,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         setVersion((value) => value + 1);
       }
     } catch (cause) {
-      if (!signal?.aborted) setError(requestErrorText(cause, locale));
+      if (!signal?.aborted) {
+        setFailure({ kind: 'sources', text: requestErrorText(cause, locale) });
+      }
     } finally {
       setUpdating(false);
     }
@@ -226,6 +250,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       return;
     const signal = request.current?.signal;
     setAssessmentUpdating(true);
+    setFailure(null);
     try {
       const next = await api<CompanyResearchRun>(
         `/company-runs/${encodeURIComponent(run.id)}/assessment`,
@@ -240,9 +265,52 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         setVersion((value) => value + 1);
       }
     } catch (cause) {
-      if (!signal?.aborted) setError(requestErrorText(cause, locale));
+      if (!signal?.aborted) {
+        setFailure({ kind: 'analysis', text: requestErrorText(cause, locale) });
+      }
     } finally {
       setAssessmentUpdating(false);
+    }
+  };
+  const cancelResearch = async () => {
+    if (!run || cancellingResearch || !isCurrentOwner()) return;
+    const available = companyResearchAvailability(run);
+    if (!available.canCancel) return;
+    const signal = request.current?.signal;
+    if (signal?.aborted) return;
+    const operation = Symbol('research-cancel');
+    cancelOperation.current = operation;
+    setCancellingResearch(true);
+    setFailure(null);
+    try {
+      const next = await api<CompanyResearchRun>(
+        `/company-runs/${encodeURIComponent(run.id)}/research/cancel`,
+        {
+          method: 'POST',
+          body: JSON.stringify(available.cancelRevisions),
+          signal,
+        }
+      );
+      if (signal?.aborted || !isCurrentOwner() || cancelOperation.current !== operation) return;
+      setRun(next);
+      setFailure(null);
+      setVersion((value) => value + 1);
+      window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
+    } catch (cause) {
+      if (!signal?.aborted && isCurrentOwner() && cancelOperation.current === operation) {
+        setFailure({
+          kind:
+            cause instanceof RequestError && cause.code === 'RESEARCH_CANCEL_STALE'
+              ? 'status'
+              : 'cancel',
+          text: requestErrorText(cause, locale),
+        });
+      }
+    } finally {
+      if (cancelOperation.current === operation) {
+        cancelOperation.current = null;
+        setCancellingResearch(false);
+      }
     }
   };
   const remove = () =>
@@ -384,9 +452,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </p>
         </div>
         <div className="context-page-actions">
-          <a className="text-link" href="/docs/methodology">
-            {t('方法说明', 'Methodology')}
-          </a>
           {section === 'overview' && (
             <button className="button button-secondary" onClick={() => window.print()}>
               <Printer size={14} />
@@ -432,8 +497,23 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       {error && (
         <p role="alert" className="field-error">
           {error}
-          <button className="text-link" onClick={() => setVersion((value) => value + 1)}>
-            {t('重试', 'Retry')}
+          <button
+            className="text-link"
+            type="button"
+            disabled={updating || assessmentUpdating || cancellingResearch}
+            onClick={() =>
+              errorKind === 'sources'
+                ? void refresh()
+                : errorKind === 'analysis'
+                  ? void refreshAssessment()
+                  : errorKind === 'cancel'
+                    ? void cancelResearch()
+                    : setVersion((value) => value + 1)
+            }
+          >
+            {errorKind === 'status'
+              ? t('重新读取状态', 'Reload research status')
+              : t('重试', 'Retry')}
           </button>
         </p>
       )}
@@ -492,6 +572,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             run={run}
             onRefresh={(focus) => void refreshAssessment(focus)}
             refreshing={assessmentUpdating}
+            onRetrySources={() => void refresh()}
+            onCancel={() => void cancelResearch()}
+            cancelling={cancellingResearch}
           />
           <CompanyBrief run={run} />
           <details

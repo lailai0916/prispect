@@ -853,3 +853,25 @@ button.research-grade:hover {
     display: none;
   }
 }
+.research-availability {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 12px 0 4px;
+}
+.research-availability-meta,
+.research-availability-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+.research-availability-meta {
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+.research-availability-actions .text-link {
+  font-size: var(--text-ui);
+}

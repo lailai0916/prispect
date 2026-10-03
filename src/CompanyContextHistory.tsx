@@ -177,6 +177,7 @@ export function CompanyContextHistory({
                   <h3>{label}</h3>
                   {detail && fields.length > 0 && (
                     <CompanyContextEvidence
+                      snapshot={snapshot}
                       row={detail}
                       fields={fields}
                       periods={sourcePeriods(key)}
@@ -233,7 +234,7 @@ export function CompanyContextHistory({
                 <strong>
                   {money(financialChartAmount(snapshot, period, field), locale, false)}
                 </strong>
-                <CompanyContextEvidence row={detail} fields={[field]} />
+                <CompanyContextEvidence snapshot={snapshot} row={detail} fields={[field]} />
               </article>
             ))}
           </div>
