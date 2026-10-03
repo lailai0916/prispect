@@ -2,7 +2,7 @@ import type express from 'express';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import type { AssistantAnswer, AssistantRequest } from '../shared/assistant.js';
-import type { AuthStore } from './auth.js';
+import type { AuthContext, AuthStore } from './auth.js';
 import type { WorkspaceStore } from './store.js';
 import type { ModelConfig } from './model.js';
 import { assertCompanyResearchSupported } from './company-sources.js';
@@ -67,6 +67,7 @@ export function installAssistantRoutes(
     auth: AuthStore;
     model: ModelConfig;
     workspaceForUser: (userId: string) => Promise<WorkspaceStore>;
+    workspaceForContext?: (context: AuthContext) => Promise<WorkspaceStore>;
     service?: AssistantService;
   }
 ) {
@@ -89,10 +90,12 @@ export function installAssistantRoutes(
       const body = requestSchema.safeParse(req.body);
       if (!body.success) throw new ApiFault(400, 'ASSISTANT_INPUT', '请输入最多五百字的问题');
       const request: AssistantRequest = body.data;
-      const session = await options.auth.session(req);
+      const session = await options.auth.workspaceSession(req);
       signal.throwIfAborted();
       if (session) options.auth.verifyCsrf(req, session);
-      const owner = session ? `user:${session.user.id}` : `anonymous:${req.ip}`;
+      const owner = session
+        ? `${session.user.isGuest ? 'guest' : 'user'}:${session.user.id}`
+        : `anonymous:${req.ip}`;
       options.auth.rateLimit(`assistant:${owner}`, session ? 30 : 12, session ? 3_600_000 : 60_000);
       if (active >= 8 || (owners.get(owner) || 0) >= 2)
         throw new ApiFault(429, 'ASSISTANT_BUSY', '助手正在处理其他问题，请稍后重试');
@@ -101,6 +104,7 @@ export function installAssistantRoutes(
       let reservation: OwnerAnswerReservation | undefined;
       try {
         if (!session || isProductQuestion(request.question, request.previousQuestions)) {
+          const signedIn = Boolean(session && !session.user.isGuest);
           const key = ownerAnswerCacheKey({
             owner,
             namespace: 'assistant-documentation',
@@ -129,8 +133,8 @@ export function installAssistantRoutes(
             service.documentation(
               request.question,
               request.locale,
-              !!session,
-              session ? options.model : {},
+              signedIn,
+              signedIn ? options.model : {},
               signal,
               { previousQuestions: request.previousQuestions }
             ),
@@ -142,7 +146,9 @@ export function installAssistantRoutes(
           res.json(answer);
           return;
         }
-        const store = await options.workspaceForUser(session.user.id);
+        const store = session.user.isGuest
+          ? await options.workspaceForContext!(session)
+          : await options.workspaceForUser(session.user.id);
         signal.throwIfAborted();
         const runs = store.state.companyRuns || [];
         for (const id of [request.currentRunId, request.previousRunId])

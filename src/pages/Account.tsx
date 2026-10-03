@@ -348,7 +348,7 @@ export function AccountPage() {
     return account;
   }, []);
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.isGuest) return;
     const controller = new AbortController(),
       owner = user.id;
     setOverview(null);
@@ -386,7 +386,7 @@ export function AccountPage() {
     return () => {
       controller.abort();
     };
-  }, [user?.id, load, loadAttempt]);
+  }, [user?.id, user?.isGuest, load, loadAttempt]);
   const secure = (action: SecureAction) => {
     if (pending) return;
     returnFocus.current = document.activeElement as HTMLElement;
@@ -443,6 +443,7 @@ export function AccountPage() {
         const result = await post('/auth/logout', {});
         if (user) clearCompanyRunCache(user.id);
         activateCompanyRunCache(null);
+        await refresh();
         navigate('/');
         return result;
       });
@@ -701,7 +702,7 @@ export function AccountPage() {
       if (result || completed) finish();
     });
   };
-  if (!user)
+  if (!user || user.isGuest)
     return (
       <div className="account-page">
         <a href="/login">{t('登录以打开账号设置', 'Log in to open account settings')}</a>

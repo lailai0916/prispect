@@ -29,8 +29,8 @@ export const aboutDocument: ProductDocument = {
           'Company financial analysis currently covers Shanghai and Shenzhen A-share issuers. After a code or company name is entered, Prispect checks the selected identity and retrieves up to six annual financial periods ending with the selected year, plus same-year peer data, through public interfaces. It presents financial observations, annual trends and peer comparisons. Ambiguous identities require your selection. Missing matches or restricted sources show their scope and stopping reason.',
         ],
         [
-          '结果优先展示取得的财务观察、对应来源和仍缺少的证据。默认流程不自动下载年报 PDF 或调用模型；明确请求的深度研究、原件核查与财报核查解释可使用 AI。金额仍需核对原文及规则计算；候选字段由你确认采用后进入财报核查。',
-          'Results prioritize financial observations, their sources and evidence still missing. The default flow does not automatically download annual-report PDFs or call a model. Explicit requests for deep research, original-report reviews and financial-review explanations may use AI. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
+          '结果先展示取得的财务观察、对应来源和仍缺少的证据。资料保存后，可用的 AI 服务在后台分析公开资料并生成独立报告，阅读数据无需等待；进一步研究、原件核查与财报核查解释也可按需使用 AI。金额仍需核对原文及规则计算；候选字段由你确认采用后进入财报核查。',
+          'Results first present acquired financial observations, their sources and evidence still missing. After sources are saved, an available AI service analyzes public information and generates a separate report in the background; reading the data does not require waiting. Further research, original-report reviews and financial-review explanations may also use AI on request. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
         ],
       ],
       links: [{ label: productTerms.companyResearch, href: '/query' }],
@@ -131,8 +131,8 @@ export const aboutDocument: ProductDocument = {
           'Prispect organizes material, traces evidence and calculates conditional results. It does not provide comprehensive corporate-registry, judicial or credit coverage, or replace checks of bank deposit products, legal due diligence, audits or professional financial advice. No matching disclosure does not mean no risk; a completed calculation does not establish that a payment is executable.',
         ],
         [
-          '默认公司财务分析不调用模型。深度研究、原件核查、财报核查解释和登录后的助手问题可使用 AI，数据处理范围与外部服务说明见隐私政策。',
-          'Default company financial analysis does not call a model. Deep research, original-report reviews, financial-review explanations and signed-in assistant questions may use AI. See the privacy policy for data-processing scope and external services.',
+          '公司查询取得并保存公开资料后，可自动生成后台 AI 报告。深度研究、原件核查、财报核查解释、企业问题与登录后的产品问题也可使用 AI；访客的产品文档问题只检索本地文档。数据处理范围与外部服务说明见隐私政策。',
+          'Company queries may automatically generate a background AI report after public sources are acquired and saved. Deep research, original-report reviews, financial-review explanations and company or signed-in product questions may also use AI. Visitor product questions search local documents only. See the privacy policy for data-processing scope and external services.',
         ],
       ],
       links: [

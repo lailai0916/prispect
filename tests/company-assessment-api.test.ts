@@ -412,7 +412,9 @@ test('company-record metadata exposes only account-local lightweight public resu
       assert.equal(body.includes(text), false, `List response must not include ${text}.`);
     const other = await h.register('records-metadata-other@example.test');
     assert.deepEqual(await (await h.call('/company-records', undefined, other.headers)).json(), []);
-    assert.equal((await fetch(`${h.base}/api/company-records`)).status, 401);
+    const anonymousRecords = await fetch(`${h.base}/api/company-records`);
+    assert.equal(anonymousRecords.status, 200);
+    assert.deepEqual(await anonymousRecords.json(), []);
     assert.equal(contextCalls, 0);
     assert.equal(modelCalls, 0);
   } finally {
@@ -473,7 +475,9 @@ test('financial record metadata exposes unavailable automatic AI without inventi
     assert.equal('model' in records[0], false);
     const other = await h.register('financial-metadata-other@example.test');
     assert.deepEqual(await (await h.call('/company-records', undefined, other.headers)).json(), []);
-    assert.equal((await fetch(`${h.base}/api/company-records`)).status, 401);
+    const anonymousRecords = await fetch(`${h.base}/api/company-records`);
+    assert.equal(anonymousRecords.status, 200);
+    assert.deepEqual(await anonymousRecords.json(), []);
     assert.equal(modelCalls, 0);
     assert.equal(researchCalls, 0);
   } finally {

@@ -9,6 +9,7 @@ import {
 } from './owner-answer-cache.js';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import type { AuthStore, AuthContext } from './auth.js';
+import { GUEST_RECORD_LIMIT } from './guest-workspace.js';
 import type { WorkspaceStore } from './store.js';
 import type { ModelConfig } from './model.js';
 import { ApiFault, modelEnabledSchema } from './validation.js';
@@ -623,8 +624,13 @@ export function installCompanyContextRoutes(
         throw new ApiFault(409, 'CONTEXT_IDENTITY', '检索存在候选或尚未完整，请先选择证券主体');
       limits(res, 'company-gap', 12);
       const store = res.locals.store as WorkspaceStore;
-      if ((store.state.companyRuns?.length || 0) >= 30)
-        throw new ApiFault(400, 'COMPANY_RUN_LIMIT', '最多保存三十条企业查询，请先移除旧记录');
+      const guest = Boolean((res.locals.auth as AuthContext).user.isGuest);
+      if ((store.state.companyRuns?.length || 0) >= (guest ? GUEST_RECORD_LIMIT : 30))
+        throw new ApiFault(
+          429,
+          'COMPANY_RUN_LIMIT',
+          guest ? '访客研究记录额度已满' : '最多保存三十条企业查询，请先移除旧记录'
+        );
       const now = new Date().toISOString();
       const reason =
         '本次未匹配到支持的上市主体。没有自动获取非上市企业财务、工商或司法数据；需补充主体和授权材料。';

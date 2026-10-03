@@ -272,7 +272,7 @@ test('authenticated matching and directory requests never initialize or clean th
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
   try {
     for (const endpoint of ['/api/companies/directory', '/api/companies/search?q=300893'])
-      assert.equal((await fetch(base + endpoint)).status, 401);
+      assert.equal((await fetch(base + endpoint)).status, 200);
     const registration = await fetch(base + '/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

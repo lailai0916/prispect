@@ -164,7 +164,7 @@ test('offline walkthrough retains acquired sources, reports and prior challenges
       0,
       'synthetic recovery is not a successful public or Grok request'
     );
-    assert.equal((await nativeFetch(`${base}/api${endpoint}`)).status, 401);
+    assert.equal((await nativeFetch(`${base}/api${endpoint}`)).status, 404);
   } finally {
     try {
       await service?.waitForIdle();

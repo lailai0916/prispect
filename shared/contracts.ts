@@ -285,6 +285,8 @@ export interface AccountUser {
   name: string;
   createdAt: string;
   timezone?: string;
+  /** A browser-isolated visitor, without an account or account-management privileges. */
+  isGuest?: boolean;
 }
 
 export interface AuthSession {

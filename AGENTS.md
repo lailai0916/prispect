@@ -126,6 +126,8 @@ types, financial/auth/API tests, client build and formatting. Keep browser and d
 acceptance separate from unit-test success. `npm start` serves the production build on
 127.0.0.1:4317 by default; development uses 4318 for the client and 4317 for the API.
 
+Browser visitors can use company research, its seven pages and company questions without creating an account. `AccountUser.isGuest` identifies a signed seven-day browser visitor, not a Better Auth account. Keep visitor research under `dataDir/guests`, separate from `dataDir/users`, and retain real-account guards on private materials, tasks, decisions, original adoption, private-original downloads, reset and account security. Product-document questions from visitors stay local. Visitor cookies and writes retain origin/CSRF protections; signing in does not merge visitor research. Registration defaults to open, with an explicit environment switch retained.
+
 ## Ownership and product boundaries
 
 - `shared/contracts.ts`, `shared/decision-contracts.ts`, `shared/company-contracts.ts` and `shared/account-contracts.ts` define API contracts; `shared/start-intent.ts` handles local entry routing. Coordinate changes before concurrent edits.

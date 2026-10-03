@@ -135,7 +135,7 @@ const DocsHome = lazyPage(
   () => import('./pages/DocsHome'),
   (module) => module.DocsHome
 );
-const publicPages = ['/', '/docs', '/login', '/register', ...documentPaths];
+const publicPages = ['/', '/query', '/company', '/docs', '/login', '/register', ...documentPaths];
 
 function pageResource(path: string, signedIn: boolean) {
   const page = path.split('?')[0];
@@ -220,6 +220,7 @@ export function App() {
   const refreshController = useRef<AbortController | null>(null);
   const refreshFailureCause = useRef<unknown>(null);
   const committedOwner = useRef<string | null>(null);
+  const committedAccount = useRef(false);
   const publishAssistantCompany = useCallback((company: AssistantCompany) => {
     if (company.owner === committedOwner.current) setAssistantCompany(company);
   }, []);
@@ -278,9 +279,10 @@ export function App() {
         }),
         api<DemoCase[]>('/cases', { signal: controller.signal }),
       ]);
-      const nextWorkspace = session.user
-        ? await api<Workspace>('/workspace', { signal: controller.signal })
-        : null;
+      const nextWorkspace =
+        session.user && !session.user.isGuest
+          ? await api<Workspace>('/workspace', { signal: controller.signal })
+          : null;
       if (controller.signal.aborted || generation !== refreshGeneration.current) return;
       const owner = session.user?.id || null;
       if (owner !== committedOwner.current) {
@@ -295,6 +297,7 @@ export function App() {
       changeComposerOwner(committedOwner.current, owner);
       activateCompanyRunCache(owner);
       committedOwner.current = owner;
+      committedAccount.current = Boolean(session.user && !session.user.isGuest);
       setDisplayTimeZone(session.user?.timezone);
       setCsrfToken(session.csrfToken);
       setUser(session.user);
@@ -414,7 +417,7 @@ export function App() {
         return;
       const path = appLinkPath(link.getAttribute('href')!, location.origin);
       if (path)
-        void pageResource(path, Boolean(committedOwner.current))
+        void pageResource(path, committedAccount.current)
           ?.preload()
           .catch(() => {});
     };
@@ -548,6 +551,7 @@ export function App() {
   const documentPage = documentPaths.includes(page as DocumentPath);
   const documentationRoute = documentPage || page === '/docs';
   const protectedPage = !publicPages.includes(page);
+  const accountUser = user && !user.isGuest ? user : null;
   useEffect(() => {
     if (loaded && !loadError && page === '/register' && !registrationEnabled) {
       const query = route.includes('?') ? route.slice(route.indexOf('?')) : '';
@@ -555,8 +559,9 @@ export function App() {
     }
   }, [loaded, loadError, page, registrationEnabled, route, navigate]);
   useEffect(() => {
-    if (loaded && !user && protectedPage) navigate(`/login?next=${encodeURIComponent(route)}`);
-  }, [loaded, user, protectedPage, navigate, route]);
+    if (loaded && !loadError && !accountUser && protectedPage)
+      navigate(`/login?next=${encodeURIComponent(route)}`, { replace: true });
+  }, [loaded, loadError, accountUser, protectedPage, navigate, route]);
   const value: AppContextValue = {
     locale,
     t,
@@ -580,7 +585,11 @@ export function App() {
   ] as const;
   const sessionAvailable = loaded && !loadError;
   const business = Boolean(
-    sessionAvailable && user && !['/login', '/register', '/docs', ...documentPaths].includes(page)
+    sessionAvailable &&
+      user &&
+      (!protectedPage || accountUser) &&
+      (page !== '/' || accountUser) &&
+      !['/login', '/register', '/docs', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
     ? t(...productTerms.financialReviews)
@@ -612,20 +621,25 @@ export function App() {
         activateCompanyRunCache(null);
         changeComposerOwner(committedOwner.current, null);
         committedOwner.current = null;
+        committedAccount.current = false;
         setDisplayTimeZone();
         setAssistantCompany(null);
         setCommandOpen(false);
         setToast(null);
         setUser(null);
         setWorkspace(null);
+        setLoaded(false);
         setEvidence(null);
         setConfirmRequest(null);
-        const result = await execute(async () => {
+        let signedOut = false;
+        await execute(async () => {
           const response = await api('/auth/logout', { method: 'POST' });
+          signedOut = true;
           setCsrfToken(null);
+          await refresh();
           return response;
         });
-        if (result) navigate('/');
+        if (signedOut) navigate('/');
         else await refresh().catch(() => {});
       },
     },
@@ -634,20 +648,33 @@ export function App() {
     <>
       <CompanySidebar route={route} onClose={() => setMenuOpen(false)} />
       <div className="sidebar-bottom">
-        {user && (
+        {accountUser ? (
           <ActionMenu
             label={t('账号菜单', 'Account menu')}
             items={accountItems}
             className="sidebar-account"
             align="start"
           >
-            <span className="user-initial">{user.name.slice(0, 1).toUpperCase()}</span>
+            <span className="user-initial">{accountUser.name.slice(0, 1).toUpperCase()}</span>
             <span className="sidebar-user">
-              <strong>{user.name}</strong>
-              <small>{user.email}</small>
+              <strong>{accountUser.name}</strong>
+              <small>{accountUser.email}</small>
             </span>
           </ActionMenu>
-        )}
+        ) : user ? (
+          <>
+            <a className="sidebar-method" href="/login" onClick={() => setMenuOpen(false)}>
+              <UserRound size={16} />
+              {t('登录', 'Log in')}
+            </a>
+            {registrationEnabled && (
+              <a className="sidebar-method" href="/register" onClick={() => setMenuOpen(false)}>
+                <Plus size={16} />
+                {t('创建账号', 'Create account')}
+              </a>
+            )}
+          </>
+        ) : null}
       </div>
     </>
   );
@@ -720,20 +747,27 @@ export function App() {
                     <Menu size={19} />
                   </button>
                 )}
-                {sessionAvailable && user ? (
+                {sessionAvailable && accountUser ? (
                   <ActionMenu
-                    label={`${t('账号菜单', 'Account menu')} · ${user.name}`}
+                    label={`${t('账号菜单', 'Account menu')} · ${accountUser.name}`}
                     className="account-link"
                     items={accountItems}
                   >
                     <UserRound size={17} />
-                    <span>{user.name}</span>
+                    <span>{accountUser.name}</span>
                     <ChevronDown size={13} />
                   </ActionMenu>
                 ) : sessionAvailable ? (
-                  <a className="login-link" href="/login">
-                    {t('登录', 'Log in')}
-                  </a>
+                  <>
+                    <a className="login-link" href="/login">
+                      {t('登录', 'Log in')}
+                    </a>
+                    {registrationEnabled && (
+                      <a className="login-link registration-link" href="/register">
+                        {t('注册', 'Sign up')}
+                      </a>
+                    )}
+                  </>
                 ) : null}
               </div>
               {(pending > 0 || openingPage || (loaded && refreshingWorkspace)) && (
@@ -819,15 +853,21 @@ export function App() {
                   ) : !loaded ? (
                     <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
                   ) : page === '/' ? (
-                    user ? (
+                    accountUser ? (
                       <CompanyQueryPage />
                     ) : (
                       <Home />
                     )
-                  ) : page === '/login' || page === '/register' || !user || !workspace ? (
+                  ) : page === '/login' ||
+                    page === '/register' ||
+                    !user ||
+                    (protectedPage && (!accountUser || !workspace)) ? (
                     <AuthPage
                       mode={page === '/register' && registrationEnabled ? 'register' : 'login'}
-                      next={new URLSearchParams(route.split('?')[1]).get('next') || '/'}
+                      next={
+                        new URLSearchParams(route.split('?')[1]).get('next') ||
+                        (protectedPage ? route : '/query')
+                      }
                     />
                   ) : page === '/account' ? (
                     <AccountPage />

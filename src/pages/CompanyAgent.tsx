@@ -65,7 +65,8 @@ export function CompanyAgentPage({
   embedded?: boolean;
   initialRun?: CompanyResearchRun;
 }) {
-  const { t, locale, workspace, navigate, execute, busy, confirm } = useApp();
+  const { t, locale, workspace, navigate, execute, busy, confirm, user } = useApp();
+  const hasAccount = Boolean(user && !user.isGuest);
   const initialQuery = query.get('query') || '';
   const yearQuery = query.get('year');
   const requestedYear = yearQuery === null ? null : Number(yearQuery);
@@ -105,6 +106,11 @@ export function CompanyAgentPage({
   const autoStarted = useRef(new Set<string>());
   const runKeys = useRef(new Map<string, string>());
   const [run, setRun] = useState<CompanyResearchRun | null>(initialRecord.current);
+  const loginHref = `/login?next=${encodeURIComponent(
+    run
+      ? `/query?query=${encodeURIComponent(run.input.securityCode || run.identity?.shortName || run.identity?.companyName || '')}&year=${run.input.year}`
+      : '/query'
+  )}`;
   const publishedRun = useRef(initialRecord.current);
   useEffect(() => {
     if (
@@ -315,6 +321,10 @@ export function CompanyAgentPage({
     if (selected) void startRun(selected);
   };
   const createReview = async (materialId: string, company: string) => {
+    if (!hasAccount) {
+      navigate(loginHref);
+      return;
+    }
     if (!run) return;
     const existing = workspace?.tasks.find(
       (item) =>
@@ -347,6 +357,10 @@ export function CompanyAgentPage({
   };
   const adopt = async (event: FormEvent) => {
     event.preventDefault();
+    if (!hasAccount) {
+      navigate(loginHref);
+      return;
+    }
     if (!run || !candidate || !confirmed || !candidate.observations.length) return;
     const response = await execute(() =>
       post<CompanyAdoptResponse>(`/company-runs/${run.id}/adopt`, {
@@ -1179,17 +1193,21 @@ export function CompanyAgentPage({
                   <div className="inline-actions">
                     <button
                       className="button button-primary"
-                      type="submit"
+                      type={hasAccount ? 'submit' : 'button'}
+                      onClick={hasAccount ? undefined : () => navigate(loginHref)}
                       disabled={
                         busy ||
-                        activeRun(run) ||
-                        run.status === 'failed' ||
-                        !confirmed ||
-                        !candidate.observations.length
+                        (hasAccount &&
+                          (activeRun(run) ||
+                            run.status === 'failed' ||
+                            !confirmed ||
+                            !candidate.observations.length))
                       }
                     >
                       {busy ? <LoaderCircle className="spinner" size={15} /> : <Check size={15} />}{' '}
-                      {t('采用并核查', 'Adopt and review')}
+                      {hasAccount
+                        ? t('采用并核查', 'Adopt and review')
+                        : t('登录后保存材料', 'Log in to save evidence')}
                     </button>
                     <span className="field-note">
                       {t(

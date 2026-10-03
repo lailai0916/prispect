@@ -13,6 +13,7 @@ import {
 } from './company-agent.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, validateMaterial } from './validation.js';
+import { GUEST_RECORD_LIMIT, GuestWorkspaceStore } from './guest-workspace.js';
 import { assertCompanyResearchSupported } from './company-sources.js';
 import { findReusableCompanyRun } from '../shared/company-run-reuse.js';
 import { retrieveCompanyContext } from './company-context-sources.js';
@@ -393,7 +394,12 @@ export function installCompanyRoutes(
             root: options.root,
             model: options.model,
             signal: controller.signal,
-            checkpoint: { directory, threadId: run.id, resume: existing },
+            // Visitors use memory checkpoints; retained official files have a
+            // separate global reservation rather than unbounded checkpoint files.
+            checkpoint:
+              store instanceof GuestWorkspaceStore
+                ? undefined
+                : { directory, threadId: run.id, resume: existing },
             previousProgress: run.agent,
             onUpdate: async (entry) => {
               if (!isCurrent()) return;
@@ -472,19 +478,26 @@ export function installCompanyRoutes(
           run.status = 'ready';
           run.updatedAt = new Date().toISOString();
           await store.persist();
-          await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+          if (!(store instanceof GuestWorkspaceStore))
+            await rm(directory, { recursive: true, force: true }).catch(() => undefined);
         } catch (error) {
           if (!isCurrent()) return;
           run.status = 'failed';
           run.updatedAt = new Date().toISOString();
           run.error = controller.signal.aborted
-            ? '本次执行已中止；可以恢复已保存的公开步骤。'
+            ? store instanceof GuestWorkspaceStore
+              ? '本次执行已中止；可以重新研究公开资料。'
+              : '本次执行已中止；可以恢复已保存的公开步骤。'
             : error instanceof ApiFault
               ? error.message
-              : '原件核查未完成；可以恢复核查，或自行导入材料。';
+              : store instanceof GuestWorkspaceStore
+                ? '公开研究未完成；已取得的资料保留，可以重新研究。'
+                : '原件核查未完成；可以恢复核查，或自行导入材料。';
           if (run.agent) {
             run.agent.recoverable =
-              graphCompleted || run.agent.recoverable || controller.signal.aborted;
+              store instanceof GuestWorkspaceStore
+                ? false
+                : graphCompleted || run.agent.recoverable || controller.signal.aborted;
             if (controller.signal.aborted) {
               run.agent.cancelRequested = true;
               run.agent.cancelledAt ||= run.updatedAt;
@@ -655,8 +668,13 @@ export function installCompanyRoutes(
         res.status(200).json({ ...structuredClone(cached), reused: true });
         return;
       }
-      if (records(store).length >= 30)
-        throw new ApiFault(429, 'COMPANY_RUN_LIMIT', '最多保留30份研究记录，请整理历史后重试');
+      const guest = Boolean((res.locals.auth as AuthContext).user.isGuest);
+      if (records(store).length >= (guest ? GUEST_RECORD_LIMIT : 30))
+        throw new ApiFault(
+          429,
+          'COMPANY_RUN_LIMIT',
+          guest ? '访客研究记录额度已满' : '最多保留30份研究记录，请整理历史后重试'
+        );
       if (active.size >= 2 || busy(store))
         throw new ApiFault(429, 'COMPANY_AGENT_BUSY', '公司研究正在进行，请稍后重试');
       options.auth.rateLimit(

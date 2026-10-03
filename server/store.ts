@@ -217,6 +217,9 @@ export class WorkspaceStore {
   }
   async persist() {
     const content = JSON.stringify(this.state, null, 2) + '\n';
+    await this.persistSnapshot(content);
+  }
+  protected async persistSnapshot(content: string) {
     const operation = this.writes.then(async () => {
       const temporary = path.join(this.dataDir, `.workspace-${randomUUID()}.tmp`);
       await writeFile(temporary, content, { mode: 0o600 });
@@ -314,7 +317,7 @@ export class WorkspaceStore {
         );
       const id = randomUUID();
       const target = this.uploadFilename(id);
-      await writeFile(target, buffer, { mode: 0o600, flag: 'wx' });
+      await this.writeRetainedOriginal(target, buffer);
       this.state.uploads[id] = {
         id,
         filename,
@@ -331,6 +334,9 @@ export class WorkspaceStore {
       }
       return id;
     });
+  }
+  protected async writeRetainedOriginal(target: string, buffer: Buffer) {
+    await writeFile(target, buffer, { mode: 0o600, flag: 'wx' });
   }
   private async verifiedUpload(id: string) {
     const record = this.state.uploads[id];

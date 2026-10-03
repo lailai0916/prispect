@@ -99,12 +99,13 @@ test('authenticated API cases → task → questions → exports → persistence
   const service = await setup();
   try {
     assert.equal((await service.request('/api/health')).status, 200);
-    assert.equal((await service.request('/api/workspace')).status, 401);
-    assert.deepEqual(await (await service.request('/api/auth/session')).json(), {
-      user: null,
-      csrfToken: null,
-      registrationEnabled: true,
-    });
+    assert.equal((await service.request('/api/workspace')).status, 200);
+    const visitorSession = (await (
+      await service.request('/api/auth/session')
+    ).json()) as AuthSession;
+    assert.equal(visitorSession.user?.isGuest, true);
+    assert.ok(visitorSession.csrfToken);
+    assert.equal(visitorSession.registrationEnabled, true);
     const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
     assert.equal(cases.length, 4);
     const alice = await register(service, 'Alice@Example.com');
@@ -239,13 +240,13 @@ test('real login/logout, CSRF, password change, invalid formats and credentials'
       )
     );
     assert.equal(changed.status, 200);
-    assert.equal((await service.request('/api/workspace', options(client))).status, 401);
+    assert.equal((await service.request('/api/account', options(client))).status, 401);
     const changedSession = (await changed.json()) as AuthSession;
     client.cookie = changed.headers.get('set-cookie')!.split(';')[0]!;
     client.csrf = changedSession.csrfToken!;
     const logout = await service.request('/api/auth/logout', options(client, {}, 'POST'));
     assert.equal(logout.status, 200);
-    assert.equal((await service.request('/api/workspace', options(client))).status, 401);
+    assert.equal((await service.request('/api/account', options(client))).status, 401);
     const wrong = await service.request('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -512,7 +513,7 @@ test('expired sessions, login limits and 25MB uploads are enforced', async () =>
     const db = new Database(path.join(service.directory, 'accounts.sqlite'));
     db.prepare('UPDATE session SET expiresAt=0').run();
     db.close();
-    assert.equal((await service.request('/api/workspace', options(client))).status, 401);
+    assert.equal((await service.request('/api/account', options(client))).status, 401);
   } finally {
     await service.close();
   }

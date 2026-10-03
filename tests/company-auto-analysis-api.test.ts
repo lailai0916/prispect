@@ -380,9 +380,24 @@ test('the bounded automatic queue allows API browsing and owner isolation; cance
   try {
     const created: CompanyResearchRun[] = [];
     for (let index = 0; index < 5; index++) {
-      const run = await h.create();
-      created.push(run);
-      await until(async () => (await h.get(run.id)).status === 'ready');
+      let run: CompanyResearchRun | undefined;
+      await until(async () => {
+        const response = await h.call('/company-runs', input);
+        if (response.status === 429) {
+          // Ready data can be read while its final durable publication still
+          // holds the creation lock. This test exercises the background queue,
+          // so wait only for that specific lock rather than bypass its guard.
+          assert.equal((await response.json()).code, 'COMPANY_AGENT_BUSY');
+          return false;
+        }
+        assert.equal(response.status, 202, await response.clone().text());
+        run = (await response.json()) as CompanyResearchRun;
+        return true;
+      });
+      assert.ok(run);
+      const readyRun = run;
+      created.push(readyRun);
+      await until(async () => (await h.get(readyRun.id)).status === 'ready');
     }
     await until(() => started.length === 3);
     assert.equal(maximum, 3);

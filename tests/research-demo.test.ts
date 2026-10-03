@@ -131,7 +131,7 @@ test('portable demo uses real owner routes without public retrieval or model cal
     );
     assert.match(JSON.stringify(result.challenge.result?.gaps), /未进行定向搜索/);
     const anonymous = await nativeFetch(`${base}/api/company-runs/${id}`);
-    assert.equal(anonymous.status, 401);
+    assert.equal(anonymous.status, 404);
     assert.equal(externalAttempts, 0);
   } finally {
     try {

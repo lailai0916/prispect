@@ -32,7 +32,7 @@ type Destination = {
 };
 
 export function CommandMenu({ onClose }: { onClose: () => void }) {
-  const { t, workspace, user, navigate } = useApp();
+  const { t, workspace, user, registrationEnabled, navigate } = useApp();
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState(0);
   const { records, loading, error, reload } = useCompanyRecords();
@@ -46,56 +46,73 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
     const group = t('页面', 'Pages');
     const researchGroup = t('研究', 'Research');
     const toolsGroup = t(...productTerms.reviewTools);
-    const pages: Destination[] = user
-      ? [
-          {
-            id: 'query',
-            label: t(...productTerms.newResearch),
-            path: '/query',
-            icon: Plus,
-            group: researchGroup,
-            keywords: '公司 company lookup 查询',
-          },
-          {
-            id: 'workspace',
-            label: t(...productTerms.financialReviews),
-            path: '/workspace',
-            icon: FileText,
-            group: toolsGroup,
-          },
-          {
-            id: 'materials',
-            label: t(...productTerms.materials),
-            path: '/materials',
-            icon: FolderOpen,
-            group: toolsGroup,
-          },
-          {
-            id: 'decisions',
-            label: t(...productTerms.paymentsAndHandovers),
-            path: '/decisions',
-            icon: ListChecks,
-            group: toolsGroup,
-          },
-          {
-            id: 'compare',
-            label: t(...productTerms.compareReviews),
-            path: '/compare',
-            icon: Columns3,
-            group: toolsGroup,
-          },
-          {
-            id: 'account',
-            label: t(...productTerms.accountSettings),
-            path: '/account',
-            icon: UserRound,
-            group,
-          },
-        ]
-      : [
-          { id: 'home', label: t('首页查询', 'Home search'), path: '/', icon: Search, group },
-          { id: 'login', label: t('登录', 'Log in'), path: '/login', icon: UserRound, group },
-        ];
+    const pages: Destination[] =
+      user && !user.isGuest
+        ? [
+            {
+              id: 'query',
+              label: t(...productTerms.newResearch),
+              path: '/query',
+              icon: Plus,
+              group: researchGroup,
+              keywords: '公司 company lookup 查询',
+            },
+            {
+              id: 'workspace',
+              label: t(...productTerms.financialReviews),
+              path: '/workspace',
+              icon: FileText,
+              group: toolsGroup,
+            },
+            {
+              id: 'materials',
+              label: t(...productTerms.materials),
+              path: '/materials',
+              icon: FolderOpen,
+              group: toolsGroup,
+            },
+            {
+              id: 'decisions',
+              label: t(...productTerms.paymentsAndHandovers),
+              path: '/decisions',
+              icon: ListChecks,
+              group: toolsGroup,
+            },
+            {
+              id: 'compare',
+              label: t(...productTerms.compareReviews),
+              path: '/compare',
+              icon: Columns3,
+              group: toolsGroup,
+            },
+            {
+              id: 'account',
+              label: t(...productTerms.accountSettings),
+              path: '/account',
+              icon: UserRound,
+              group,
+            },
+          ]
+        : [
+            {
+              id: 'query',
+              label: t(...productTerms.newResearch),
+              path: '/query',
+              icon: Plus,
+              group: researchGroup,
+              keywords: '公司 company lookup 查询',
+            },
+            { id: 'home', label: t('首页查询', 'Home search'), path: '/', icon: Search, group },
+            { id: 'login', label: t('登录', 'Log in'), path: '/login', icon: UserRound, group },
+          ];
+    if ((!user || user.isGuest) && registrationEnabled)
+      pages.push({
+        id: 'register',
+        label: t('创建账号', 'Create account'),
+        path: '/register',
+        icon: UserRound,
+        group,
+      });
     pages.push({
       id: 'docs',
       label: t(...documentationTitle),
@@ -143,7 +160,7 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
         )
         .slice(0, index === 0 ? items.length : 6)
     );
-  }, [records, workspace, query, t, user]);
+  }, [records, workspace, query, t, user, registrationEnabled]);
   const active = Math.min(selected, Math.max(0, results.length - 1));
   useEffect(() => {
     document.getElementById(`command-option-${active}`)?.scrollIntoView({ block: 'nearest' });

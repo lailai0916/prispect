@@ -1848,6 +1848,9 @@ thead th {
     min-height: 44px;
     padding-inline: 7px;
   }
+  .header-actions .registration-link {
+    display: none;
+  }
 }
 
 @media (max-width: 360px) {

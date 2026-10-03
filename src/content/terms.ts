@@ -33,8 +33,8 @@ export const termsDocument: ProductDocument = {
       ],
       bullets: [
         [
-          '公司研究：默认取得结构化年度财务与同行数据，展示财务观察、年度趋势和同年同行参照，不自动下载年报 PDF 或调用模型。你明确请求深度研究时，可按目标补查公告、新闻等公开资料并生成研究判断。公开研究与待确认的年报候选分别保留，不自动采用候选。',
-          'Company research retrieves structured annual financial and peer data by default, presenting financial observations, annual trends and same-year peer comparisons without automatically downloading annual-report PDFs or calling a model. Explicit deep-research requests may retrieve disclosures, news and other public information according to the goal and generate research judgments. Public research remains separate from unconfirmed annual-report candidates and does not automatically adopt them.',
+          '公司研究：先取得结构化年度财务与同行数据，展示财务观察、年度趋势和同年同行参照。资料保存后，可用的 AI 服务在后台补查公开资料并生成独立报告，阅读数据无需等待。你也可明确请求进一步研究或原件核查。公开研究与待确认的年报候选分别保留，不自动采用候选。',
+          'Company research first retrieves structured annual financial and peer data, presenting financial observations, annual trends and same-year peer comparisons. After sources are saved, an available AI service researches public information and generates a separate report in the background; reading the data does not require waiting. You may also explicitly request further research or original-report review. Public research remains separate from unconfirmed annual-report candidates and does not automatically adopt them.',
         ],
         [
           '财报核查：按同期间、同主体与合并范围核对利润和经营现金；必要材料缺失或冲突时，暂停相关计算。',
@@ -51,6 +51,10 @@ export const termsDocument: ProductDocument = {
       id: 'accounts',
       title: ['3. 账号与访问安全', '3. Accounts and access'],
       bullets: [
+        [
+          '公开公司研究可以访客身份使用，无需注册。访客记录与账号工作区隔离；清除访客 Cookie 或其过期后可能无法继续访问记录，登录或注册不会自动迁移这些记录。私人材料、付款计划与账号管理需要登录。',
+          'Public company research is available to visitors without registration. Visitor records are separate from account workspaces; clearing or expiring the visitor cookie may prevent later access, and signing in or registering does not automatically move those records. Private materials, payment plans and account management require sign-in.',
+        ],
         [
           '请使用你有权使用的账号资料，妥善保管密码、验证器、通行密钥及恢复码，不向他人提供访问凭据。',
           'Use account information you are entitled to use. Protect passwords, authenticators, passkeys and recovery codes, and do not share access credentials.',
@@ -93,8 +97,8 @@ export const termsDocument: ProductDocument = {
       title: ['5. 数据处理与 AI', '5. Data processing and AI'],
       paragraphs: [
         [
-          '默认公司财务分析不调用模型。你明确请求深度研究、原件核查、财报核查解释，或提交登录后的助手问题时，相应功能可使用 AI，且不提供单独关闭模型的选项。使用 AI 的研究目标会与公开资料一起发送给模型，请勿填写私人信息。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
-          'Default company financial analysis does not call a model. Explicit deep-research, original-report review and financial-review explanation requests, and signed-in assistant questions, may use AI with no separate model-disable switch. Goals for research using AI are sent to the model with public information; do not include private information. The privacy policy describes processing scope, external services and record retention.',
+          '公司查询或刷新取得并保存公开资料后，可自动启动后台 AI 分析。深度研究、原件核查、财报核查解释、企业问题与登录后的产品问题也可使用 AI；这些功能不提供单独关闭模型的选项。研究目标会与相关公开资料一起发送给模型，请勿填写私人信息。访客的产品文档问题仅检索本地文档。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
+          'Company queries or source refreshes may automatically start background AI analysis after public sources are acquired and saved. Deep research, original-report reviews, financial-review explanations and company or signed-in product questions may also use AI; these features have no separate model-disable switch. Research goals are sent to the model with relevant public information; do not include private information. Visitor product questions search local documents only. The privacy policy describes processing scope, external services and record retention.',
         ],
         [
           '阅读或接受本协议不替代依法需要的数据使用告知与同意。你可以停止使用相应功能；已发生的数据处理及后续保留，依照隐私政策与适用法律处理。',

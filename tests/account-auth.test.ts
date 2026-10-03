@@ -89,8 +89,8 @@ function client(service: Awaited<ReturnType<typeof open>>) {
   };
 }
 
-test('registration is closed by default in production and can be explicitly reopened', () => {
-  assert.equal(registrationEnabledFromEnv(true, ''), false);
+test('registration is open by default and can be explicitly closed', () => {
+  assert.equal(registrationEnabledFromEnv(true, ''), true);
   assert.equal(registrationEnabledFromEnv(false, ''), true);
   assert.equal(registrationEnabledFromEnv(true, 'true'), true);
   assert.equal(registrationEnabledFromEnv(false, 'false'), false);
@@ -114,11 +114,10 @@ test('closing registration blocks both public creation routes while preserving e
     assert.equal((await existing.send('/api/workspace')).status, 200);
 
     const anonymous = client(service);
-    assert.deepEqual(await anonymous.sync(), {
-      user: null,
-      csrfToken: null,
-      registrationEnabled: false,
-    });
+    const anonymousSession = await anonymous.sync();
+    assert.equal(anonymousSession.user?.isGuest, true);
+    assert.ok(anonymousSession.csrfToken);
+    assert.equal(anonymousSession.registrationEnabled, false);
     for (const route of ['/api/auth/register', '/api/identity/sign-up/email']) {
       for (const body of [
         {},
@@ -334,7 +333,7 @@ test('legacy numeric dates survive real HTTP login, native session/profile/passk
       .run(new Date(originalDate).getTime(), new Date(originalDate).getTime(), id);
     const old = client(service);
     old.cookies.set('cashlens_session', randomBytes(32).toString('base64url'));
-    assert.equal((await old.send('/api/workspace')).status, 401);
+    assert.equal((await old.send('/api/account')).status, 401);
     const owner = client(service);
     for (let repeat = 0; repeat < 2; repeat++) {
       const login = await owner.send('/api/auth/login', {
@@ -686,7 +685,7 @@ test('TOTP confirmation revokes password-only sessions; login challenge, backup 
     assert.equal(confirmed.status, 200, await confirmed.clone().text());
     await first.sync();
     assert.equal(service.auth.profileFor(account.user!.id).twoFactorEnabled, true);
-    assert.equal((await other.send('/api/workspace')).status, 401);
+    assert.equal((await other.send('/api/account')).status, 401);
     assert.equal(
       (
         await other.send('/api/auth/password', {
@@ -700,7 +699,7 @@ test('TOTP confirmation revokes password-only sessions; login challenge, backup 
     const login = await fresh.send('/api/auth/login', { email: account.user!.email, password });
     assert.equal(login.status, 200);
     assert.equal((await login.json()).twoFactorRequired, true);
-    assert.equal((await fresh.send('/api/workspace')).status, 401);
+    assert.equal((await fresh.send('/api/account')).status, 401);
     const backed = await fresh.send('/api/identity/two-factor/verify-backup-code', {
       code: data.backupCodes[0],
     });
@@ -717,7 +716,7 @@ test('TOTP confirmation revokes password-only sessions; login challenge, backup 
       ).status,
       401
     );
-    assert.equal((await replay.send('/api/workspace')).status, 401);
+    assert.equal((await replay.send('/api/account')).status, 401);
     const concurrentA = client(service),
       concurrentB = client(service);
     await concurrentA.send('/api/auth/login', { email: account.user!.email, password });

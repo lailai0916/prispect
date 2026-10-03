@@ -273,7 +273,7 @@ export function CinematicLanding() {
               )}
             </p>
             <div className="landing-actions">
-              <a className="landing-primary" href="/login">
+              <a className="landing-primary" href="/query">
                 {t('试一试', 'Try Prispect')}
                 <ArrowRight size={17} />
               </a>
@@ -357,7 +357,7 @@ export function CinematicLanding() {
               <em>{t('你关心的公司。', 'you care about.')}</em>
             </h2>
             <div className="landing-actions">
-              <a className="landing-primary" href="/login">
+              <a className="landing-primary" href="/query">
                 {t('试一试', 'Try Prispect')}
                 <ArrowRight size={17} />
               </a>
@@ -526,7 +526,7 @@ export function CinematicLanding() {
             )}
           </p>
           <div className="landing-actions">
-            <a className="landing-primary" href="/login">
+            <a className="landing-primary" href="/query">
               {t('试一试', 'Try Prispect')}
               <ArrowRight size={17} />
             </a>
@@ -589,7 +589,7 @@ export function CinematicLanding() {
           <p className="landing-eyebrow">04 / {t('回到你的问题', 'BACK TO YOUR QUESTION')}</p>
           <h2>{t('换成一家，你关心的公司。', 'Now, a company you care about.')}</h2>
           <div className="landing-actions">
-            <a className="landing-primary" href="/login">
+            <a className="landing-primary" href="/query">
               {t('试一试', 'Try Prispect')}
               <ArrowRight size={17} />
             </a>

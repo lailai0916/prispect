@@ -17,8 +17,8 @@ export const privacyDocument: ProductDocument = {
           'For personal-information or data-processing questions, contact lailai0x394@gmail.com. External disclosure sites, model services and other external pages also apply their own rules. This policy does not replace their privacy notices.',
         ],
         [
-          '账号登录和私人工作区需要必要的身份与服务信息；头像、简介、组织和附加安全方式可按需填写或使用。默认公司财务分析不调用模型；深度研究、原件核查、财报核查解释和登录后的助手问题可使用 AI，具体处理范围见本政策的“AI 解读与对外发送”。',
-          'Account access and private workspaces need identity and service information. Avatars, biographies, organization details and additional sign-in methods are optional. Default company financial analysis does not call a model. Deep research, original-report reviews, financial-review explanations and signed-in assistant questions may use AI; see “AI interpretation and external processing” for their scope.',
+          '账号登录和私人工作区需要必要的身份与服务信息；头像、简介、组织和附加安全方式可按需填写或使用。公司查询先取得公开财务资料，保存后由可用的 AI 服务在后台分析。深度研究、原件核查、财报核查解释和企业助手问题也可使用 AI，具体处理范围见本政策的“AI 解读与对外发送”。',
+          'Account access and private workspaces need identity and service information. Avatars, biographies, organization details and additional sign-in methods are optional. Company queries first acquire public financial data; after it is saved, an available AI service analyzes it in the background. Deep research, original-report reviews, financial-review explanations and company assistant questions may also use AI; see “AI interpretation and external processing” for their scope.',
         ],
       ],
     },
@@ -175,8 +175,8 @@ export const privacyDocument: ProductDocument = {
       emphasis: true,
       paragraphs: [
         [
-          '默认公司财务分析通过公开接口取得结构化年度财务与同行数据，不自动下载年报 PDF 或调用模型。你明确请求深度研究、原件核查、财报核查解释，或提交登录后的析光助手问题时，相应功能可按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统保留信息缺口、规则回答或文档原文，并显示实际状态。未登录时，助手只检索产品文档，不调用外部模型或读取个人研究记录。',
-          'Default company financial analysis retrieves structured annual financial and peer data through public interfaces, without automatically downloading annual-report PDFs or calling a model. Explicit requests for deep research, original-report reviews or financial-review explanations, and signed-in Prispect assistant questions, may send data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model retain evidence gaps, rules-based answers or document excerpts with their actual status. Signed-out assistant questions only search product documents, without calling a model or accessing personal research records.',
+          '公司查询先通过公开接口取得结构化年度财务与同行资料；这一取数阶段不调用模型或下载年报 PDF。资料成功保存后，可用的模型会自动在后台分析公开资料，并可补查新闻、公开讨论和官方公告节选。明确请求的深度研究、原件核查、财报核查解释，以及企业问题与登录后的产品问题，也可按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统保留信息缺口、规则回答或文档原文，并显示实际状态。访客的产品文档问题只检索本地文档；企业分析和企业问题只使用本访客研究中已取得的公开资料，不读取账号的私人研究记录。',
+          'Company queries first retrieve structured annual financial and peer data through public interfaces. This acquisition stage does not call a model or download annual-report PDFs. After sources are successfully saved, an available model automatically analyzes public information in the background and may research news, public discussions and official disclosure excerpts. Explicit deep-research, original-report review and financial-review explanation requests, and company or signed-in product questions, may also send data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model retain evidence gaps, rules-based answers or document excerpts with their actual status. Visitor product questions search local documents. Visitor company analysis and questions use public information acquired in that visitor’s own research, without accessing private account records.',
         ],
         [
           '企业证据实验室的本地撤回与恢复选择不上传，也不发送给模型。明确点击“挑战这个解释”后，服务端按已匹配公司的年度与固定解释补查，并可向模型发送相关公开字段、已知来源、已读短摘录和公开检索结果；不发送本地试验状态、上传预览、私人备注、账号资料或私人现金计划。挑战目标、实际步骤与结果随公司记录保存。',
@@ -206,10 +206,13 @@ export const privacyDocument: ProductDocument = {
             ],
           ],
           [
-            ['深度公司研究与进一步研究', 'Deep company research and follow-up research'],
             [
-              '你填写的研究目标、确定主体与年度、公开财务历史及计算指标、同行统计、公告、新闻和公开讨论的标题、日期、来源、摘要及已取得的正文节选，以及研究过程中的公开检索结果和读取范围。节选可能因文本上限而缩短；公开帖子按未核实观点处理。目标按你填写的内容发送，请勿包含私人信息。',
-              'Your research goal, confirmed company and year, public financial history and calculated metrics, peer statistics, disclosure/news/public-discussion titles, dates, sources, digests and retrieved body excerpts, plus public retrieval results and reading scope. Text limits may shorten excerpts; public posts are treated as unverified opinions. Goals are sent as entered; do not include private information.',
+              '公司后台分析、深度研究与进一步研究',
+              'Background company analysis, deep research and follow-up research',
+            ],
+            [
+              '确定主体与年度、公开财务历史及计算指标、同行统计、公告、新闻和公开讨论的标题、日期、来源、摘要及已取得的正文节选，以及研究过程中的公开检索结果和读取范围；明确填写的研究目标也按原文发送。节选可能因文本上限而缩短；公开帖子按未核实观点处理。请勿在目标中填写私人信息。',
+              'The confirmed company and year, public financial history and calculated metrics, peer statistics, disclosure/news/public-discussion titles, dates, sources, digests and retrieved body excerpts, plus public retrieval results and reading scope. Any research goal you enter is sent as written. Text limits may shorten excerpts; public posts are treated as unverified opinions. Do not include private information in goals.',
             ],
             [
               '账号标识与资料、安全凭据、私人核查事项和计划、付款安排、交易原话、原始上传文件及未确认预览、私人材料与备注，以及其他账号的数据。',
@@ -219,8 +222,8 @@ export const privacyDocument: ProductDocument = {
           [
             ['企业问答与析光助手', 'Company questions and the Prispect assistant'],
             [
-              '你提交的问题、为理解追问而提供的最近最多四条问题，以及相关产品文档。企业问题还使用自动匹配的企业与利润口径、已取得的公开快照、公开字段及来源引用；需要补查时使用本次取得的公开资料。问题按原文发送，请勿包含私人信息。未登录的文档检索不调用模型。',
-              'Your submitted question, up to four preceding questions for follow-ups, and relevant product documents. Company questions also use the automatically matched company and profit basis, retrieved public snapshots, public fields and source references; requested follow-ups can use newly retrieved public material. Questions are sent as entered; do not include private information. Signed-out document searches do not call a model.',
+              '你提交的问题、为理解追问而提供的最近最多四条问题，以及相关产品文档。企业问题还使用自动匹配的企业与利润口径、已取得的公开快照、公开字段及来源引用；需要补查时使用本次取得的公开资料。问题按原文发送，请勿包含私人信息。访客的产品文档检索不调用模型。',
+              'Your submitted question, up to four preceding questions for follow-ups, and relevant product documents. Company questions also use the automatically matched company and profit basis, retrieved public snapshots, public fields and source references; requested follow-ups can use newly retrieved public material. Questions are sent as entered; do not include private information. Visitor product-document searches do not call a model.',
             ],
             [
               '账号标识与安全凭据、私人核查材料、付款安排、现金计划、私人备注，以及其他账号的企业记录。',
@@ -242,8 +245,8 @@ export const privacyDocument: ProductDocument = {
       },
       bullets: [
         [
-          '明确请求的深度研究先分页读取新闻和对应公司的公开讨论目录，并尝试获取行情；模型可继续选择财务阅读、同行比较、主题新闻检索，以及已取得 ID 对应的新闻、帖子和公告节选。相应来源网站接收确定的公司名称、证券代码、年度、公开主题或已知文章／帖子 ID；取得的公开结果再提供给模型作分析与反向审视。此流程不登录股吧账号、不读取私人帖子或评论，不用私人工作区补齐资料，也不会自动采用原件候选。',
-          'Explicitly requested deep research first reads paginated news and the issuer’s public-discussion catalog and attempts a quote. The model may select financial review, peer comparisons, focused news searches and news/post/disclosure excerpts for acquired IDs. Source websites receive the confirmed company name, security code, year, public topic or known article/post ID. Retrieved public results then go to the model for analysis and counterargument review. This does not sign into a Guba account, read private posts or comments, fill gaps from private workspace data, or automatically adopt original-report candidates.',
+          '公司后台分析与明确请求的深度研究可分页读取新闻和对应公司的公开讨论目录，并尝试获取行情；模型可继续选择财务阅读、同行比较、主题新闻检索，以及已取得 ID 对应的新闻、帖子和公告节选。相应来源网站接收确定的公司名称、证券代码、年度、公开主题或已知文章／帖子 ID；取得的公开结果再提供给模型作分析与反向审视。此流程不登录股吧账号、不读取私人帖子或评论，不用私人工作区补齐资料，也不会自动采用原件候选。',
+          'Background company analysis and explicitly requested deep research may read paginated news and the issuer’s public-discussion catalog and attempt a quote. The model may select financial review, peer comparisons, focused news searches and news/post/disclosure excerpts for acquired IDs. Source websites receive the confirmed company name, security code, year, public topic or known article/post ID. Retrieved public results then go to the model for analysis and counterargument review. This does not sign into a Guba account, read private posts or comments, fill gaps from private workspace data, or automatically adopt original-report candidates.',
         ],
         [
           'AI 请求当前由 TokenFlux.dev 外部接口处理。经该接口处理不代表已确定由某一模型厂商直接接收数据。',
@@ -258,8 +261,8 @@ export const privacyDocument: ProductDocument = {
           'Externally sent excerpts are not automatically redacted. Public disclosures, media articles and post text may contain names or other personal information; public availability does not permit unrestricted use. Public-discussion collection excludes poster account profiles, avatars and identity attributes, but information written in post text may still appear in excerpts. We do not train our own models on private reviews or cash plans, and those private inputs are not connected to the public company-research model.',
         ],
         [
-          '上述使用 AI 的功能不提供单独关闭模型的选项；默认公司财务分析不调用模型。原件检索运行中取消，可停止后续步骤，但不能追回已经发送的数据。规则报告与返回的解释分别保存；核查来源标识、格式或数值不代表已认证解释的含义，也不会自动决定是否付款。',
-          'The AI features above have no separate model-disable switch; default company financial analysis does not call a model. Cancelling original retrieval while it is running can stop subsequent steps, but cannot recall data already sent. Rules reports and returned explanations are retained separately. Checking source identifiers, format or numbers does not authenticate an interpretation’s meaning or automatically decide a payment.',
+          '公司后台分析与上述其他 AI 功能不提供单独关闭模型的选项。新查询或刷新成功保存资料后，可启动后台分析；重新打开已有报告不会重复启动同一份资料的分析，失败后需主动重试。取消进行中的研究或原件检索可停止后续步骤，但不能追回已经发送的数据。规则报告与返回的解释分别保存；核查来源标识、格式或数值不代表已认证解释的含义，也不会自动决定是否付款。',
+          'Background company analysis and the other AI features above have no separate model-disable switch. A new query or successful source refresh may start background analysis; reopening a saved report does not restart analysis of the same sources, and failures require an explicit retry. Cancelling active research or original retrieval can stop subsequent steps, but cannot recall data already sent. Rules reports and returned explanations are retained separately. Checking source identifiers, format or numbers does not authenticate an interpretation’s meaning or automatically decide a payment.',
         ],
       ],
       links: [
@@ -274,8 +277,8 @@ export const privacyDocument: ProductDocument = {
       title: ['外部服务与访问', 'External services and access'],
       paragraphs: [
         [
-          '默认公司财务分析从公开接口读取年度财务与同行数据；深度研究与原件核查还可通过东方财富、新浪与巨潮公开来源读取企业资料、新闻、公告、公开股吧帖子、行情及年报原件。目录与正文节选的读取范围分别保存，来源失败时保留未取得状态。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按账号保存，删除研究记录时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
-          'Default company financial analysis retrieves annual financial and peer data through public interfaces. Deep research and original-report reviews may also retrieve issuer profiles, news, disclosures, public Guba posts, quotes and annual-report originals from Eastmoney, Sina and CNINFO public sources. Catalog and body-excerpt scope are retained separately; source failures remain unavailable. Company records, public snapshots, research goals and steps, analyses, source comparisons and up to fifty answers are stored per account and removed with the research record. Public research and company questions exclude account identifiers, private materials, payment plans and security credentials from model requests.',
+          '公司财务查询先从公开接口读取年度财务与同行数据；资料保存后的后台分析、深度研究与原件核查还可通过东方财富、新浪与巨潮公开来源读取企业资料、新闻、公告、公开股吧帖子、行情或年报内容。目录与正文节选的读取范围分别保存，来源失败时保留未取得状态。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按当前账号或浏览器访客标识隔离保存，删除研究记录时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
+          'Company financial queries first read annual financial and peer data from public interfaces. Background analysis after sources are saved, deep research and original-report reviews may additionally read company profiles, news, disclosures, public Guba posts, quotes or annual-report content from public Eastmoney, Sina and CNINFO sources. Catalog and excerpt coverage are retained separately, and failed sources stay unavailable. Company records, public snapshots, goals and steps, analyses, source comparisons and up to fifty question answers are stored separately for the current account or browser visitor and removed with the research record. Public research and company questions do not send account identifiers, private materials, payment arrangements or security credentials to the model.',
         ],
         [
           '公司研究的原件检索把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',
@@ -308,8 +311,12 @@ export const privacyDocument: ProductDocument = {
       title: ['Cookie 与浏览器内保存', 'Cookies and browser storage'],
       paragraphs: [
         [
-          '必要 Cookie 用于登录会话、两步验证和通行密钥挑战等认证操作。正式 HTTPS 服务的会话 Cookie 使用 Secure、HttpOnly 和 SameSite 限制。阻止或删除这些 Cookie 可能使你退出登录或无法完成认证。',
-          'Necessary cookies support sessions, two-step verification and passkey challenges. Session cookies on the production HTTPS service use Secure, HttpOnly and SameSite restrictions. Blocking or deleting these cookies may sign you out or prevent authentication.',
+          '无需登录即可查询公司、查看公开财务图表和提出企业问题。服务使用有效期七天的必要访客 Cookie，将这些研究记录与其他访客、账号资料分开保存。访客标识不是已注册账号，也不表示身份已验证。清除或停用 Cookie、换用浏览器或标识过期后，原访客记录可能无法继续访问；这不表示服务器记录已立即删除。注册或登录不会自动合并访客记录。私人上传、付款计划和账号安全操作仍需要个人账号。',
+          'You can search companies, read public financial charts and ask company questions without signing in. A necessary seven-day visitor cookie separates these research records from other visitors and account data. The visitor identity is not a registered account or a verified identity. Clearing or blocking cookies, using another browser or letting the cookie expire may prevent access to earlier visitor records; this does not mean the server records were immediately deleted. Registering or signing in does not automatically merge visitor records. Private uploads, payment plans and account-security actions still require a personal account.',
+        ],
+        [
+          '必要 Cookie 用于浏览器访客标识、登录会话、两步验证和通行密钥挑战等认证操作。正式 HTTPS 服务的会话 Cookie 使用 Secure、HttpOnly 和 SameSite 限制。阻止或删除这些 Cookie 可能使你退出登录或无法完成认证。',
+          'Necessary cookies support browser visitor identity, account sessions, two-step verification and passkey challenges. Session cookies on the production HTTPS service use Secure, HttpOnly and SameSite restrictions. Blocking or deleting these cookies may sign you out or prevent authentication.',
         ],
         [
           '语言偏好保存在当前浏览器的 localStorage；外观在打开网页和系统配色变化时跟随系统，手动切换不持久保存。起始输入等短草稿保存在当前标签页的 sessionStorage，并与账号状态关联。匿名草稿可以在登录后接续；退出或切换账号会清理相应账号草稿。',
@@ -418,8 +425,8 @@ export const privacyDocument: ProductDocument = {
           'Specify the account, data categories, requested action and a reply channel. We will verify identity and authority only as necessary, and handle the request under applicable law or explain why it cannot be met. Do not send passwords, recovery codes or unnecessary identity documents.',
         ],
         [
-          '默认公司财务分析不调用模型。深度研究、原件核查、财报核查解释和登录后的助手问题使用 AI 时，页面不提供单独关闭模型的选项。你可以停止使用这些功能；原件检索运行中取消，可停止后续步骤。已经发送的数据、完成的处理和历史结果不会因此自动消失。依法需要留存或技术上暂时难以删除的数据，应限制用途并继续采取必要保护措施。对处理答复有异议，可以再次联系我们或依法向有权机关反映。',
-          'Default company financial analysis does not call a model. Deep research, original-report reviews, financial-review explanations and signed-in assistant questions have no separate model-disable switch when using AI. You may stop using these features. Cancel original retrieval while it is running to stop subsequent steps. Data already sent, completed processing and historical results do not automatically disappear. Data that must legally be retained or cannot yet be technically deleted should have its use restricted and remain protected. You may contact us again about a response or raise the matter with a competent authority under applicable law.',
+          '公司查询取得并保存资料后，可自动启动后台 AI 分析；该分析、深度研究、原件核查、财报核查解释和企业问题与登录后的产品问题均不提供单独关闭模型的选项。你可以停止使用这些功能；取消进行中的研究或原件检索可停止后续步骤。已经发送的数据、完成的处理和历史结果不会因此自动消失。依法需要留存或技术上暂时难以删除的数据，应限制用途并继续采取必要保护措施。对处理答复有异议，可以再次联系我们或依法向有权机关反映。',
+          'Company queries may automatically start background AI analysis after sources are acquired and saved. This analysis, deep research, original-report reviews, financial-review explanations and company or signed-in product questions have no separate model-disable switch. You may stop using these features. Cancel active research or original retrieval to stop subsequent steps. Data already sent, completed processing and historical results do not automatically disappear. Data that must legally be retained or cannot yet be technically deleted should have its use restricted and remain protected. You may contact us again about a response or raise the matter with a competent authority under applicable law.',
         ],
       ],
       links: [
