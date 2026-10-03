@@ -574,10 +574,10 @@ export function StartInput({
         <button
           type="submit"
           className="start-submit"
-          aria-label={companyOnly ? t('开始研究', 'Start research') : t('继续', 'Continue')}
+          aria-label={companyOnly ? t('开始', 'Start') : t('继续', 'Continue')}
           disabled={disabled || isComposing || !text.trim()}
         >
-          <span>{companyOnly ? t('开始研究', 'Start research') : t('继续', 'Continue')}</span>
+          <span>{companyOnly ? t('开始', 'Start') : t('继续', 'Continue')}</span>
           <ArrowRight size={16} />
         </button>
       </div>
