@@ -74,6 +74,7 @@ export function publicCompanyCacheRun(run: CompanyResearchRun): CompanyResearchR
     contextStatus: run.contextStatus,
     contextRevision: run.contextRevision,
     industry: run.industry,
+    industryHistoryErrors: run.industryHistoryErrors,
     assessmentStatus: run.assessmentStatus,
     assessmentRevision: run.assessmentRevision,
     assessmentInputHash: run.assessmentInputHash,

@@ -336,6 +336,11 @@ export interface CompanyWorkspaceExtension {
   contextError?: string;
   contextRevision?: number;
   industry?: Record<string, CompanyIndustrySnapshot>;
+  /** Settled annual retrieval failures are retried only by an explicit action. */
+  industryHistoryErrors?: Record<
+    string,
+    import('./company-industry-history.js').IndustryHistoryFailure
+  >;
   questions?: CompanyQuestionAnswer[];
   assessment?: CompanyAssessment;
   assessmentStatus?: 'loading' | 'ready' | 'failed';
