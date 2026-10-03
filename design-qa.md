@@ -1,3 +1,79 @@
+# Lite optical redesign design QA
+
+Date: 2026-10-04 (Asia/Shanghai).
+
+**Findings**
+
+- [P2, resolved] The 1440px English headline's outlined ending fell over near-white prism glass. Keep the English second line solid lime, add a thin dark stroke and a dark text shadow; preserve the Chinese outline. The fresh full English capture and `output/browser-qa/v2-comparison/en-ending-before-and-after.png` show the complete ending clearly against the glass.
+- [P2, resolved] The intermediate narrow hero let its bright prism crowd the sample-company row. Move the mobile artwork down, shorten the unnecessary hero height and group the annual selector with the Pro link. Fresh 390px, 375px and 320px captures now separate the editable task controls, sample row and artwork.
+- [P2, resolved] A single-page footer misidentified the scanner when its second original was revealed, and the superimposed rows could suggest correspondence. The footer now says p.190–191, identifies the continuation as cash-flow reconciliation, and states that the two original pages' rows do not align. Fresh desktop/mobile endpoints show those labels, while the exact displayed amounts remain unchanged.
+- [P2, resolved] On narrow screens, source values and the selected process preview followed too much decorative content. Move the two meaningful amounts ahead of the scanner and put only the active preview directly inside its selected process step. Fresh mobile evidence/process captures confirm that reading order and the correct real asset for each step.
+- No open P0/P1/P2 was found in the inspected Lite entry, menu, historical-source and process views. This is a scoped comparison of the requested art direction and actual application, not a pixel clone verdict, complete accessibility audit or acceptance of model-generated answers.
+
+**Comparison target and evidence**
+
+The user's latest instruction supersedes the earlier monochrome paper concept: build an expressive Lite experience with color and motion inspired by the live reference, while retaining the existing restrained Pro experience. The current comparison targets are the observed JieJoe techniques and the project's original generated optical asset. Its website illustrations, logo, portrait and typography are not copied into Prispect.
+
+- Source visual truth paths: `output/reference-review/v2-jiejoe/01-hero.png`, `04-menu-open.png` and `08-portrait-scan-lower.png`. Each source capture is 1440 × 1000 pixels at a 1440 × 1000 CSS viewport and density 1. The live behavior and its limits are recorded in `output/reference-review/v2-jiejoe/motion-review.md`.
+- Original generated asset truth: `/workspace/generated_images/exec-c78e3693-8da1-4e1b-9e4c-2236e499f706.png`; deployed decorative asset: `public/showcase/optical-prism.webp`, 1254 × 1254 RGBA. The source image and rendered region were opened. Asset provenance, processing and display-font license are in `public/showcase/SOURCES.md`.
+- Implementation: actual production build at `http://127.0.0.1:4338`, Lite `/` and preserved Pro `/query`, with a fresh temporary guest session. No company research was submitted in this entry check.
+- Main implementation capture: `output/browser-qa/lite-desktop-zh-light.png`, 1440 × 1024 CSS/pixels, density 1, Chinese/light, page top, menu closed and entrance complete. English desktop uses the same viewport. Narrow captures use 390 × 844 English/dark, 375 × 812 Chinese/light/reduced-motion and 320 × 768 English/light/reduced-motion, all density 1.
+- Density normalization: both desktop source and implementation are density 1. Hero/menu/scanner full comparisons retain the source's 1440 × 1000 pixels and crop the implementation's bottom 24 pixels to the same canvas. Sources and implementation represent different products and content; this normalization supports composition/technique comparison, not exact geometry identity.
+- Full-view combined comparison inputs: `output/browser-qa/v2-comparison/hero-reference-and-lite.png`, `menu-reference-and-lite.png` and `scanner-reference-and-lite.png`.
+- Focused combined inputs: `headline-reference-and-lite.png`, `asset-source-and-rendered.png`, `scanner-keyboard-endpoints.png` and `en-ending-before-and-after.png`, in the same comparison directory. Headline and art panels are contained within equal comparison frames; original crops remain available. The asset panel explicitly contrasts the full generated square with its intentionally enlarged/cropped responsive hero placement.
+- An old/current narrow composition comparison is `query-mobile-before-and-after.png`; its labels explicitly distinguish old Chinese/light and new English/dark content. It documents the redesigned UX, not a same-state fidelity measurement.
+- All 21 final implementation captures were reviewed, including the desktop/mobile source endpoints and process previews. `final-desktop-sheet.png` and `final-narrow-sheet.png` index this last stable run. Focused full-resolution images were also inspected; contact sheets do not replace them. All combined comparison inputs above were opened and inspected.
+
+**Required fidelity surfaces**
+
+| Surface                          | Current result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fonts and typography             | JieJoe's condensed Latin display hierarchy is intentionally adapted to the licensed Prispect Display/Noto Sans CJK bold face, with native body/input text. Large solid/outline Chinese words carry the requested visual hierarchy. Bilingual headlines fit their masks at 1440px and 320px; English uses solid type over bright glass for readability. Labels and native editable text remain distinct from the decorative lettering.                                                                    |
+| Spacing and layout rhythm        | The desktop pairs a large right sculpture with the left headline and a stable query area; source/process chapters switch full scene rather than repeating the hero. Mobile puts the task first, then artwork, amounts and native scanner. Annual/Pro controls stay together; samples do not collide with the prism. Every tested header control and page remains inside its viewport.                                                                                                                    |
+| Colors and tokens                | Dark olive/charcoal with acid lime `#c7ff3a`, cyan `#89ecff`, ivory text and violet menu offset type carries the reference's dark/neon contrast. The process/menu become bright lime scenes; the source chapter stays dark for reading. Bright-glass English contrast was fixed. Light/dark preferences retain different dark scene values; Pro keeps its original restrained palette.                                                                                                                   |
+| Image quality and asset fidelity | The actual 1254px transparent optical-prism asset preserves the black chrome, glass ribbons, lime edge and cyan/violet iridescence seen in its generated source. It is not replaced by CSS/SVG art. Responsive cropping is intentional; there are no visible transparency halos in the inspected views. Real p190/p191 report crops remain unchanged, and their small mobile previews link to a readable original dialog. Decorative canvas points are separate from source images and financial values. |
+| Copy and app content             | Canonical `让企业判断，有据可查。` / `Make company judgments traceable.` stays complete. Query/year/sample/menu labels describe real actions. The source example explicitly names 松原安全 2025, annual/consolidated/CNY, with exact 366,373,098.93 and 26,197,123.70 values. The scanner identifies both original pages and the lack of row correspondence. It suggests further checking rather than inferring a cause from the amount difference.                                                      |
+
+Intentional adaptations: transfer whole-scene contrast, kinetic solid/outline type, a pointer-responsive optical sculpture, menu focus previews and an X-Ray reveal. The personal site's portrait is replaced by genuine financial original pages; its horizontal scroll-controlled scan becomes a vertical keyboard-operable range reveal. Retain Prispect's own brand, company/year workflow, account/language/theme controls, assistant and Lite/Pro links. Reference-site tiny controls and ongoing reduced-motion loops are not copied. Native input focus pauses the ambient canvas, and reduced-motion loads a ready static image/canvas state.
+
+**Actual browser acceptance**
+
+- `node --import tsx scripts/browser-qa.mjs` passed **48 checks with 21 screenshots** after the final English contrast fix and the latest combined production build. Evidence: `output/browser-qa/receipt.json`. No financial fixtures, production data or outgoing public source/model request was used.
+- Checks preserve the original entry-flow coverage: real guest readiness, native IME editing, sample filling without submission, annual selection, full-screen menu keyboard focus/preview, Escape/focus restoration, original-dialog images and distinct Lite → Pro query → Lite navigation.
+- New optical coverage waits for `data-hero-ready="true"`, the loaded original prism and completed entrance before screenshots. Actual left/right pointer states change the prism transform and canvas image; focusing the native company field pauses the canvas. The screenshot differences include ambient animation, so no claim isolates pointer motion as their sole cause.
+- Source range ArrowRight/Home/End changes both `--scan-position` and actual image clipping, preserves the two exact amount strings, and exposes real p190/p191 crops. Each of the three process steps changes its pressed state and correct loaded asset; mobile selects an inline preview within the active step.
+- Fresh reduced-motion checks at 375px and 320px keep the loaded optical canvas static through pointer movement. Header/label/headline/overflow checks cover the bilingual and narrow states. The receipt records zero console errors, page errors, failed responses/requests, blocked source/model attempts and research writes.
+- The exact existing `https://analytics.lailai.one/script.js` telemetry script is served as empty JavaScript in local acceptance and explicitly listed in the receipt. Analytics behavior is outside this check.
+- Separate result-agent evidence is `output/browser-qa/lite-results/receipt.json`: one genuine 松原安全/300893/2025 acquisition, nine checks, exact source-backed values, seven recorded links, local profit-basis changes and same-owning-run Lite → cached Pro → Lite without a new research POST/source call/context revision. No model was configured or submitted. Its seven result captures precede two isolated CSS corrections (opaque sticky chapter navigation and optical-wrapper hover); those corrections are included in this final build, but this entry run did not re-acquire or recapture a financial result. Result screenshots are therefore not represented as post-correction visual evidence.
+
+**Comparison history**
+
+1. Current-run old production captures in `output/reference-review/v2-current/` showed the repeated white-paper presentation and distant mobile previews. The new original optical asset and distinct full scenes implement the user's revised direction; the combined source/implementation inputs document intentional transfer of the selected reference techniques.
+2. Intermediate redesigned captures exposed narrow sample/art crowding, amount reading order, process preview placement and scanner attribution. Source/CSS fixes above were followed by a stable build and fresh desktop/mobile hero, scanner and process captures. The intermediate files were overwritten by later runs; the final evidence is named explicitly rather than presented as before images.
+3. The subsequent stable 48-check run exposed the English outline-on-glass P2 during actual visual inspection despite passing geometry. `v2-comparison/before-fix-desktop-en-glass.png` preserves that full state. After the scoped English glyph/backing fix, a new build, all 48 checks and 21 captures passed. `en-ending-before-and-after.png` compares the same x710–1120/y320–460 crop at density 1 (enlarged 2× only for inspection).
+4. Earlier lazy-asset build races and a harness selector mistake were test setup defects, not design iterations. They were resolved before the stable acceptance runs and do not support a product quality claim.
+
+**Open Questions and limits**
+
+No unresolved design decision blocks the inspected Lite entry. Other browser engines, full zoom/screen-reader/touch coverage, all hidden legacy flows, production analytics and model/assistant answers were not exercised. Local screenshots do not establish deployment status. A later Git integration or production smoke must identify its own release/build and evidence.
+
+**Implementation Checklist**
+
+1. Source captures and generated asset opened; desktop density/crop normalization recorded: completed.
+2. Full/focused combined comparisons and all five fidelity surfaces: completed.
+3. Desktop/mobile/menu/source/process captures plus real native entry interactions: completed.
+4. P2 fixes followed by a fresh stable build, 48 checks and 21 reviewed screenshots: completed.
+5. Live result evidence is scoped separately, with its two later CSS-only changes disclosed; no live-model acceptance claimed.
+
+**Follow-up Polish**
+
+No additional P3 change is required for this handoff. Future animation changes must retain native text composition, focus pause, reduced-motion static readiness, genuine source images and stable exact financial values.
+
+final result: passed
+
+<details>
+<summary>Historical monochrome and workspace QA — superseded visual direction</summary>
+
 # Lite / Pro design QA
 
 Date: 2026-10-04 (Asia/Shanghai).
@@ -255,5 +331,7 @@ Screenshots: `report-1440-light.png`, `docs-guide-1440-light.png` and
 `assistant-390-dark.png` in the same directory. Production build, changed-file
 formatting and diff checks passed. No calculation, retrieval, permission or
 stored-data behavior changed; CI and production deployment were not awaited.
+
+</details>
 
 </details>

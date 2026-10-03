@@ -3,6 +3,7 @@ import { ArrowUpRight, Menu } from 'lucide-react';
 import { Dialog } from '../components';
 import { useApp } from '../context';
 import './showcase.css';
+import './showcase-v2.css';
 
 /** The previews are local presentation assets, never live account data. */
 export function ShowcaseNavigation({
@@ -21,9 +22,9 @@ export function ShowcaseNavigation({
       href: '/',
       label: 'Lite',
       detail: t('从一家公司的名字开始。', 'Start with a company name.'),
-      image: '/showcase/paper-sculpture.webp',
-      width: 1400,
-      height: 1004,
+      image: '/showcase/optical-prism.webp',
+      width: 1254,
+      height: 1254,
     },
     {
       href: proLink,

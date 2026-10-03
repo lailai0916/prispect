@@ -706,7 +706,7 @@ export function App() {
           }}
         >
           <div
-            className={`app-shell ${business ? 'business-shell' : 'public-shell'}${liteExperience ? ' showcase-shell' : ''}`}
+            className={`app-shell ${business ? 'business-shell' : 'public-shell'}${liteExperience ? ' showcase-shell' : ''}${showcaseHome ? ' showcase-home-shell' : liteExperience ? ' showcase-research-shell' : ''}`}
           >
             <header className="site-header">
               <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>

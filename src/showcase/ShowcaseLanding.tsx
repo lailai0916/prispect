@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowDown, ArrowRight, ArrowUpRight, LoaderCircle, Search } from 'lucide-react';
 import { productTagline } from '../../shared/product-terms';
 import { Dialog } from '../components';
@@ -8,7 +8,9 @@ import { useApp } from '../context';
 import { useCompanyQuery } from '../useCompanyQuery';
 import { landingExample } from '../cinematic/landing-content';
 import { useShowcaseMotion } from './useShowcaseMotion';
+import { HeroField } from './HeroField';
 import './showcase.css';
+import './showcase-v2.css';
 
 function displayAmount(value: string, english: boolean) {
   return new Intl.NumberFormat(english ? 'en-US' : 'zh-CN', {
@@ -69,6 +71,7 @@ export function ShowcaseLanding({
   const root = useRef<HTMLDivElement>(null);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [activePreview, setActivePreview] = useState(0);
+  const [scanPosition, setScanPosition] = useState(52);
   const searchScope = JSON.stringify([user?.id || null, query?.get('query') || '']);
   const [exampleDraft, setExampleDraft] = useState<{
     text: string;
@@ -108,9 +111,9 @@ export function ShowcaseLanding({
         '输入名称或代码，确认你要看的主体。',
         'Enter a name or code and confirm the company.'
       ),
-      image: '/showcase/paper-sculpture.webp',
-      width: 1400,
-      height: 1004,
+      image: '/showcase/optical-prism.webp',
+      width: 1254,
+      height: 1254,
     },
     {
       title: t('看数字', 'Read the numbers'),
@@ -136,19 +139,16 @@ export function ShowcaseLanding({
   return (
     <div ref={root} className="showcase-home" data-locale={locale}>
       <section className="showcase-hero" aria-labelledby="showcase-title">
-        <div className="showcase-paper-scene" aria-hidden="true">
-          <div className="showcase-paper-follow">
-            <img
-              className="showcase-paper"
-              src="/showcase/paper-sculpture.webp"
-              width="1400"
-              height="1004"
-              alt=""
-              fetchPriority="high"
-            />
-          </div>
+        <HeroField />
+        <div className="showcase-orbit-labels" aria-hidden="true">
+          <span>BEYOND THE NUMBERS</span>
+          <span>{t('财务 / 来源 / 线索', 'FINANCIALS / SOURCES / LEADS')}</span>
         </div>
         <div className="showcase-hero-copy">
+          <p className="showcase-hero-kicker">
+            <span>PRISPECT / LITE</span>
+            <span>{t('透过数字，看清公司', 'LOOK THROUGH THE NUMBERS')}</span>
+          </p>
           <h1 id="showcase-title" className="showcase-title" aria-label={t(...productTagline)}>
             {titleLines.map((line, index) => (
               <span className="showcase-title-mask" key={line}>
@@ -266,7 +266,22 @@ export function ShowcaseLanding({
           <ArrowDown size={23} aria-hidden="true" />
           <span>{t('向下探索', 'Scroll to explore')}</span>
         </a>
+        <span className="showcase-hero-edition" aria-hidden="true">
+          FOLLOW THE EVIDENCE ↗
+        </span>
       </section>
+      <div className="showcase-marquee" aria-hidden="true">
+        <div className="showcase-marquee-track">
+          {[0, 1, 2, 3].map((index) => (
+            <span key={index}>
+              {t('看见数字背后的故事', 'SEE THE STORY BEHIND THE NUMBERS')}
+              <ArrowUpRight size={48} />
+              <span>FOLLOW THE EVIDENCE</span>
+              <ArrowUpRight size={48} />
+            </span>
+          ))}
+        </div>
+      </div>
       <section
         id="showcase-evidence"
         className="showcase-evidence"
@@ -274,7 +289,7 @@ export function ShowcaseLanding({
         aria-labelledby="showcase-evidence-title"
       >
         <div className="showcase-evidence-heading">
-          <span className="showcase-eyebrow">{t('从原文开始', 'Begin with the source')}</span>
+          <span className="showcase-eyebrow">01 / {t('从原文开始', 'BEGIN WITH THE SOURCE')}</span>
           <h2 id="showcase-evidence-title" className="showcase-reveal">
             {t('让数字，', 'Let the numbers')}
             <br />
@@ -288,24 +303,64 @@ export function ShowcaseLanding({
           </p>
         </div>
         <div className="showcase-evidence-stage">
-          <button
-            className="showcase-source-sheet"
-            type="button"
-            onClick={() => setSourceOpen(true)}
-            aria-label={t('查看松原安全 2025 年报原件', 'View Songyuan’s original 2025 report')}
+          <span className="showcase-evidence-watermark" aria-hidden="true">
+            SOURCE
+          </span>
+          <div
+            className="showcase-source-scanner"
+            style={{ '--scan-position': `${scanPosition}%` } as CSSProperties}
           >
-            <img
-              src={landingExample.source.crops[0].src}
-              width={landingExample.source.crops[0].width}
-              height={landingExample.source.crops[0].height}
-              alt={t(...landingExample.source.crops[0].alt)}
-              loading="lazy"
-            />
-            <span>
-              {t('年报原文 · p.190', 'Annual report · p.190')}
-              <ArrowUpRight size={16} aria-hidden="true" />
-            </span>
-          </button>
+            <button
+              className="showcase-source-sheet"
+              type="button"
+              onClick={() => setSourceOpen(true)}
+              aria-label={t('查看松原安全 2025 年报原件', 'View Songyuan’s original 2025 report')}
+            >
+              <img
+                src={landingExample.source.crops[0].src}
+                width={landingExample.source.crops[0].width}
+                height={landingExample.source.crops[0].height}
+                alt={t(...landingExample.source.crops[0].alt)}
+                loading="lazy"
+              />
+              <span className="showcase-source-xray" aria-hidden="true">
+                <img
+                  src={landingExample.source.crops[1].src}
+                  width={landingExample.source.crops[1].width}
+                  height={landingExample.source.crops[1].height}
+                  alt=""
+                  loading="lazy"
+                />
+                <span>
+                  {t('现金流量补充资料（续）· p.191', 'CASH FLOW RECONCILIATION · p.191')}
+                </span>
+              </span>
+              <span className="showcase-source-scan-line" aria-hidden="true" />
+              <span>
+                {t('年报原文 · p.190–191', 'Annual report · p.190–191')}
+                <ArrowUpRight size={16} aria-hidden="true" />
+              </span>
+            </button>
+            <label className="showcase-scan-control">
+              <span>{t('拖动，透视两页年报原文', 'SLIDE TO LOOK THROUGH TWO REPORT PAGES')}</span>
+              <input
+                type="range"
+                min="8"
+                max="92"
+                value={scanPosition}
+                aria-describedby="showcase-scan-note"
+                onChange={(event) => setScanPosition(Number(event.target.value))}
+                aria-label={t(
+                  '调整年报第 190 页与第 191 页的展示分界',
+                  'Adjust the reveal between annual-report pages 190 and 191'
+                )}
+              />
+              <span className="showcase-scan-pages">p.190 ↔ p.191</span>
+            </label>
+            <p id="showcase-scan-note" className="showcase-scan-note">
+              {t('两页独立原文，行位置不对应。', 'Separate original pages; rows do not align.')}
+            </p>
+          </div>
           <div className="showcase-evidence-values">
             <p className="showcase-source-scope">
               {t(...landingExample.notices.sample)}
@@ -347,9 +402,12 @@ export function ShowcaseLanding({
         </div>
       </section>
       <section className="showcase-process" aria-labelledby="showcase-process-title">
+        <span className="showcase-process-word" aria-hidden="true">
+          LOOK CLOSER.
+        </span>
         <div className="showcase-process-heading">
           <span className="showcase-eyebrow">
-            {t('看懂一家公司的路径', 'A path to understanding a company')}
+            02 / {t('看懂一家公司的路径', 'A PATH TO UNDERSTANDING A COMPANY')}
           </span>
           <h2 id="showcase-process-title" className="showcase-reveal">
             {t('从名字，', 'From a name,')}
@@ -373,12 +431,26 @@ export function ShowcaseLanding({
                 <span>
                   <strong>{chapter.title}</strong>
                   <span>{chapter.detail}</span>
+                  {activePreview === index && (
+                    <img
+                      className="showcase-chapter-inline-preview"
+                      src={chapter.image}
+                      width={chapter.width}
+                      height={chapter.height}
+                      alt=""
+                      aria-hidden="true"
+                      loading="lazy"
+                    />
+                  )}
                 </span>
                 <ArrowUpRight size={25} aria-hidden="true" />
               </button>
             ))}
           </div>
           <div className="showcase-chapter-preview" aria-hidden="true">
+            <span className="showcase-preview-caption">
+              0{activePreview + 1} / {chapters[activePreview].title}
+            </span>
             {chapters.map((chapter, index) => (
               <img
                 src={chapter.image}
@@ -394,6 +466,12 @@ export function ShowcaseLanding({
         </div>
       </section>
       <section className="showcase-ending" aria-labelledby="showcase-ending-title">
+        <span className="showcase-ending-word" aria-hidden="true">
+          YOUR NEXT QUESTION.
+        </span>
+        <span className="showcase-eyebrow">
+          03 / {t('好问题，从这里开始', 'A GOOD QUESTION STARTS HERE')}
+        </span>
         <h2 id="showcase-ending-title" className="showcase-reveal">
           {t('从你关心的', 'Start with a company')}
           <br />

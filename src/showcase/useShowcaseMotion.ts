@@ -5,151 +5,306 @@ import { useGSAP } from '@gsap/react';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-/** Animation only owns presentation: it never starts research or interpolates amounts. */
+/** Motion owns presentation only; native scrolling, exact amounts and research stay untouched. */
 export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale: string) {
   useGSAP(
     () => {
       const container = root.current;
       if (!container) return;
       const media = gsap.matchMedia();
-      media.add('(prefers-reduced-motion: no-preference)', () => {
-        const select = gsap.utils.selector(container);
-        const entrance = gsap.timeline({ defaults: { ease: 'power4.out' } });
-        entrance
-          .from(select('.showcase-letter'), {
-            yPercent: 120,
-            rotationX: -65,
+      media.add(
+        {
+          motion: '(prefers-reduced-motion: no-preference)',
+          desktop: '(min-width: 900px)',
+        },
+        (context) => {
+          if (!context.conditions?.motion) return;
+          const desktop = context.conditions.desktop;
+          const one = (selector: string) => container.querySelector<HTMLElement>(selector);
+          const all = (selector: string) =>
+            Array.from(container.querySelectorAll<HTMLElement>(selector));
+          const hero = one('.showcase-hero');
+          const scene = one('.showcase-paper-scene');
+          const entrance = gsap.timeline({ defaults: { ease: 'power4.out' } });
+
+          // Every letter settles at its native position before scroll choreography begins.
+          entrance.from(all('.showcase-letter'), {
+            yPercent: 145,
+            rotationX: -80,
             transformOrigin: '50% 100%',
-            duration: 0.95,
-            stagger: 0.026,
-          })
-          .from(
-            select('.showcase-paper-scene'),
-            { xPercent: 18, rotation: 9, opacity: 0, duration: 1.2 },
-            0.12
-          )
-          .from(select('.showcase-description'), { y: 16, opacity: 0, duration: 0.55 }, 0.45);
-        gsap.to(select('.showcase-paper-scene'), {
-          yPercent: 14,
-          xPercent: -13,
-          rotation: -12,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: select('.showcase-hero')[0],
-            start: 'top top',
-            end: 'bottom top',
-            scrub: 0.8,
-          },
-        });
-        select('.showcase-title-line').forEach((line: HTMLElement, index: number) =>
-          gsap.to(line, {
-            xPercent: index ? 5 : -7,
-            ease: 'none',
-            scrollTrigger: {
-              trigger: select('.showcase-hero')[0],
-              start: 'top top',
-              end: 'bottom top',
-              scrub: 0.7,
-            },
-          })
-        );
-        select('.showcase-reveal').forEach((heading: HTMLElement) =>
-          gsap.from(heading, {
-            y: 70,
-            rotation: -2,
-            opacity: 0,
-            duration: 0.85,
-            ease: 'power3.out',
-            scrollTrigger: {
-              trigger: heading,
-              start: 'top 90%',
-              toggleActions: 'play none none reverse',
-            },
-          })
-        );
-        gsap.from(select('.showcase-source-sheet'), {
-          rotation: 12,
-          y: 140,
-          scale: 0.82,
-          opacity: 0,
-          ease: 'power2.out',
-          scrollTrigger: {
-            trigger: select('.showcase-evidence-stage')[0],
-            start: 'top 90%',
-            end: 'top 38%',
-            scrub: 0.65,
-          },
-        });
-        gsap.from(select('.showcase-evidence-values > *'), {
-          y: 34,
-          opacity: 0,
-          stagger: 0.12,
-          duration: 0.65,
-          scrollTrigger: {
-            trigger: select('.showcase-evidence-values')[0],
-            start: 'top 85%',
-            toggleActions: 'play none none reverse',
-          },
-        });
-        gsap.from(select('.showcase-chapters > button'), {
-          x: -80,
-          opacity: 0,
-          stagger: 0.1,
-          duration: 0.75,
-          ease: 'power3.out',
-          scrollTrigger: {
-            trigger: select('.showcase-chapters')[0],
-            start: 'top 88%',
-            toggleActions: 'play none none reverse',
-          },
-        });
-        const visibility = () => {
-          if (document.hidden) entrance.pause();
-          else {
-            entrance.resume();
-            ScrollTrigger.refresh();
+            duration: 1.12,
+            stagger: { each: locale === 'en' ? 0.016 : 0.035, from: 'start' },
+          });
+          if (scene) {
+            entrance.from(
+              scene,
+              {
+                xPercent: desktop ? 20 : 8,
+                yPercent: 12,
+                rotation: -24,
+                scale: 0.58,
+                opacity: 0,
+                duration: 1.65,
+                ease: 'expo.out',
+              },
+              0.08
+            );
           }
-        };
-        document.addEventListener('visibilitychange', visibility);
-        return () => document.removeEventListener('visibilitychange', visibility);
-      });
+          entrance.from(all('.showcase-description'), { y: 28, opacity: 0, duration: 0.75 }, 0.42);
+          const orbitLabels = all('.showcase-orbit-labels > *');
+          if (orbitLabels.length) {
+            entrance.from(orbitLabels, { y: 24, opacity: 0, duration: 0.8, stagger: 0.12 }, 0.7);
+          }
+
+          if (hero) {
+            if (scene) {
+              gsap.to(scene, {
+                yPercent: desktop ? 34 : 16,
+                xPercent: desktop ? -17 : -5,
+                rotation: desktop ? 21 : 9,
+                scale: desktop ? 1.18 : 1.08,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: hero,
+                  start: 'top top',
+                  end: 'bottom top',
+                  scrub: 0.9,
+                },
+              });
+            }
+            const copy = one('.showcase-hero-copy');
+            if (copy) {
+              gsap.to(copy, {
+                y: desktop ? -76 : -24,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: hero,
+                  start: 'top top',
+                  end: 'bottom top',
+                  scrub: 0.7,
+                },
+              });
+            }
+            all('.showcase-title-line').forEach((line, index) => {
+              gsap.to(line, {
+                xPercent: (index ? 1 : -1) * (desktop ? 11 : 3),
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: hero,
+                  start: 'top top',
+                  end: 'bottom top',
+                  scrub: 0.75,
+                },
+              });
+            });
+            orbitLabels.forEach((label, index) => {
+              gsap.to(label, {
+                y: (index % 2 ? -1 : 1) * (desktop ? 95 : 32),
+                rotation: index % 2 ? 8 : -8,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: hero,
+                  start: 'top top',
+                  end: 'bottom top',
+                  scrub: 1.15,
+                },
+              });
+            });
+          }
+
+          all('.showcase-reveal').forEach((heading) => {
+            gsap.from(heading, {
+              y: desktop ? 90 : 42,
+              rotation: desktop ? -3 : -1,
+              opacity: 0,
+              duration: 1.05,
+              ease: 'power4.out',
+              scrollTrigger: {
+                trigger: heading,
+                start: 'top 94%',
+                toggleActions: 'play none none reverse',
+              },
+            });
+          });
+
+          // The document peels into view, then drifts past the exact figures beside it.
+          const sourceSheet = one('.showcase-source-sheet');
+          const evidenceStage = one('.showcase-evidence-stage');
+          if (sourceSheet && evidenceStage) {
+            gsap.fromTo(
+              sourceSheet,
+              {
+                y: desktop ? 160 : 65,
+                rotation: desktop ? 17 : 8,
+                rotationY: desktop ? -28 : -10,
+                scale: 0.82,
+                opacity: 0,
+                transformOrigin: '8% 80%',
+              },
+              {
+                y: desktop ? -28 : 0,
+                rotation: -3,
+                rotationY: 0,
+                scale: 1,
+                opacity: 1,
+                ease: 'power2.out',
+                scrollTrigger: {
+                  trigger: evidenceStage,
+                  start: 'top 94%',
+                  end: 'top 22%',
+                  scrub: 0.8,
+                },
+              }
+            );
+          }
+          const values = one('.showcase-evidence-values');
+          if (values) {
+            gsap.from(all('.showcase-evidence-values > *'), {
+              y: 38,
+              clipPath: 'inset(100% 0% 0% 0%)',
+              opacity: 0,
+              stagger: 0.14,
+              duration: 0.95,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: values,
+                start: 'top 92%',
+                toggleActions: 'play none none reverse',
+              },
+            });
+          }
+
+          const chapters = one('.showcase-chapters');
+          if (chapters) {
+            gsap.from(all('.showcase-chapters > button'), {
+              x: desktop ? -115 : -28,
+              y: desktop ? 16 : 22,
+              opacity: 0,
+              stagger: 0.14,
+              duration: 1.05,
+              ease: 'power4.out',
+              scrollTrigger: {
+                trigger: chapters,
+                start: 'top 92%',
+                toggleActions: 'play none none reverse',
+              },
+            });
+          }
+
+          const driftingType = (
+            selector: string,
+            sectionSelector: string,
+            desktopDistance: number,
+            mobileDistance: number
+          ) => {
+            const word = one(selector);
+            const section = one(sectionSelector);
+            if (!word || !section) return;
+            gsap.fromTo(
+              word,
+              { xPercent: desktop ? 5 : 2 },
+              {
+                xPercent: desktop ? desktopDistance : mobileDistance,
+                ease: 'none',
+                scrollTrigger: {
+                  trigger: section,
+                  start: 'top bottom',
+                  end: 'bottom top',
+                  scrub: 0.65,
+                },
+              }
+            );
+          };
+          driftingType('.showcase-process-word', '.showcase-process', -20, -8);
+          driftingType('.showcase-ending-word', '.showcase-ending', -17, -7);
+          all('.showcase-marquee').forEach((marquee) => {
+            gsap.from(marquee, {
+              y: 35,
+              opacity: 0,
+              duration: 0.8,
+              ease: 'power3.out',
+              scrollTrigger: {
+                trigger: marquee,
+                start: 'top 96%',
+                toggleActions: 'play none none reverse',
+              },
+            });
+          });
+
+          const visibility = () => {
+            if (document.hidden) entrance.pause();
+            else {
+              entrance.resume();
+              ScrollTrigger.refresh();
+            }
+          };
+          if (document.hidden) entrance.pause();
+          document.addEventListener('visibilitychange', visibility);
+          return () => document.removeEventListener('visibilitychange', visibility);
+        }
+      );
       media.add(
         '(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)',
         () => {
           const hero = container.querySelector<HTMLElement>('.showcase-hero');
           const paper = container.querySelector<HTMLElement>('.showcase-paper-follow');
-          if (!hero || !paper) return;
-          const x = gsap.quickTo(paper, 'x', { duration: 0.7, ease: 'power3.out' });
-          const y = gsap.quickTo(paper, 'y', { duration: 0.7, ease: 'power3.out' });
-          const rotationY = gsap.quickTo(paper, 'rotationY', { duration: 0.8, ease: 'power3.out' });
-          const rotationX = gsap.quickTo(paper, 'rotationX', { duration: 0.8, ease: 'power3.out' });
+          const paperMoves = paper
+            ? {
+                x: gsap.quickTo(paper, 'x', { duration: 0.8, ease: 'power3.out' }),
+                y: gsap.quickTo(paper, 'y', { duration: 0.8, ease: 'power3.out' }),
+                rotationY: gsap.quickTo(paper, 'rotationY', {
+                  duration: 0.9,
+                  ease: 'power3.out',
+                }),
+                rotationX: gsap.quickTo(paper, 'rotationX', {
+                  duration: 0.9,
+                  ease: 'power3.out',
+                }),
+              }
+            : null;
+          let pointerFrame = 0;
+          const shine = (horizontal: number, vertical: number) => {
+            hero?.style.setProperty('--showcase-pointer-x', `${horizontal * 100}%`);
+            hero?.style.setProperty('--showcase-pointer-y', `${vertical * 100}%`);
+          };
           const reset = () => {
-            x(0);
-            y(0);
-            rotationY(0);
-            rotationX(0);
+            cancelAnimationFrame(pointerFrame);
+            shine(0.5, 0.5);
+            if (!paperMoves) return;
+            paperMoves.x(0);
+            paperMoves.y(0);
+            paperMoves.rotationY(0);
+            paperMoves.rotationX(0);
           };
           const follow = (event: PointerEvent) => {
             if (
+              !hero ||
               document.hidden ||
               container.querySelector('.showcase-search')?.contains(document.activeElement)
             )
               return;
             const bounds = hero.getBoundingClientRect();
-            const horizontal = (event.clientX - bounds.left) / bounds.width - 0.5;
-            const vertical = (event.clientY - bounds.top) / bounds.height - 0.5;
-            x(horizontal * 38);
-            y(vertical * 28);
-            rotationY(horizontal * 18);
-            rotationX(-vertical * 12);
+            const horizontal = gsap.utils.clamp(0, 1, (event.clientX - bounds.left) / bounds.width);
+            const vertical = gsap.utils.clamp(0, 1, (event.clientY - bounds.top) / bounds.height);
+            cancelAnimationFrame(pointerFrame);
+            pointerFrame = requestAnimationFrame(() => shine(horizontal, vertical));
+            paperMoves?.x((horizontal - 0.5) * 60);
+            paperMoves?.y((vertical - 0.5) * 42);
+            paperMoves?.rotationY((horizontal - 0.5) * 24);
+            paperMoves?.rotationX((vertical - 0.5) * -18);
           };
           const onFocus = (event: FocusEvent) => {
             if (container.querySelector('.showcase-search')?.contains(event.target as Node))
               reset();
           };
-          hero.addEventListener('pointermove', follow);
-          hero.addEventListener('pointerleave', reset);
-          hero.addEventListener('focusin', onFocus);
+          const onVisibility = () => {
+            if (document.hidden) reset();
+          };
+          hero?.addEventListener('pointermove', follow);
+          hero?.addEventListener('pointerleave', reset);
+          hero?.addEventListener('focusin', onFocus);
+          document.addEventListener('visibilitychange', onVisibility);
+
           const magneticSelector = '[data-magnetic], .showcase-search .start-submit';
           const magnetic = new Map<HTMLElement, { x: gsap.QuickToFunc; y: gsap.QuickToFunc }>();
           const magneticButton = (target: EventTarget | null) => {
@@ -196,12 +351,17 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
           container.addEventListener('pointerout', magneticOut);
           container.addEventListener('focusin', magneticFocus);
           return () => {
-            hero.removeEventListener('pointermove', follow);
-            hero.removeEventListener('pointerleave', reset);
-            hero.removeEventListener('focusin', onFocus);
+            cancelAnimationFrame(pointerFrame);
+            hero?.removeEventListener('pointermove', follow);
+            hero?.removeEventListener('pointerleave', reset);
+            hero?.removeEventListener('focusin', onFocus);
+            hero?.style.removeProperty('--showcase-pointer-x');
+            hero?.style.removeProperty('--showcase-pointer-y');
+            document.removeEventListener('visibilitychange', onVisibility);
             container.removeEventListener('pointermove', magneticMove);
             container.removeEventListener('pointerout', magneticOut);
             container.removeEventListener('focusin', magneticFocus);
+            if (paperMoves) Object.values(paperMoves).forEach((move) => move.tween.kill());
             magnetic.forEach((moves, button) => {
               moves.x.tween.kill();
               moves.y.tween.kill();

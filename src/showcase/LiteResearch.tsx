@@ -880,10 +880,10 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
         <div className="lite-evidence-layout lite-reveal">
           <div className="lite-source-paper" aria-hidden="true">
             <img
-              src="/showcase/paper-sculpture.webp"
+              src="/showcase/optical-prism.webp"
               alt=""
-              width="1400"
-              height="1004"
+              width="1254"
+              height="1254"
               loading="lazy"
             />
           </div>

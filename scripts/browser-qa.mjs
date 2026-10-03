@@ -19,7 +19,7 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 2,
+  version: 3,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: false,
@@ -34,6 +34,7 @@ const receipt = {
   blockedBrowserRequests: [],
   excludedTelemetryScripts: [],
   researchWrites: [],
+  opticalInteraction: [],
   limits: [
     'No company research is submitted; live company-result, financial acquisition, same-run switching and model/assistant answers are outside this entry-flow check.',
     'Screenshots require a separate visual comparison with the selected source; successful assertions are not a fidelity verdict.',
@@ -103,6 +104,157 @@ async function submitLabelFits(page, name) {
   });
   assert.equal(measured.lines, 1, `${name} wraps its submit label: ${JSON.stringify(measured)}`);
   check(`${name}: company query submit label remains on one line`);
+}
+async function canvasStamp(page) {
+  return page.locator('.hero-field-canvas').evaluate((canvas) => canvas.toDataURL());
+}
+async function staticOptics(page, name) {
+  await page.locator('[data-hero-ready="true"]').waitFor();
+  const before = await canvasStamp(page);
+  await page.mouse.move(24, 200);
+  await page.mouse.move(page.viewportSize().width - 24, 300);
+  await page.waitForTimeout(180);
+  assert.equal(await canvasStamp(page), before, `${name} optical canvas continues animating`);
+  receipt.opticalInteraction.push({ name, canvasStatic: true });
+  check(`${name}: loaded optical artwork remains static under reduced motion`);
+}
+async function pointerOptics(page) {
+  const scene = page.locator('[data-hero-ready="true"]');
+  assert.equal(await scene.getAttribute('data-hero-rendering'), 'canvas');
+  await page.mouse.move(110, 290, { steps: 10 });
+  await page.waitForFunction(
+    () =>
+      parseFloat(
+        document.querySelector('.showcase-hero').style.getPropertyValue('--showcase-pointer-x')
+      ) < 20
+  );
+  await page.waitForTimeout(950);
+  const left = await canvasStamp(page);
+  const leftTransform = await page
+    .locator('.hero-field-prism')
+    .evaluate((element) => getComputedStyle(element).transform);
+  await capture(page, 'lite-hero-pointer-left');
+  await page.mouse.move(page.viewportSize().width - 110, 380, { steps: 10 });
+  await page.waitForFunction(
+    () =>
+      parseFloat(
+        document.querySelector('.showcase-hero').style.getPropertyValue('--showcase-pointer-x')
+      ) > 80
+  );
+  await page.waitForTimeout(950);
+  const right = await canvasStamp(page);
+  const rightTransform = await page
+    .locator('.hero-field-prism')
+    .evaluate((element) => getComputedStyle(element).transform);
+  assert.notEqual(right, left, 'Optical canvas does not change between live pointer states');
+  assert.notEqual(rightTransform, leftTransform, 'Optical prism does not follow pointer position');
+  await capture(page, 'lite-hero-pointer-right');
+  const input = page.locator('.showcase-search textarea');
+  await input.focus();
+  await page.waitForTimeout(60);
+  const focused = await canvasStamp(page);
+  await page.mouse.move(120, 250);
+  await page.mouse.move(page.viewportSize().width - 120, 250);
+  await page.waitForTimeout(180);
+  assert.equal(
+    await canvasStamp(page),
+    focused,
+    'Query focus does not pause the decorative canvas'
+  );
+  receipt.opticalInteraction.push({
+    name: 'desktop pointer',
+    canvasChanged: true,
+    prismTransformChanged: true,
+    queryFocusPausedCanvas: true,
+  });
+  check(
+    'Optical canvas and prism respond to pointer; query focus pauses canvas without submitting'
+  );
+  await input.blur();
+  await page.mouse.move(0, 0);
+}
+async function scrollScene(page, selector, inset = 80) {
+  await page.locator(selector).evaluate((element, inset) => {
+    window.scrollTo({
+      top: element.getBoundingClientRect().top + scrollY - inset,
+      behavior: 'instant',
+    });
+  }, inset);
+  await page.waitForTimeout(1250);
+}
+async function evidenceAndProcess(page, name) {
+  await scrollScene(page, '.showcase-evidence');
+  await noOverflow(page, `${name} evidence heading`);
+  await capture(page, `${name}-evidence-heading`);
+  await scrollScene(page, '.showcase-evidence-stage', 120);
+  await page.waitForFunction(() =>
+    Array.from(document.querySelectorAll('.showcase-source-sheet img')).every(
+      (image) => image.complete && image.naturalWidth > 0
+    )
+  );
+  const originals = await page
+    .locator('.showcase-source-sheet img')
+    .evaluateAll((images) =>
+      images.map((image) => ({ src: image.getAttribute('src'), alt: image.getAttribute('alt') }))
+    );
+  assert.ok(originals[0].src.includes('page-190'));
+  assert.ok(originals[0].alt?.length);
+  assert.ok(originals[1].src.includes('page-191'));
+  assert.equal(await page.locator('.showcase-source-xray').getAttribute('aria-hidden'), 'true');
+  const scanner = page.locator('.showcase-source-scanner');
+  const range = page.locator('.showcase-scan-control input[type="range"]');
+  const exactAmountsBefore = await page.locator('.showcase-evidence-values dl').innerText();
+  const before = await range.inputValue();
+  const clipBefore = await page
+    .locator('.showcase-source-xray')
+    .evaluate((element) => getComputedStyle(element).clipPath);
+  await range.focus();
+  await page.keyboard.press('ArrowRight');
+  const after = await range.inputValue();
+  assert.equal(Number(after), Number(before) + 1);
+  assert.equal(
+    (await scanner.evaluate((element) => element.style.getPropertyValue('--scan-position'))).trim(),
+    `${after}%`
+  );
+  const clipAfter = await page
+    .locator('.showcase-source-xray')
+    .evaluate((element) => getComputedStyle(element).clipPath);
+  assert.notEqual(clipAfter, clipBefore);
+  await page.keyboard.press('Home');
+  assert.equal(await range.inputValue(), '8');
+  await capture(page, `${name}-evidence-reveal-left`);
+  await page.keyboard.press('End');
+  assert.equal(await range.inputValue(), '92');
+  await capture(page, `${name}-evidence-reveal-right`);
+  assert.equal(await page.locator('.showcase-evidence-values dl').innerText(), exactAmountsBefore);
+  check(
+    `${name}: keyboard reveal changes CSS/clipping of real p190/p191 crops and preserves exact amounts`
+  );
+  await noOverflow(page, `${name} evidence scanner`);
+  await scrollScene(page, '.showcase-process');
+  await capture(page, `${name}-process-heading`);
+  await scrollScene(page, '.showcase-process-layout', 110);
+  const chapters = page.locator('.showcase-chapters > button');
+  const expected = ['optical-prism.webp', 'page-191', 'page-190'];
+  for (let index = 0; index < expected.length; index++) {
+    await chapters.nth(index).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction((expected) => {
+      const active = document.querySelector('.showcase-chapters > button[aria-pressed="true"]');
+      const inline = active?.querySelector('img.showcase-chapter-inline-preview');
+      const image =
+        matchMedia('(max-width: 600px)').matches && inline
+          ? inline
+          : document.querySelector('.showcase-chapter-preview img.is-active');
+      return (
+        image?.getAttribute('src')?.includes(expected) && image.complete && image.naturalWidth > 0
+      );
+    }, expected[index]);
+    assert.equal(await chapters.nth(index).getAttribute('aria-pressed'), 'true');
+  }
+  await noOverflow(page, `${name} process`);
+  await capture(page, `${name}-process-evidence-preview`);
+  check(`${name}: each process chapter exposes its own correct loaded asset and pressed state`);
 }
 async function capture(page, name) {
   const filename = `${name}.png`;
@@ -202,11 +354,15 @@ async function openContext({
     return input && !input.disabled;
   });
   await page.waitForFunction(() => {
-    const paper = document.querySelector('.showcase-paper');
+    const scene = document.querySelector('[data-hero-ready="true"]');
+    const prism = scene?.querySelector('img');
     const description = document.querySelector('.showcase-description');
     return (
-      paper?.complete &&
-      paper.naturalWidth > 0 &&
+      scene &&
+      Number(getComputedStyle(scene).opacity) > 0.9999 &&
+      prism?.getAttribute('src')?.endsWith('/optical-prism.webp') &&
+      prism.complete &&
+      prism.naturalWidth > 0 &&
       description &&
       Number(getComputedStyle(description).opacity) > 0.99
     );
@@ -245,6 +401,7 @@ try {
   await headlineFits(page, 'desktop Lite');
   await submitLabelFits(page, 'desktop Lite');
   await capture(page, 'lite-desktop-zh-light');
+  await pointerOptics(page);
   const input = page.locator('.showcase-search textarea');
   await input.evaluate((element) =>
     element.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }))
@@ -294,6 +451,7 @@ try {
   await menu.waitFor({ state: 'hidden' });
   assert.equal(await trigger.evaluate((element) => document.activeElement === element), true);
   check('Full-screen menu keyboard open, focus preview, Escape and focus restoration');
+  await evidenceAndProcess(page, 'lite-desktop-zh');
   await page.locator('.showcase-source-sheet').click();
   const source = page.locator('.showcase-source-dialog');
   await source.waitFor();
@@ -343,6 +501,7 @@ try {
   await noOverflow(mobile.page, 'mobile menu');
   await mobile.page.keyboard.press('Escape');
   check('390px English dark entry and mobile menu');
+  await evidenceAndProcess(mobile.page, 'lite-mobile-en-dark');
   await mobile.context.close();
   const reduced = await openContext({
     width: 375,
@@ -357,6 +516,7 @@ try {
   await headlineFits(reduced.page, 'reduced-motion mobile');
   await submitLabelFits(reduced.page, 'reduced-motion mobile');
   await capture(reduced.page, 'lite-mobile-zh-reduced-motion');
+  await staticOptics(reduced.page, '375px reduced motion');
   check('375px reduced-motion entry remains visible and editable');
   await reduced.context.close();
   const englishDesktop = await openContext({ locale: 'en' });
@@ -378,6 +538,7 @@ try {
   await headlineFits(narrow.page, '320px English Lite');
   await submitLabelFits(narrow.page, '320px English Lite');
   await capture(narrow.page, 'lite-320-en-light');
+  await staticOptics(narrow.page, '320px reduced motion');
   const narrowTrigger = narrow.page.locator('.showcase-menu-trigger');
   await narrowTrigger.focus();
   await narrow.page.keyboard.press('Enter');
