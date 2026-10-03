@@ -4,6 +4,8 @@
 
 Company/team and product share one brand: 析光 in Simplified Chinese, Prispect in English. Preserve the existing geometric logo. The public product domain is prispect.com; domain-specific configuration and links must use that domain. Do not invent a registered legal entity.
 
+The canonical product tagline is 让企业判断，有据可查。 / Make company judgments traceable. Use this exact wording for the home headline, short product introduction and sharing/search metadata; detailed feature explanations may describe their actual scope.
+
 Public product copy uses 析光 / Prispect, and explains the customer's evidence and decisions. Keep competition rules, development process, SDK/provider implementation details and validation claims in repository documentation rather than business flows. Necessary data-use disclosures belong in the privacy policy and relevant product documentation. Preserve truthful uncertainty, hypothetical-plan labels, source coverage and unavailable-feature states.
 
 `prispect` is the private repository for Prispect (析光), a cash-conversion
@@ -40,6 +42,10 @@ The evidence lab in `shared/evidence-lab.ts` is a pure local dependency trial: w
 Keep one restrained UI system across reports, company pages and documentation. Use shared light/dark theme tokens, typography, spacing and control radii; business routes must not introduce a separate glass or gradient theme. Status color belongs to compact, explicitly labeled states, not entire cards or large decorative risk gauges. Report amounts stay neutral and source-linked. Prefer document sections and subtle borders, immediate readable content, and short interaction feedback over glowing indicators, floating cards or delayed decorative reveals. Validate changed report layouts in both themes and at narrow mobile widths.
 
 Keep full service, privacy and general analysis limitations in the canonical documents, with compact document entry points instead of repeating notices across business pages. Preserve the sources, financial scope, concrete assumptions, missing/conflicting data, actual failures and irreversible-action confirmations needed for the current result or action. Login and registration use one concise linked terms/privacy notice; guidance documents do not grant additional data-processing permissions or replace any separately required consent.
+
+Keep profile and account forms focused on labels and actions. Do not append generic purpose or assurance text beneath ordinary fields, such as “display only,” “no verification required” or browser-supplied device details; document these details in the guide and privacy policy. Preserve feedback and instructions necessary to finish the current action.
+
+Reports lead with a direct, source-backed headline, a prominent grade and the actual research stages; synthesis states the main judgment before findings and actions. Incomplete complete grades stay NR in storage, while the read-only report may separately show a provisional A–D grade derived from independently supported same-year core dimensions, their coverage, the observed-score mean and existing weak-dimension caps. Do not show a complete score for that subset, fabricate a grade with no valid dimensions, mix snapshots or rewrite saved grades. Document this provisional method and retain clear labels in the assistant.
 
 Home, documentation and research share one header height through `--site-header-height`: 52px on desktop and 56px at the existing mobile breakpoint. Headers span their available width: keep branding at the left edge and actions at the right with shared responsive padding, independent of centered article widths. The same account dropdown stays visible at the far right on all signed-in routes, including research; keep account actions shared with the sidebar.
 

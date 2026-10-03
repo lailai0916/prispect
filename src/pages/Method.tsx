@@ -54,6 +54,19 @@ export function MethodContent() {
         {ASSESSMENT_METHODOLOGY.map((paragraph, index) => (
           <p key={index}>{t(...paragraph)}</p>
         ))}
+        <h3>{t('暂定评级', 'Provisional grades')}</h3>
+        <p>
+          {t(
+            '完整评级为 NR 时，只要已有可独立核对、同年度合并口径的有效财务维度，首屏就可展示暂定评级与维度覆盖数。暂定评级按有效维度的得分等权平均，沿用上述等级阈值和弱项上限；不显示完整百分制总分，不将缺失或冲突的维度当作零或支持。',
+            'When the complete grade is NR, independently supported dimensions for the same annual consolidated scope can yield a provisional grade with dimension coverage. It averages valid dimension scores equally and applies the same grade thresholds and weak-dimension caps. It does not present a complete score out of 100 or treat missing or conflicting dimensions as zero or support.'
+          )}
+        </p>
+        <p>
+          {t(
+            '主体或年度不符、没有有效维度时不生成暂定评级。暂定评级是已有资料下的初步倾向，补齐资料后可能改变；它不改写保存的完整财务评级或历史记录。上一份资料快照的判断保留对应标记，不与新快照金额混算。',
+            'A mismatched issuer or year, or no valid dimensions, produces no provisional grade. It is an initial view of available evidence and can change when more data arrives. It does not rewrite saved complete grades or historical records. Judgments from a previous snapshot remain labeled and are not calculated using amounts from a newer snapshot.'
+          )}
+        </p>
       </section>
       <section className="document-section" id="method-decision">
         <h2>{t('付款事项', 'Payment matters')}</h2>

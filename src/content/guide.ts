@@ -60,8 +60,8 @@ export const guideDocument: ProductDocument = {
       title: ['公司研究与确认候选', 'Company research and candidate confirmation'],
       bullets: [
         [
-          '从首页或“新建研究”输入公司名称或证券代码，确认匹配的披露主体后进入研究报告。公开资料取得后自动研究，报告先给分析摘要、财务评级、合并净利润、经营现金和现金利润比，再给最多三条重点发现与下一步核查。入口保留当前账号的输入草稿；年报原件继续在后台核查，未取得材料如实显示。',
-          'Enter a company name or security code from the home page or New research, then confirm the matched disclosure identity. Research starts when public data is available. The research report first shows an analysis summary, financial grade, consolidated profit, operating cash and their ratio, then at most three key findings and next checks. The entry retains the current account’s draft. Original reports continue in the background, with unavailable evidence stated.',
+          '从首页或“新建研究”输入公司名称或证券代码，确认匹配的披露主体后进入研究报告。公开资料取得后自动研究，首屏先给一句核心判断、评级与解释，再展示关键金额、资料覆盖和四个实际研究阶段。点击“依据与计算”核对原文，点击“检验解释”或“挑战解释”进入已有证据实验；展开入口不会自动启动补查。入口保留当前账号的输入草稿，年报原件继续在后台核查。',
+          'Enter a company name or security code from the home page or New research and confirm the matched issuer. Research starts when public data is available. The first screen leads with a concise judgment, grade and explanation, followed by key amounts, source coverage and four recorded research stages. Evidence and calculations opens the sources; Test an explanation or Challenge an explanation opens the existing evidence lab without automatically starting retrieval. The entry retains your draft while original reports continue in the background.',
         ],
         [
           '主导航提供“研究库”“材料”和“付款与交接”。研究库保留本账号的研究记录、已保存摘要、财务评级与资料时点，可按公司、代码、年度和状态筛选；筛选不会重新研究。打开一家企业后，侧边栏才显示公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个专题。财报核查和核查比较继续在“核查工具”中。',
@@ -146,6 +146,10 @@ export const guideDocument: ProductDocument = {
         [
           '基础评级为 A：至少 80 分；B：60–79.99；C：40–59.99；D：低于 40。一个核心维度低于 40 分，最终评级最高 C；两个及以上低于 40 分，最高 D。综合分保留原值，评级旁显示触发原因。四个核心维度缺少关键数据或存在冲突时为 NR（暂不评级），不补零或调整缺失权重。',
           'Base grades are A: at least 80; B: 60–79.99; C: 40–59.99; D: below 40. One core dimension below 40 caps the final grade at C; two or more cap it at D. The original score remains visible alongside the cap reason. Missing or conflicting key data in any core dimension produces NR (not rated), without filling zeros or redistributing missing weights.',
+        ],
+        [
+          '完整财务评级为 NR，但已有可独立核对的财务维度时，首屏可以先给“暂定评级”，同时标明已覆盖几个维度。暂定评级只按这些有效维度的得分等权平均，采用相同等级阈值与弱项上限，不显示完整百分制总分。主体或年度不符、零个有效维度时不生成评级；未取得或冲突的维度不补零、不作为支持。补齐资料后再形成完整财务评级，原保存记录不会因显示暂定评级而改写。',
+          'When the complete financial grade is NR but independently supported financial dimensions are available, the first screen can show a provisional grade with its dimension coverage. It averages only those valid dimension scores, using the same grade thresholds and weak-dimension caps, without presenting a complete score out of 100. A mismatched issuer or year, or no valid dimensions, produces no grade. Missing or conflicting dimensions are not zero-filled or treated as support. Complete data enables the full financial grade; displaying a provisional grade does not rewrite saved records.',
         ],
         [
           '“依据”和“指标与计算依据”展示精确金额、公式与对应来源；完整评级规则集中在“核查方法”的“财务评级标准”章节，可通过下方链接查看。评级属于析光公开财务筛选方法，不是评级机构的信用等级。历史金额不代表当前可用现金；标题线索、网页字段和已取得的原文节选分别标注。',

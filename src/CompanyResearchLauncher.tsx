@@ -9,16 +9,18 @@ export function CompanyResearchLauncher({
   children,
   metadata,
   feedback,
+  heading,
 }: {
   children: ReactNode;
   metadata?: ReactNode;
   feedback?: ReactNode;
+  heading?: string;
 }) {
   const { t } = useApp();
   return (
     <section className="research-launcher" aria-labelledby="research-entry-title">
       <header className="research-entry-heading">
-        <h1 id="research-entry-title">{t(...productTerms.companyResearch)}</h1>
+        <h1 id="research-entry-title">{heading || t(...productTerms.companyResearch)}</h1>
       </header>
       {children}
       <div className="research-entry-meta">{metadata}</div>

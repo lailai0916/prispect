@@ -165,14 +165,14 @@ function Section({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   children: ReactNode;
 }) {
   return (
     <section className="account-section">
       <div className="account-section-heading">
         <h2>{title}</h2>
-        <p>{description}</p>
+        {description && <p>{description}</p>}
       </div>
       <div className="account-section-content">{children}</div>
     </section>
@@ -815,13 +815,7 @@ export function AccountPage() {
         >
           {tab === 'profile' && (
             <>
-              <Section
-                title={t('公开称呼', 'Your profile')}
-                description={t(
-                  '头像与称呼用于账号界面。不会自动公开你的私人材料。',
-                  'Your avatar and name appear in your account interface. Private materials stay private.'
-                )}
-              >
+              <Section title={t('公开称呼', 'Your profile')}>
                 <div
                   {...avatarDropProps}
                   className={`account-avatar-row avatar-upload${avatarDragging ? ' is-dragging' : ''}`}
@@ -957,19 +951,12 @@ export function AccountPage() {
                     <input
                       type="tel"
                       aria-labelledby="account-phone-label"
-                      aria-describedby="account-phone-hint"
                       autoComplete="tel"
                       value={phone}
                       maxLength={30}
                       onChange={(event) => setPhone(event.target.value)}
                       placeholder={t('手机号或带国家区号的号码', 'Phone number with country code')}
                     />
-                    <span className="account-muted" id="account-phone-hint">
-                      {t(
-                        '用于个人资料展示，无需验证码。',
-                        'Shown in your profile. No verification code required.'
-                      )}
-                    </span>
                   </label>
                   <label>
                     <span id="account-bio-label">{t('简介', 'Bio')}</span>
@@ -1024,10 +1011,7 @@ export function AccountPage() {
                   </div>
                 </form>
               </Section>
-              <Section
-                title={t('邮箱', 'Email')}
-                description={t('邮箱用于登录。', 'Your email is used to sign in.')}
-              >
+              <Section title={t('邮箱', 'Email')}>
                 <div className="account-binding-row">
                   <div>
                     <strong>{overview.user.email}</strong>
@@ -1394,20 +1378,8 @@ export function AccountPage() {
                         : t('尚未登记通行密钥。', 'No passkeys registered.')}
                   </p>
                 )}
-                <p className="account-muted">
-                  {t(
-                    '通行密钥必须完成设备用户验证，可替代密码与验证码登录。',
-                    'A passkey must complete device user verification and can replace password-and-code sign-in.'
-                  )}
-                </p>
               </Section>
-              <Section
-                title={t('设备会话', 'Device sessions')}
-                description={t(
-                  '查看已登录设备，可单独退出会话。',
-                  'View logged-in devices and log out individual sessions.'
-                )}
-              >
+              <Section title={t('设备会话', 'Device sessions')}>
                 {sessionsLoading ? (
                   <p className="account-muted" role="status">
                     {t('载入设备会话…', 'Loading device sessions…')}
@@ -1440,12 +1412,6 @@ export function AccountPage() {
                         {session.userAgent && (
                           <details className="account-device-details">
                             <summary>{t('查看浏览器信息', 'Browser details')}</summary>
-                            <p>
-                              {t(
-                                '由浏览器提供，不用于身份认证。',
-                                'Provided by the browser; not an identity check.'
-                              )}
-                            </p>
                             <code>{session.userAgent}</code>
                           </details>
                         )}
@@ -1494,13 +1460,7 @@ export function AccountPage() {
           )}
           {tab === 'data' && (
             <>
-              <Section
-                title={t('数据使用说明', 'Data use')}
-                description={t(
-                  '查看账号、工作区数据与 AI 分析的使用范围。',
-                  'Review how account data, workspace data and AI analysis are used.'
-                )}
-              >
+              <Section title={t('数据使用说明', 'Data use')}>
                 <p className="account-muted">
                   {t('注册于', 'Joined')} {date(overview.user.createdAt, locale)} ·{' '}
                   <a href="/docs/privacy">{t('隐私政策', 'Privacy policy')}</a>

@@ -1,4 +1,4 @@
-import { productTerms } from '../shared/product-terms';
+import { productTagline, productTerms } from '../shared/product-terms';
 import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
 import {
   Activity,
@@ -343,8 +343,21 @@ export function App() {
       ? workspace?.tasks.find((task) => route.split('?')[0] === `/tasks/${task.id}`)?.title ||
         t(...productTerms.reviewReport)
       : titles[route.split('?')[0]];
-    document.title = title ? `${title} · ${t('析光', 'Prispect')}` : t('析光 Prispect', 'Prispect');
+    document.title = title
+      ? `${title} · ${t('析光', 'Prispect')}`
+      : `${t('析光', 'Prispect')} · ${t(...productTagline)}`;
   }, [t, route, workspace]);
+  useEffect(() => {
+    for (const selector of [
+      'meta[name="description"]',
+      'meta[property="og:description"]',
+      'meta[name="twitter:description"]',
+    ]) {
+      document
+        .querySelector<HTMLMetaElement>(selector)
+        ?.setAttribute('content', t(...productTagline));
+    }
+  }, [t]);
   const page = route.split('?')[0];
   const documentPage = documentPaths.includes(page as DocumentPath);
   const documentationRoute = documentPage || page === '/docs';

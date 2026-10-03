@@ -1,6 +1,6 @@
 import type { ProductDocument } from './document';
 import { documentMetadata, documentTitles } from './document-navigation';
-import { productTerms } from '../../shared/product-terms';
+import { productTagline, productTerms } from '../../shared/product-terms';
 
 export const aboutDocument: ProductDocument = {
   ...documentMetadata['/docs/about'],
@@ -9,6 +9,7 @@ export const aboutDocument: ProductDocument = {
       id: 'product',
       title: ['产品与用途', 'Product and purpose'],
       paragraphs: [
+        productTagline,
         [
           '析光 / Prispect 帮助你在交款、合作或接手公司前，把分散的财务资料、交易条件和收付款安排整理成可追溯的核查事项。你可以从公司名或一句具体安排开始，再逐步补充影响判断的材料。',
           'Prispect helps you organize financial documents, transaction conditions and cash arrangements into traceable reviews before a payment, partnership or company handover. Start with a company name or a specific arrangement, then add the material that affects your decision.',

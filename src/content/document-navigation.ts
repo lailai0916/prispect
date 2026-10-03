@@ -19,7 +19,7 @@ export const documentMetadata = {
   '/docs/about': {
     title: documentTitles['/docs/about'],
     description: ['产品用途、功能与适用范围。', 'Product purpose, features and scope.'],
-    version: DOCUMENT_VERSION,
+    version: '1.1',
     updatedAt: '2026-10-03',
   },
   '/docs/guide': {
@@ -28,7 +28,7 @@ export const documentMetadata = {
       '公司研究、材料管理与核查记录。',
       'Company research, materials and review records.',
     ],
-    version: '1.2',
+    version: '1.3',
     updatedAt: '2026-10-03',
   },
   '/docs/methodology': {
@@ -37,7 +37,7 @@ export const documentMetadata = {
       '计算口径、证据要求与分析边界。',
       'Calculations, evidence requirements and analysis limits.',
     ],
-    version: '1.1',
+    version: '1.2',
     updatedAt: '2026-10-03',
   },
   '/docs/privacy': {
@@ -52,7 +52,7 @@ export const documentMetadata = {
       '服务范围、账号使用与双方责任。',
       'Service scope, account use and responsibilities.',
     ],
-    version: '1.1',
+    version: '1.2',
     updatedAt: '2026-10-03',
   },
   '/docs/copyright': {

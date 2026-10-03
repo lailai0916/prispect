@@ -6,6 +6,8 @@ import type {
   AssessmentResearchStep,
   CompanyAssessment,
 } from '../shared/company-assessment.js';
+import { deriveCompanyAssessment } from '../shared/company-assessment.js';
+import { contextAmountFields, type CompanyContextPeriod } from '../shared/company-workspace.js';
 import {
   deriveCompanyResearchBrief,
   deriveCompanyResearchProgress,
@@ -176,6 +178,285 @@ function fixture(withAssessment = true): CompanyResearchRun {
     ...(withAssessment ? { assessment } : {}),
   };
 }
+
+function financialFixture(
+  current: Partial<CompanyContextPeriod['amounts']> = {},
+  previous: Partial<CompanyContextPeriod['amounts']> = {}
+): CompanyResearchRun {
+  const run = fixture(false);
+  const row = (
+    year: number,
+    overrides: Partial<CompanyContextPeriod['amounts']>
+  ): CompanyContextPeriod => ({
+    period: `${year}-12-31`,
+    annual: true,
+    noticeDate: `${year + 1}-04-01`,
+    amounts: {
+      ...Object.fromEntries(contextAmountFields.map((field) => [field, null])),
+      revenue: year === 2025 ? '1200.00' : '1000.00',
+      netProfit: year === 2025 ? '200.00' : '100.00',
+      ocf: '200.00',
+      cash: '200.00',
+      shortLoan: '100.00',
+      currentPortionDebt: '50.00',
+      totalAssets: '1000.00',
+      totalLiabilities: '400.00',
+      receivables: '100.00',
+      inventory: '100.00',
+      ...overrides,
+    } as CompanyContextPeriod['amounts'],
+    ratios: { grossMargin: null, roe: null, revenueGrowth: null },
+    auditOpinion: null,
+    fieldSources: {},
+    sourceUrls: [`https://datacenter.eastmoney.com/report?year=${year}`],
+    originalUrl: null,
+  });
+  run.context!.financials = [row(2024, previous), row(2025, current)];
+  run.assessment = deriveCompanyAssessment(run);
+  run.assessmentStatus = 'ready';
+  return run;
+}
+
+test('the headline leads with annual cash pressure and retains the original narrative and source IDs', () => {
+  const run = financialFixture({ ocf: '15.00' });
+  run.assessment!.narrative = fixture().assessment!.narrative;
+  run.assessment!.model.status = 'completed';
+  const before = structuredClone(run);
+  const brief = deriveCompanyResearchBrief(run);
+  assert.equal(brief.headline.text.zh, '经营现金明显低于利润');
+  assert.ok(brief.headline.metricIds.includes('2025-ocf'));
+  assert.ok(brief.headline.metricIds.includes('cash-profit'));
+  assert.ok(brief.headline.evidenceIds.includes('financial-2025-ocf'));
+  assert.deepEqual(brief.summary, run.assessment!.narrative!.summary);
+  assert.notEqual(brief.headline.text.zh, brief.summary.text.zh);
+  brief.headline.evidenceIds.push('local-only');
+  assert.deepEqual(run, before);
+});
+
+test('annual losses, negative operating cash, occupation and debt coverage have precise factual leads', () => {
+  const cases = [
+    [{ netProfit: '-20.00', ocf: '-10.00' }, '全年合并亏损，经营活动同时净流出'],
+    [{ ocf: '-10.00' }, '全年盈利，经营活动仍净流出'],
+    [{ netProfit: '-20.00' }, '全年合并亏损'],
+    [{ netProfit: '0.00' }, '全年合并净利润为零'],
+    [{ receivables: '500.00', inventory: '200.00' }, '应收与存货占营收比重上升'],
+    [{ cash: '25.00' }, '年末货币资金低于两项短债合计'],
+    [{ totalLiabilities: '1100.00' }, '年末总负债超过总资产'],
+    [{ totalLiabilities: '950.00' }, '年末资产负债率处于承压区间'],
+    [{ revenue: '900.00', receivables: '50.00', inventory: '50.00' }, '年度营收同比下降'],
+  ] as const;
+  for (const [amounts, text] of cases) {
+    const brief = deriveCompanyResearchBrief(financialFixture(amounts));
+    assert.equal(brief.headline.text.zh, text);
+    assert.ok(brief.headline.metricIds.length);
+    assert.ok(brief.headline.evidenceIds.length);
+    assert.doesNotMatch(brief.headline.text.zh, /违约|坏账|滞销|销售回款率/);
+  }
+});
+
+test('a favorable lead requires complete comparable data and positive prior profit before claiming profit growth', () => {
+  const complete = deriveCompanyResearchBrief(financialFixture());
+  assert.equal(complete.headline.text.zh, '合并利润增长，经营现金覆盖利润');
+  assert.ok(complete.headline.metricIds.includes('2024-netProfit'));
+  assert.equal(complete.provisionalRating, undefined);
+  const zeroPriorProfit = deriveCompanyResearchBrief(financialFixture({}, { netProfit: '0.00' }));
+  assert.equal(zeroPriorProfit.headline.text.zh, '全年盈利，经营现金覆盖合并利润');
+  const incomplete = deriveCompanyResearchBrief(financialFixture({ inventory: null }));
+  assert.match(incomplete.headline.text.zh, /已取得的财务维度表现较强/);
+  assert.match(incomplete.headline.text.zh, /资料待补/);
+  assert.deepEqual(incomplete.headline.evidenceIds, incomplete.provisionalRating!.evidenceIds);
+  assert.doesNotMatch(incomplete.headline.text.zh, /覆盖.*利润|利润增长/);
+  const incomparable = deriveCompanyResearchBrief(financialFixture({}, { revenue: '0.00' }));
+  assert.match(incomparable.headline.text.zh, /缺少可比年度数据/);
+  assert.doesNotMatch(incomparable.headline.text.zh, /增长/);
+  assert.equal(incomparable.provisionalRating!.coveredDimensions, 2);
+});
+
+test('an NR lead retains an observed cash weakness without a favorable or fully rated conclusion', () => {
+  const run = financialFixture({ ocf: '15.00', inventory: null });
+  const brief = deriveCompanyResearchBrief(run);
+  assert.match(brief.headline.text.zh, /经营现金明显低于利润/);
+  assert.match(brief.headline.text.zh, /资料.*不足/);
+  assert.doesNotMatch(brief.headline.text.zh, /暂不评级/);
+  assert.equal(run.assessment!.grade, 'NR');
+  assert.equal(run.assessment!.score, null);
+  assert.equal(brief.provisionalRating!.grade, 'C');
+  assert.match(brief.summary.text.zh, /期后回款/);
+  assert.doesNotMatch(brief.summary.text.zh, /暂不形成综合评级|资料.*不足/);
+  assert.ok(brief.summary.evidenceIds.includes('financial-2025-ocf'));
+});
+
+test('rule summaries with a provisional grade identify the follow-up while model summaries stay recorded', () => {
+  const run = financialFixture({ inventory: null });
+  const before = structuredClone(run);
+  const brief = deriveCompanyResearchBrief(run);
+  assert.match(brief.summary.text.zh, /初步判断.*已取得的财务维度/);
+  assert.match(brief.summary.text.zh, /营运占用.*复核/);
+  assert.doesNotMatch(brief.summary.text.zh, /暂不形成综合评级/);
+  assert.deepEqual(brief.summary.evidenceIds, brief.provisionalRating!.evidenceIds);
+  assert.deepEqual(run, before);
+  const empty = financialFixture({ netProfit: null, cash: null, inventory: null });
+  assert.equal(
+    deriveCompanyResearchBrief(empty).summary.text.zh,
+    '关键财务数据未齐或存在冲突，暂不形成综合评级。'
+  );
+  run.assessment!.model.status = 'completed';
+  run.assessment!.narrative = fixture().assessment!.narrative;
+  const modeled = deriveCompanyResearchBrief(run);
+  assert.ok(modeled.provisionalRating);
+  assert.deepEqual(modeled.summary, run.assessment!.narrative!.summary);
+});
+
+test('an incomplete headline takes a bounded position on the actually observed dimensions', () => {
+  const strong = deriveCompanyResearchBrief(financialFixture({ revenue: null, cash: null }));
+  assert.equal(strong.provisionalRating!.coveredDimensions, 1);
+  assert.match(strong.headline.text.zh, /已取得的财务维度表现较强/);
+  assert.deepEqual(strong.headline.metricIds, strong.provisionalRating!.metricIds);
+  const balanced = deriveCompanyResearchBrief(
+    financialFixture({ revenue: null, cash: null, ocf: '180.00' })
+  );
+  assert.equal(balanced.provisionalRating!.grade, 'B');
+  // The actual cash shortfall remains more informative than the provisional aggregate.
+  assert.match(balanced.headline.text.zh, /经营现金低于合并利润/);
+  const noFacts = deriveCompanyResearchBrief(
+    financialFixture({ netProfit: null, cash: null, inventory: null })
+  );
+  assert.equal(noFacts.provisionalRating, undefined);
+  assert.match(noFacts.headline.text.zh, /资料不足/);
+});
+
+test('losing cash evidence does not turn a combined solvency weakness into a leverage claim', () => {
+  const run = financialFixture({ cash: '25.00', totalLiabilities: '600.00', inventory: null });
+  assert.equal(
+    run.assessment!.dimensions.find((dimension) => dimension.id === 'solvency')!.status,
+    'pressure'
+  );
+  run.assessment!.evidence.find((evidence) => evidence.id === 'financial-2025-cash')!.period =
+    '2024-12-31';
+  const brief = deriveCompanyResearchBrief(run);
+  assert.doesNotMatch(brief.headline.text.zh, /负债率.*承压|货币资金低于/);
+  assert.deepEqual(brief.provisionalRating!.dimensionIds, ['profitability', 'cash']);
+});
+
+test('provisional ratings preserve valid zero-debt and nonpositive-profit applicability branches', () => {
+  const noShortDebt = deriveCompanyResearchBrief(
+    financialFixture({ shortLoan: '0.00', currentPortionDebt: '0.00', inventory: null })
+  );
+  assert.equal(noShortDebt.provisionalRating!.coveredDimensions, 3);
+  assert.ok(noShortDebt.provisionalRating!.dimensionIds.includes('solvency'));
+  assert.equal(noShortDebt.provisionalRating!.metricIds.includes('cash-short-debt'), false);
+  assert.doesNotMatch(noShortDebt.headline.text.zh, /没有.*债务/);
+  for (const profit of ['0.00', '-20.00']) {
+    for (const cash of ['0.00', '50.00']) {
+      const brief = deriveCompanyResearchBrief(
+        financialFixture({ netProfit: profit, ocf: cash, cash: null, inventory: null })
+      );
+      assert.ok(brief.provisionalRating!.dimensionIds.includes('cash'));
+      assert.equal(brief.provisionalRating!.metricIds.includes('cash-profit'), false);
+      assert.doesNotMatch(brief.headline.text.zh, /现金覆盖.*利润|利润增长/);
+    }
+  }
+});
+
+test('previous headlines and provisional ratings use only the recorded assessment snapshot', () => {
+  const run = financialFixture({ inventory: null });
+  const before = structuredClone(run.assessment);
+  run.context!.fetchedAt = '2026-10-02T03:00:00.000Z';
+  run.context!.financials[1]!.amounts.ocf = '-999.00';
+  const brief = deriveCompanyResearchBrief(run);
+  assert.match(brief.headline.text.zh, /^上次分析：/);
+  assert.doesNotMatch(brief.headline.text.zh, /净流出/);
+  assert.equal(brief.provisionalRating!.grade, 'A');
+  assert.equal(brief.provisionalRating!.coveredDimensions, 3);
+  assert.deepEqual(run.assessment, before);
+});
+
+test('provisional grades average only supported dimensions and retain the known weak-dimension caps', () => {
+  const cases = [
+    [{ inventory: null }, 'A', 3, ['profitability', 'cash', 'solvency']],
+    [{ inventory: null, ocf: '15.00' }, 'C', 3, ['profitability', 'cash', 'solvency']],
+    [
+      { inventory: null, cash: null, netProfit: '-20.00', ocf: '-10.00' },
+      'D',
+      2,
+      ['profitability', 'cash'],
+    ],
+    [{ revenue: null, cash: null }, 'A', 1, ['cash']],
+    [{ revenue: null, cash: null, ocf: '180.00' }, 'B', 1, ['cash']],
+    [{ revenue: null, cash: null, ocf: '15.00' }, 'D', 1, ['cash']],
+  ] as const;
+  for (const [amounts, grade, count, dimensions] of cases) {
+    const run = financialFixture(amounts);
+    const before = structuredClone(run);
+    assert.equal(run.assessment!.grade, 'NR');
+    const brief = deriveCompanyResearchBrief(run);
+    assert.equal(brief.provisionalRating!.grade, grade);
+    assert.equal(brief.provisionalRating!.coveredDimensions, count);
+    assert.equal(brief.provisionalRating!.totalDimensions, 4);
+    assert.deepEqual(brief.provisionalRating!.dimensionIds, dimensions);
+    assert.ok(brief.provisionalRating!.metricIds.length);
+    assert.ok(brief.provisionalRating!.evidenceIds.length);
+    assert.equal('score' in brief.provisionalRating!, false);
+    brief.provisionalRating!.evidenceIds.push('local-only');
+    brief.provisionalRating!.dimensionIds.pop();
+    assert.deepEqual(run, before);
+  }
+});
+
+test('conflicting, missing, malformed and wrong-year source support cannot enter a provisional grade', () => {
+  for (const failure of [
+    'conflict',
+    'missing-source',
+    'wrong-year',
+    'nonfinancial',
+    'headline-only',
+    'invalid-url',
+    'malformed',
+  ] as const) {
+    const run = financialFixture({ inventory: null });
+    const metric = run.assessment!.metrics.find((metric) => metric.id === '2025-ocf')!;
+    const evidence = run.assessment!.evidence.find(
+      (evidence) => evidence.id === metric.evidenceIds[0]
+    )!;
+    if (failure === 'conflict') metric.status = 'conflict';
+    else if (failure === 'missing-source') metric.evidenceIds = [];
+    else if (failure === 'wrong-year') evidence.period = '2024-12-31';
+    else if (failure === 'nonfinancial') evidence.kind = 'news';
+    else if (failure === 'headline-only') evidence.sourceQuality = 'headline';
+    else if (failure === 'invalid-url') evidence.url = 'not-a-url';
+    else metric.value = 'not-a-number';
+    const brief = deriveCompanyResearchBrief(run);
+    assert.equal(brief.provisionalRating!.coveredDimensions, 2);
+    assert.deepEqual(brief.provisionalRating!.dimensionIds, ['profitability', 'solvency']);
+    assert.equal(brief.provisionalRating!.metricIds.includes('2025-ocf'), false);
+    assert.doesNotMatch(brief.headline.text.zh, /覆盖.*利润|利润增长/);
+  }
+  const conflict = financialFixture({ inventory: null });
+  conflict.assessment!.dimensions.find((dimension) => dimension.id === 'cash')!.status = 'conflict';
+  assert.equal(deriveCompanyResearchBrief(conflict).provisionalRating!.coveredDimensions, 2);
+  for (const score of [-1, 101, Number.NaN, Number.POSITIVE_INFINITY]) {
+    const run = financialFixture({ inventory: null });
+    run.assessment!.dimensions.find((dimension) => dimension.id === 'cash')!.score = score;
+    assert.equal(deriveCompanyResearchBrief(run).provisionalRating!.coveredDimensions, 2);
+  }
+});
+
+test('no supported core dimension, a mismatched scope or a formal grade yields no provisional grade', () => {
+  const empty = financialFixture({ netProfit: null, cash: null, inventory: null });
+  assert.equal(deriveCompanyResearchBrief(empty).provisionalRating, undefined);
+  for (const scope of ['issuer', 'year', 'basis'] as const) {
+    const run = financialFixture({ inventory: null });
+    if (scope === 'issuer') run.context!.securityCode = '600000';
+    else if (scope === 'year') run.assessment!.year = 2024;
+    else Object.assign(run.assessment!, { basis: 'parent' });
+    const brief = deriveCompanyResearchBrief(run);
+    assert.equal(brief.provisionalRating, undefined);
+    assert.deepEqual(brief.headline.metricIds, []);
+    assert.deepEqual(brief.headline.evidenceIds, []);
+    assert.match(brief.headline.text.zh, /范围未确认/);
+  }
+  assert.equal(deriveCompanyResearchBrief(financialFixture()).provisionalRating, undefined);
+});
 
 test('unstarted research has no invented steps, call counts or field coverage', () => {
   const run = fixture(false);

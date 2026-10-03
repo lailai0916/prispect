@@ -213,12 +213,6 @@ export function CompanyContextOverview({
             ：{profitName} {money(analysis.threeYear.profit, locale)}；
             {t('经营现金', 'Operating cash')} {money(analysis.threeYear.cash, locale)}
           </p>
-          <small>
-            {t(
-              '经营现金净额不是销售回款，比例不能单独说明差额成因。',
-              'Operating net cash is not sales receipts; the ratio alone does not explain the difference.'
-            )}
-          </small>
           <strong className="context-card-value">
             {analysis.threeYear.ratio === null ? '—' : analysis.threeYear.ratio.toFixed(2)}
             <small>{t(`经营现金 / ${profitName}`, `Operating cash / ${profitName}`)}</small>
@@ -278,10 +272,6 @@ export function CompanyContextOverview({
             <Info size={14} />
             {t('尚缺字段：', 'Missing fields: ')}
             {analysis.missing.map((field) => t(...contextFieldLabels[field])).join('、')}
-            {t(
-              '。缺失不会生成“覆盖充足”等肯定判断。',
-              '. Missing fields do not produce reassuring conclusions.'
-            )}
           </p>
         )}
         {companyCheckPriorities(snapshot, analysis).map((item) => (

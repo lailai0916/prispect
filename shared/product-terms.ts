@@ -1,4 +1,9 @@
 /** Stable product names shared by navigation, page headings, actions and exports. */
+export const productTagline = [
+  '让企业判断，有据可查。',
+  'Make company judgments traceable.',
+] as const;
+
 export const productTerms = {
   newResearch: ['新建研究', 'New research'],
   companyResearch: ['公司研究', 'Company research'],
