@@ -376,8 +376,8 @@ export function CashStressLab({ plan }: { plan: CashPlanInput | undefined }) {
               </dl>
               <p className="cash-stress-threshold-note">
                 {t(
-                  '最低比例按当前延后与额外付款条件，以整数百分比试算；不代表公司实际回款率。',
-                  'The minimum is tested in whole percentages under this delay and extra payment. It is not the company’s actual collection rate.'
+                  '按当前延后与额外付款条件，以整数百分比试算最低兑现比例。',
+                  'The minimum received is tested in whole percentages under the current delay and extra payment.'
                 )}
               </p>
             </div>
@@ -447,8 +447,8 @@ export function CashStressLab({ plan }: { plan: CashPlanInput | undefined }) {
       )}
       <p className="cash-stress-disclaimer">
         {t(
-          '原计划与压力情景都基于用户提供、未经核验的假设。负余额仅表示这些假设下的期末缺口，不是断款日预测或资金安全评级。试算调整不保存、不发送模型。',
-          'Both scenarios use unverified user assumptions. A negative balance is an interval-end gap under those assumptions, not a predicted cash-exhaustion date or a safety rating. Stress adjustments are not saved or sent to a model.'
+          '负余额表示假设下的区间期末缺口，无法定位断款日。',
+          'A negative balance is an interval-end gap under the assumptions; it cannot locate a cash-exhaustion date.'
         )}
       </p>
     </section>

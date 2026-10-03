@@ -120,8 +120,8 @@ export interface CompanyAssessment {
 export const ASSESSMENT_METHODOLOGY_VERSION = 'financial-screen-v1' as const;
 export const ASSESSMENT_METHODOLOGY: readonly AssessmentText[] = [
   [
-    '析光分析评级反映所选年度通用行业财务筛选，使用合并报表口径；不属于评级机构的信用等级。',
-    'Prispect analysis grades screen the selected annual consolidated financials of general-industry issuers; they are not credit-agency ratings.',
+    '析光财务评级反映所选年度通用行业财务筛选，使用合并报表口径；不属于评级机构的信用等级。',
+    'Prispect financial grades screen the selected annual consolidated financials of general-industry issuers; they are not credit-agency ratings.',
   ],
   [
     '盈利成长、经营现金、偿付杠杆、营运占用各占 25%；同行和事件提供定性判断，不机械扣分。',

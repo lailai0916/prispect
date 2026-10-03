@@ -1,3 +1,4 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import {
@@ -352,15 +353,15 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
   };
   const removeRun = (item: CompanyResearchRun) =>
     confirm({
-      title: t('删除这份查询记录？', 'Delete this retrieval record?'),
+      title: t('删除这份研究记录？', 'Delete this research record?'),
       text: t(
-        '查询记录及未采用原件将删除；已保存材料和财务报告保留。',
-        'The retrieval record and unadopted original are removed. Saved evidence and financial reviews remain.'
+        '研究记录及未采用原件将删除；已保存材料和核查报告保留。',
+        'The research record and unadopted original are removed. Saved evidence and review reports remain.'
       ),
       action: async () => {
         const result = await execute(
           () => api<{ ok: true }>(`/company-runs/${item.id}`, { method: 'DELETE' }),
-          t('查询记录已删除', 'Retrieval record deleted')
+          t('研究记录已删除', 'Research record deleted')
         );
         if (result) {
           if (run?.id === item.id) navigate('/company');
@@ -417,6 +418,8 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
           'Before paying, also obtain the contract, full payee account name and entity responsible for refunds. Annual reports do not establish responsibility for this payment or refund.'
         );
   const fileUrl = run ? `/api/company-runs/${run.id}/file` : '';
+  const originalIsPdf = /\.pdf$/i.test(run?.preview?.material.filename || '');
+  const pausedMarket = run?.identity?.exchange === 'us';
   const status = (item: CompanyResearchRun) =>
     item.agent?.cancelRequested
       ? activeRun(item)
@@ -427,19 +430,19 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
         : {
             queued: t('等待检索', 'Queued'),
             running: t('正在检索', 'Retrieving'),
-            ready: t('待确认候选', 'Awaiting confirmation'),
+            ready: t('候选待确认', 'Candidates need confirmation'),
             failed: t('检索停止', 'Retrieval stopped'),
-            adopted: t('材料已采用', 'Evidence adopted'),
+            adopted: t('原件已采用', 'Original adopted'),
           }[item.status];
 
   return (
     <div className="company-agent">
       <PageHeading
-        title={t('公司查询', 'Company search')}
+        title={t('年报原件核查', 'Original-report review')}
         action={
           run ? (
             <button className="button button-secondary" onClick={() => navigate('/company')}>
-              {t('新查询', 'New search')}
+              {t(...productTerms.newResearch)}
             </button>
           ) : undefined
         }
@@ -469,10 +472,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
       )}
       {!run && (
         <p className="company-coverage-note">
-          {t(
-            '来源：巨潮资讯大陆 A 股披露。未匹配不代表无风险，也不覆盖所有企业。',
-            'Source: CNINFO mainland A-share disclosures. No match does not mean no risk; coverage is limited.'
-          )}
+          {t('来源：巨潮资讯 A 股披露。', 'Source: CNINFO A-share disclosures.')}
         </p>
       )}
       {!run && !creating && (
@@ -674,7 +674,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
       {loadingRun && (
         <div className="company-run-loading">
           <LoaderCircle className="spinner" size={18} />
-          {t('读取已保存的查询记录…', 'Reading the saved retrieval run…')}
+          {t('正在读取研究记录…', 'Loading research records…')}
         </div>
       )}
       {run && (
@@ -703,7 +703,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   {t('取消', 'Cancel')}
                 </button>
               )}
-              {run.status === 'failed' && run.agent?.recoverable && (
+              {!pausedMarket && run.status === 'failed' && run.agent?.recoverable && (
                 <button
                   type="button"
                   className="button button-primary"
@@ -716,6 +716,17 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               )}
             </div>
           </section>
+          {pausedMarket && (
+            <div className="warning-box" role="note">
+              <CircleAlert size={17} aria-hidden="true" />
+              <p>
+                {t(
+                  '美股研究暂未开放。这份历史记录及原件仍可查看；外币金额不参与当前人民币核查。',
+                  'US research is paused. This saved record and its original remain available; foreign-currency amounts are excluded from current CNY reviews.'
+                )}
+              </p>
+            </div>
+          )}
           {run.agent && <CompanyRunOverview run={run} />}
           {(run.stoppedReason || run.error) && (
             <section className="company-stopped">
@@ -812,7 +823,9 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   rel="noopener noreferrer"
                 >
                   <Download size={15} />
-                  {t('打开下载原件', 'Open downloaded original')}
+                  {originalIsPdf
+                    ? t('打开原件', 'Open original')
+                    : t('下载原件', 'Download original')}
                 </a>
               </div>
               {run.preview.warnings.length > 0 && (
@@ -873,7 +886,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                       createReview(run.adoptedMaterialId, candidate.company)
                     }
                   >
-                    {t('打开核查报告', 'Open financial review')}
+                    {t('查看核查报告', 'View review report')}
                     <ArrowRight size={15} />
                   </button>
                 </div>
@@ -1301,14 +1314,14 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
       )}
       {historyLoading && !history.length && (
         <p className="company-import-link" role="status">
-          {t('正在读取已保存的核查…', 'Loading saved research…')}
+          {t('正在读取研究记录…', 'Loading research records…')}
         </p>
       )}
       {(history.length > 0 || historyError) && (
         <details className="company-history company-record-details">
-          <summary>{t('查询记录', 'Search history')}</summary>
+          <summary>{t(...productTerms.researchRecords)}</summary>
           <div className="report-section-title">
-            <h2>{t('查询历史', 'Retrieval history')}</h2>
+            <h2>{t(...productTerms.researchRecords)}</h2>
             <button className="text-link" type="button" onClick={loadHistory}>
               {t('刷新', 'Refresh')}
               <RefreshCw size={13} />
@@ -1340,7 +1353,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                     className="icon-button"
                     disabled={activeRun(item) || busy}
                     onClick={() => removeRun(item)}
-                    aria-label={`${t('删除查询记录', 'Delete retrieval record')} · ${item.identity?.shortName || item.input.securityCode} · ${item.input.year}`}
+                    aria-label={`${t('删除研究记录', 'Delete research record')} · ${item.identity?.shortName || item.input.securityCode} · ${item.input.year}`}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -1399,12 +1412,6 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               </div>
             ) : null}
             {source.quote && <blockquote>{source.quote}</blockquote>}
-            <p className="field-note">
-              {t(
-                '定位文本与字段核对不代表材料真实性已经独立验证。',
-                'Text location and field checks do not independently authenticate a document.'
-              )}
-            </p>
             <div className="inline-actions">
               {source.sha256 && source.sha256 === run?.preview?.material.sha256 && (
                 <a
@@ -1429,15 +1436,17 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                 </a>
               )}
             </div>
-            {source.page != null && source.sha256 === run?.preview?.material.sha256 && (
-              <details className="company-inline-pdf">
-                <summary>{t('在此查看 PDF 页', 'View PDF page here')}</summary>
-                <iframe
-                  src={`${fileUrl}#page=${source.page}`}
-                  title={`${source.title} · PDF ${source.page}`}
-                />
-              </details>
-            )}
+            {originalIsPdf &&
+              source.page != null &&
+              source.sha256 === run?.preview?.material.sha256 && (
+                <details className="company-inline-pdf">
+                  <summary>{t('在此查看 PDF 页', 'View PDF page here')}</summary>
+                  <iframe
+                    src={`${fileUrl}#page=${source.page}`}
+                    title={`${source.title} · PDF ${source.page}`}
+                  />
+                </details>
+              )}
             {source.sha256 && (
               <details className="company-file-metadata">
                 <summary>{t('文件标识', 'File identity')}</summary>

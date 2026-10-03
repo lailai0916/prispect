@@ -1,0 +1,30 @@
+/** Stable product names shared by navigation, page headings, actions and exports. */
+export const productTagline = [
+  '让企业判断，有据可查。',
+  'Make company judgments traceable.',
+] as const;
+
+export const productTerms = {
+  newResearch: ['新建研究', 'New research'],
+  companyResearch: ['公司研究', 'Company research'],
+  researchLibrary: ['研究库', 'Research library'],
+  researchRecord: ['研究记录', 'Research record'],
+  researchRecords: ['研究记录', 'Research records'],
+  researchReport: ['研究报告', 'Research report'],
+  financialGrade: ['财务评级', 'Financial grade'],
+  loadedCompanies: ['已载入企业', 'Loaded companies'],
+  companyQuestions: ['企业问答', 'Company questions'],
+  financialReviews: ['财报核查', 'Financial reviews'],
+  newFinancialReview: ['新建财报核查', 'New financial review'],
+  reviewReport: ['核查报告', 'Review report'],
+  reviewReports: ['核查报告', 'Review reports'],
+  compareReviews: ['核查比较', 'Compare reviews'],
+  reviewTools: ['核查工具', 'Review tools'],
+  materials: ['材料', 'Materials'],
+  paymentsAndHandovers: ['付款与交接', 'Payments and handovers'],
+  beforePayment: ['付款前核对', 'Before payment'],
+  handoverReview: ['接手核查', 'Company handover'],
+  reviewItem: ['核查事项', 'Review item'],
+  accountSettings: ['账号设置', 'Account settings'],
+  clearMyWorkspace: ['清空我的工作区', 'Clear my workspace'],
+} as const satisfies Record<string, readonly [string, string]>;

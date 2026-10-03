@@ -240,15 +240,15 @@ export function CashPlanImport({
       </button>
       {open && (
         <Dialog
-          title={t('导入私人现金计划', 'Import a private cash plan')}
+          title={t('导入现金计划', 'Import cash plan')}
           onClose={close}
           wide
           className="cash-import-dialog"
         >
           <p>
             {t(
-              'CSV或JSON，最多1MB、100个事件。只在此浏览器解析，不发送模型。采用后作为计划条件，仍需保存当前事项。',
-              'CSV or JSON, up to 1MB and 100 events. Parsed in this browser without sending to a model. Adoption changes plan conditions; save the case separately.'
+              'CSV或JSON，最多1MB、100个事件。只在此浏览器解析，不发送模型。采用后作为计划条件，仍需保存当前核查事项。',
+              'CSV or JSON, up to 1MB and 100 events. Parsed in this browser without sending to a model. Adoption changes plan conditions; save the current review item separately.'
             )}
           </p>
           <div className="cash-import-actions">

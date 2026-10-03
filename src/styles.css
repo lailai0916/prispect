@@ -11,7 +11,8 @@
   color: var(--ink);
   background: var(--paper);
   --paper: #ffffff;
-  --site-header-height: 60px;
+  --site-header-height: 52px;
+  --site-header-padding: 24px;
   --sidebar-surface: #f7f7f8;
   --ink: #25262b;
   --muted: #63656f;
@@ -40,10 +41,6 @@
   --selection: #dfe6ff;
   --selection-text: #202431;
   --red: #b42335;
-  --status-good: #16794f;
-  --status-warn: #9a6700;
-  --status-bad: var(--red);
-  --status-unknown: var(--muted);
   --danger-action: #b42335;
   --danger-hover: #971e2e;
   --danger-surface: #fff6f7;
@@ -104,10 +101,6 @@
   --selection: #465a94;
   --selection-text: #ffffff;
   --red: #ff9eaa;
-  --status-good: #83c7a4;
-  --status-warn: #d6b476;
-  --status-bad: var(--red);
-  --status-unknown: var(--muted);
   --danger-action: #b92f46;
   --danger-hover: #cd3c53;
   --danger-surface: #352229;
@@ -352,7 +345,7 @@ pre {
 .site-header {
   height: var(--site-header-height);
   min-height: var(--site-header-height);
-  padding: 0 max(24px, calc((100vw - 1200px) / 2));
+  padding: 0 var(--site-header-padding);
   display: flex;
   align-items: center;
   gap: 28px;
@@ -401,6 +394,10 @@ pre {
   font-size: 12px;
   font-weight: 500;
   letter-spacing: -0.01em;
+}
+.brand-link {
+  display: inline-flex;
+  align-items: center;
 }
 .brand-link:hover,
 .sidebar-brand:hover {
@@ -485,6 +482,11 @@ pre {
   background: var(--hover);
   color: var(--ink);
 }
+.account-link > span {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .language-button,
 .theme-button {
   display: inline-flex;
@@ -511,8 +513,7 @@ pre {
   font-size: 13px;
 }
 .language-button:hover,
-.theme-button:hover,
-.theme-button[data-popup-open] {
+.theme-button:hover {
   border-color: var(--line);
   background: var(--hover);
   color: var(--ink);
@@ -571,21 +572,15 @@ pre {
 .business-shell {
   display: grid;
   grid-template-columns: var(--sidebar) minmax(0, 1fr);
-  grid-template-rows: 52px 1fr;
+  grid-template-rows: var(--site-header-height) 1fr;
 }
 .business-shell > .site-header {
   grid-column: 2;
-  height: 52px;
-  min-height: 52px;
-  padding: 0 40px;
   position: sticky;
   top: 0;
   border-bottom: 1px solid var(--line-soft);
 }
 .business-shell > .site-header > .brand-link {
-  display: none;
-}
-.business-shell > .site-header .account-link {
   display: none;
 }
 .header-context {
@@ -599,7 +594,7 @@ pre {
   position: fixed;
   inset: 0 auto 0 0;
   width: var(--sidebar);
-  padding: 16px 12px 12px;
+  padding: 0 12px 12px;
   background: var(--sidebar-surface);
   border-right: 1px solid var(--line-soft);
   display: flex;
@@ -609,9 +604,11 @@ pre {
 .sidebar-brand {
   display: flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 10px;
-  margin-bottom: 22px;
+  height: var(--site-header-height);
+  min-height: var(--site-header-height);
+  padding: 0 calc(var(--site-header-padding) - 12px);
+  border-bottom: 1px solid transparent;
+  margin-bottom: 14px;
 }
 .sidebar-create {
   margin: 0 4px 18px;
@@ -932,12 +929,15 @@ pre {
 }
 .toast {
   position: fixed;
-  right: 24px;
-  bottom: 24px;
+  left: 50%;
+  right: auto;
+  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
   z-index: 95;
   display: flex;
   align-items: center;
   gap: 10px;
+  width: max-content;
   max-width: min(500px, calc(100vw - 32px));
   padding: 12px 12px 12px 16px;
   border: 1px solid var(--control-border);
@@ -1554,9 +1554,6 @@ thead th {
   .main-app {
     padding: 28px 28px 48px;
   }
-  .business-shell > .site-header {
-    padding: 0 28px;
-  }
 }
 @media (max-width: 1050px) {
   .page-heading {
@@ -1570,6 +1567,7 @@ thead th {
   :root {
     --sidebar: 0px;
     --site-header-height: 56px;
+    --site-header-padding: 18px;
   }
   .business-shell {
     display: block;
@@ -1578,7 +1576,7 @@ thead th {
   .business-shell > .site-header {
     height: var(--site-header-height);
     min-height: var(--site-header-height);
-    padding: 0 18px;
+    padding: 0 var(--site-header-padding);
     gap: 12px;
   }
   .business-shell > .site-header > .brand-link {
@@ -1603,9 +1601,6 @@ thead th {
   .mobile-menu {
     min-width: 44px;
     min-height: 44px;
-  }
-  .business-shell > .site-header .account-link {
-    display: inline-flex;
   }
   .account-link > span,
   .account-link > svg:last-child {
@@ -1751,10 +1746,8 @@ thead th {
     padding: 0 16px 20px;
   }
   .toast {
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    max-width: none;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    max-width: calc(100vw - 24px);
     padding: 8px 10px 8px 14px;
     font-size: 12px;
   }
@@ -1787,11 +1780,15 @@ thead th {
   }
 }
 @media (max-width: 480px) {
-  .public-shell > .site-header {
-    gap: 4px;
-    padding: 0 12px;
+  :root {
+    --site-header-padding: 12px;
   }
-  .public-shell > .site-header .brand-name > span {
+  .site-header,
+  .business-shell > .site-header {
+    gap: 8px;
+    padding: 0 var(--site-header-padding);
+  }
+  .site-header .brand-name > span {
     display: none;
   }
   .public-shell > .site-header .navigation a {
@@ -1801,7 +1798,7 @@ thead th {
 }
 
 @media (max-width: 360px) {
-  .public-shell > .site-header .navigation a[href='/method'] {
+  .public-shell > .site-header .navigation a[href='/docs/methodology'] {
     display: none;
   }
 }
@@ -1843,10 +1840,6 @@ thead th {
     --selection: #dfe6ff;
     --selection-text: #202431;
     --red: #b42335;
-    --status-good: #16794f;
-    --status-warn: #9a6700;
-    --status-bad: var(--red);
-    --status-unknown: var(--muted);
     --danger-action: #b42335;
     --danger-hover: #971e2e;
     --danger-surface: #fff6f7;

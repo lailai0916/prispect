@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import type {
   AnalysisTask,
   EvidenceRef,
@@ -5,6 +6,7 @@ import type {
   Report,
   ReviewPurpose,
 } from '../shared/contracts';
+import { reportCurrencyView } from '../shared/report-currency-view';
 import { metricName, type Locale } from './format';
 import { translateRule } from './ruleTranslations';
 
@@ -64,7 +66,8 @@ export function rankReviewQuestions(
   report: Report,
   purpose: ReviewPurpose = 'external'
 ): RankedReviewQuestion[] {
-  return report.questions
+  const currencyView = reportCurrencyView(report);
+  return currencyView.report.questions
     .map((question, index) => {
       const fen = question.trigger ? savedAmountInFen(question.trigger.amount) : null;
       const priority: RankedReviewQuestion['priority'] =
@@ -86,20 +89,25 @@ export function rankReviewQuestions(
                 zh: '先补齐阻断核查的材料或口径；金额大小不改变这一优先级。',
                 en: 'Resolve the evidence or scope prerequisite first. Amount size does not change this priority.',
               }
-            : question.trigger && fen !== null
+            : currencyView.bridgeBlocked && !question.trigger
               ? {
-                  zh: `${question.trigger.year} 年${metricName(question.trigger.metric, 'zh-Hans')}的历史现金影响绝对额为 ${magnitudeInYuan(fen)} 元，仅用于安排询证先后，不是风险评级。`,
-                  en: `The ${question.trigger.year} historical cash-effect magnitude for ${metricName(question.trigger.metric, 'en')} is CNY ${magnitudeInYuan(fen)}. It orders follow-up only; it is not a risk rating.`,
+                  zh: '币种或金额单位待核对，受影响的历史触发金额不用于排序；保留询证问题与原顺序。',
+                  en: 'Currency or amount units need review. Affected historical triggering amounts are not used for ordering; the questions and their relative order are retained.',
                 }
-              : question.trigger
+              : question.trigger && fen !== null
                 ? {
-                    zh: '已保存的触发金额不符合精确人民币分格式，未用于金额排序；保留原值与原顺序供核对。',
-                    en: 'The saved triggering amount is not a valid exact CNY-cent value. It was not used for amount ordering; its original value and relative order are retained for review.',
+                    zh: `${question.trigger.year} 年${metricName(question.trigger.metric, 'zh-Hans')}的历史现金影响绝对额为 ${magnitudeInYuan(fen)} 元，仅用于安排询证先后，不是风险评级。`,
+                    en: `The ${question.trigger.year} historical cash-effect magnitude for ${metricName(question.trigger.metric, 'en')} is CNY ${magnitudeInYuan(fen)}. It orders follow-up only; it is not a risk rating.`,
                   }
-                : {
-                    zh: '没有已保存的触发金额，保留原有询证顺序；不从指标补算。',
-                    en: 'No triggering amount was saved. The original follow-up order is retained; no amount is reconstructed from metrics.',
-                  };
+                : question.trigger
+                  ? {
+                      zh: '已保存的触发金额不符合精确人民币分格式，未用于金额排序；保留原值与原顺序供核对。',
+                      en: 'The saved triggering amount is not a valid exact CNY-cent value. It was not used for amount ordering; its original value and relative order are retained for review.',
+                    }
+                  : {
+                      zh: '没有已保存的触发金额，保留原有询证顺序；不从指标补算。',
+                      en: 'No triggering amount was saved. The original follow-up order is retained; no amount is reconstructed from metrics.',
+                    };
       return {
         question,
         priority,
@@ -196,7 +204,8 @@ function questionRefs(question: Question, report: Report): EvidenceRef[] {
 export function buildReviewChecklist(task: AnalysisTask, locale: Locale): string {
   const t = (zh: string, en: string) => (locale === 'en' ? en : zh);
   const purpose = task.purpose === 'handover' ? 'handover' : 'external';
-  const report = task.report;
+  const currencyView = task.report ? reportCurrencyView(task.report) : undefined;
+  const report = currencyView?.report;
   const purposeLabel =
     purpose === 'handover'
       ? t(
@@ -209,7 +218,7 @@ export function buildReviewChecklist(task: AnalysisTask, locale: Locale): string
         );
   const lines = [
     `# ${t('析光 · 询证清单', 'Prispect · Review checklist')}`,
-    `${t('工作底稿', 'Working paper')}: ${escapeMarkdown(task.title)}`,
+    `${t(...productTerms.reviewReport)}: ${escapeMarkdown(task.title)}`,
     `${t('公司', 'Company')}: ${escapeMarkdown(report?.company || task.company)}`,
     `${t('用途', 'Purpose')}: ${purposeLabel}`,
     ...(!task.purpose
@@ -240,11 +249,29 @@ export function buildReviewChecklist(task: AnalysisTask, locale: Locale): string
     lines.push(
       `## ${t('报告状态', 'Report status')}`,
       t(
-        '此工作底稿尚无已保存报告，未生成询证清单。',
-        'This working paper has no saved report; no review questions were generated.'
+        '此财报核查尚无已保存核查报告，未生成询证清单。',
+        'This financial review has no saved review report; no review questions were generated.'
       )
     );
     return `${lines.join('\n\n')}\n`;
+  }
+
+  if (currencyView?.issues.length) {
+    lines.push(
+      `## ${t('币种与单位核对', 'Currency and amount-unit review')}`,
+      t(
+        '相关历史计算与触发金额暂停采用，原记录与来源保留。以下保存金额未转换为人民币；历史询证问题保留，需先核对触发依据。',
+        'Dependent historical calculations and triggering amounts are withheld; original records and sources remain. The saved amounts below have not been converted to CNY. Historical questions are retained pending review of their triggering evidence.'
+      )
+    );
+    for (const issue of currencyView.issues)
+      lines.push(
+        `**${issue.year} · ${metricName(issue.key, locale)}**`,
+        `${t('保存金额（未转换）', 'Saved amount (not converted)')}:`,
+        literal(issue.value),
+        `${t('单位 / 币种', 'Unit / currency')}: ${escapeMarkdown(issue.unit)} / ${escapeMarkdown(issue.currency || t('未确认', 'unconfirmed'))}`,
+        references(issue.sourceRefs, report, locale)
+      );
   }
 
   const verdicts = {
@@ -265,7 +292,10 @@ export function buildReviewChecklist(task: AnalysisTask, locale: Locale): string
       'Core scope or amount conflicts exist; dependent explanations remain unknown.'
     ),
   };
-  lines.push(`## ${t('已保存核查状态', 'Saved review state')}`, verdicts[report.verdict]);
+  lines.push(
+    `## ${currencyView?.issues.length ? t('当前展示核查状态', 'Displayed review state') : t('已保存核查状态', 'Saved review state')}`,
+    verdicts[report.verdict]
+  );
   for (const check of report.checks.filter((item) => item.status !== 'pass')) {
     lines.push(
       `**${t('核查项目', 'Check')}**: ${check.status === 'fail' ? t('未通过', 'failed') : t('待核对', 'needs review')}`,

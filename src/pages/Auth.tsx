@@ -11,6 +11,7 @@ import {
 import type { LoginResult } from '../../shared/account-contracts';
 import { post } from '../api';
 import { useApp } from '../context';
+import { documentTitles } from '../content/document-navigation';
 import { identityClient, identityResult } from '../auth-client';
 import { loginDestination, ROUTE_CHANGE_EVENT } from '../routing';
 import '../account.css';
@@ -223,8 +224,8 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 'Enter a 6-digit authenticator code or a one-time recovery code.'
               )
             : t(
-                '你的材料与决定保存在独立的私人工作区。',
-                'Your materials and decisions stay in your private workspace.'
+                '你的材料与核查事项保存在独立的私人工作区。',
+                'Your materials and review items stay in your private workspace.'
               )}
         </p>
         {challenge ? (
@@ -415,25 +416,23 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               </p>
             )}
             <p className="account-auth-fineprint">
-              {register && (
-                <span>{t('创建账号前，请阅读', 'Before creating an account, read')} </span>
-              )}
+              <span>{t('继续即表示接受', 'By continuing, you accept the')} </span>
               <a
-                href="/terms"
+                href="/docs/terms"
                 target="_blank"
                 rel="noreferrer"
-                aria-label={t('用户协议（新标签页）', 'Terms of service (new tab)')}
+                aria-label={`${t(...documentTitles['/docs/terms'])}${t('（新标签页）', ' (new tab)')}`}
               >
-                {t('用户协议', 'Terms of service')}
+                {t(...documentTitles['/docs/terms'])}
               </a>
-              <span> · </span>
+              <span>{t('，并已阅读', ' and have read the')} </span>
               <a
-                href="/privacy"
+                href="/docs/privacy"
                 target="_blank"
                 rel="noreferrer"
-                aria-label={t('隐私政策（新标签页）', 'Privacy policy (new tab)')}
+                aria-label={`${t(...documentTitles['/docs/privacy'])}${t('（新标签页）', ' (new tab)')}`}
               >
-                {t('隐私政策', 'Privacy policy')}
+                {t(...documentTitles['/docs/privacy'])}
               </a>
             </p>
           </>

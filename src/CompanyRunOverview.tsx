@@ -127,6 +127,7 @@ export function CompanyFinancialFindings({
       row.scope === 'consolidated' &&
       row.period === 'annual' &&
       row.currency === 'CNY' &&
+      ['yuan', 'wan', 'yi'].includes(row.unit) &&
       ['netProfit', 'operatingCashFlow'].includes(row.key)
   );
   if (!rows?.length) return null;
@@ -189,12 +190,6 @@ export function CompanyEvidenceResults({
             <h2>{t('可能解释', 'Possible explanations')}</h2>
             <Tag>{t('待补证', 'Further evidence needed')}</Tag>
           </div>
-          <p className="field-note">
-            {t(
-              '附注和公告提供线索，不能单凭这些材料确认经营原因。',
-              'Notes and disclosures provide leads; they do not establish operating causes on their own.'
-            )}
-          </p>
           <ul>
             {sourcedExplanations.map((item) => (
               <li key={item.id}>
@@ -271,8 +266,8 @@ export function CompanyEvidenceResults({
         </dl>
         <p className="field-note">
           {t(
-            '公告标题不等于已读全文；未发现线索不代表不存在变化。',
-            'A title is not a full-text review. No identified lead does not mean no change occurred.'
+            '仅有标题的公告尚未读取全文。',
+            'The full text of title-only disclosures has not been read.'
           )}
         </p>
         {agent.coverage.recentTruncated && (

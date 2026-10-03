@@ -1,7 +1,7 @@
 import { Suspense, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
+import { productTagline } from '../../shared/product-terms';
 import { CompanyResearchLauncher } from '../CompanyResearchLauncher';
-import { PublicResearchExample } from '../PublicResearchExample';
 import { StartInput } from '../StartInput';
 import { HomeRiskCards } from '../HomeRiskCards';
 import { useViewMode } from '../ViewModeContext';
@@ -21,12 +21,12 @@ export function Home() {
   return (
     <div className="home-landing research-entry-page">
       <CompanyResearchLauncher
-        metadata={<a href="/docs?section=company">{t('支持范围', 'Coverage')}</a>}
+        heading={t(...productTagline)}
+        metadata={<a href="/docs/guide?section=company">{t('支持范围', 'Coverage')}</a>}
       >
         <StartInput key={user?.id || 'anonymous'} compact />
       </CompanyResearchLauncher>
       {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
-      <PublicResearchExample />
       <details
         className="research-cash-example"
         onToggle={(event) => setCashOpen(event.currentTarget.open)}

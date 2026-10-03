@@ -1,24 +1,27 @@
+import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useEffect, useRef, useState } from 'react';
-import { Settings2, LoaderCircle } from 'lucide-react';
+import { Settings2, LoaderCircle, Search } from 'lucide-react';
 import type { CompanyIdentity, CompanyResearchRun, ReviewPurpose } from '../../shared/contracts';
 import { companyPath } from '../../shared/company-workspace';
 import { StartInput } from '../StartInput';
 import { Dialog } from '../components';
 import { useApp } from '../context';
+import { CompanyRecentResearch } from '../CompanyRecentResearch';
 import { HomeRiskCards } from '../HomeRiskCards';
 import { useViewMode } from '../ViewModeContext';
-import { CompanyResearchLauncher } from '../CompanyResearchLauncher';
-import { CompanyRecentResearch } from '../CompanyRecentResearch';
-import { PublicResearchExample } from '../PublicResearchExample';
+import { useCompanyRecords } from '../CompanyRecordsContext';
 import { api, requestErrorText } from '../api';
 import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
 import { clearComposerDraft } from '../start-draft';
 import '../home.css';
+import '../query.css';
 
 export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
   const { t, locale, navigate, user, workspace } = useApp();
   const { viewMode } = useViewMode();
+  const { records, loading: recordsLoading, error: recordsError } = useCompanyRecords();
+  const hasNoRecentResearch = !recordsLoading && !recordsError && records.length === 0;
   const latest = new Date().getFullYear() - 1;
   const requestedYear = Number(query?.get('year'));
   const [year, setYear] = useState(
@@ -90,54 +93,58 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
     }
   };
   return (
-    <div className="company-query-page research-entry-page">
-      <CompanyResearchLauncher
-        metadata={
+    <div
+      className={`company-query-page query-create-page${hasNoRecentResearch ? ' query-create-empty' : ''}`}
+    >
+      <div className="query-create-content">
+        <header className="query-create-heading">
+          <h1>{t(...productTerms.newResearch)}</h1>
+        </header>
+        <div className="query-create-search">
+          <Search size={18} className="query-create-search-icon" aria-hidden="true" />
+          <StartInput
+            key={`${user?.id || 'anonymous'}:${query?.get('query') || 'new-company'}`}
+            initialText={query?.get('query') || undefined}
+            compact
+            companyOnly
+            disabled={creating}
+            onCompanyChoice={(identity) => void begin(identity)}
+            onInformationGap={(name) => void begin(undefined, name)}
+          />
+        </div>
+        <div className="query-create-meta">
           <button
-            className="research-entry-options"
+            className="query-create-options"
             type="button"
             disabled={creating}
-            aria-label={t(`查询选项，${year} 年度`, `Research options, annual ${year}`)}
+            aria-label={t(`研究设置，${year} 年度`, `Research settings, annual ${year}`)}
+            aria-haspopup="dialog"
             onClick={() => setOptions(true)}
           >
+            <Settings2 size={13} aria-hidden="true" />
             {t(`${year} 年度`, `Annual ${year}`)}
-            <Settings2 size={12} />
+            <span aria-hidden="true">·</span>
+            {purpose === 'external'
+              ? t('外部付款', 'External payment')
+              : t('内部交接', 'Internal handover')}
           </button>
-        }
-        feedback={
-          <>
-            {creating && (
-              <p className="context-data-note" role="status">
-                <LoaderCircle size={14} className="spinner" />
-                {t('正在建立研究记录…', 'Creating the research record…')}
-              </p>
-            )}
-            {error && (
-              <p role="alert" className="field-error">
-                {error}
-              </p>
-            )}
-          </>
-        }
-      >
-        <StartInput
-          key={`${user?.id || 'anonymous'}:${query?.get('query') || 'new-company'}`}
-          initialText={query?.get('query') || undefined}
-          compact
-          companyOnly
-          disabled={creating}
-          onCompanyChoice={(identity) => void begin(identity)}
-          onInformationGap={(name) => void begin(undefined, name)}
-        />
-      </CompanyResearchLauncher>
-      {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
-      <CompanyRecentResearch />
-      <details className="research-public-trial">
-        <summary>{t('查看公开年报实例', 'Explore a public annual-report example')}</summary>
-        <PublicResearchExample />
-      </details>
+        </div>
+        {creating && (
+          <p className="query-create-feedback" role="status">
+            <LoaderCircle size={14} className="spinner" aria-hidden="true" />
+            {t('正在建立研究记录…', 'Creating the research record…')}
+          </p>
+        )}
+        {error && (
+          <p role="alert" className="query-create-feedback field-error">
+            {error}
+          </p>
+        )}
+        {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
+        <CompanyRecentResearch />
+      </div>
       {options && (
-        <Dialog title={t('查询选项', 'Query options')} onClose={() => setOptions(false)}>
+        <Dialog title={t('研究设置', 'Research settings')} onClose={() => setOptions(false)}>
           <div className="query-options-form">
             <label className="field-label">
               {t('分析年度', 'Analysis year')}

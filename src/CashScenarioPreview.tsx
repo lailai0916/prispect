@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { Check, ChevronRight, FileText, Minus, PanelLeft, RotateCcw, Wallet } from 'lucide-react';
 import type { DatedCashInput } from '../shared/decision-contracts';
 import { compareDatedCash } from '../shared/decision-cash';
+import { productTerms } from '../shared/product-terms';
 import { useApp } from './context';
 import { money } from './format';
 import './home.css';
@@ -64,13 +65,11 @@ export function CashScenarioPreview() {
       <div className="product-window-chrome">
         <span>
           <PanelLeft size={15} />
-          {t('付款事项', 'Payments')}
+          {t(...productTerms.reviewItem)}
           <ChevronRight size={12} />
           {t('采购付款', 'Procurement')}
         </span>
-        <span className="preview-label">
-          {t('情景演算 · 假设收付款计划', 'Scenario analysis · hypothetical cash plan')}
-        </span>
+        <span className="preview-label">{t('假设收付款计划', 'Hypothetical cash plan')}</span>
       </div>
       <div className="product-preview-body">
         <div className="preview-title">
@@ -192,7 +191,7 @@ export function CashScenarioPreview() {
               {!hasBalance && (
                 <div className="preview-chart-waiting">
                   <Minus size={18} />
-                  <span>{t('等待现金余额依据', 'Awaiting opening cash evidence')}</span>
+                  <span>{t('等待当前可用现金输入', 'Awaiting available cash input')}</span>
                 </div>
               )}
             </div>
@@ -242,8 +241,8 @@ export function CashScenarioPreview() {
             />
             <p className="preview-assumption">
               {t(
-                '改期为条件对照，尚待协商；其他收付款金额和日期保持不变。',
-                'Rescheduling remains subject to agreement; other listed amounts and dates stay fixed.'
+                '只调整采购付款日；改期需协商，其他收付金额和日期不变。',
+                'Only the procurement payment day changes; rescheduling needs agreement, and other amounts and dates stay fixed.'
               )}
             </p>
           </div>
@@ -252,7 +251,7 @@ export function CashScenarioPreview() {
             <div className={`preview-source ${hasBalance ? '' : 'preview-source-withdrawn'}`}>
               <FileText size={17} />
               <div>
-                <strong>{t('当前可用现金', 'Opening cash')}</strong>
+                <strong>{t('当前可用现金', 'Current available cash')}</strong>
                 <span>120,000 CNY</span>
               </div>
               <span className="preview-source-state">
@@ -265,8 +264,8 @@ export function CashScenarioPreview() {
               onClick={() => setHasBalance(!hasBalance)}
             >
               {hasBalance
-                ? t('暂不采信这项依据', 'Withdraw this input')
-                : t('恢复这项依据', 'Restore this input')}
+                ? t('撤回这项假设', 'Withdraw this assumption')
+                : t('恢复这项假设', 'Restore this assumption')}
               <RotateCcw size={13} />
             </button>
             <div className="preview-next-check">

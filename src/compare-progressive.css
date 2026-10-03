@@ -1,34 +1,32 @@
-.compare-evidence-details {
-  margin-top: 28px;
-  border-top: 1px solid var(--line);
+.compare-page,
+.compare-content {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.compare-page .compare-selectors {
+  padding: 0 0 24px;
+  margin-bottom: 24px;
+  border: 0;
   border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
 }
 
-.compare-evidence-details > summary {
-  min-height: 56px;
-  padding: 18px 4px;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.5;
-  cursor: pointer;
+.compare-page .comparison-table-wrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-small);
 }
 
-.compare-evidence-details > summary:hover {
-  color: var(--accent);
-}
-
-.compare-evidence-content {
-  padding: 4px 0 24px;
+.compare-page .comparison-table th,
+.compare-page .comparison-table td {
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 600px) {
-  .compare-evidence-details {
-    margin-top: 20px;
-  }
-
-  .compare-evidence-details > summary {
-    padding-inline: 0;
-    font-size: 13px;
+  .compare-page .compare-selectors {
+    padding-bottom: 20px;
+    margin-bottom: 20px;
   }
 }

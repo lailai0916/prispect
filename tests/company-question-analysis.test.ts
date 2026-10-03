@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import { deriveCompanyAssessment } from '../shared/company-assessment.js';
+import { deriveCompanyResearchBrief } from '../shared/company-research-view.js';
 import { contextAmountFields, type CompanyContextPeriod } from '../shared/company-workspace.js';
 import { answerCompanyQuestion, answerCompanyRules } from '../server/company-questions.js';
 
@@ -90,6 +91,17 @@ function company(): CompanyResearchRun {
 const response = (content: unknown) =>
   new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify(content) } }] }));
 
+function companyWithMissingSolvency(): CompanyResearchRun {
+  const run = company();
+  run.context!.financials.find((row) => row.period === '2025-12-31')!.amounts.totalAssets = null;
+  return run;
+}
+
+const assessmentFacts = (assessment: ReturnType<typeof deriveCompanyAssessment>) => {
+  const { generatedAt: _generatedAt, ...facts } = assessment;
+  return facts;
+};
+
 test('Grok Q&A explains the server grade with accurate numeric templates and a full historical citation pool', async () => {
   const run = company();
   Object.assign(run, {
@@ -125,6 +137,7 @@ test('Grok Q&A explains the server grade with accurate numeric templates and a f
       const supplied = JSON.parse(payload.messages[1].content);
       assert.equal(supplied.publicContext.readingBasis, 'parent');
       assert.equal(supplied.publicContext.screen.grade, seed.grade);
+      assert.ok(!Object.hasOwn(supplied.publicContext, 'provisionalRating'));
       assert.ok(
         supplied.citations.some((row: { id: string }) => row.id === 'financial-2020-revenue')
       );
@@ -152,6 +165,171 @@ test('Grok Q&A explains the server grade with accurate numeric templates and a f
   assert.equal(output.snapshotFetchedAt, run.context!.fetchedAt);
   assert.equal(output.citations.length, 2);
   assert.deepEqual(run, before);
+});
+
+test('partial financial questions explain the provisional grade and coverage without changing the formal assessment', () => {
+  const run = companyWithMissingSolvency();
+  const before = structuredClone(run);
+  const assessment = deriveCompanyAssessment(run);
+  assert.equal(assessment.grade, 'NR');
+  assert.equal(assessment.score, null);
+  const answer = answerCompanyRules(run, '为什么暂定评级？', 'parent');
+  assert.match(answer.text, /暂定评级为 C/);
+  assert.match(answer.text, /3\/4/);
+  assert.match(answer.text, /完整正式评级仍为 NR/);
+  assert.match(answer.text, /2025 年合并/);
+  assert.match(answer.text, /盈利成长|经营现金|营运占用/);
+  assert.ok(answer.citations.some((citation) => citation.url.endsWith('public-2024')));
+  assert.ok(answer.citations.some((citation) => citation.url.endsWith('public-2025')));
+  assert.ok(answer.citations.every((citation) => !citation.url.includes('public-news')));
+  const english = answerCompanyRules(run, 'What is the provisional grade?', 'consolidated');
+  assert.match(english.text, /^The provisional grade is C/);
+  assert.match(english.text, /3\/4/);
+  assert.match(english.text, /full formal grade remains NR/);
+  assert.deepEqual(run, before);
+  assert.deepEqual(assessmentFacts(deriveCompanyAssessment(run)), assessmentFacts(assessment));
+});
+
+test('concise model explanations retain the computed provisional judgment and its public sources', async () => {
+  const run = companyWithMissingSolvency();
+  Object.assign(run, {
+    privateSecret: 'PRIVATE_ACCOUNT_SENTINEL',
+    preview: { material: { observations: ['PRIVATE_MATERIAL_SENTINEL'] } },
+    contextNotes: 'PRIVATE_DECISION_SENTINEL',
+  });
+  const before = structuredClone(run);
+  const assessment = deriveCompanyAssessment(run);
+  const provisional = deriveCompanyResearchBrief({ ...run, assessment }).provisionalRating;
+  assert.ok(provisional);
+  let calls = 0;
+  const answer = await answerCompanyQuestion(
+    run,
+    '为什么暂定评级？',
+    'consolidated',
+    true,
+    {
+      apiKey: 'test-key',
+      fetch: async (_url, init) => {
+        calls++;
+        const request = JSON.parse(String(init?.body));
+        const supplied = JSON.parse(request.messages[1].content);
+        assert.equal(supplied.publicContext.screen.grade, 'NR');
+        assert.equal(supplied.publicContext.screen.score, null);
+        assert.deepEqual(supplied.publicContext.provisionalRating, provisional);
+        for (const privateValue of [
+          'PRIVATE_ACCOUNT_SENTINEL',
+          'PRIVATE_MATERIAL_SENTINEL',
+          'PRIVATE_DECISION_SENTINEL',
+          'PRIVATE_PROFILE_SENTINEL',
+        ])
+          assert.ok(!String(init?.body).includes(privateValue));
+        return response({
+          text: '现金利润比为 {{metric:cash-profit}}，现金转化偏弱；总资产缺失，偿付杠杆维度尚未覆盖。',
+          citations: ['financial-2025-ocf'],
+          metricIds: ['cash-profit'],
+        });
+      },
+    },
+    undefined,
+    { concise: true, locale: 'zh' }
+  );
+  assert.equal(calls, 1);
+  assert.equal(answer.mode, 'model');
+  assert.match(answer.text, /^暂定评级为 C/);
+  assert.match(answer.text, /3\/4/);
+  assert.match(answer.text, /完整正式评级仍为 NR/);
+  assert.match(answer.text, /偿付杠杆维度尚未覆盖/);
+  assert.ok(
+    answer.text.includes(
+      assessment.metrics.find((metric) => metric.id === 'cash-profit')!.display[0]
+    )
+  );
+  assert.ok(!answer.text.includes('{{metric:'));
+  assert.ok(answer.citations.some((citation) => citation.url.endsWith('public-2024')));
+  assert.ok(answer.citations.some((citation) => citation.url.endsWith('public-2025')));
+  assert.equal(
+    new Set(answer.citations.map((citation) => citation.url)).size,
+    answer.citations.length
+  );
+  assert.deepEqual(run, before);
+  assert.deepEqual(assessmentFacts(deriveCompanyAssessment(run)), assessmentFacts(assessment));
+});
+
+test('model grade claims and bare coverage numbers still fall back to the computed provisional answer', async () => {
+  const run = companyWithMissingSolvency();
+  const before = structuredClone(run);
+  const question = '为什么暂定评级？';
+  const rule = answerCompanyRules(run, question, 'consolidated');
+  for (const text of ['暂定评级为 C。', '暂定评级为 A。', '已覆盖 3/4 个财务维度。']) {
+    let calls = 0;
+    const answer = await answerCompanyQuestion(
+      run,
+      question,
+      'consolidated',
+      true,
+      {
+        apiKey: 'test-key',
+        fetch: async () => {
+          calls++;
+          return response({ text, citations: ['financial-2025-ocf'], metricIds: [] });
+        },
+      },
+      undefined,
+      { concise: true, locale: 'zh' }
+    );
+    assert.equal(calls, 1);
+    assert.equal(answer.mode, 'rules-fallback');
+    assert.equal(answer.text, rule.text);
+    assert.deepEqual(answer.citations, rule.citations);
+  }
+  assert.deepEqual(run, before);
+  assert.equal(deriveCompanyAssessment(run).grade, 'NR');
+  assert.equal(deriveCompanyAssessment(run).score, null);
+});
+
+test('recent source questions do not get mistaken for interim financial questions', () => {
+  const run = company();
+  const news = answerCompanyRules(run, '查一下最新新闻', 'consolidated');
+  assert.ok(news.text.includes('重要新闻线索'));
+  assert.equal(news.citations[0]?.url, run.context!.news[0]!.url);
+  assert.ok(!news.text.includes('中报或季报'));
+  const disclosures = answerCompanyRules(run, '最新公告有哪些风险？', 'consolidated');
+  assert.ok(disclosures.text.includes('公告'));
+  assert.ok(!disclosures.text.includes('中报或季报'));
+});
+
+test('the unified assistant keeps follow-ups concise while preserving validated amounts and sources', async () => {
+  const run = company();
+  const question = '那现金呢？';
+  const output = await answerCompanyQuestion(
+    run,
+    question,
+    'consolidated',
+    true,
+    {
+      apiKey: 'test-key',
+      fetch: async (_url, init) => {
+        const payload = JSON.parse(String(init?.body));
+        assert.ok(payload.messages[0].content.includes('析光助手'));
+        const supplied = JSON.parse(payload.messages[1].content);
+        assert.deepEqual(supplied.previousQuestions, ['公司盈利怎么样？']);
+        assert.equal(supplied.locale, 'zh');
+        return response({
+          text: '经营现金与利润差距较大，现金利润比为 {{metric:cash-profit}}，需要核对期后回款。',
+          citations: ['financial-2025-ocf'],
+          metricIds: ['cash-profit'],
+        });
+      },
+    },
+    undefined,
+    { concise: true, locale: 'zh', previousQuestions: ['公司盈利怎么样？'] }
+  );
+  assert.equal(output.mode, 'model');
+  assert.ok(output.text.includes('需要核对期后回款'));
+  assert.ok(!output.text.includes('{{metric:'));
+  assert.ok(!output.text.includes(answerCompanyRules(run, question, 'consolidated').text));
+  assert.equal(output.citations.length, 1);
+  assert.equal(output.snapshotFetchedAt, run.context!.fetchedAt);
 });
 
 test('English questions render English metric displays without dropping the original rule working paper', async () => {

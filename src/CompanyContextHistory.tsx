@@ -196,8 +196,8 @@ export function CompanyContextHistory({
     <section className="context-history">
       <p className="context-data-note">
         {t(
-          '图表使用同一年度的网页快照，原件字段核对保留在“原件核查”中。缺失值显示为未知。',
-          'Charts use same-year web snapshots; original-field verification remains under Original verification. Missing values stay unknown.'
+          '年度网页快照 · 缺失值为未知；原件字段另在“原件核查”中核对。',
+          'Annual web snapshots · missing values remain unknown; check original fields under Original-report review.'
         )}
       </p>
       <div className="context-tabs" role="tablist" aria-label={t('财务图表', 'Financial charts')}>

@@ -83,11 +83,6 @@ input[type='radio'] {
     translate: 2px 0;
   }
 }
-.command-trigger {
-  gap: 7px;
-  width: auto;
-  padding-inline: 8px;
-}
 kbd {
   display: inline-flex;
   justify-content: center;
@@ -102,9 +97,6 @@ kbd {
   font-size: 10px;
   font-weight: 450;
   white-space: nowrap;
-}
-.header-actions .command-trigger kbd {
-  font-size: 10px;
 }
 .site-header {
   overflow: visible;
@@ -134,17 +126,8 @@ kbd {
   }
 }
 .app-shell .toast {
-  bottom: 90px;
   overflow: hidden;
   animation: toast-enter var(--motion-medium) var(--motion-ease) both;
-}
-.app-shell:has(.company-assistant-panel:not([hidden])) .toast {
-  right: auto;
-  left: calc(var(--sidebar) + 24px);
-  bottom: 24px;
-}
-.public-shell:has(.company-assistant-panel:not([hidden])) .toast {
-  left: 24px;
 }
 .toast-lifetime {
   position: absolute;
@@ -434,18 +417,6 @@ kbd {
 .app-shell .list-toolbar .segmented-control {
   margin-bottom: 0;
 }
-.reading-top.icon-button {
-  position: fixed;
-  right: 88px;
-  bottom: max(30px, env(safe-area-inset-bottom));
-  z-index: 59;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  box-shadow: 0 2px 8px var(--shadow-button);
-  animation: toast-enter var(--motion-medium) var(--motion-ease);
-}
 .app-shell .company-assistant-panel:not([hidden]) {
   transform-origin: right bottom;
   animation: assistant-enter var(--motion-medium) var(--motion-ease);
@@ -655,9 +626,6 @@ kbd {
   .app-shell .start-key-hint + .start-submit {
     margin-left: auto;
   }
-  .header-actions .command-trigger kbd {
-    display: none;
-  }
   .header-actions .command-trigger {
     width: 36px;
     padding-inline: 0;
@@ -677,18 +645,6 @@ kbd {
   }
   .app-shell .empty-state {
     padding: 44px 8px;
-  }
-  .app-shell .toast {
-    left: 16px;
-    right: 16px;
-    bottom: 88px;
-    max-width: none;
-  }
-  .app-shell:has(.company-assistant-panel:not([hidden])) .toast {
-    left: 16px;
-    right: 16px;
-    top: calc(var(--site-header-height) + 16px);
-    bottom: auto;
   }
   .dialog.command-dialog {
     top: 74px;
@@ -729,8 +685,7 @@ kbd {
     width: 100%;
     background: var(--action);
   }
-  .app-shell .company-assistant-panel:not([hidden]),
-  .app-shell .reading-top {
+  .app-shell .company-assistant-panel:not([hidden]) {
     animation: none;
   }
   .toast-lifetime {
@@ -741,27 +696,16 @@ kbd {
   }
 }
 @media (max-width: 640px) {
-  .business-shell > .site-header {
+  .site-header {
     gap: 8px;
   }
-  .business-shell > .site-header .header-actions {
+  .site-header .header-actions {
     gap: 0;
   }
-  .business-shell
-    > .site-header
-    .header-actions
-    :is(.icon-button, .language-button, .theme-button, .account-link) {
+  .site-header .header-actions :is(.icon-button, .language-button, .theme-button, .account-link) {
     width: 32px;
     min-width: 32px;
     padding-inline: 0;
-  }
-}
-@media (max-width: 420px) {
-  .business-shell > .site-header {
-    padding-inline: 12px;
-  }
-  .business-shell > .site-header .brand-name > span {
-    display: none;
   }
 }
 @media print {

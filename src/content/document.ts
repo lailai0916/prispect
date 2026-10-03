@@ -13,7 +13,7 @@ export interface DocumentSection {
 export interface ProductDocument {
   title: BilingualText;
   description: BilingualText;
-  version?: string;
+  version: string;
   updatedAt: string;
   sections: DocumentSection[];
 }

@@ -1,5 +1,15 @@
+import { productTerms } from '../shared/product-terms';
 import { useEffect, useState } from 'react';
-import { ArrowRight, Check, ChevronDown, FileSearch, LoaderCircle, Minus } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  FileSearch,
+  FlaskConical,
+  LoaderCircle,
+  Minus,
+  ScanLine,
+} from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type { AssessmentJudgment, AssessmentText } from '../shared/company-assessment';
 import {
@@ -8,13 +18,15 @@ import {
   type CompanyResearchViewState,
 } from '../shared/company-research-view';
 import { companyReviewSummary } from '../shared/company-review';
-import { companyPath } from '../shared/company-workspace';
+import { companyPath, companySections } from '../shared/company-workspace';
 import { CompanyAssessmentEvidence } from './CompanyAssessment';
 import { CompanyContextEvidence } from './CompanyContextViews';
 import { CompanyReview } from './CompanyReview';
 import { useApp } from './context';
 import { date, money } from './format';
 import './research-report.css';
+
+const [, coverageZh, coverageEn] = companySections.find(([key]) => key === 'coverage')!;
 
 const stateLabels: Record<CompanyResearchViewState, AssessmentText> = {
   'not-started': ['尚无记录', 'Not recorded'],
@@ -32,7 +44,7 @@ const gradeLabels: Record<string, AssessmentText> = {
 };
 
 /** Expand the containing content before moving focus; direct links never land in hidden content. */
-export function openCompanyReportSection(id: string, focusInput = false) {
+export function openCompanyReportSection(id: string, focusInput = false, focusSelector?: string) {
   const target = document.getElementById(id);
   if (!target) return;
   let containing: HTMLElement | null = target;
@@ -41,17 +53,27 @@ export function openCompanyReportSection(id: string, focusInput = false) {
     containing = containing.parentElement;
   }
   requestAnimationFrame(() => {
-    target.scrollIntoView({
+    const focus = focusSelector
+      ? target.querySelector<HTMLElement>(focusSelector)
+      : focusInput
+        ? target.querySelector<HTMLTextAreaElement>('textarea')
+        : target instanceof HTMLDetailsElement
+          ? target.querySelector<HTMLElement>('summary')
+          : null;
+    if (focusSelector && focus) {
+      const toolbar = focus.closest('.evidence-lab')?.querySelector('.lab-trial-toolbar');
+      const toolbarHeight =
+        toolbar && getComputedStyle(toolbar).position === 'sticky'
+          ? toolbar.getBoundingClientRect().height
+          : 0;
+      focus.style.setProperty('--research-focus-toolbar-height', `${toolbarHeight}px`);
+    }
+    (focusSelector && focus ? focus : target).scrollIntoView({
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 'instant'
         : 'smooth',
       block: 'start',
     });
-    const focus = focusInput
-      ? target.querySelector<HTMLTextAreaElement>('textarea')
-      : target instanceof HTMLDetailsElement
-        ? target.querySelector<HTMLElement>('summary')
-        : null;
     focus?.focus({ preventScroll: true });
   });
 }
@@ -66,94 +88,115 @@ function CompanyResearchProgress({ run }: { run: CompanyResearchRun }) {
         ? []
         : run.assessmentTrace || run.assessment?.research?.steps || [];
   return (
-    <details className="research-progress" id="company-research-process">
-      <summary>
-        <span className="research-progress-label" aria-live="polite" aria-atomic="true">
-          {progress.state === 'running' ? (
-            <LoaderCircle size={14} className="spinner" aria-hidden="true" />
-          ) : progress.state === 'completed' ? (
-            <Check size={14} aria-hidden="true" />
-          ) : (
-            <FileSearch size={14} aria-hidden="true" />
-          )}
-          <span>{t(...progress.label)}</span>
-        </span>
-        <span className="research-progress-count">
-          {progress.counts.completedSteps > 0
-            ? t(
-                `${progress.counts.completedSteps} 项步骤已完成`,
-                `${progress.counts.completedSteps} steps completed`
-              )
-            : t('查看研究过程', 'View research process')}
-        </span>
-        <ChevronDown size={13} aria-hidden="true" />
-      </summary>
-      <div className="research-progress-body">
-        <p className="research-progress-goal">{t(...progress.goal)}</p>
-        <ol className="research-progress-stages">
-          {progress.stages.map((stage) => (
-            <li key={stage.id} className={'research-stage research-stage-' + stage.status}>
-              <div>
-                <span className="research-stage-mark" aria-hidden="true">
-                  {stage.status === 'running' ? (
-                    <LoaderCircle size={12} className="spinner" />
-                  ) : stage.status === 'completed' ? (
-                    <Check size={12} />
-                  ) : (
-                    <Minus size={12} />
-                  )}
-                </span>
-                <strong>{t(...stage.label)}</strong>
-                <span>{t(...stateLabels[stage.status])}</span>
-              </div>
-              <p>{t(...stage.summary)}</p>
-            </li>
-          ))}
-        </ol>
-        {steps.length > 0 && (
-          <ol className="research-progress-log">
-            {steps.map((step) => (
-              <li key={step.id}>
-                <span className={'research-log-status research-log-status-' + step.status}>
-                  {step.status === 'running'
-                    ? t('执行中', 'Running')
-                    : step.status === 'completed'
-                      ? t('完成', 'Completed')
-                      : t('未完成', 'Incomplete')}
-                </span>
+    <div className="research-process">
+      <ol className="research-process-overview" aria-label={t('研究阶段', 'Research stages')}>
+        {progress.stages.map((stage) => (
+          <li key={stage.id} className={'research-process-stage research-stage-' + stage.status}>
+            <span className="research-stage-mark" aria-hidden="true">
+              {stage.status === 'running' ? (
+                <LoaderCircle size={12} className="spinner" />
+              ) : stage.status === 'completed' ? (
+                <Check size={12} />
+              ) : (
+                <Minus size={12} />
+              )}
+            </span>
+            <span>
+              <strong>{t(...stage.label)}</strong>
+              <small>{t(...stateLabels[stage.status])}</small>
+            </span>
+          </li>
+        ))}
+      </ol>
+      <details className="research-progress" id="company-research-process">
+        <summary>
+          <span className="research-progress-label" aria-live="polite" aria-atomic="true">
+            {progress.state === 'running' ? (
+              <LoaderCircle size={14} className="spinner" aria-hidden="true" />
+            ) : progress.state === 'completed' ? (
+              <Check size={14} aria-hidden="true" />
+            ) : (
+              <FileSearch size={14} aria-hidden="true" />
+            )}
+            <span>{t(...progress.label)}</span>
+          </span>
+          <span className="research-progress-count">
+            {progress.counts.completedSteps > 0
+              ? t(
+                  `${progress.counts.completedSteps} 项步骤已完成`,
+                  `${progress.counts.completedSteps} steps completed`
+                )
+              : t('查看研究过程', 'View research process')}
+          </span>
+          <ChevronDown size={13} aria-hidden="true" />
+        </summary>
+        <div className="research-progress-body">
+          <p className="research-progress-goal">{t(...progress.goal)}</p>
+          <ol className="research-progress-stages">
+            {progress.stages.map((stage) => (
+              <li key={stage.id} className={'research-stage research-stage-' + stage.status}>
                 <div>
-                  <strong>{step.label}</strong>
-                  {step.summary && <p>{step.summary}</p>}
+                  <span className="research-stage-mark" aria-hidden="true">
+                    {stage.status === 'running' ? (
+                      <LoaderCircle size={12} className="spinner" />
+                    ) : stage.status === 'completed' ? (
+                      <Check size={12} />
+                    ) : (
+                      <Minus size={12} />
+                    )}
+                  </span>
+                  <strong>{t(...stage.label)}</strong>
+                  <span>{t(...stateLabels[stage.status])}</span>
                 </div>
-                {step.startedAt && (
-                  <time dateTime={step.startedAt}>{date(step.startedAt, locale)}</time>
-                )}
+                <p>{t(...stage.summary)}</p>
               </li>
             ))}
           </ol>
-        )}
-        {(progress.counts.modelCalls !== null || progress.counts.toolCalls !== null) && (
-          <p className="research-progress-counts">
-            {progress.counts.modelCalls !== null && (
-              <span>
-                {t(
-                  `分析调用 ${progress.counts.modelCalls} 次`,
-                  `Analysis calls ${progress.counts.modelCalls}`
-                )}
-              </span>
-            )}
-            {progress.counts.toolCalls !== null && (
-              <span>
-                {t(
-                  `工具执行 ${progress.counts.toolCalls} 次`,
-                  `Tool executions ${progress.counts.toolCalls}`
-                )}
-              </span>
-            )}
-          </p>
-        )}
-      </div>
-    </details>
+          {steps.length > 0 && (
+            <ol className="research-progress-log">
+              {steps.map((step) => (
+                <li key={step.id}>
+                  <span className={'research-log-status research-log-status-' + step.status}>
+                    {step.status === 'running'
+                      ? t('执行中', 'Running')
+                      : step.status === 'completed'
+                        ? t('完成', 'Completed')
+                        : t('未完成', 'Incomplete')}
+                  </span>
+                  <div>
+                    <strong>{step.label}</strong>
+                    {step.summary && <p>{step.summary}</p>}
+                  </div>
+                  {step.startedAt && (
+                    <time dateTime={step.startedAt}>{date(step.startedAt, locale)}</time>
+                  )}
+                </li>
+              ))}
+            </ol>
+          )}
+          {(progress.counts.modelCalls !== null || progress.counts.toolCalls !== null) && (
+            <p className="research-progress-counts">
+              {progress.counts.modelCalls !== null && (
+                <span>
+                  {t(
+                    `分析调用 ${progress.counts.modelCalls} 次`,
+                    `Analysis calls ${progress.counts.modelCalls}`
+                  )}
+                </span>
+              )}
+              {progress.counts.toolCalls !== null && (
+                <span>
+                  {t(
+                    `工具执行 ${progress.counts.toolCalls} 次`,
+                    `Tool executions ${progress.counts.toolCalls}`
+                  )}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+      </details>
+    </div>
   );
 }
 
@@ -175,11 +218,13 @@ export function CompanyResearchReport({
   );
   const assessment =
     progress.snapshot === 'mismatch' || run.informationGap ? undefined : run.assessment;
+  const provisionalRating = assessment?.grade === 'NR' ? brief.provisionalRating : undefined;
+  const reportGrade = provisionalRating?.grade || assessment?.grade || 'NR';
   useEffect(() => setSelected(null), [run.id, run.assessment?.generatedAt]);
   const loading = refreshing || progress.state === 'running';
   const judgmentText = (judgment: AssessmentJudgment) =>
     judgment.text[locale === 'en' ? 'en' : 'zh'];
-  const basis = (title: string, judgment: AssessmentJudgment) =>
+  const basis = (title: string, judgment: AssessmentJudgment, label?: string) =>
     assessment && (judgment.metricIds.length > 0 || judgment.evidenceIds.length > 0) ? (
       <button
         type="button"
@@ -188,52 +233,108 @@ export function CompanyResearchReport({
         aria-label={t('查看依据：', 'Evidence for: ') + title}
       >
         <FileSearch size={13} />
-        {t('依据', 'Evidence')}
+        {label || t('依据', 'Evidence')}
       </button>
     ) : null;
   const gradeTitle = assessment
-    ? t(
-        '所选年度合并财务的规则筛选，不属于信用评级。',
-        'A rule-based screen of selected-year consolidated financials, not a credit rating.'
-      ) + (assessment.ratingConstraints?.map((item) => t(...item)).join(' ') || '')
+    ? (provisionalRating
+        ? t('依据已覆盖财务维度暂定。', 'Provisional grade based on covered financial dimensions.')
+        : t('所选年度合并财务筛选。', 'Selected-year consolidated financial screening.')) +
+      (assessment.ratingConstraints?.map((item) => t(...item)).join(' ') || '')
     : '';
   const ratio = amounts.ratio === null ? '—' : `${(amounts.ratio * 100).toFixed(2)}%`;
   const coverage = brief.coverage;
   return (
     <article className="company-research-report" data-testid="company-research-report">
       <section className="research-summary" aria-labelledby="research-summary-heading">
-        <div className="research-section-heading">
-          <h2 id="research-summary-heading">{t('分析摘要', 'Analysis summary')}</h2>
+        <div className={'research-summary-lead' + (assessment ? ' research-summary-rated' : '')}>
+          <div className="research-summary-copy">
+            <p className="research-summary-label">{t('分析摘要', 'Analysis summary')}</p>
+            <h2 id="research-summary-heading" className="research-summary-headline">
+              {judgmentText(brief.headline)}
+            </h2>
+            <p className="research-summary-judgment">{judgmentText(brief.summary)}</p>
+          </div>
           {assessment && (
             <button
               type="button"
-              className={'research-grade research-grade-' + assessment.grade.toLowerCase()}
+              className={'research-grade research-grade-' + reportGrade.toLowerCase()}
               title={gradeTitle}
-              aria-label={t('查看财务筛选依据', 'View financial screening evidence')}
+              aria-label={
+                provisionalRating
+                  ? t('查看暂定评级依据', 'View provisional grade evidence')
+                  : t('查看财务评级依据', 'View financial grade evidence')
+              }
               onClick={() => openCompanyReportSection('company-full-report')}
             >
-              <span>{t('财务筛选', 'Financial screen')}</span>
-              <strong>
-                {assessment.grade === 'NR' ? t('暂不评级', 'Not rated') : assessment.grade}
-              </strong>
-              {assessment.grade !== 'NR' && <span>{t(...gradeLabels[assessment.grade])}</span>}
-              {assessment.score !== null && (
-                <span className="research-grade-score">{assessment.score.toFixed(2)} / 100</span>
+              <span>
+                {provisionalRating
+                  ? t('暂定评级', 'Provisional grade')
+                  : t(...productTerms.financialGrade)}
+              </span>
+              <strong>{reportGrade === 'NR' ? t('暂不评级', 'Not rated') : reportGrade}</strong>
+              {reportGrade !== 'NR' && (
+                <span className="research-grade-rating">{t(...gradeLabels[reportGrade])}</span>
               )}
+              {provisionalRating && (
+                <span className="research-grade-coverage">
+                  {t(
+                    `已覆盖 ${provisionalRating.coveredDimensions}/${provisionalRating.totalDimensions} 维度`,
+                    `${provisionalRating.coveredDimensions}/${provisionalRating.totalDimensions} dimensions covered`
+                  )}
+                </span>
+              )}
+              {!provisionalRating && assessment.score !== null && (
+                <span className="research-grade-score">
+                  {assessment.score.toFixed(2)} <small>/ 100</small>
+                </span>
+              )}
+              <span className="research-grade-link">
+                {t('评级依据', 'Grade evidence')}
+                <ArrowRight size={12} aria-hidden="true" />
+              </span>
             </button>
           )}
         </div>
-        <p className="research-summary-judgment">{judgmentText(brief.summary)}</p>
         <div className="research-summary-scope">
           <span>{t(...brief.scope)}</span>
           <span>
             {brief.mode === 'model'
               ? t('资料分析', 'Source analysis')
               : brief.mode === 'rules'
-                ? t('规则结果', 'Rule results')
+                ? t('规则分析', 'Rule-based analysis')
                 : t('判断待形成', 'Analysis pending')}
           </span>
           {basis(t('分析摘要', 'Analysis summary'), brief.summary)}
+        </div>
+        <div className="research-summary-actions">
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => openCompanyReportSection('company-full-report')}
+          >
+            <FileSearch size={14} aria-hidden="true" />
+            {t('依据与计算', 'Evidence and calculations')}
+          </button>
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() => openCompanyReportSection('company-evidence-lab')}
+          >
+            <FlaskConical size={14} aria-hidden="true" />
+            {t('检验解释', 'Test an explanation')}
+          </button>
+          <button
+            type="button"
+            className="button button-secondary"
+            onClick={() =>
+              openCompanyReportSection('company-evidence-lab', false, '.lab-node-hypothesis')
+            }
+          >
+            <ScanLine size={14} aria-hidden="true" />
+            {t('挑战解释', 'Challenge an explanation')}
+          </button>
+          {basis(t('结论', 'Conclusion'), brief.headline, t('结论依据', 'Conclusion evidence'))}
         </div>
         {brief.warnings.length > 0 && (
           <div className="research-warnings" role={loading ? 'status' : undefined}>
@@ -298,42 +399,75 @@ export function CompanyResearchReport({
             )}
           </div>
         </dl>
-        <p className="research-amount-note">
-          {t(
-            '经营现金净额 ÷ 合并净利润；不是销售回款率。',
-            'Operating cash ÷ consolidated profit; not a sales collection rate.'
-          )}
-          {amounts.relation === 'conflict' && (
+        {(amounts.relation === 'conflict' ||
+          amounts.relation === 'nonpositive' ||
+          progress.snapshot === 'previous') && (
+          <p className="research-amount-note">
+            {amounts.relation === 'conflict' && (
+              <span>
+                {' '}
+                {t(
+                  '来源存在冲突，相关金额与比例暂停展示。',
+                  'Conflicting amounts and ratios are withheld.'
+                )}
+              </span>
+            )}
+            {amounts.relation === 'nonpositive' && (
+              <span>
+                {' '}
+                {t(
+                  '利润非正，比例不作常规解读。',
+                  'The ratio is not conventionally interpreted with nonpositive profit.'
+                )}
+              </span>
+            )}
+            {progress.snapshot === 'previous' && (
+              <span>
+                {' '}
+                {t(
+                  '以上金额来自当前资料快照，与上一份分析分别呈现。',
+                  'These amounts use the current snapshot, separately from the previous analysis.'
+                )}
+              </span>
+            )}
+          </p>
+        )}
+        {coverage.origin !== 'unavailable' && (
+          <div className="research-report-coverage">
+            <span>{t('本份分析覆盖', 'Scope of this analysis')}</span>
             <span>
-              {' '}
-              {t(
-                '来源存在冲突，相关金额与比例暂停展示。',
-                'Conflicting amounts and ratios are withheld.'
-              )}
+              {coverage.years} {t('个财务年度', 'financial years')}
             </span>
-          )}
-          {amounts.relation === 'nonpositive' && (
-            <span>
-              {' '}
-              {t(
-                '利润非正，比例不作常规解读。',
-                'The ratio is not conventionally interpreted with nonpositive profit.'
-              )}
-            </span>
-          )}
-          {amounts.relation === 'missing' && (
-            <span> {t('缺失金额保持未知。', 'Missing amounts remain unknown.')}</span>
-          )}
-          {progress.snapshot === 'previous' && (
-            <span>
-              {' '}
-              {t(
-                '以上金额来自当前资料快照，与上一份分析分别呈现。',
-                'These amounts use the current snapshot, separately from the previous analysis.'
-              )}
-            </span>
-          )}
-        </p>
+            {coverage.fields !== null && coverage.requiredFields !== null && (
+              <span>
+                {coverage.fields}/{coverage.requiredFields} {t('个关键字段', 'key fields')}
+              </span>
+            )}
+            {coverage.news > 0 && (
+              <span>
+                {t(
+                  `新闻 ${coverage.news} · 正文节选 ${coverage.mediaBodies ?? '—'}`,
+                  `News ${coverage.news} · body excerpts ${coverage.mediaBodies ?? '—'}`
+                )}
+              </span>
+            )}
+            {coverage.discussions !== null && coverage.discussions > 0 && (
+              <span>
+                {t(
+                  `讨论 ${coverage.discussions} · 摘录 ${coverage.discussionBodies ?? '—'}`,
+                  `Discussions ${coverage.discussions} · excerpts ${coverage.discussionBodies ?? '—'}`
+                )}
+              </span>
+            )}
+            {coverage.peers > 0 && (
+              <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
+            )}
+            <a className="text-link" href={companyPath(run.id, 'coverage')}>
+              {t(coverageZh, coverageEn)}
+              <ArrowRight size={12} />
+            </a>
+          </div>
+        )}
         <CompanyResearchProgress run={run} />
       </section>
       {brief.priorities.length > 0 && (
@@ -392,42 +526,6 @@ export function CompanyResearchReport({
         )}
         <CompanyReview run={run} />
       </section>
-      {coverage.origin !== 'unavailable' && (
-        <div className="research-report-coverage">
-          <span>{t('本份分析覆盖', 'Scope of this analysis')}</span>
-          <span>
-            {coverage.years} {t('个财务年度', 'financial years')}
-          </span>
-          {coverage.fields !== null && coverage.requiredFields !== null && (
-            <span>
-              {coverage.fields}/{coverage.requiredFields} {t('个关键字段', 'key fields')}
-            </span>
-          )}
-          {coverage.news > 0 && (
-            <span>
-              {t(
-                `新闻 ${coverage.news} · 正文节选 ${coverage.mediaBodies ?? '—'}`,
-                `News ${coverage.news} · body excerpts ${coverage.mediaBodies ?? '—'}`
-              )}
-            </span>
-          )}
-          {coverage.discussions !== null && coverage.discussions > 0 && (
-            <span>
-              {t(
-                `讨论 ${coverage.discussions} · 摘录 ${coverage.discussionBodies ?? '—'}`,
-                `Discussions ${coverage.discussions} · excerpts ${coverage.discussionBodies ?? '—'}`
-              )}
-            </span>
-          )}
-          {coverage.peers > 0 && (
-            <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
-          )}
-          <a className="text-link" href={companyPath(run.id, 'coverage')}>
-            {t('范围与缺口', 'Scope and gaps')}
-            <ArrowRight size={12} />
-          </a>
-        </div>
-      )}
       {!run.context?.publicSignals && !run.informationGap && (
         <p className="research-public-followup">
           {t(

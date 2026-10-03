@@ -98,10 +98,10 @@ export function ModelExplanation({
     <div className="model-explanation-body">
       <p className="model-explanation-note">
         {locale === 'en' && hasChineseText
-          ? 'Original model response in Chinese; not translated.'
+          ? 'Original AI interpretation in Chinese; not translated.'
           : t(
-              '以下保留模型原文，不随界面语言自动翻译。',
-              'Original model response, preserved without translation.'
+              '以下保留 AI 解读原文，不随界面语言自动翻译。',
+              'Original AI interpretation, preserved without translation.'
             )}
       </p>
       {paragraphs.map((paragraph, paragraphIndex) => (
@@ -121,13 +121,13 @@ export function ModelExplanation({
                 key={partIndex}
                 aria-haspopup="dialog"
                 aria-label={t(
-                  `查看本段模型解释的 ${part.refs.length} 条原文依据`,
-                  `Inspect ${part.refs.length} original ${part.refs.length === 1 ? 'source' : 'sources'} for this model explanation`
+                  `查看本段 AI 解读的 ${part.refs.length} 条原文依据`,
+                  `Inspect ${part.refs.length} original ${part.refs.length === 1 ? 'source' : 'sources'} for this AI interpretation`
                 )}
                 title={t('打开原文依据', 'Open original evidence')}
                 onClick={() =>
                   onSource(
-                    t('模型解释 · 原文依据', 'Model explanation · Original evidence'),
+                    t('AI 解读 · 原文依据', 'AI interpretation · Original evidence'),
                     part.refs
                   )
                 }

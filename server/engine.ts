@@ -113,11 +113,13 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
       );
       const currencies = new Set(values.map(({ observation }) => observation.currency));
       const mixedCurrency = currencies.size > 1;
+      const badCurrency = values.some(({ observation }) => observation.currency !== 'CNY');
+      const badUnit = values.some(({ observation }) => observation.unit === 'usd');
       const amounts = values.map(({ observation }) =>
         moneyToFen(observation.value, observation.unit)
       );
       const different = new Set(amounts.map(String)).size > 1;
-      if (subjectMismatch || badScope || mixedCurrency || different || badPeriod) {
+      if (subjectMismatch || badScope || badCurrency || badUnit || different || badPeriod) {
         conflict = true;
         checks.push({
           id: `${year}-${key}`,
@@ -129,9 +131,13 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
               ? '母公司与合并口径不能混用，请补交合并口径材料。'
               : mixedCurrency
                 ? '同一指标存在不同币种；本次不进行汇率转换或混币种计算。'
-                : different
-                  ? '同一指标存在不同数值，保留双方来源并停止采用，不静默覆盖。'
-                  : '主体不一致，不能跨公司计算。',
+                : badCurrency
+                  ? '币种不是已确认的人民币；本次只核查人民币年度合并材料，不进行汇率转换或混币种计算。'
+                  : badUnit
+                    ? '金额单位声明为美元，与人民币币种不一致；停止采用，请核对原表币种和单位。'
+                    : different
+                      ? '同一指标存在不同数值，保留双方来源并停止采用，不静默覆盖。'
+                      : '主体不一致，不能跨公司计算。',
           sourceRefs: refs,
         });
         continue;
@@ -175,25 +181,19 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
     }
     return fenToYuan(item.fen);
   };
-  const metric = (key: MetricKey): ComputedMetric => {
-    const currency = get(input.year, key)?.observation.currency;
-    return {
-      key,
-      label: metricLabels[key],
-      value: metricAmount(input.year, key),
-      previousValue: metricAmount(input.year - 1, key),
-      unit: currency === 'USD' ? 'USD' : 'CNY',
-      kind: key === 'otherAdjustments' ? 'calculated' : 'reported',
-      formula:
-        key === 'otherAdjustments'
-          ? '原表其余已披露调整逐行分组求和，另与差额核对'
-          : `原表金额 × 单位换算系数；${currency === 'USD' ? '美元' : '人民币元'}`,
-      sourceRefs: [
-        ...(get(input.year, key)?.refs || []),
-        ...(get(input.year - 1, key)?.refs || []),
-      ],
-    };
-  };
+  const metric = (key: MetricKey): ComputedMetric => ({
+    key,
+    label: metricLabels[key],
+    value: metricAmount(input.year, key),
+    previousValue: metricAmount(input.year - 1, key),
+    unit: 'CNY',
+    kind: key === 'otherAdjustments' ? 'calculated' : 'reported',
+    formula:
+      key === 'otherAdjustments'
+        ? '原表其余已披露调整逐行分组求和，另与差额核对'
+        : '原表金额 × 单位换算系数；人民币元',
+    sourceRefs: [...(get(input.year, key)?.refs || []), ...(get(input.year - 1, key)?.refs || [])],
+  });
   const metrics = metricKeys.map(metric);
   const profit = get(input.year, 'netProfit'),
     cash = get(input.year, 'operatingCashFlow');
@@ -288,44 +288,6 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
           derived: false,
         },
       ];
-  } else if (
-    profit &&
-    cash &&
-    profit.observation.currency === cash.observation.currency &&
-    profit.observation.currency !== 'CNY'
-  ) {
-    // Cross-border source materials (e.g. SEC EDGAR XBRL facts) provide only the
-    // two totals without the intermediate reconciliation rows. Show the honest
-    // two-step bridge instead of pretending a full reconciliation exists.
-    // RMB filings without the intermediate rows keep the previous no-bridge
-    // behaviour, because the full reconciliation is expected from local filings.
-    bridge = [
-      {
-        key: 'netProfit',
-        label: metricLabels.netProfit,
-        value: fenToYuan(profit.fen),
-        kind: 'total',
-        sourceRefs: profit.refs,
-        derived: false,
-      },
-      {
-        key: 'operatingCashFlow',
-        label: metricLabels.operatingCashFlow,
-        value: fenToYuan(cash.fen),
-        kind: 'total',
-        sourceRefs: cash.refs,
-        derived: false,
-      },
-    ];
-    checks.push({
-      id: 'bridge-balance',
-      label: '现金桥闭合',
-      status: 'warn',
-      message:
-        '来源仅提供净利润与经营现金两项合计，未提供中间调节明细；现金桥只展示起止两项，完整调节见披露原文现金流量表。',
-      sourceRefs: [],
-    });
-    insufficient = true;
   } else {
     insufficient = true;
     checks.push({
@@ -338,23 +300,6 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
   }
   // Compare only adopted annual observations. A complete cash bridge is not
   // required, but a declared or reconciliation conflict withholds comparisons.
-  // Adjacent years in different currencies cannot be compared without an
-  // exchange rate, so they stop the calculation instead of mixing units.
-  for (const [crossKey, crossLabel, current, previous] of [
-    ['profit-currency', '净利润跨年币种', profit, previousProfit],
-    ['cash-currency', '经营现金跨年币种', cash, previousCash],
-  ] as const) {
-    if (current && previous && current.observation.currency !== previous.observation.currency) {
-      conflict = true;
-      checks.push({
-        id: crossKey,
-        label: crossLabel,
-        status: 'fail',
-        message: '同一指标相邻年度币种不一致，不进行跨币种比较；请补齐同币种材料。',
-        sourceRefs: [...current.refs, ...previous.refs],
-      });
-    }
-  }
   for (const [growthKey, changeKey, growthLabel, changeLabel, current, previous] of [
     ['profitGrowth', 'profitChange', '净利润同比', '净利润变动额', profit, previousProfit],
     ['cashGrowth', 'cashChange', '经营现金同比', '经营现金变动额', cash, previousCash],
@@ -377,12 +322,9 @@ export function analyze(input: CreateTaskInput, materials: Material[]): Report {
         label: changeLabel,
         value: change === null ? null : fenToYuan(change),
         previousValue: null,
-        unit: current?.observation.currency === 'USD' ? 'USD' : 'CNY',
+        unit: 'CNY',
         kind: 'calculated',
-        formula:
-          current?.observation.currency === 'USD'
-            ? '本年金额 − 上年金额；同主体、相邻年度、美元合并口径；按分计算'
-            : '本年金额 − 上年金额；同主体、相邻年度、人民币合并口径；按分计算',
+        formula: '本年金额 − 上年金额；同主体、相邻年度、人民币合并口径；按分计算',
         sourceRefs,
       }
     );

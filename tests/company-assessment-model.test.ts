@@ -126,8 +126,8 @@ function narrative(seed: CompanyAssessment): AssessmentNarrative {
     seed.metrics.find((item) => item.status === 'available' && item.unit === 'percent') ||
     seed.metrics.find((item) => item.status === 'available')!;
   const judgment = (
-    zh = '盈利增长，但经营现金质量承压。',
-    en = 'Earnings grew, but cash conversion is under pressure.'
+    zh = '收入增长，但经营现金质量承压。',
+    en = 'Revenue grew, but cash conversion is under pressure.'
   ): AssessmentJudgment => ({
     text: { zh, en },
     metricIds: [metric.id],
@@ -135,8 +135,8 @@ function narrative(seed: CompanyAssessment): AssessmentNarrative {
   });
   return {
     summary: judgment(
-      `关键指标为 {{metric:${metric.id}}}；盈利增长，但经营现金质量承压。`,
-      `The key indicator is {{metric:${metric.id}}}; earnings grew but cash conversion is under pressure.`
+      `关键指标为 {{metric:${metric.id}}}；收入增长，但经营现金质量承压。`,
+      `The key indicator is {{metric:${metric.id}}}; revenue grew but cash conversion is under pressure.`
     ),
     dimensions: seed.dimensions.map((dimension) => ({ ...judgment(), dimensionId: dimension.id })),
     strengths: [
@@ -190,6 +190,15 @@ test('Grok analyzes rich public context with real metric substitution while grad
   Object.assign(run.context!.financials[7]!.ratios, { privateSecret: 'PRIVATE_RATIO_SENTINEL' });
   const beforeWithPrivateExtras = structuredClone(run);
   const seed = deriveCompanyAssessment(run);
+  const answer = narrative(seed);
+  answer.summary = {
+    text: {
+      zh: '收入增长，但现金转化明显偏弱，是所选年度的主要弱点。收入增长率为 {{metric:revenue-growth}}，现金利润比为 {{metric:cash-profit}}；优先核对主要客户期后回款是否兑现。',
+      en: 'Revenue grew, but weak cash conversion is the main weakness in the selected year. Revenue growth is {{metric:revenue-growth}} and cash conversion is {{metric:cash-profit}}; prioritize checking subsequent collections from major customers.',
+    },
+    metricIds: ['revenue-growth', 'cash-profit'],
+    evidenceIds: [],
+  };
   let calls = 0;
   const result = await analyzeCompanyWithModel(run, {
     ...config(async (url, init) => {
@@ -223,7 +232,7 @@ test('Grok analyzes rich public context with real metric substitution while grad
       assert.equal(context.announcements[0].id, 'announcement-25');
       assert.equal(context.sourceQuality[0].responseHashes[0], 'a'.repeat(64));
       assert.equal(context.industry, null);
-      return response(narrative(seed));
+      return response(answer);
     }),
     serviceTier: 'default',
   });
@@ -232,12 +241,16 @@ test('Grok analyzes rich public context with real metric substitution while grad
   assert.equal(result.model.calls, 1);
   assert.equal(result.model.name, 'grok-4.7-fast');
   assert.equal(result.model.provider, 'tokenflux.dev');
-  assert.ok(result.narrative?.summary.text.zh.includes('经营现金质量承压'));
+  assert.ok(result.narrative?.summary.text.zh.startsWith('收入增长，但现金转化明显偏弱'));
+  assert.ok(result.narrative?.summary.text.en.startsWith('Revenue grew, but weak cash conversion'));
   assert.ok(!JSON.stringify(result.narrative).includes('{{metric:'));
-  const id = result.narrative!.summary.metricIds[0]!;
-  const metric = seed.metrics.find((item) => item.id === id)!;
-  assert.ok(result.narrative!.summary.text.zh.includes(metric.display[0]));
-  assert.ok(result.narrative!.summary.text.en.includes(metric.display[1]));
+  for (const id of answer.summary.metricIds) {
+    const metric = seed.metrics.find((item) => item.id === id)!;
+    assert.ok(result.narrative!.summary.text.zh.includes(metric.display[0]));
+    assert.ok(result.narrative!.summary.text.en.includes(metric.display[1]));
+  }
+  assert.deepEqual(result.narrative!.actions, answer.actions);
+  assert.deepEqual(result.narrative!.changeConditions, answer.changeConditions);
   assert.deepEqual(financialResult(result), financialResult(seed));
   assert.deepEqual(run, beforeWithPrivateExtras);
 });

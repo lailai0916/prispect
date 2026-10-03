@@ -176,12 +176,6 @@
   margin-bottom: 0;
 }
 @media (max-height: 720px) {
-  .workspace-sidebar {
-    padding-top: 12px;
-  }
-  .sidebar-brand {
-    margin-bottom: 12px;
-  }
   .sidebar-create {
     margin-bottom: 10px;
   }
@@ -1052,9 +1046,6 @@
   min-height: 60px;
 }
 @media (max-height: 720px) {
-  .sidebar-brand {
-    margin-bottom: 12px;
-  }
   .sidebar-create {
     margin-bottom: 10px;
   }

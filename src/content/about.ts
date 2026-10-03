@@ -1,18 +1,15 @@
-import { DOCUMENT_DATE, DOCUMENT_VERSION, type ProductDocument } from './document';
+import type { ProductDocument } from './document';
+import { documentMetadata, documentTitles } from './document-navigation';
+import { productTagline, productTerms } from '../../shared/product-terms';
 
 export const aboutDocument: ProductDocument = {
-  title: ['关于析光', 'About Prispect'],
-  description: [
-    '企业资料核查与条件计算：从公开财报到具体安排。',
-    'Company-evidence review and conditional calculations, from public financials to specific arrangements.',
-  ],
-  version: DOCUMENT_VERSION,
-  updatedAt: DOCUMENT_DATE,
+  ...documentMetadata['/docs/about'],
   sections: [
     {
       id: 'product',
       title: ['产品与用途', 'Product and purpose'],
       paragraphs: [
+        productTagline,
         [
           '析光 / Prispect 帮助你在交款、合作或接手公司前，把分散的财务资料、交易条件和收付款安排整理成可追溯的核查事项。你可以从公司名或一句具体安排开始，再逐步补充影响判断的材料。',
           'Prispect helps you organize financial documents, transaction conditions and cash arrangements into traceable reviews before a payment, partnership or company handover. Start with a company name or a specific arrangement, then add the material that affects your decision.',
@@ -28,15 +25,15 @@ export const aboutDocument: ProductDocument = {
       title: ['从公开资料理解公司', 'Understand a company from public disclosures'],
       paragraphs: [
         [
-          '公司查询当前检索巨潮资讯的大陆 A 股披露。输入代码或公司名称后，析光核对披露主体、读取指定年度完整年报，并按实际可取得的资料检查财务表、附注与近期公告。主体有歧义时需要你选择；没有匹配或来源受限时会说明范围及停止原因。',
-          'Company lookup currently covers mainland A-share disclosures on CNINFO. After a code or company name is entered, Prispect checks the disclosure identity, reads the complete annual report for the selected year, and examines financial tables, notes and recent announcements that it can obtain. Ambiguous identities require your selection. Missing matches or restricted sources show their scope and stopping reason.',
+          '公司研究的原件检索当前覆盖巨潮资讯的大陆 A 股披露。输入代码或公司名称后，析光核对披露主体、读取指定年度完整年报，并按实际可取得的资料检查财务表、附注与近期公告。主体有歧义时需要你选择；没有匹配或来源受限时会说明范围及停止原因。',
+          'Original retrieval in company research currently covers mainland A-share disclosures on CNINFO. After a code or company name is entered, Prispect checks the disclosure identity, reads the complete annual report for the selected year, and examines financial tables, notes and recent announcements that it can obtain. Ambiguous identities require your selection. Missing matches or restricted sources show their scope and stopping reason.',
         ],
         [
           '结果优先展示取得的财务观察、对应来源和仍缺少的证据。AI 自动协助公开资料检索和解释，金额仍需核对原文及规则计算；候选字段由你确认采用后进入财报核查。',
           'Results prioritize financial observations, their sources and evidence still missing. AI automatically assists public-source retrieval and explanation. Amounts remain subject to source checks and rule calculations; you confirm candidate fields before adopting them into a financial review.',
         ],
       ],
-      links: [{ label: ['查询公司', 'Look up a company'], href: '/company' }],
+      links: [{ label: productTerms.companyResearch, href: '/query' }],
     },
     {
       id: 'financial-review',
@@ -53,7 +50,7 @@ export const aboutDocument: ProductDocument = {
       ],
       links: [
         { label: ['导入财务材料', 'Import financial material'], href: '/materials' },
-        { label: ['了解核查方法', 'Read the method'], href: '/method' },
+        { label: documentTitles['/docs/methodology'], href: '/docs/methodology' },
       ],
     },
     {
@@ -67,7 +64,7 @@ export const aboutDocument: ProductDocument = {
         ],
         rows: [
           [
-            ['交款前核查', 'Before a payment'],
+            productTerms.beforePayment,
             [
               '合同、收款与退款责任是谁？本次付款后有多少尚未获得交付或退款抵扣的敞口？',
               'Who is responsible for the contract, receipt and refund? What exposure remains after this payment, after eligible delivery or refund amounts?',
@@ -78,7 +75,7 @@ export const aboutDocument: ProductDocument = {
             ],
           ],
           [
-            ['接手核查', 'Company handover'],
+            productTerms.handoverReview,
             [
               '哪些财务信号需要问前任？若安排付款，在所填现金与日期条件下，何时低于自设底线？',
               'Which financial signals need questions for the previous operator? If a payment is planned, when does cash fall below your floor under the entered balances and dates?',
@@ -90,7 +87,7 @@ export const aboutDocument: ProductDocument = {
           ],
         ],
       },
-      links: [{ label: ['新建核查事项', 'Create a review'], href: '/decisions?new=external' }],
+      links: [{ label: productTerms.beforePayment, href: '/decisions?new=external' }],
     },
     {
       id: 'evidence-and-scenarios',
@@ -123,7 +120,7 @@ export const aboutDocument: ProductDocument = {
           'Financial reviews can be compared and exported as HTML or JSON working papers. Private reviews can export the current version. Exports retain applicable conditions and do not create public sharing links.',
         ],
       ],
-      links: [{ label: ['阅读使用文档', 'Read the guide'], href: '/docs' }],
+      links: [{ label: documentTitles['/docs/guide'], href: '/docs/guide' }],
     },
     {
       id: 'limits-and-data',
@@ -134,13 +131,13 @@ export const aboutDocument: ProductDocument = {
           'Prispect organizes material, traces evidence and calculates conditional results. It does not provide comprehensive corporate-registry, judicial or credit coverage, or replace checks of bank deposit products, legal due diligence, audits or professional financial advice. No matching disclosure does not mean no risk; a completed calculation does not establish that a payment is executable.',
         ],
         [
-          'AI 自动参与公司查询、财报核查和企业问答。数据处理范围与外部服务说明见隐私政策。',
-          'AI automatically participates in company lookup, financial reviews and company questions. See the privacy policy for data-processing scope and external services.',
+          'AI 自动参与公司研究、财报核查和企业问答。数据处理范围与外部服务说明见隐私政策。',
+          'AI automatically participates in company research, financial reviews and company questions. See the privacy policy for data-processing scope and external services.',
         ],
       ],
       links: [
-        { label: ['数据与隐私', 'Data and privacy'], href: '/privacy' },
-        { label: ['服务条款', 'Terms of service'], href: '/terms' },
+        { label: documentTitles['/docs/privacy'], href: '/docs/privacy' },
+        { label: documentTitles['/docs/terms'], href: '/docs/terms' },
       ],
     },
   ],

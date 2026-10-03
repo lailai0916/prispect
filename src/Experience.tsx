@@ -1,36 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowUp, CheckCircle2, CircleAlert, LoaderCircle, Search, X } from 'lucide-react';
+import { CheckCircle2, CircleAlert, LoaderCircle, Search, X } from 'lucide-react';
 import { useApp } from './context';
-import { Hint } from './components';
-
-export function ReadingTop({ route }: { route: string }) {
-  const { t } = useApp();
-  const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    const update = () => setVisible(window.scrollY > 650);
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
-  }, [route]);
-  if (!visible) return null;
-  return (
-    <Hint label={t('返回顶部', 'Back to top')}>
-      <button
-        className="reading-top icon-button"
-        aria-label={t('返回顶部', 'Back to top')}
-        onClick={() => {
-          window.scrollTo({
-            top: 0,
-            behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
-          });
-          document.getElementById('main')?.focus({ preventScroll: true });
-        }}
-      >
-        <ArrowUp size={16} />
-      </button>
-    </Hint>
-  );
-}
 
 export function SearchField({
   value,

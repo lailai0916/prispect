@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { ArrowUpRight, ChevronDown, FileSearch, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import {
-  ASSESSMENT_METHODOLOGY,
   type AssessmentJudgment,
   type AssessmentStatus,
   type AssessmentText,
@@ -140,10 +139,7 @@ export function CompanyAssessment({
                     '本次分析未完成，已取得的财务数据与原件核查仍可查看。',
                     'The analysis did not complete. Available financial data and original reviews remain accessible.'
                   )
-                : t(
-                    '尚未形成分析。缺失资料不会填零，也不会推定公司评级。',
-                    'Analysis is not yet available. Missing data is not filled with zero or used to infer a grade.'
-                  )}
+                : t('尚未形成分析。', 'Analysis is not yet available.')}
         </p>
         {run.context && !loading && run.contextStatus !== 'loading' && (
           <button className="button button-secondary" onClick={() => onRefresh()}>
@@ -326,21 +322,6 @@ export function CompanyAssessment({
           {t('分析生成 ', 'Analyzed ') + date(assessment.generatedAt, locale)}
         </span>
       </div>
-      <details className="assessment-details assessment-methodology">
-        <summary>
-          <ChevronDown size={14} />
-          {t('评级方法与阈值', 'Grade methodology and thresholds')}
-        </summary>
-        {ASSESSMENT_METHODOLOGY.map((paragraph, index) => (
-          <p key={index}>{t(...paragraph)}</p>
-        ))}
-      </details>
-      <p className="assessment-footnote">
-        {t(
-          '这是所选年度的公开数据分析，不是评级机构的信用等级。历史货币资金不代表当前可用现金。',
-          'This analysis uses selected-year public data and is not a credit-agency rating. Historical monetary funds are not current available cash.'
-        )}
-      </p>
       {selected && (
         <CompanyAssessmentEvidence
           assessment={assessment}

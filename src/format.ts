@@ -32,6 +32,22 @@ export function metricValue(metric: ComputedMetric | undefined, locale: Locale):
   return money(metric.value, locale);
 }
 
+/** Preserve an original amount's scale and declared currency without conversion. */
+export function originalAmount(
+  value: string,
+  unit: MoneyUnit,
+  currency: string,
+  locale: Locale
+): string {
+  const units: Record<MoneyUnit, readonly [string, string]> = {
+    yuan: ['元', 'base units'],
+    wan: ['万元', '10k units'],
+    yi: ['亿元', '100m units'],
+    usd: ['美元', 'USD units'],
+  };
+  return `${money(value, locale, false)} ${units[unit][locale === 'en' ? 1 : 0]} · ${currency || (locale === 'en' ? 'unconfirmed currency' : '币种未确认')}`;
+}
+
 export function yuan(value: string, unit: MoneyUnit): string {
   const sign = value.startsWith('-') ? '-' : '';
   const [integer = '0', fraction = ''] = value.replace(/^-/, '').split('.');

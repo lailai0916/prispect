@@ -192,20 +192,14 @@ export function CompanyIndustryView({ run }: { run: CompanyResearchRun }) {
           <div className="context-data-note">
             <p>
               {t(
-                '各企业比率等权平均，中位数帮助观察极端值影响；保留亏损与极端值，不删尾。',
-                'Ratios use an equal-weight mean. The median helps show extreme-value effects; losses and extremes are retained.'
+                '样本为该年度已披露的沪深上市企业；比率等权平均，保留亏损与极端值。',
+                'Samples are disclosed Shanghai/Shenzhen listed companies for this year. Ratios use an equal-weight mean, retaining losses and extremes.'
               )}
             </p>
             <p>
               {t(
-                '高于均值不等于更好，负债与应收比例需结合结构。有效同行不足五家时，均值与差异保持未知。',
-                'Above-average does not mean better. Debt and receivables need structural context. Means and differences are withheld below five valid peers.'
-              )}
-            </p>
-            <p>
-              {t(
-                '样本只覆盖该年度已披露的沪深上市企业，不代表整个行业，也不用于补填企业缺失数据或生成评分。',
-                'Samples cover disclosed Shanghai/Shenzhen listed companies for this year, not the entire industry. They do not fill missing company values or generate scores.'
+                '负债与应收比例需结合结构解读。有效同行不足五家时，均值与差异保持未知。',
+                'Debt and receivables ratios need structural context. Means and differences are withheld below five valid peers.'
               )}
             </p>
           </div>

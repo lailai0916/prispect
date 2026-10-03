@@ -1,21 +1,17 @@
-import { DOCUMENT_VERSION, type ProductDocument } from './document';
+import type { ProductDocument } from './document';
+import { documentMetadata, documentTitles } from './document-navigation';
+import { productTerms } from '../../shared/product-terms';
 
 export const guideDocument: ProductDocument = {
-  title: ['使用文档', 'Documentation'],
-  description: [
-    '从公司分析到保存核查：评级依据、研究目标、材料与现金条件的使用方法。',
-    'From company analysis to saved reviews: grading evidence, research goals, materials and cash conditions.',
-  ],
-  version: DOCUMENT_VERSION,
-  updatedAt: '2026-10-03',
+  ...documentMetadata['/docs/guide'],
   sections: [
     {
       id: 'start',
       title: ['选择起点', 'Choose a starting point'],
       paragraphs: [
         [
-          '首页输入公司名称、证券代码或一句待核查的安排。自动识别在本地选择入口，也可能把你明确写出的名称或拟付金额带入草稿；描述不成为已验证证据。你也可以手动选择公司查询、交款前核查或接手公司。',
-          'Enter a company name, security code or an arrangement to review on the home page. Local recognition chooses an entry point and may prefill a name or proposed amount you explicitly stated into a draft; it does not turn the description into verified evidence. You can also select company lookup, a prepayment review or a company handover manually.',
+          '首页输入公司名称、证券代码或一句待核查的安排。自动识别在本地选择入口，也可能把你明确写出的名称或拟付金额带入草稿；描述不成为已验证证据。你也可以手动选择“公司研究”“付款前核对”或“接手核查”。',
+          'Enter a company name, security code or an arrangement to review on the home page. Local recognition chooses an entry point and may prefill a name or proposed amount you explicitly stated into a draft; it does not turn the description into verified evidence. You can also select Company research, Before payment or Company handover manually.',
         ],
         [
           '登录后，个人工作区可以保存材料与历史。尚无记录时从输入开始即可；未提供的交易金额、现金或日期保持未知，不必为了进入页面填写零。',
@@ -30,58 +26,58 @@ export const guideDocument: ProductDocument = {
         rows: [
           [
             ['了解一家公司的公开财务资料', 'Understand public company financials'],
-            ['公司查询', 'Company lookup'],
+            productTerms.companyResearch,
           ],
           [
             [
               '核对合同责任、收款与预付款条件',
               'Review responsibility, receipt and prepayment conditions',
             ],
-            ['付款与交接：交款前', 'Payments and handovers: before payment'],
+            ['付款与交接 → 付款前核对', 'Payments and handovers → Before payment'],
           ],
           [
             ['接手前问清财务问题或安排收付款', 'Review handover questions or cash arrangements'],
-            ['付款与交接：接手公司', 'Payments and handovers: company handover'],
+            ['付款与交接 → 接手核查', 'Payments and handovers → Company handover'],
           ],
           [
             ['已有年报或结构化财务数据', 'You already have reports or structured financial data'],
             [
-              '材料 → 导入；财报工作记录 → 新建核查',
-              'Materials → Import; Financial reviews → New review',
+              '材料 → 导入；财报核查 → 新建财报核查',
+              'Materials → Import; Financial reviews → New financial review',
             ],
           ],
         ],
       },
       links: [
-        { label: ['查询公司', 'Company lookup'], href: '/query' },
-        { label: ['研究库', 'Research library'], href: '/research' },
-        { label: ['付款与交接', 'Payments and handovers'], href: '/decisions' },
-        { label: ['材料', 'Materials'], href: '/materials' },
+        { label: productTerms.companyResearch, href: '/query' },
+        { label: productTerms.researchLibrary, href: '/research' },
+        { label: productTerms.paymentsAndHandovers, href: '/decisions' },
+        { label: productTerms.materials, href: '/materials' },
       ],
     },
     {
       id: 'company',
-      title: ['查询公司与确认候选', 'Look up a company and confirm candidates'],
+      title: ['公司研究与确认候选', 'Company research and candidate confirmation'],
       bullets: [
         [
-          '从首页或“新建研究”输入公司名称或证券代码，确认匹配的披露主体后进入公司报告。公开资料取得后自动研究，报告先给分析摘要、紧凑财务评级、合并净利润、经营现金和现金利润比，再给最多三条重点发现与下一步核查。入口保留当前账号的输入草稿；年报原件继续在后台核查，未取得材料如实显示。',
-          'Enter a company name or security code from the home page or New research, then confirm the matched disclosure identity. Research starts when public data is available. The company report first shows an analysis summary, compact financial grade, consolidated profit, operating cash and their ratio, then at most three key findings and next checks. The entry retains the current account’s draft. Original reports continue in the background, with unavailable evidence stated.',
+          '从首页或“新建研究”输入公司名称或证券代码，确认匹配的披露主体后进入研究报告。公开资料取得后自动研究，首屏先给一句核心判断、评级与解释，再展示关键金额、资料覆盖和四个实际研究阶段。点击“依据与计算”核对原文，点击“检验解释”或“挑战解释”进入已有证据实验；展开入口不会自动启动补查。入口保留当前账号的输入草稿，年报原件继续在后台核查。',
+          'Enter a company name or security code from the home page or New research and confirm the matched issuer. Research starts when public data is available. The first screen leads with a concise judgment, grade and explanation, followed by key amounts, source coverage and four recorded research stages. Evidence and calculations opens the sources; Test an explanation or Challenge an explanation opens the existing evidence lab without automatically starting retrieval. The entry retains your draft while original reports continue in the background.',
         ],
         [
-          '主导航提供“研究库”“材料”和“付款与交接”。研究库保留本账号的企业记录、已保存摘要、评级与资料时点，可按公司、代码、年度和状态筛选；筛选不会重新研究。打开一家企业后，侧边栏才显示公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个专题。财报工作台和核查比较继续在“核查工具”中。',
-          'The main navigation opens Research library, Materials, and Payments and handovers. The library retains your company records, saved summaries, grades and source timestamps, with local company, code, year and state filters. Filtering does not restart research. A selected company opens seven sidebar topics: Company overview, Financial history, Industry comparison, Announcements, Further checks, Data coverage and Source comparison. The financial workbench and review comparison remain in Review tools.',
+          '主导航提供“研究库”“材料”和“付款与交接”。研究库保留本账号的研究记录、已保存摘要、财务评级与资料时点，可按公司、代码、年度和状态筛选；筛选不会重新研究。打开一家企业后，侧边栏才显示公司概览、历史财务走势、行业对比、公告线索、扩展核查、数据覆盖和来源比对七个专题。财报核查和核查比较继续在“核查工具”中。',
+          'The main navigation opens Research library, Materials, and Payments and handovers. The library retains your research records, saved summaries, financial grades and source timestamps, with local company, code, year and state filters. Filtering does not restart research. A selected company opens seven sidebar topics: Company overview, Financial history, Industry comparison, Announcements, Further checks, Data coverage and Source comparison. Financial reviews and Compare reviews remain in Review tools.',
         ],
         [
           '继续展开“检验解释”“六维分析与计算依据”“新闻与公开讨论”和“完整财务数据与核查清单”，或打开“年报原件与核查过程”。无需选择阅读模式。财务专题保留归母与合并两种利润口径；外部付款与内部交接仍是独立核查目的。原件现金桥使用同年度合并净利润。行业均值剔除本企业，只比较同年度且至少五家有效同行。',
           'Expand Test an explanation, Dimensions and calculation evidence, News and public discussions, or Financial data and review checklist; originals remain in Originals and review process. No reading-mode choice is needed. Financial topics retain attributable and consolidated profit controls; external payment and internal handover remain separate review purposes. The original cash bridge uses same-year consolidated profit. Industry averages exclude the target and require at least five valid same-year peers.',
         ],
         [
-          '侧边栏“已载入企业”记录右侧的 × 可删除本次查询和问答，已采用材料保留；查询、分析或解释补查进行中暂不可删除。匿名首页的公开年报实例可直接查看事实出处并做本地撤证，无需登录或调用模型；新企业查询与保存需要账号。',
-          'The × beside a loaded-company record deletes that query and its answers while keeping adopted materials. Active queries, analysis or explanation research must finish first. Anonymous homepage examples let you inspect original-report facts and try local withdrawal without signing in or calling a model. New company queries and saved work require an account.',
+          '侧边栏“已载入企业”记录右侧的 × 可删除本次研究记录和问答，已采用材料保留；研究、分析或解释补查进行中暂不可删除。新建公司研究与保存需要账号。',
+          'The × beside a loaded-company record deletes that research record and its answers while keeping adopted materials. Active research, analysis or explanation research must finish first. New company research and saved work require an account.',
         ],
         [
-          '右下角助手在公司页面沿用当前企业和利润口径；在其他页面，可以选择账号内已保存的企业。企业问答使用 AI 结合当前公开快照回答，回答与来源随企业记录保存；模型失败时保留规则底稿并显示实际状态。未登录或尚未载入企业时，助手提供本地产品帮助，以及文档、登录或新建研究入口。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
-          'The lower-right assistant uses the current company and profit basis on company pages. Elsewhere, you can select a company saved in your account. Company questions use AI with the current public snapshot, saving answers and sources with the company record. Model failures retain rule results and show the actual status. Signed-out visitors and accounts without a loaded company receive local product help and links to documentation, sign-in or new research. Missing fields stay unknown. The coverage page does not infer “no risk” from missing information. Failed refreshes retain earlier timestamps rather than labeling old data as newly updated.',
+          '右下角的析光助手只有一个对话框。直接问已经研究的公司即可：问题中明确提到的企业优先，其次沿用当前企业、上一轮企业或最近的研究；有歧义时会追问。你也可以问网站功能、隐私政策或使用方法，回答附文档链接。需要新的企业资料时，可在同一对话中要求补查，助手说明实际来源和缺口。企业回答随对应研究记录保存；未登录时可检索产品文档。模型失败保留规则回答或文档原文，未取得的字段保持未知。',
+          'The lower-right Prispect assistant has one conversation. Ask directly about a researched company: an explicitly named company takes priority, then the current company, the previous conversation company or the latest research; ambiguity prompts a follow-up. You can also ask about features, privacy or how to use the site, with document links in the answer. Ask for fresh company material in the same conversation to see actual sources and gaps. Company answers stay with their research record; signed-out visitors can search product documents. Model failures retain rules-based answers or document excerpts, and missing fields stay unknown.',
         ],
         [
           '输入准确公司名称或证券代码。准确唯一匹配可直接开始；简称有歧义时选择披露主体。当前覆盖巨潮大陆 A 股披露，未匹配不等于公司不存在或没有风险。',
@@ -109,8 +105,8 @@ export const guideDocument: ProductDocument = {
         ],
       ],
       links: [
-        { label: ['开始公司研究', 'Start company research'], href: '/query' },
-        { label: ['打开研究库', 'Open research library'], href: '/research' },
+        { label: productTerms.companyResearch, href: '/query' },
+        { label: productTerms.researchLibrary, href: '/research' },
       ],
     },
     {
@@ -152,31 +148,41 @@ export const guideDocument: ProductDocument = {
           'Base grades are A: at least 80; B: 60–79.99; C: 40–59.99; D: below 40. One core dimension below 40 caps the final grade at C; two or more cap it at D. The original score remains visible alongside the cap reason. Missing or conflicting key data in any core dimension produces NR (not rated), without filling zeros or redistributing missing weights.',
         ],
         [
-          '“依据”和“指标与计算依据”展示精确金额、公式与对应来源；“评级方法与阈值”说明具体规则。评级属于析光公开财务筛选方法，不是评级机构的信用等级。历史金额不代表当前可用现金；标题线索、网页字段和已取得的原文节选分别标注。',
-          'Evidence and Metrics and calculations show exact amounts, formulas and supporting sources; Grade methodology and thresholds explains the rules. The grade is Prispect’s public-financial screening method, not a credit-agency rating. Historical amounts are not current available cash. Headline leads, web fields and retrieved source excerpts are labeled separately.',
+          '完整财务评级为 NR，但已有可独立核对的财务维度时，首屏可以先给“暂定评级”，同时标明已覆盖几个维度。暂定评级只按这些有效维度的得分等权平均，采用相同等级阈值与弱项上限，不显示完整百分制总分。主体或年度不符、零个有效维度时不生成评级；未取得或冲突的维度不补零、不作为支持。补齐资料后再形成完整财务评级，原保存记录不会因显示暂定评级而改写。',
+          'When the complete financial grade is NR but independently supported financial dimensions are available, the first screen can show a provisional grade with its dimension coverage. It averages only those valid dimension scores, using the same grade thresholds and weak-dimension caps, without presenting a complete score out of 100. A mismatched issuer or year, or no valid dimensions, produces no grade. Missing or conflicting dimensions are not zero-filled or treated as support. Complete data enables the full financial grade; displaying a provisional grade does not rewrite saved records.',
+        ],
+        [
+          '“依据”和“指标与计算依据”展示精确金额、公式与对应来源；完整评级规则集中在“核查方法”的“财务评级标准”章节，可通过下方链接查看。评级属于析光公开财务筛选方法，不是评级机构的信用等级。历史金额不代表当前可用现金；标题线索、网页字段和已取得的原文节选分别标注。',
+          'Evidence and Metrics and calculations show exact amounts, formulas and supporting sources. The full grading rules are in Financial grade criteria within Review methodology, linked below. The grade is Prispect’s public-financial screening method, not a credit-agency rating. Historical amounts are not current available cash. Headline leads, web fields and retrieved source excerpts are labeled separately.',
         ],
         [
           '需要补查时打开“进一步研究”，填写重点，例如“比较现金质量与同行，梳理近一年重大事项”，再点击“开始研究”。研究目标会发送给分析模型，请只填写公开公司问题。留空回到常规研究范围；不需要填写目标才能得到默认分析。',
           'For a focused follow-up, open Research further, enter a goal such as “compare cash quality with peers and review major events over the past year,” and select Start research. The goal is sent to the analysis model; include public-company questions only. Leaving it blank restores the standard scope. A goal is not required for the default analysis.',
         ],
         [
-          '研究过程区分执行中、完成与未完成。模型未配置或失败时保留规则评级与指标，缺失项保持未知；反向审视未完成时，已通过检查的初稿会保留并提示该阶段未完成。重试未完成时保留上一份分析，并注明对应的资料快照与生成时间。没有查到新闻或公告，不代表没有风险；已有结果也不代表刚刚重新检索过。',
-          'Research steps distinguish running, completed and failed states. An unconfigured or failed model retains rule-based grades and metrics with missing fields left unknown. If counterargument review fails, an already validated draft is retained with that limitation stated. An incomplete retry retains the prior analysis and its snapshot and generation times. No news or disclosure does not establish absence of risk; a saved result does not mean a fresh search occurred.',
+          '研究过程区分执行中、完成与未完成。模型未配置或失败时保留按规则计算的财务评级与指标，缺失项保持未知；反向审视未完成时，已通过检查的初稿会保留并提示该阶段未完成。重试未完成时保留上一份分析，并注明对应的资料快照与生成时间。没有查到新闻或公告，不代表没有风险；已有结果也不代表刚刚重新检索过。',
+          'Research steps distinguish running, completed and failed states. An unconfigured or failed model retains rule-based financial grades and metrics with missing fields left unknown. If counterargument review fails, an already validated draft is retained with that limitation stated. An incomplete retry retains the prior analysis and its snapshot and generation times. No news or disclosure does not establish absence of risk; a saved result does not mean a fresh search occurred.',
         ],
       ],
-      links: [{ label: ['开始公司研究', 'Start company research'], href: '/query' }],
+      links: [
+        { label: productTerms.companyResearch, href: '/query' },
+        {
+          label: ['财务评级标准', 'Financial grade criteria'],
+          href: '/docs/methodology?section=financial-rating',
+        },
+      ],
     },
     {
       id: 'evidence-lab',
       title: ['企业证据实验室', 'Company evidence lab'],
       bullets: [
         [
-          '选择一条事实，查看对应来源、页码或网页字段，再沿连线检查计算与待检验解释。点击“在试验中撤回”只在本地暂停依赖它的路径；点击“在试验中恢复”重新计算，不修改已保存报告或评级，也不发送模型请求。',
-          'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or grades or sending a model request.',
+          '选择一条事实，查看对应来源、页码或网页字段，再沿连线检查计算与待检验解释。点击“在试验中撤回”只在本地暂停依赖它的路径；点击“在试验中恢复”重新计算，不修改已保存报告或财务评级，也不发送模型请求。',
+          'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or financial grades or sending a model request.',
         ],
         [
-          '公司报告先呈现摘要、关键数值、重点发现和下一步；需要检验判断时再展开“检验解释”，查看实验室和挑战操作。已保存的原件报告也先给摘要与下一步，继续展开可看实验室、原件、计算和解释。首页公开年报实例只做历史资料的本地试验；查询并打开公司后，才能执行该公司的解释补查。',
-          'The company report first presents its summary, key values, findings and next checks. Expand Test an explanation to open the lab and challenge actions. Saved original reports also start with the summary and next checks, with the lab, originals, calculations and explanations further down. Homepage examples are local historical trials; look up and open a company to run its explanation research.',
+          '研究报告先呈现摘要、关键数值、重点发现和下一步；需要检验判断时再展开“检验解释”，查看实验室和挑战操作。已保存的核查报告也先给摘要与下一步，继续展开可看实验室、原件、计算和解释。研究并打开公司后，才能执行该公司的解释补查。',
+          'The research report first presents its summary, key values, findings and next checks. Expand Test an explanation to open the lab and challenge actions. Saved review reports also start with the summary and next checks, with the lab, originals, calculations and explanations further down. Research and open a company to run its explanation research.',
         ],
         [
           '恢复已撤回事实后，选择扩张备货、存货去化压力或回款压力，再点击“挑战这个解释”，补查公开新闻、公告及有限原文，分别查看支持、反向线索与资料缺口。模型未配置或失败时保留实际补查和规则线索；“所需材料”仍表示尚未取得，不代表已经拿到订单、库龄或期后流水。',
@@ -213,15 +219,15 @@ export const guideDocument: ProductDocument = {
           'Unconfirmed uploads expire after 24 hours and are cleaned on later access or uploads. Confirmed originals remain with their materials; the account original-file quota is 250 MB. Edited metrics and original files are retained separately. Manual confirmation does not alter or authenticate the original.',
         ],
       ],
-      links: [{ label: ['打开材料', 'Open materials'], href: '/materials' }],
+      links: [{ label: productTerms.materials, href: '/materials' }],
     },
     {
       id: 'report',
       title: ['阅读财报核查', 'Read a financial review'],
       paragraphs: [
         [
-          '报告先展示核查摘要、核心金额和下一步材料，不需要选择阅读模式。继续向下可展开各维度状况，以及原件、计算、解释、询证清单和范围记录；打开相关入口时会直接展开对应内容。核查比较先呈现各报告的风险状态矩阵，再展开两份核查的材料与计算差异。',
-          'Reports present the review summary, core amounts and next evidence first, without a reading-mode choice. Continue down the page to expand dimension details, originals, calculations, explanations, evidence requests and scope records; related links open the relevant content directly. Review comparison starts with the risk-state matrix, followed by an expandable comparison of the evidence and calculations in two reviews.',
+          '报告先展示核查摘要、核心金额和下一步材料，不需要选择阅读模式。继续向下可展开原件、计算、检查、解释、询证清单和范围记录；打开相关入口时会直接展开对应内容。核查比较可直接选择两份报告，查看材料、金额与计算差异。不同公司或不同年度的结果仅并列展示，不能把解释差异当成同一年度的证据撤回。',
+          'Reports present the review summary, core amounts and next evidence first, without a reading-mode choice. Continue down the page to expand originals, calculations, checks, explanations, evidence requests and scope records; related links open the relevant content directly. In review comparison, select two reports to inspect their evidence, amounts and calculations. Results from different companies or years are shown side by side; explanation differences are not evidence withdrawals within the same year.',
         ],
         [
           '报告采用同主体、完整年度、人民币与合并口径的数据。先看净利润、经营现金净额及现金利润比，再看有来源的现金桥与年度对比。现金利润比 = 经营现金净额 ÷ 合并净利润；比例来源应分别核对分子与分母。它不表示销售回款率、可用现金或本金安全。',
@@ -236,11 +242,11 @@ export const guideDocument: ProductDocument = {
           'A passed scope check only means adopted fields meet that rule. Missing fields, conflicts or a difference between original-row totals and reported cash stop the relevant calculation. The system does not plug a residual. Possible causes remain hypotheses; questions identify the customer, settlement, inventory or other evidence needed next.',
         ],
       ],
-      links: [{ label: ['查看核查方法', 'Read the review method'], href: '/method' }],
+      links: [{ label: documentTitles['/docs/methodology'], href: '/docs/methodology' }],
     },
     {
       id: 'external',
-      title: ['交款前：核对责任与敞口', 'Before payment: responsibility and exposure'],
+      title: ['付款前核对：责任与敞口', 'Before payment: responsibility and exposure'],
       bullets: [
         [
           '先填公司或商家名称和拟付金额；不知道金额时可留空。名称暂按你的输入保存，尚未确认合同责任主体。补充条件中分别核对合同、收款与退款主体，以及授权和责任关系。',
@@ -267,7 +273,7 @@ export const guideDocument: ProductDocument = {
     {
       id: 'handover',
       title: [
-        '接手公司：财务问题与当前现金',
+        '接手核查：财务问题与当前现金',
         'Company handover: financial questions and current cash',
       ],
       paragraphs: [
@@ -302,8 +308,8 @@ export const guideDocument: ProductDocument = {
           'The dated cash path shows the minimum balance, first end-of-day shortfall and period-end balances. Same-day receipts and payments can be order-sensitive: a day-end balance may be sufficient while paying first causes an intraday gap. Payment limits and minimum collection percentages are mathematical thresholds under stated assumptions, not forecasts or payment permission.',
         ],
         [
-          '财报报告中的 90 天工作表使用 0–30、31–60、61–90 天三个区间。保存计划后可在现金压力沙盘改变回款比例、时点或额外付款。沙盘采用已保存的人工计划；缺字段时停止相关测算，不能从年报补成当前资金。',
-          'The financial-report 90-day worksheet uses three intervals: days 0–30, 31–60 and 61–90. After saving a plan, the cash stress sandbox can vary collection percentages, timing or additional payments. It uses the saved manual plan; missing fields stop dependent calculations rather than drawing current funds from an annual report.',
+          '核查报告中的 90 天工作表使用 0–30、31–60、61–90 天三个区间。保存计划后可在现金压力沙盘改变回款比例、时点或额外付款。沙盘采用已保存的人工计划；缺字段时停止相关测算，不能从年报补成当前资金。',
+          'The review-report 90-day worksheet uses three intervals: days 0–30, 31–60 and 61–90. After saving a plan, the cash stress sandbox can vary collection percentages, timing or additional payments. It uses the saved manual plan; missing fields stop dependent calculations rather than drawing current funds from an annual report.',
         ],
       ],
     },
@@ -393,7 +399,7 @@ export const guideDocument: ProductDocument = {
           'After a save error or revision conflict, read the latest state before continuing. Loading errors do not present an older workspace as current. After retrying successfully, recheck unsaved changes.',
         ],
       ],
-      links: [{ label: ['比较财报核查', 'Compare financial reviews'], href: '/compare' }],
+      links: [{ label: productTerms.compareReviews, href: '/compare' }],
     },
     {
       id: 'exports',
@@ -430,30 +436,35 @@ export const guideDocument: ProductDocument = {
           'Add, change or clear a display phone number in Profile without a verification code. Email verification, email changes and recovery by email are currently unavailable; verification emails cannot be sent. An email used as a sign-in name does not establish verified ownership. Keep your independent password and recovery methods.',
         ],
         [
-          '重置工作区是清除当前账号核查资料的操作，不是退出登录或账号注销。请先导出需要保留的底稿，并仔细阅读确认范围。',
-          'Workspace reset clears review data for the current account; it is not sign-out or account deletion. Export needed working papers first and read the confirmation scope carefully.',
+          '账号页的“清空我的工作区”会清除当前账号的核查资料，不是退出登录或账号注销。请先导出需要保留的底稿，并仔细阅读确认范围。',
+          'Clear my workspace on the account page clears review data for the current account; it is not sign-out or account deletion. Export needed working papers first and read the confirmation scope carefully.',
         ],
       ],
-      links: [{ label: ['管理账号', 'Manage account'], href: '/account' }],
+      links: [{ label: productTerms.accountSettings, href: '/account' }],
     },
     {
       id: 'ai-and-appearance',
       title: ['AI、语言与外观', 'AI, language and appearance'],
       paragraphs: [
         [
-          '公开公司查询、财报核查和企业问答自动使用 AI，不需要单独启用。模型未完成时保留已有核查结果，并显示实际状态。数据处理范围与第三方服务说明见隐私政策。',
-          'Company lookup, financial reviews and company questions use AI automatically without a separate switch. If the model does not complete, existing review results are retained with its actual status. See the privacy policy for data-processing scope and third-party services.',
+          '公司研究、财报核查和企业问答自动使用 AI，不需要单独启用。模型未完成时保留已有核查结果，并显示实际状态。数据处理范围与第三方服务说明见隐私政策。',
+          'Company research, financial reviews and company questions use AI automatically without a separate switch. If the model does not complete, existing review results are retained with its actual status. See the privacy policy for data-processing scope and third-party services.',
         ],
         [
-          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。外观可选择自动、浅色或深色；自动模式跟随系统设置。',
-          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Appearance offers System, Light and Dark; System follows your device preference.',
+          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。打开网页或系统主题变化时，外观自动跟随系统；随时点击顶栏图标即可切换深色与浅色。',
+          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Appearance follows your system when the page opens or the system theme changes. Click the header icon anytime to switch between light and dark.',
         ],
         [
           '点击顶栏搜索，或按 ⌘ K / Ctrl K，跳转到页面、已保存公司、核查报告和材料。键入时只筛选当前工作区，不发送模型请求；用方向键选择、Enter 打开、Esc 关闭。列表搜索可用 Esc 清除；页面动画遵循系统的减少动态效果设置。',
           'Use header search or ⌘ K / Ctrl K to jump to pages, saved companies, reports and materials. Typing filters this workspace without a model request. Use arrows to select, Enter to open and Esc to close. Esc clears list searches; page animations respect the system reduced-motion preference.',
         ],
       ],
-      links: [{ label: ['数据与隐私', 'Data and privacy'], href: '/privacy?section=ai' }],
+      links: [
+        {
+          label: ['AI 数据处理说明', 'AI data-processing details'],
+          href: '/docs/privacy?section=ai',
+        },
+      ],
     },
     {
       id: 'troubleshooting',

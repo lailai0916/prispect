@@ -3,6 +3,13 @@ import { ArrowUpRight, ChevronRight, Mail, Printer } from 'lucide-react';
 import { useApp } from '../context';
 import { DocumentLayout } from '../DocumentLayout';
 import type { ProductDocument } from '../content/document';
+import {
+  documentationTitle,
+  documentNavigation,
+  documentMetadata,
+  type DocumentPath,
+} from '../content/document-navigation';
+import { MethodContent, methodSections } from './Method';
 import { aboutDocument } from '../content/about';
 import { guideDocument } from '../content/guide';
 import { privacyDocument } from '../content/privacy';
@@ -10,13 +17,16 @@ import { termsDocument } from '../content/terms';
 import { copyrightDocument } from '../content/copyright';
 import '../styles/documentation.css';
 
-export type DocumentPath = '/about' | '/docs' | '/privacy' | '/terms' | '/copyright';
 const documents: Record<DocumentPath, ProductDocument> = {
-  '/about': aboutDocument,
-  '/docs': guideDocument,
-  '/privacy': privacyDocument,
-  '/terms': termsDocument,
-  '/copyright': copyrightDocument,
+  '/docs/about': aboutDocument,
+  '/docs/guide': guideDocument,
+  '/docs/methodology': {
+    ...documentMetadata['/docs/methodology'],
+    sections: [],
+  },
+  '/docs/privacy': privacyDocument,
+  '/docs/terms': termsDocument,
+  '/docs/copyright': copyrightDocument,
 };
 
 // Existing public contact of the operator; shared across policies and support information.
@@ -31,6 +41,7 @@ export function DocumentationPage({
 }) {
   const { t } = useApp();
   const documentContent = documents[path];
+  const method = path === '/docs/methodology';
   useEffect(() => {
     document.title = `${t(...documentContent.title)} · ${t('析光', 'Prispect')}`;
   }, [documentContent, t]);
@@ -39,17 +50,17 @@ export function DocumentationPage({
       path={path}
       section={section}
       headings={[
-        ...documentContent.sections.map((item) => ({
-          id: `document-${item.id}`,
+        ...(method ? methodSections : documentContent.sections).map((item) => ({
+          id: `${method ? 'method' : 'document'}-${item.id}`,
           section: item.id,
-          label: t(...item.title),
+          label: t(item.title[0], item.title[1]),
         })),
         { id: 'document-contact', section: 'contact', label: t('联系析光', 'Contact Prispect') },
       ]}
     >
       <header className="document-heading">
         <div className="document-breadcrumb">
-          <a href="/">{t('析光', 'Prispect')}</a>
+          <a href="/docs">{t(...documentationTitle)}</a>
           <ChevronRight size={13} aria-hidden="true" />
           <span>{t(...documentContent.title)}</span>
         </div>
@@ -60,11 +71,9 @@ export function DocumentationPage({
             {t('更新日期', 'Updated')}{' '}
             <time dateTime={documentContent.updatedAt}>{documentContent.updatedAt}</time>
           </span>
-          {documentContent.version && (
-            <span>
-              {t('版本', 'Version')} {documentContent.version}
-            </span>
-          )}
+          <span>
+            {t('版本', 'Version')} {documentContent.version}
+          </span>
           <button type="button" className="text-link" onClick={() => window.print()}>
             <Printer size={14} />
             {t('打印或保存', 'Print or save')}
@@ -72,6 +81,7 @@ export function DocumentationPage({
         </div>
       </header>
       <div className="document-body">
+        {method && <MethodContent />}
         {documentContent.sections.map((item) => (
           <section
             id={`document-${item.id}`}
@@ -157,11 +167,11 @@ export function DocumentationPage({
           </p>
         </section>
         <nav className="document-related" aria-label={t('相关文档', 'Related documents')}>
-          {Object.entries(documents)
-            .filter(([href]) => href !== path)
-            .map(([href, content]) => (
-              <a key={href} href={href}>
-                {t(...content.title)}
+          {documentNavigation
+            .filter((item) => item.path !== path)
+            .map((item) => (
+              <a key={item.path} href={item.path}>
+                {t(item.label[0], item.label[1])}
                 <ChevronRight size={14} aria-hidden="true" />
               </a>
             ))}

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ArrowUpRight, FileSearch, Info } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
+import { companySections } from '../shared/company-workspace';
 import type {
   CompanyContextSnapshot,
   CompanyContextPeriod,
@@ -20,6 +21,8 @@ import {
 import { Dialog, Tag } from './components';
 import { useApp, type Translate } from './context';
 import { date, money } from './format';
+
+const [, disclosuresZh, disclosuresEn] = companySections.find(([key]) => key === 'disclosures')!;
 
 export function CompanyContextEvidence({
   row,
@@ -73,7 +76,7 @@ export function CompanyContextEvidence({
                       <td>{period.period}</td>
                       <td>{t(...contextFieldLabels[field])}</td>
                       <td>{money(period.amounts[field], locale, false)}</td>
-                      <td>{period.fieldSources[field] || t('未取得', 'Unavailable')}</td>
+                      <td>{period.fieldSources[field] || t('未取得', 'Not retrieved')}</td>
                     </tr>
                   ))
                 )}
@@ -98,8 +101,8 @@ export function CompanyContextEvidence({
           )}
           <p className="muted">
             {t(
-              '现金流补充表中的调整与资产负债表余额不同；网页字段不会自动成为已采用的核查材料。',
-              'Cash-flow adjustments differ from balance-sheet amounts. Web fields are never adopted automatically as review evidence.'
+              '现金流调整需另查补充表。',
+              'Check cash-flow adjustments in the supplementary statement.'
             )}
           </p>
         </Dialog>
@@ -187,8 +190,8 @@ export function CompanyContextOverview({
           </p>
           <small>
             {t(
-              `已取得年度中，${analysis.lossYears} 年利润为负。利润不能单独说明履约能力。`,
-              `${analysis.lossYears} retrieved years have negative profit. Profit alone does not establish fulfilment capacity.`
+              `已取得年度中，${analysis.lossYears} 年利润为负。`,
+              `${analysis.lossYears} retrieved years have negative profit.`
             )}
           </small>
           {last && (
@@ -210,12 +213,6 @@ export function CompanyContextOverview({
             ：{profitName} {money(analysis.threeYear.profit, locale)}；
             {t('经营现金', 'Operating cash')} {money(analysis.threeYear.cash, locale)}
           </p>
-          <small>
-            {t(
-              '经营现金净额不是销售回款，比例不能单独说明差额成因。',
-              'Operating net cash is not sales receipts; the ratio alone does not explain the difference.'
-            )}
-          </small>
           <strong className="context-card-value">
             {analysis.threeYear.ratio === null ? '—' : analysis.threeYear.ratio.toFixed(2)}
             <small>{t(`经营现金 / ${profitName}`, `Operating cash / ${profitName}`)}</small>
@@ -241,8 +238,8 @@ export function CompanyContextOverview({
           </p>
           <small>
             {t(
-              '货币资金不是当前可用现金；两项短债不代表全部偿付责任。',
-              'Monetary funds are not current available cash; two debt fields do not cover all repayment obligations.'
+              '年末账面金额；短债合计仅含上述两项。',
+              'Year-end book amounts; the debt total includes these two items only.'
             )}
           </small>
           <strong className="context-card-value">
@@ -275,10 +272,6 @@ export function CompanyContextOverview({
             <Info size={14} />
             {t('尚缺字段：', 'Missing fields: ')}
             {analysis.missing.map((field) => t(...contextFieldLabels[field])).join('、')}
-            {t(
-              '。缺失不会生成“覆盖充足”等肯定判断。',
-              '. Missing fields do not produce reassuring conclusions.'
-            )}
           </p>
         )}
         {companyCheckPriorities(snapshot, analysis).map((item) => (
@@ -522,29 +515,18 @@ export function CompanyProfileView({ snapshot }: { snapshot: CompanyContextSnaps
     <>
       <section className="context-section">
         <h2>{t('公司公开资料', 'Public company profile')}</h2>
-        <p className="muted">
-          {t(
-            '资料更新时间未知；不能视为当前工商登记状态。',
-            'The profile update date is unknown; this is not current registration verification.'
-          )}
-        </p>
+        <p className="muted">{t('资料更新时间未知。', 'The profile update date is unknown.')}</p>
         <dl className="context-profile-grid">
           {Object.entries(labels).map(([key, label]) => (
             <div key={key}>
               <dt>{t(...label)}</dt>
-              <dd>{snapshot.profile[key] || t('未取得', 'Unavailable')}</dd>
+              <dd>{snapshot.profile[key] || t('未取得', 'Not retrieved')}</dd>
             </div>
           ))}
         </dl>
       </section>
       <section className="context-section">
-        <h2>{t('已披露十大股东', 'Disclosed top shareholders')}</h2>
-        <p className="muted">
-          {t(
-            '已披露直接股东，不代表完整多层股权穿透。',
-            'Direct disclosed shareholders do not represent complete ownership tracing.'
-          )}
-        </p>
+        <h2>{t('已披露十大直接股东', 'Disclosed top direct shareholders')}</h2>
         {snapshot.shareholders.length ? (
           <div className="table-scroll">
             <table>
@@ -578,12 +560,6 @@ export function CompanyProfileView({ snapshot }: { snapshot: CompanyContextSnaps
       </section>
       <section className="context-section">
         <h2>{t('近期新闻线索', 'Recent news leads')}</h2>
-        <p className="muted">
-          {t(
-            '媒体报道需要原文核实，检索为空不代表没有舆情。',
-            'Media reports require original verification. Empty results do not mean no coverage.'
-          )}
-        </p>
         {snapshot.news.length ? (
           <div className="context-news-list">
             {snapshot.news.map((row) => (
@@ -646,12 +622,6 @@ export function CompanySourcesView({ snapshot }: { snapshot: CompanyContextSnaps
   const { t, locale } = useApp();
   return (
     <>
-      <p className="context-data-note">
-        {t(
-          '获取时间、报告期与事件日期分别记录。两个财经平台可能转录同一份报告；一致不代表独立认证。',
-          'Retrieval, report and event dates are separate. Two platforms may transcribe the same report; matching values are not independent authentication.'
-        )}
-      </p>
       <div className="table-scroll">
         <table>
           <thead>
@@ -737,8 +707,8 @@ export function CompanySourcesView({ snapshot }: { snapshot: CompanyContextSnaps
         )}
         <p className="muted">
           {t(
-            '主来源只在缺项时由第二来源补充；差异超过一万元或主金额百万分之一中较大者时，保留双方原值但暂停冲突字段的推断。容差不代表原件核验。',
-            'Only missing primary fields are filled. Differences above the larger of CNY 10,000 and one millionth of the primary amount retain both originals but withhold the conflicting field from inference. Tolerance is not original verification.'
+            '仅补充主来源缺项。差异超过一万元与主金额百万分之一的较大值时，保留双方原值并暂停该字段推断。',
+            'Only missing primary fields are filled. Differences above the larger of CNY 10,000 and one millionth of the primary amount retain both values and withhold inference for that field.'
           )}
         </p>
       </section>
@@ -759,7 +729,7 @@ export function CompanyCoverageView({
       t('年度财务', 'Annual financials'),
       snapshot.financials.some((row) => row.annual)
         ? t('已取得网页字段', 'Web fields retrieved')
-        : t('未取得', 'Unavailable'),
+        : t('未取得', 'Not retrieved'),
       t(
         '字段与来源比对，原件核查单独进行',
         'Fields and source comparison; originals checked separately'
@@ -769,13 +739,13 @@ export function CompanyCoverageView({
       t('最新定期报告', 'Latest periodic report'),
       snapshot.financials.some((row) => !row.annual)
         ? t('已取得', 'Retrieved')
-        : t('未取得', 'Unavailable'),
+        : t('未取得', 'Not retrieved'),
       t('累计期间，通常未经审计', 'Cumulative period, usually unaudited'),
     ],
     [
       t('年报原件与附注', 'Annual originals and notes'),
       run.status === 'adopted'
-        ? t('原件材料已确认采用', 'Original evidence adopted')
+        ? t('原件已采用', 'Original adopted')
         : run.preview
           ? t('已有候选，待确认采用', 'Candidates awaiting confirmation')
           : t('尚未形成候选', 'No candidates yet'),
@@ -785,7 +755,7 @@ export function CompanyCoverageView({
       ),
     ],
     [
-      t('公告线索', 'Disclosures'),
+      t(disclosuresZh, disclosuresEn),
       sourceStateLabel(
         snapshot.sources.find((source) => source.id === 'cninfo-disclosures')?.status || 'unknown',
         t
@@ -799,7 +769,7 @@ export function CompanyCoverageView({
       t('公司资料与股东', 'Company profile and shareholders'),
       snapshot.profile.orgName
         ? t('已取得公开资料', 'Public profile retrieved')
-        : t('未取得', 'Unavailable'),
+        : t('未取得', 'Not retrieved'),
       t(
         '资料更新时间未知，不等同实时登记或股权穿透',
         'Unknown update date; not real-time registration or ownership tracing'

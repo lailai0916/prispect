@@ -1,3 +1,4 @@
+import { productTerms } from '../shared/product-terms';
 import { useEffect, useImperativeHandle, useState, type FormEvent, type Ref } from 'react';
 import { ArrowRight, ArrowUpRight, Check, FileText, Save } from 'lucide-react';
 import type {
@@ -19,8 +20,8 @@ import { CashStressLab } from './CashStressLab';
 
 export function purposeName(purpose: ReviewPurpose | undefined, t: Translate) {
   return purpose === 'handover'
-    ? t('接手经营核查', 'Operating handover')
-    : t('交款前核查', 'Before committing funds');
+    ? t(...productTerms.handoverReview)
+    : t(...productTerms.beforePayment);
 }
 
 function scopeItems(
@@ -47,8 +48,8 @@ function scopeItems(
           key: 'external.promise',
           title: t('用途、交付与退出条件', 'Use of funds, delivery and exit terms'),
           reason: t(
-            '年报现金利润比不能证明本金安全或履约能力。记录承诺的资金用途、交付时间、退款条件及保障由谁承担。',
-            'The annual cash-to-profit ratio does not establish principal safety or performance. Record the promised use of funds, delivery dates, refund conditions, and who provides any protection.'
+            '记录承诺的资金用途、交付时间、退款条件及保障由谁承担。',
+            'Record the promised use of funds, delivery dates, refund conditions, and who provides any protection.'
           ),
           required: t(
             '书面条款、收款用途、交付节点、退款或保障文件。',
@@ -242,7 +243,7 @@ export function ReviewContext({
           <li>
             <span className="path-number">1</span>
             <div>
-              <h3>{t('所用资料', 'Materials used')}</h3>
+              <h3>{t('所用材料', 'Materials used')}</h3>
               <p>
                 {task.company} · {report.year} {t('年度', 'FY')} · {report.snapshot.length}{' '}
                 {t('份材料', 'materials')}
@@ -295,12 +296,6 @@ export function ReviewContext({
             <div>
               <h3>{t('现金信号', 'Cash signal')}</h3>
               <p>{signal}</p>
-              <small>
-                {t(
-                  '不是销售回款率，也不是本金安全率。',
-                  'Neither a sales collection rate nor a measure of principal safety.'
-                )}
-              </small>
             </div>
           </li>
           <li className={stopped ? 'path-stopped' : ''}>
@@ -324,8 +319,8 @@ export function ReviewContext({
               ) : (
                 <p>
                   {t(
-                    '材料没有形成需进一步裁定的应收或存货占款解释；不作公司可靠性判断。',
-                    'The evidence does not identify a receivables or inventory cash-use explanation requiring a decision between alternatives. No company reliability judgment is made.'
+                    '本报告暂无应收或存货占款解释。',
+                    'This report has no receivables or inventory cash-use explanation.'
                   )}
                 </p>
               )}
@@ -371,8 +366,8 @@ export function ReviewContext({
               <p>
                 {purpose === 'external'
                   ? t(
-                      '先核对交付性质、签约与收款主体，再核对承诺条款及近期变化。财报不替代银行机构或存款产品核查。',
-                      'Verify the commitment type and contracting/receiving entities, then review terms and recent changes. Financial statements do not replace checks on a bank or deposit product.'
+                      '核对交付性质、签约与收款主体，再检查承诺条款及近期变化。',
+                      'Check the commitment type and contracting or receiving entities, then review terms and recent changes.'
                     )
                   : t(
                       '取得最新资金对账与付款回款计划，明确交接责任后填写90天工作表。',
@@ -425,14 +420,11 @@ export function ReviewContext({
               ? t('未保存', 'Unsaved')
               : saved || items.some((item) => task.contextNotes?.[item.key])
                 ? t('已保存', 'Saved')
-                : t('尚未保存', 'Not saved')}
+                : t('未保存', 'Unsaved')}
           </span>
         </div>
         <p className="context-note">
-          {t(
-            '勾选只记录跟进，不认证事实；备注不发送给模型。',
-            'Checking an item records follow-up, not fact verification. Notes are not sent to a model.'
-          )}
+          {t('勾选记录跟进完成。', 'Check items to record completed follow-up.')}
         </p>
         {items.map((item) => (
           <div className="context-check-row" key={item.key}>
@@ -590,13 +582,13 @@ export function CashWorksheet({ task }: { task: AnalysisTask }) {
               ? t('已保存', 'Saved')
               : task.cashPlan?.updatedAt
                 ? `${t('保存于', 'Saved')} ${date(task.cashPlan.updatedAt, locale)}`
-                : t('尚未保存', 'Not saved')}
+                : t('未保存', 'Unsaved')}
         </span>
       </div>
       <p className="context-note">
         {t(
-          '来源：用户输入，未经核验，不发送模型。按情景递推，不是预测；年报金额不自动填入。',
-          'Source: unverified user input, not sent to a model. Scenario arithmetic rather than a forecast; annual-report amounts are not prefilled.'
+          '按你填写、尚未核验的收付款假设试算；年报金额不自动填入。',
+          'Calculated from your unverified cash-plan assumptions; annual-report amounts are not prefilled.'
         )}
       </p>
       <div className="worksheet-start">
@@ -708,8 +700,8 @@ export function CashWorksheet({ task }: { task: AnalysisTask }) {
               confirm({
                 title: t('删除这份工作表？', 'Delete this worksheet?'),
                 text: t(
-                  '本任务保存的人工现金假设将删除，年度核查与材料保留。',
-                  'This deletes the saved user-entered cash assumptions. The annual review and its materials remain.'
+                  '这份财报核查保存的人工现金假设将删除，核查报告与材料保留。',
+                  'This deletes the cash assumptions saved with this financial review. The review report and materials remain.'
                 ),
                 action: async () => {
                   await api(`/tasks/${task.id}/context`, {

@@ -21,9 +21,9 @@ import {
   MoreHorizontal,
   X,
 } from 'lucide-react';
-import type { AnalysisTask, EvidenceRef, Report } from '../shared/contracts';
+import type { AnalysisTask, EvidenceRef, Observation, Report } from '../shared/contracts';
 import { api } from './api';
-import { metricName, money, yuan } from './format';
+import { metricName, money, originalAmount } from './format';
 
 import { useApp } from './context';
 import { translateRule } from './ruleTranslations';
@@ -336,6 +336,58 @@ function useReturnFocus(restore = true) {
   return target;
 }
 
+export function EvidenceObservation({ observation: obs }: { observation: Observation }) {
+  const { t, locale } = useApp();
+  const currencyConflict = obs.unit === 'usd' && obs.currency !== 'USD';
+  return (
+    <div>
+      <strong>{metricName(obs.key, locale)}</strong>
+      <span className="mono">{originalAmount(obs.value, obs.unit, obs.currency, locale)}</span>
+      <span>
+        {obs.year} ·{' '}
+        {obs.scope === 'consolidated'
+          ? t('合并', 'Consolidated')
+          : obs.scope === 'parent'
+            ? t('母公司', 'Parent company')
+            : t('范围待确认', 'Unconfirmed scope')}{' '}
+        ·{' '}
+        {obs.period === 'annual'
+          ? t('全年', 'Annual')
+          : obs.period || t('期间待确认', 'Unconfirmed period')}
+      </span>
+      {currencyConflict && (
+        <p className="field-note">
+          {t(
+            '原始单位声明为美元，币种字段与之不一致；保留原值，不作为人民币金额采用。',
+            'The original unit declares USD but the currency field differs. Original values are retained and are not adopted as CNY amounts.'
+          )}
+        </p>
+      )}
+      {obs.components?.length ? (
+        <details>
+          <summary>
+            {t('查看全部原始分组行', 'View original component rows')}
+            <ChevronDown size={13} />
+          </summary>
+          {obs.components.map((component, i) => (
+            <p className="component-row" key={i}>
+              <span>{component.label}</span>
+              <span className="mono">
+                {originalAmount(component.value, obs.unit, obs.currency, locale)}
+              </span>
+              <small>
+                {component.page === null
+                  ? t('页码未提供', 'Page not supplied')
+                  : `PDF ${component.page}`}
+              </small>
+            </p>
+          ))}
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
 export function EvidenceDrawer({
   refs,
   report,
@@ -496,41 +548,7 @@ export function EvidenceDrawer({
                     {observations.length > 0 && (
                       <div className="evidence-observations">
                         {observations.map((obs) => (
-                          <div key={obs.id}>
-                            <strong>{metricName(obs.key, locale)}</strong>
-                            <span className="mono">
-                              {money(yuan(obs.value, obs.unit), locale, false)} {obs.currency}
-                            </span>
-                            <span>
-                              {obs.year} ·{' '}
-                              {obs.scope === 'consolidated'
-                                ? t('合并', 'Consolidated')
-                                : obs.scope === 'parent'
-                                  ? t('母公司', 'Parent')
-                                  : t('范围待确认', 'Unconfirmed scope')}{' '}
-                              ·{' '}
-                              {obs.period === 'annual'
-                                ? t('全年', 'Annual')
-                                : obs.period || t('期间待确认', 'Unconfirmed period')}
-                            </span>
-                            {obs.components?.length && (
-                              <details>
-                                <summary>
-                                  {t('查看全部原始分组行', 'View original component rows')}
-                                  <ChevronDown size={13} />
-                                </summary>
-                                {obs.components.map((component, i) => (
-                                  <p className="component-row" key={i}>
-                                    <span>{component.label}</span>
-                                    <span className="mono">
-                                      {money(yuan(component.value, obs.unit), locale, false)} CNY
-                                    </span>
-                                    <small>PDF {component.page}</small>
-                                  </p>
-                                ))}
-                              </details>
-                            )}
-                          </div>
+                          <EvidenceObservation key={obs.id} observation={obs} />
                         ))}
                       </div>
                     )}

@@ -5,7 +5,7 @@ import type {
   CompanySearchResponse,
 } from '../shared/contracts.js';
 import { ApiFault } from './validation.js';
-import { isSecTicker, secSearchCompanies } from './company-sec.js';
+import { secSearchCompanies } from './company-sec.js';
 import pdfLimits from './pdf-limits.json' with { type: 'json' };
 
 export interface CompanySourceDependencies {
@@ -20,6 +20,18 @@ export interface CompanySourceDependencies {
 }
 const SEARCH = 'https://www.cninfo.com.cn/new/information/topSearch/query';
 const ANNOUNCEMENTS = 'https://www.cninfo.com.cn/new/hisAnnouncement/query';
+export function assertCompanyResearchSupported(
+  securityCode: string,
+  exchange?: CompanyIdentity['exchange']
+): void {
+  if (exchange === 'us' || !/^\d{6}$/.test(securityCode))
+    throw new ApiFault(
+      400,
+      'COMPANY_MARKET_UNSUPPORTED',
+      '当前仅支持A股上市公司研究，美股研究暂未开放；已保存的研究记录仍可查看。'
+    );
+}
+
 export const MAX_COMPANY_PDF_BYTES = pdfLimits.officialBytes;
 export const shanghaiDate = (value: Date | string) =>
   new Date(value).toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
@@ -194,7 +206,6 @@ export async function searchCompanies(
   query = query.trim();
   if (!query || query.length > 80 || /[\x00-\x1f]/.test(query))
     throw new ApiFault(400, 'COMPANY_QUERY_INVALID', '请输入1至80字的公司名称或六位A股代码');
-  if (isSecTicker(query)) return secSearchCompanies(query);
   const raw = await formJson(SEARCH, { keyWord: query, maxNum: '20' }, dependencies);
   if (!Array.isArray(raw))
     throw new ApiFault(502, 'COMPANY_SOURCE_FORMAT', '官方主体检索响应格式改变');
