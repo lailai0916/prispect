@@ -30,6 +30,7 @@ import {
   type OpenCompanyAssistantDetail,
 } from '../../shared/company-navigation';
 import { assessmentSourceHref, knownSourcePage } from '../../shared/source-excerpt-focus';
+import { companyEvidenceSourceUrls } from '../../shared/company-source-evidence';
 import { api, RequestError, requestErrorText } from '../api';
 import { useApp } from '../context';
 import { useCompanyRecords } from '../CompanyRecordsContext';
@@ -72,7 +73,7 @@ const stageLabels = {
 
 /** Saved, owner-scoped public reading only. GET never starts another research job. */
 export function LiteResearchPage({ query }: { query: URLSearchParams }) {
-  const { user, locale, t } = useApp();
+  const { user, locale, t, historyNavigation } = useApp();
   const { isCurrentOwner, removeLocal } = useCompanyRecords();
   const { publish } = useContext(CompanyAssistantContext);
   const owner = user?.id || null;
@@ -124,7 +125,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       reads++;
       try {
         const next = await api<CompanyResearchRun>(`/company-runs/${encodeURIComponent(id)}`, {
-          signal: controller.signal,
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]),
         });
         if (!current()) return;
         if (next.id !== id)
@@ -151,7 +152,16 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           setLoaded({ scope, run: null });
           setVerified(null);
         }
-        setFailure({ scope, text: requestErrorText(cause, locale) });
+        setFailure({
+          scope,
+          text:
+            cause instanceof DOMException && cause.name === 'TimeoutError'
+              ? t(
+                  '读取研究状态超时，请重新读取。已保存资料仍可继续查看。',
+                  'Reading research status timed out. Read again; saved data remains available.'
+                )
+              : requestErrorText(cause, locale),
+        });
       } finally {
         if (current()) setReading(false);
       }
@@ -205,9 +215,30 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
     return () => observer.disconnect();
   }, [run?.id]);
 
+  useEffect(() => {
+    if (!run || historyNavigation) return;
+    const anchor = location.hash.slice(1);
+    if (!chapters.some(([id]) => id === anchor)) return;
+    const frame = requestAnimationFrame(() => {
+      const target = root.current?.querySelector<HTMLElement>(`#${anchor}`);
+      if (!target) return;
+      setChapter(anchor);
+      target.scrollIntoView({ block: 'start', behavior: 'auto' });
+      target.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [run?.id, scope, historyNavigation]);
+
+  useEffect(() => {
+    if (!run) return;
+    // Saved research arriving, a local basis change or translation can move chapter anchors.
+    const frame = requestAnimationFrame(() => ScrollTrigger.refresh());
+    return () => cancelAnimationFrame(frame);
+  }, [run?.updatedAt, run?.context?.fetchedAt, run?.assessment?.generatedAt, basis, locale]);
+
   useGSAP(
     () => {
-      if (!run) return;
+      if (!run || run.informationGap || !researchSupported(run)) return;
       const media = gsap.matchMedia();
       media.add('(prefers-reduced-motion: no-preference)', () => {
         gsap.from('.lite-title-reveal', {
@@ -257,11 +288,13 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <article ref={root} className="lite-research lite-empty" data-locale={locale}>
         <p className="lite-kicker">PRISPECT / LITE</p>
         <h1>
-          {owner && id && reading
+          {owner && id && !error
             ? t('正在打开，\n这一家公司。', 'Opening this\ncompany.')
-            : t('从一家\n公司开始。', 'Start with\na company.')}
+            : owner && id && error
+              ? t('这份研究，\n暂时打不开。', 'This research\ncould not be opened.')
+              : t('从一家\n公司开始。', 'Start with\na company.')}
         </h1>
-        {owner && id && reading && (
+        {owner && id && !error && (
           <p role="status">
             <LoaderCircle className="spinner" size={18} aria-hidden="true" />{' '}
             {t('读取已保存的研究记录', 'Reading the saved research')}
@@ -297,13 +330,53 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
         </p>
         {error && <p role="alert">{error}</p>}
         <div className="lite-empty-actions">
-          <a href={`${companyPath(run.id, 'evidence')}&experience=pro`}>
+          {error && (
+            <button
+              type="button"
+              disabled={reading}
+              onClick={() => setVersion((previous) => previous + 1)}
+            >
+              <RefreshCw size={17} aria-hidden="true" />
+              {t('重新读取状态', 'Read status again')}
+            </button>
+          )}
+          <a href={`${companyPath(run.id, 'evidence')}&cached=1&experience=pro`}>
             {t('在 Pro 中查看已保存原文', 'View saved originals in Pro')}
             <ArrowUpRight size={19} aria-hidden="true" />
           </a>
           <a href="/#showcase-query">
             {t('查一家新公司', 'Find a company')}
             <ArrowRight size={19} aria-hidden="true" />
+          </a>
+        </div>
+      </article>
+    );
+  if (run.informationGap)
+    return (
+      <article ref={root} className="lite-research lite-empty" data-locale={locale}>
+        <p className="lite-kicker">PRISPECT / LITE / {run.input.year}</p>
+        <h1>{run.informationGap.name}</h1>
+        <p role="status">{t('未匹配到支持的上市主体。', 'No supported listed entity matched.')}</p>
+        <p>{run.informationGap.reason}</p>
+        {error && <p role="alert">{error}</p>}
+        <div className="lite-empty-actions">
+          {error && (
+            <button
+              type="button"
+              disabled={reading}
+              onClick={() => setVersion((previous) => previous + 1)}
+            >
+              <RefreshCw size={17} aria-hidden="true" />
+              {t('重新读取状态', 'Read status again')}
+            </button>
+          )}
+          <a href="/#showcase-query">
+            {t('用证券代码或其他名称再查', 'Try a security code or another name')}
+            <ArrowRight size={19} aria-hidden="true" />
+          </a>
+          <a href={`${companyPath(run.id)}&cached=1&experience=pro`}>
+            {t('在 Pro 中查看这份记录', 'View this record in Pro')}
+            <ArrowUpRight size={19} aria-hidden="true" />
           </a>
         </div>
       </article>
@@ -325,7 +398,10 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       ? t(...ruleLead.judgment)
       : t('资料还在路上，先保留判断。', 'More evidence is needed before a judgment.');
   const companyName =
-    run.identity?.companyName || run.context?.companyName || run.input.securityCode;
+    run.identity?.companyName ||
+    run.context?.companyName ||
+    run.identity?.shortName ||
+    run.input.securityCode;
   const summaryEvidence =
     report && core.summary
       ? new Set([
@@ -342,6 +418,30 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       (annual?.originalUrl ? [annual.originalUrl] : []).filter((url) => assessmentSourceHref(url))
     ),
   ];
+  const acquiredSources = new Map<
+    string,
+    { href: string; provider: string; fields: ContextAmountField[] }
+  >();
+  if (annual && overview.state === 'available') {
+    for (const field of fields) {
+      if (annual.amounts[field] === null) continue;
+      for (const provider of ['primary', 'secondary'] as const) {
+        for (const href of companyEvidenceSourceUrls(run.context, annual, field, provider)) {
+          const receipt = run.context?.sources.find((source) => source.url === href);
+          if (receipt && !['available', 'partial'].includes(receipt.status)) continue;
+          const source = acquiredSources.get(href);
+          if (source) source.fields.push(field);
+          else
+            acquiredSources.set(href, {
+              href,
+              provider:
+                provider === 'primary' ? t('东方财富', 'Eastmoney') : t('新浪财经', 'Sina Finance'),
+              fields: [field],
+            });
+        }
+      }
+    }
+  }
   const sourceCards = boundSources.flatMap((source) => {
     const href = assessmentSourceHref(source.url, knownSourcePage(source.page));
     return href
@@ -369,8 +469,12 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
         {
           id: 'lite-current-evidence',
           text: t(
-            `请用通俗的话解释 ${run.input.year} 年已取得的财务数据，哪些结论还缺少依据？`,
-            `Explain the acquired ${run.input.year} financial data simply. Which conclusions still lack evidence?`
+            annual
+              ? `请用通俗的话解释 ${run.input.year} 年已取得的财务数据，哪些结论还缺少依据？`
+              : `这份研究在 ${run.input.year} 年度缺少哪些资料，下一步应如何核对？`,
+            annual
+              ? `Explain the acquired ${run.input.year} financial data simply. Which conclusions still lack evidence?`
+              : `Which ${run.input.year} annual evidence is missing, and how should it be checked next?`
           ),
         },
         {
@@ -381,8 +485,14 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           ),
         },
       ];
+  const canAsk = Boolean(
+    owner &&
+      verified === scope &&
+      researchSupported(run) &&
+      (core.summary || (overview.state === 'available' && run.context?.status !== 'unavailable'))
+  );
   const ask = (question: string) => {
-    if (!owner || verified !== scope || !researchSupported(run) || !isCurrentOwner()) return;
+    if (!owner || !canAsk || !isCurrentOwner()) return;
     const detail: OpenCompanyAssistantDetail = {
       owner,
       runId: run.id,
@@ -406,15 +516,34 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <p>{description}</p>
     </header>
   );
-  const stepLink = (index: number) =>
-    index < chapters.length - 1 ? (
-      <a className="lite-next-chapter" href={`#${chapters[index + 1][0]}`}>
-        <span>
-          {t('接着看', 'Continue')} · {t(chapters[index + 1][1], chapters[index + 1][2])}
-        </span>
-        <ArrowDown size={21} aria-hidden="true" />
-      </a>
-    ) : null;
+  const stepLink = (index: number) => (
+    <nav className="lite-chapter-pager" aria-label={t('相邻章节', 'Adjacent chapters')}>
+      {index > 0 && (
+        <a
+          className="lite-next-chapter lite-previous-chapter"
+          href={`#${chapters[index - 1][0]}`}
+          onClick={() => setChapter(chapters[index - 1][0])}
+        >
+          <ArrowLeft size={18} aria-hidden="true" />
+          <span>
+            {t('回看', 'Previous')} · {t(chapters[index - 1][1], chapters[index - 1][2])}
+          </span>
+        </a>
+      )}
+      {index < chapters.length - 1 && (
+        <a
+          className="lite-next-chapter"
+          href={`#${chapters[index + 1][0]}`}
+          onClick={() => setChapter(chapters[index + 1][0])}
+        >
+          <span>
+            {t('接着看', 'Continue')} · {t(chapters[index + 1][1], chapters[index + 1][2])}
+          </span>
+          <ArrowDown size={21} aria-hidden="true" />
+        </a>
+      )}
+    </nav>
+  );
 
   return (
     <article
@@ -425,7 +554,11 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       key={scope}
     >
       <nav className="lite-chapter-nav" aria-label={t('阅读章节', 'Reading chapters')}>
-        <a className="lite-back" href="/#showcase-query">
+        <a
+          className="lite-back"
+          href="/#showcase-query"
+          aria-label={t('查另一家', 'Another company')}
+        >
           <ArrowLeft size={16} aria-hidden="true" />
           <span>{t('查另一家', 'Another company')}</span>
         </a>
@@ -434,14 +567,16 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             <a
               key={anchor}
               href={`#${anchor}`}
+              aria-label={t(`第 ${index + 1} 章：${zh}`, `Chapter ${index + 1}: ${en}`)}
               aria-current={chapter === anchor ? 'location' : undefined}
+              onClick={() => setChapter(anchor)}
             >
               <span>0{index + 1}</span>
               <span>{t(zh, en)}</span>
             </a>
           ))}
         </div>
-        <a className="lite-pro-link" href={`${companyPath(run.id)}&experience=pro`}>
+        <a className="lite-pro-link" href={`${companyPath(run.id)}&cached=1&experience=pro`}>
           Pro
           <ArrowUpRight size={16} aria-hidden="true" />
         </a>
@@ -470,6 +605,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <section
         className="lite-chapter lite-intro"
         id="lite-judgment"
+        tabIndex={-1}
         aria-labelledby="lite-company-title"
       >
         <div className="lite-intro-top">
@@ -553,7 +689,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 : !report
                   ? t('尚无可用财务评级', 'No financial grade is available yet')
                   : grade === 'NR'
-                    ? t('资料未齐，暂不评级', 'Incomplete evidence; unrated')
+                    ? t('综合评级暂未形成', 'An overall grade is not yet available')
                     : t('所选年度 · 合并口径', 'Selected annual year · consolidated basis')}
             </p>
             {report && <small>{date(report.snapshotFetchedAt, locale)}</small>}
@@ -563,7 +699,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           <span>{t(...progress.label)}</span>
           <ol>
             {progress.stages.map((stage, index) => (
-              <li key={stage.id} data-status={stage.status}>
+              <li key={stage.id} data-status={stage.status} title={t(...stage.summary)}>
                 <span>0{index + 1}</span>
                 <strong>{t(...stage.label)}</strong>
                 <small>{t(stageLabels[stage.status][0], stageLabels[stage.status][1])}</small>
@@ -571,11 +707,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             ))}
           </ol>
         </div>
-        {(brief.warnings.length > 0 ||
-          run.contextError ||
-          run.assessmentError ||
-          run.error ||
-          run.informationGap) && (
+        {(brief.warnings.length > 0 || run.contextError || run.assessmentError || run.error) && (
           <div className="lite-scope-notes" role="status">
             {brief.warnings.map((warning, index) => (
               <p key={index}>{t(...warning)}</p>
@@ -583,7 +715,6 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             {run.contextError && <p>{run.contextError}</p>}
             {run.assessmentError && <p>{run.assessmentError}</p>}
             {run.error && <p>{run.error}</p>}
-            {run.informationGap && <p>{run.informationGap.reason}</p>}
           </div>
         )}
         {stepLink(0)}
@@ -592,6 +723,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <section
         className="lite-chapter lite-number-chapter"
         id="lite-numbers"
+        tabIndex={-1}
         aria-labelledby="lite-numbers-heading"
       >
         {chapterHeading(
@@ -687,6 +819,14 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             )}
           </p>
         )}
+        {overview.state === 'available' && !annual && (
+          <p className="lite-scope-notes" role="status">
+            {t(
+              `尚未取得 ${run.input.year} 年度数据；本节数值保持未知。`,
+              `${run.input.year} annual data has not been acquired; the values in this chapter remain unknown.`
+            )}
+          </p>
+        )}
         <div className="lite-observations lite-reveal">
           {overview.cards.map((card) => {
             const rows = companyOverviewEvidencePeriods(run.context, card.evidence);
@@ -722,6 +862,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <section
         className="lite-chapter lite-evidence-chapter"
         id="lite-sources"
+        tabIndex={-1}
         aria-labelledby="lite-sources-heading"
       >
         {chapterHeading(
@@ -747,6 +888,12 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             />
           </div>
           <div className="lite-source-list">
+            {sourceCards.length > 0 && (
+              <p className="lite-source-group-label">
+                {t('核心判断的依据', 'Evidence for the core judgment')} ·{' '}
+                {report ? date(report.snapshotFetchedAt, locale) : ''}
+              </p>
+            )}
             {sourceCards.map((source, index) => (
               <a key={source.id} href={source.href} target="_blank" rel="noopener noreferrer">
                 <span className="lite-source-index">0{index + 1}</span>
@@ -760,6 +907,13 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 <ArrowUpRight size={21} aria-hidden="true" />
               </a>
             ))}
+            {(originals.length > 0 || acquiredSources.size > 0) && (
+              <p className="lite-source-group-label">
+                {run.input.year} ·{' '}
+                {t('本年度数字的来源', 'Sources for the selected year’s figures')}
+                {run.context ? ` · ${date(run.context.fetchedAt, locale)}` : ''}
+              </p>
+            )}
             {originals.map((href) => (
               <a key={href} href={href} target="_blank" rel="noopener noreferrer">
                 <FileSearch size={22} aria-hidden="true" />
@@ -773,7 +927,30 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
                 <ArrowUpRight size={21} aria-hidden="true" />
               </a>
             ))}
-            {!sourceCards.length && !originals.length && (
+            {acquiredSources.size > 0 && (
+              <p className="lite-source-group-label">
+                {t(
+                  '网页字段尚未逐项核对原件。',
+                  'Public web fields have not been individually checked against the original.'
+                )}
+              </p>
+            )}
+            {[...acquiredSources.values()].map((source) => (
+              <a key={source.href} href={source.href} target="_blank" rel="noopener noreferrer">
+                <FileSearch size={22} aria-hidden="true" />
+                <div>
+                  <small>
+                    {source.provider} · {run.input.year} ·{' '}
+                    {t('结构化财务数据', 'Structured financial data')}
+                  </small>
+                  <h3>
+                    {source.fields.map((field) => t(...contextFieldLabels[field])).join(' / ')}
+                  </h3>
+                </div>
+                <ArrowUpRight size={21} aria-hidden="true" />
+              </a>
+            ))}
+            {!sourceCards.length && !originals.length && !acquiredSources.size && (
               <p className="lite-source-empty">
                 {t(
                   '尚未取得支撑核心判断的原文。已取得的字段仍可在上一节逐项核对。',
@@ -783,7 +960,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             )}
             <a
               className="lite-source-full"
-              href={`${companyPath(run.id, 'sources')}&experience=pro`}
+              href={`${companyPath(run.id, 'sources')}&cached=1&experience=pro`}
             >
               <span>{t('在 Pro 中核对全部来源', 'Check all sources in Pro')}</span>
               <ArrowRight size={19} aria-hidden="true" />
@@ -802,6 +979,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       <section
         className="lite-chapter lite-question-chapter"
         id="lite-questions"
+        tabIndex={-1}
         aria-labelledby="lite-questions-heading"
       >
         {chapterHeading(
@@ -821,7 +999,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             <button
               key={question.id}
               type="button"
-              disabled={verified !== scope || !researchSupported(run)}
+              disabled={!canAsk}
               onClick={() => ask(question.text)}
             >
               <span>0{index + 1}</span>
@@ -830,9 +1008,31 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
             </button>
           ))}
         </div>
+        <p className="lite-snapshot-note" role={!canAsk ? 'status' : undefined}>
+          {canAsk
+            ? t(
+                `点击问题即提交给析光助手，沿用这份研究的 ${run.input.year} 年度、${core.summary || basis === 'consolidated' ? '合并口径' : '归母口径'}${core.summary && report ? '及已保存报告版本' : ''}。`,
+                `Selecting a question submits it to the Prispect assistant with this research’s ${run.input.year} annual period, ${core.summary || basis === 'consolidated' ? 'consolidated' : 'attributable'} basis${core.summary && report ? ' and saved report version' : ''}.`
+              )
+            : verified !== scope
+              ? error
+                ? t(
+                    '暂未能确认这份研究记录。重新读取状态后，可继续追问；已有资料仍可阅读。',
+                    'This research record could not be confirmed. Read its status again to enable follow-ups; saved data remains readable.'
+                  )
+                : t(
+                    '正在确认这份研究记录，确认后可继续追问。',
+                    'Confirming this research record before follow-up questions become available.'
+                  )
+              : t(
+                  '取得可用的公开资料后，可基于这份研究继续追问。',
+                  'Follow-up questions become available when usable public sources have been acquired.'
+                )}
+        </p>
+        {stepLink(3)}
         <div className="lite-finish lite-reveal">
           <p>{t('想把每个细节都看清？', 'Ready to inspect every detail?')}</p>
-          <a href={`${companyPath(run.id)}&experience=pro`}>
+          <a href={`${companyPath(run.id)}&cached=1&experience=pro`}>
             {t('进入 Pro，展开完整研究', 'Open the complete research in Pro')}
             <ArrowUpRight size={22} aria-hidden="true" />
           </a>

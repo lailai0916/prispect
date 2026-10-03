@@ -688,7 +688,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             section === 'industry' ? 'industry' : section === 'financial' ? 'combined' : 'history'
           }
           visible={section === 'trends' || section === 'industry' || section === 'financial'}
-          autoLoad={verifiedRunScope === `${user?.id}:${id}`}
+          autoLoad={!savedOnly && verifiedRunScope === `${user?.id}:${id}`}
           onHistoryResult={rememberIndustryHistory}
         />
       )}

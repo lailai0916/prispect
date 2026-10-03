@@ -12,7 +12,7 @@ export function ShowcaseNavigation({
   homeActive?: boolean;
   proLink?: string;
 }) {
-  const { t } = useApp();
+  const { t, locale } = useApp();
   const [open, setOpen] = useState(false);
   const [preview, setPreview] = useState(0);
   const firstLink = useRef<HTMLAnchorElement>(null);
@@ -22,18 +22,24 @@ export function ShowcaseNavigation({
       label: 'Lite',
       detail: t('从一家公司的名字开始。', 'Start with a company name.'),
       image: '/showcase/paper-sculpture.webp',
+      width: 1400,
+      height: 1004,
     },
     {
       href: proLink,
       label: 'Pro',
       detail: t('查询企业，回到现有研究流程。', 'Search companies in the research workspace.'),
       image: '/landing/songyuan-2025-page-191-crop.png',
+      width: 1032,
+      height: 495,
     },
     {
       href: '/docs',
       label: t('文档', 'Documentation'),
       detail: t('了解用法、方法与数据范围。', 'Read the guide, methodology and coverage.'),
       image: '/landing/songyuan-2025-page-190-crop.png',
+      width: 1032,
+      height: 665,
     },
   ];
   return (
@@ -54,7 +60,7 @@ export function ShowcaseNavigation({
       {open && (
         <Dialog
           title={t('探索析光', 'Explore Prispect')}
-          className="showcase-navigation"
+          className={`showcase-navigation${locale === 'en' ? ' showcase-navigation-english' : ''}`}
           initialFocus={firstLink}
           onClose={() => setOpen(false)}
         >
@@ -84,8 +90,8 @@ export function ShowcaseNavigation({
                   key={entry.href}
                   src={entry.image}
                   alt=""
-                  width={index === 0 ? 1400 : 1032}
-                  height={index === 0 ? 1004 : 495}
+                  width={entry.width}
+                  height={entry.height}
                   className={preview === index ? 'is-active' : ''}
                 />
               ))}

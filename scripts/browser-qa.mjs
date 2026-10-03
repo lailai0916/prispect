@@ -19,7 +19,7 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 1,
+  version: 2,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: false,
@@ -29,13 +29,16 @@ const receipt = {
   consoleErrors: [],
   failedResponses: [],
   failedRequests: [],
+  cancelledReadRequests: [],
   blockedServerRequests: [],
   blockedBrowserRequests: [],
+  excludedTelemetryScripts: [],
   researchWrites: [],
   limits: [
     'No company research is submitted; live company-result, financial acquisition, same-run switching and model/assistant answers are outside this entry-flow check.',
     'Screenshots require a separate visual comparison with the selected source; successful assertions are not a fidelity verdict.',
     'Guest storage is fresh and temporary; no production records or synthetic financial responses are used.',
+    'The existing analytics.lailai.one/script.js telemetry script receives empty JavaScript locally; analytics behavior is outside this check.',
   ],
 };
 globalThis.fetch = async (input, init) => {
@@ -65,6 +68,18 @@ async function noOverflow(page, name) {
   );
   check(`${name}: no horizontal page overflow`);
 }
+async function headerControlsFit(page, name) {
+  const viewport = page.viewportSize().width;
+  for (const control of await page.locator('.site-header a, .site-header button').all()) {
+    if (!(await control.isVisible())) continue;
+    const box = await control.boundingBox();
+    assert.ok(
+      box && box.x >= -2 && box.x + box.width <= viewport + 2,
+      `${name} hides a header control: ${await control.getAttribute('aria-label')}`
+    );
+  }
+  check(`${name}: visible header controls remain inside the viewport`);
+}
 async function capture(page, name) {
   const filename = `${name}.png`;
   await page.screenshot({
@@ -77,6 +92,10 @@ async function capture(page, name) {
     deviceScaleFactor: 1,
     url: new URL(page.url()).pathname,
     theme: await page.locator('html').getAttribute('data-theme'),
+    locale: await page.locator('.showcase-home, .company-query-page').getAttribute('data-locale'),
+    reducedMotion: await page.evaluate(
+      () => matchMedia('(prefers-reduced-motion: reduce)').matches
+    ),
   });
 }
 async function openContext({
@@ -99,7 +118,14 @@ async function openContext({
   await context.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (['http:', 'https:'].includes(url.protocol) && url.origin !== base) {
+    if (
+      request.method() === 'GET' &&
+      request.resourceType() === 'script' &&
+      request.url() === 'https://analytics.lailai.one/script.js'
+    ) {
+      receipt.excludedTelemetryScripts.push(request.url());
+      await route.fulfill({ status: 200, contentType: 'application/javascript', body: '' });
+    } else if (['http:', 'https:'].includes(url.protocol) && url.origin !== base) {
       receipt.blockedBrowserRequests.push({
         origin: url.origin,
         pathname: url.pathname,
@@ -130,12 +156,21 @@ async function openContext({
         pathname: new URL(response.url()).pathname,
       });
   });
-  page.on('requestfailed', (request) =>
-    receipt.failedRequests.push({
+  page.on('requestfailed', (request) => {
+    const failure = {
       pathname: new URL(request.url()).pathname,
       failure: request.failure()?.errorText,
-    })
-  );
+    };
+    // Owner-scoped reads abort when a page detaches or an input draft is cleared.
+    // Preserve these observations without hiding writes, HTTP errors or other failures.
+    const cancelledRead =
+      request.method() === 'GET' &&
+      failure.failure === 'net::ERR_ABORTED' &&
+      /^\/api\/(?:company-records|workspace|companies\/(?:directory|search))$/.test(
+        failure.pathname
+      );
+    receipt[cancelledRead ? 'cancelledReadRequests' : 'failedRequests'].push(failure);
+  });
   page.setDefaultTimeout(15000);
   await page.goto(base, { waitUntil: 'networkidle' });
   await page.waitForFunction(() => {
@@ -176,6 +211,7 @@ try {
   assert.equal((await session.json()).user.isGuest, true);
   check('Real guest session and enabled Lite company entry');
   await noOverflow(page, 'desktop Lite');
+  await headerControlsFit(page, 'desktop Lite');
   await capture(page, 'lite-desktop-zh-light');
   const input = page.locator('.showcase-search textarea');
   await input.evaluate((element) =>
@@ -189,6 +225,15 @@ try {
   );
   await input.blur();
   check('Native editable company input retains composition text without submitting research');
+  // These labels are present in the real bundled public catalog. Clear immediately;
+  // clicking a sample only drafts its name and never submits company research.
+  await page.locator('.showcase-examples button').filter({ hasText: '松原安全' }).click();
+  await page.waitForFunction(() => {
+    const field = document.querySelector('.showcase-search textarea');
+    return field?.value === '松原安全' && document.activeElement === field;
+  });
+  await input.fill('');
+  check('Sample company button fills and focuses the editable draft without submission');
   const year = page.locator('.showcase-search-meta .select-trigger');
   const before = await year.innerText();
   await year.click();
@@ -257,6 +302,7 @@ try {
     .waitFor();
   assert.equal(await mobile.page.locator('html').getAttribute('data-theme'), 'dark');
   await noOverflow(mobile.page, 'mobile English dark');
+  await headerControlsFit(mobile.page, 'mobile English dark');
   await capture(mobile.page, 'lite-mobile-en-dark');
   await mobile.page.locator('.showcase-menu-trigger').click();
   await mobile.page.getByRole('dialog', { name: 'Explore Prispect', exact: true }).waitFor();
@@ -277,6 +323,33 @@ try {
   await capture(reduced.page, 'lite-mobile-zh-reduced-motion');
   check('375px reduced-motion entry remains visible and editable');
   await reduced.context.close();
+  const narrow = await openContext({
+    locale: 'en',
+    width: 320,
+    height: 768,
+    reducedMotion: 'reduce',
+  });
+  await noOverflow(narrow.page, '320px English Lite');
+  await headerControlsFit(narrow.page, '320px English Lite');
+  await capture(narrow.page, 'lite-320-en-light');
+  const narrowTrigger = narrow.page.locator('.showcase-menu-trigger');
+  await narrowTrigger.focus();
+  await narrow.page.keyboard.press('Enter');
+  const narrowMenu = narrow.page.getByRole('dialog', { name: 'Explore Prispect', exact: true });
+  await narrowMenu.waitFor();
+  for (const key of ['Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Shift+Tab']) {
+    await narrow.page.keyboard.press(key);
+    await narrow.page.waitForFunction(() =>
+      Boolean(document.activeElement?.closest('.showcase-navigation[role="dialog"]'))
+    );
+  }
+  await noOverflow(narrow.page, '320px English full-screen menu');
+  await capture(narrow.page, 'lite-menu-320-en-light');
+  await narrow.page.keyboard.press('Escape');
+  await narrowMenu.waitFor({ state: 'hidden' });
+  assert.equal(await narrowTrigger.evaluate((element) => document.activeElement === element), true);
+  check('320px English menu confines Tab/Shift+Tab focus and restores its trigger');
+  await narrow.context.close();
   for (const name of [
     'pageErrors',
     'consoleErrors',

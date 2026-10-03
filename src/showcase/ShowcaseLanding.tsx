@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, ArrowRight, ArrowUpRight, LoaderCircle, Search } from 'lucide-react';
 import { productTagline } from '../../shared/product-terms';
 import { Dialog } from '../components';
@@ -62,15 +62,41 @@ export function ShowcaseLanding({
   query?: URLSearchParams;
   connectionError?: string;
 }) {
-  const { t, locale, user, refresh } = useApp();
+  const { t, locale, user, refresh, historyNavigation } = useApp();
   const { year, setYear, latest, creating, error, begin } = useCompanyQuery(query, {
     experience: 'lite',
   });
   const root = useRef<HTMLDivElement>(null);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [activePreview, setActivePreview] = useState(0);
-  const [exampleDraft, setExampleDraft] = useState<{ text: string; revision: number } | null>(null);
+  const searchScope = JSON.stringify([user?.id || null, query?.get('query') || '']);
+  const [exampleDraft, setExampleDraft] = useState<{
+    text: string;
+    revision: number;
+    scope: string;
+  } | null>(null);
+  const activeExample = exampleDraft?.scope === searchScope ? exampleDraft : null;
   useShowcaseMotion(root, locale);
+  useEffect(() => {
+    let frame = 0;
+    const followAnchor = () => {
+      if (historyNavigation) return;
+      const anchor = location.hash.slice(1);
+      if (!['showcase-query', 'showcase-evidence'].includes(anchor)) return;
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const target = root.current?.querySelector<HTMLElement>(`#${anchor}`);
+        target?.scrollIntoView({ block: 'start', behavior: 'instant' });
+        target?.focus({ preventScroll: true });
+      });
+    };
+    followAnchor();
+    window.addEventListener('hashchange', followAnchor);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('hashchange', followAnchor);
+    };
+  }, [historyNavigation]);
   const english = locale === 'en';
   const titleLines = english
     ? ['Make company', 'judgments traceable.']
@@ -83,6 +109,8 @@ export function ShowcaseLanding({
         'Enter a name or code and confirm the company.'
       ),
       image: '/showcase/paper-sculpture.webp',
+      width: 1400,
+      height: 1004,
     },
     {
       title: t('看数字', 'Read the numbers'),
@@ -91,6 +119,8 @@ export function ShowcaseLanding({
         'Compare profit, operating cash and same-year financial records.'
       ),
       image: landingExample.source.crops[1].src,
+      width: landingExample.source.crops[1].width,
+      height: landingExample.source.crops[1].height,
     },
     {
       title: t('追依据', 'Trace the evidence'),
@@ -99,6 +129,8 @@ export function ShowcaseLanding({
         'Return to the source and ask what needs investigating next.'
       ),
       image: landingExample.source.crops[0].src,
+      width: landingExample.source.crops[0].width,
+      height: landingExample.source.crops[0].height,
     },
   ];
   return (
@@ -136,13 +168,20 @@ export function ShowcaseLanding({
               'Find a company. Read the numbers. Trace every source.'
             )}
           </p>
-          <div id="showcase-query" className="showcase-search" aria-busy={creating || !user}>
+          <div
+            id="showcase-query"
+            className="showcase-search"
+            role="search"
+            aria-label={t('企业查询', 'Company search')}
+            tabIndex={-1}
+            aria-busy={creating || (!user && !connectionError)}
+          >
             <Search className="showcase-search-icon" size={23} aria-hidden="true" />
             <StartInput
-              key={`${user?.id || 'anonymous'}:${query?.get('query') || 'new-company'}:${exampleDraft?.revision || 0}`}
+              key={`${searchScope}:${activeExample?.revision || 0}`}
               compact
               companyOnly
-              initialText={exampleDraft?.text || query?.get('query') || undefined}
+              initialText={activeExample?.text || query?.get('query') || undefined}
               disabled={!user || creating}
               placeholder={t('输入 A 股公司名称或代码', 'Enter an A-share company name or code')}
               submitLabel={t('开始查询', 'Search')}
@@ -208,6 +247,7 @@ export function ShowcaseLanding({
                   setExampleDraft((draft) => ({
                     text: name,
                     revision: (draft?.revision || 0) + 1,
+                    scope: searchScope,
                   }));
                   requestAnimationFrame(() =>
                     root.current
@@ -230,6 +270,7 @@ export function ShowcaseLanding({
       <section
         id="showcase-evidence"
         className="showcase-evidence"
+        tabIndex={-1}
         aria-labelledby="showcase-evidence-title"
       >
         <div className="showcase-evidence-heading">
@@ -343,8 +384,8 @@ export function ShowcaseLanding({
                 src={chapter.image}
                 key={chapter.title}
                 className={activePreview === index ? 'is-active' : ''}
-                width={index === 0 ? 1400 : 1032}
-                height={index === 0 ? 1004 : 495}
+                width={chapter.width}
+                height={chapter.height}
                 alt=""
                 loading="lazy"
               />
@@ -380,7 +421,7 @@ export function ShowcaseLanding({
         </button>
       </section>
       <footer className="showcase-footer">
-        <span>析光 / Prispect Lite</span>
+        <span>© 2026 析光 / Prispect Lite</span>
         <div>
           <a href="/query">Pro</a>
           <a href="/docs/privacy">{t('隐私政策', 'Privacy')}</a>

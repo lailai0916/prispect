@@ -26,7 +26,7 @@ export function useCompanyQuery(
   const [year, setYear] = useState(initialYear);
   const purpose = 'external' as const;
   const [creating, setCreating] = useState(false);
-  const [error, setError] = useState('');
+  const [failure, setFailure] = useState<{ cause: unknown } | null>(null);
   const controller = useRef<AbortController | null>(null);
   const locked = useRef(false);
   const pendingRequest = useRef<{ signature: string; key: string } | null>(null);
@@ -38,7 +38,7 @@ export function useCompanyQuery(
     pendingRequest.current = null;
     setYear(initialYear);
     setCreating(false);
-    setError('');
+    setFailure(null);
     return () => controller.current?.abort();
   }, [user?.id, initialYear]);
 
@@ -62,7 +62,7 @@ export function useCompanyQuery(
     }
     locked.current = true;
     setCreating(true);
-    setError('');
+    setFailure(null);
     const request = new AbortController();
     controller.current = request;
     const path = identity ? '/company-runs' : '/company-gaps';
@@ -95,8 +95,7 @@ export function useCompanyQuery(
         navigate(`${companyPath(run.id)}${run.reused ? '&cached=1' : ''}${experienceSuffix}`);
       }
     } catch (cause) {
-      if (!request.signal.aborted && currentOwner.current === owner)
-        setError(requestErrorText(cause, locale));
+      if (!request.signal.aborted && currentOwner.current === owner) setFailure({ cause });
     } finally {
       if (!request.signal.aborted && currentOwner.current === owner) {
         locked.current = false;
@@ -105,5 +104,6 @@ export function useCompanyQuery(
     }
   };
 
+  const error = failure ? requestErrorText(failure.cause, locale) : '';
   return { year, setYear, latest, creating, error, begin };
 }

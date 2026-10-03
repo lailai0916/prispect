@@ -30,9 +30,9 @@ Date: 2026-10-04 (Asia/Shanghai).
 
 **Code checks, separate from visual QA**
 
-- Frontend build passed, research-record check passed, and 10 selected pure test files passed as reported by the implementation task. These do not establish browser behavior or fidelity.
+- The restored-Pro release frontend build and strict frontend entry type check passed. Eight relevant pure test files passed, and the new Lite SSR regressions cover unmatched company names, paused legacy markets and actual cross-owner cache isolation. Research-record validation passed. These do not establish browser behavior or fidelity.
 - Full type checking remains blocked by the existing missing `cheerio@1.1.2` dependency and its transitive packages; the exact packages are absent from the local offline cache.
-- Final implementation checks are still pending. No production deployment, real-provider verification or current browser acceptance is claimed here.
+- The latest source-based polish covers motion reset/cleanup, layout-trigger refresh, chapter paging and deep links, acquired-source access, failure recovery and narrow-screen control names. These are implementation changes, not findings from a rendered comparison. Browser CI acceptance is prepared for eight entry-flow screenshots and a receipt, but has not run. No production deployment, real-provider verification or current browser acceptance is claimed here.
 
 **Open Questions**
 

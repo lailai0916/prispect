@@ -84,6 +84,10 @@
   color: var(--showcase-ink);
   background: var(--showcase-paper);
   overflow-x: clip;
+  min-width: 0;
+}
+.showcase-home :is(a, button) {
+  touch-action: manipulation;
 }
 .showcase-home :is(a, button):focus-visible,
 .showcase-navigation a:focus-visible {
@@ -197,6 +201,7 @@
   line-height: 26px;
   resize: none;
   white-space: pre;
+  min-width: 0;
 }
 .showcase-search .start-input textarea:focus-visible {
   outline: 2px solid var(--showcase-ink);
@@ -272,8 +277,8 @@
   color: var(--showcase-muted);
   font-size: 13px;
 }
-.showcase-search-meta .select-control {
-  min-height: 36px;
+.showcase-search-meta .select-trigger {
+  min-height: 44px;
   padding-block: 6px;
 }
 .showcase-search-meta a {
@@ -281,6 +286,7 @@
   gap: 6px;
   align-items: center;
   color: var(--showcase-ink);
+  min-height: 44px;
 }
 .showcase-search-feedback {
   display: flex;
@@ -290,6 +296,8 @@
   font-size: 13px;
   color: var(--showcase-ink);
   line-height: 1.6;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
 }
 .showcase-examples {
   pointer-events: auto;
@@ -305,12 +313,17 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 5px 0;
+  min-height: 44px;
+  padding: 5px 3px;
   border: 0;
   background: transparent;
   color: var(--showcase-ink);
   font-size: inherit;
   cursor: pointer;
+  text-underline-offset: 5px;
+}
+.showcase-examples > button:not(:disabled):is(:hover, :focus-visible) {
+  text-decoration: underline;
 }
 .showcase-examples > button:disabled {
   opacity: 0.5;
@@ -323,6 +336,7 @@
   display: grid;
   gap: 14px;
   font-size: 12px;
+  min-height: 44px;
 }
 .showcase-evidence {
   position: relative;
@@ -592,6 +606,9 @@
   font-weight: 800;
   letter-spacing: -0.06em;
   line-height: 1.1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  isolation: isolate;
   transition: transform 280ms ease;
 }
 .showcase-menu-label::after {
@@ -616,6 +633,7 @@
   width: 34px;
   height: 34px;
   margin-left: auto;
+  flex-shrink: 0;
 }
 .showcase-navigation-preview {
   position: relative;
@@ -658,6 +676,12 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-height: 44px;
+}
+.showcase-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 .showcase-originals > p {
   font-size: 13px;
@@ -839,6 +863,9 @@
   .showcase-menu-label {
     font-size: clamp(36px, 9.6vw, 56px);
   }
+  .showcase-navigation-english .showcase-menu-label {
+    font-size: clamp(28px, 7.4vw, 42px);
+  }
   .showcase-navigation nav > a {
     padding-block: 24px;
     gap: 16px;
@@ -853,6 +880,22 @@
   }
   .showcase-originals dl {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 380px) {
+  .showcase-shell > .site-header {
+    padding-inline: 14px;
+    gap: 8px;
+  }
+  .showcase-shell .brand-name {
+    display: none;
+  }
+  .showcase-shell > .site-header .header-actions {
+    gap: 4px;
+  }
+  .showcase-shell .experience-switch > a {
+    padding-inline: 5px;
   }
 }
 

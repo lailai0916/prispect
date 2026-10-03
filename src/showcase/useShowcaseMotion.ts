@@ -105,7 +105,10 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
         });
         const visibility = () => {
           if (document.hidden) entrance.pause();
-          else entrance.resume();
+          else {
+            entrance.resume();
+            ScrollTrigger.refresh();
+          }
         };
         document.addEventListener('visibilitychange', visibility);
         return () => document.removeEventListener('visibilitychange', visibility);
@@ -147,42 +150,79 @@ export function useShowcaseMotion(root: RefObject<HTMLDivElement | null>, locale
           hero.addEventListener('pointermove', follow);
           hero.addEventListener('pointerleave', reset);
           hero.addEventListener('focusin', onFocus);
-          const magnetic = Array.from(
-            container.querySelectorAll<HTMLElement>(
-              '[data-magnetic], .showcase-search .start-submit'
-            )
-          );
-          const handlers = magnetic.map((button) => {
-            const moveX = gsap.quickTo(button, 'x', { duration: 0.3, ease: 'power2.out' });
-            const moveY = gsap.quickTo(button, 'y', { duration: 0.3, ease: 'power2.out' });
-            const move = (event: PointerEvent) => {
-              if (document.hidden) return;
-              const bounds = button.getBoundingClientRect();
-              moveX((event.clientX - bounds.left - bounds.width / 2) * 0.12);
-              moveY((event.clientY - bounds.top - bounds.height / 2) * 0.12);
-            };
-            const leave = () => {
-              moveX(0);
-              moveY(0);
-            };
-            button.addEventListener('pointermove', move);
-            button.addEventListener('pointerleave', leave);
-            button.addEventListener('focus', leave);
-            return () => {
-              button.removeEventListener('pointermove', move);
-              button.removeEventListener('pointerleave', leave);
-              button.removeEventListener('focus', leave);
-            };
-          });
+          const magneticSelector = '[data-magnetic], .showcase-search .start-submit';
+          const magnetic = new Map<HTMLElement, { x: gsap.QuickToFunc; y: gsap.QuickToFunc }>();
+          const magneticButton = (target: EventTarget | null) => {
+            const button =
+              target instanceof Element ? target.closest<HTMLElement>(magneticSelector) : null;
+            return button && container.contains(button) ? button : null;
+          };
+          const magneticMove = (event: PointerEvent) => {
+            if (document.hidden) return;
+            const button = magneticButton(event.target);
+            if (!button || button.matches(':disabled')) return;
+            for (const [previous, moves] of magnetic) {
+              if (previous.isConnected) continue;
+              moves.x.tween.kill();
+              moves.y.tween.kill();
+              magnetic.delete(previous);
+            }
+            let moves = magnetic.get(button);
+            if (!moves) {
+              moves = {
+                x: gsap.quickTo(button, 'x', { duration: 0.3, ease: 'power2.out' }),
+                y: gsap.quickTo(button, 'y', { duration: 0.3, ease: 'power2.out' }),
+              };
+              magnetic.set(button, moves);
+            }
+            const bounds = button.getBoundingClientRect();
+            moves.x((event.clientX - bounds.left - bounds.width / 2) * 0.12);
+            moves.y((event.clientY - bounds.top - bounds.height / 2) * 0.12);
+          };
+          const magneticOut = (event: PointerEvent) => {
+            const button = magneticButton(event.target);
+            if (!button || magneticButton(event.relatedTarget) === button) return;
+            magnetic.get(button)?.x(0);
+            magnetic.get(button)?.y(0);
+          };
+          const magneticFocus = (event: FocusEvent) => {
+            const button = magneticButton(event.target);
+            if (!button) return;
+            magnetic.get(button)?.x(0);
+            magnetic.get(button)?.y(0);
+          };
+          // Delegation also covers the input's submit button after a sample fills a new draft.
+          container.addEventListener('pointermove', magneticMove);
+          container.addEventListener('pointerout', magneticOut);
+          container.addEventListener('focusin', magneticFocus);
           return () => {
             hero.removeEventListener('pointermove', follow);
             hero.removeEventListener('pointerleave', reset);
             hero.removeEventListener('focusin', onFocus);
-            handlers.forEach((cleanup) => cleanup());
+            container.removeEventListener('pointermove', magneticMove);
+            container.removeEventListener('pointerout', magneticOut);
+            container.removeEventListener('focusin', magneticFocus);
+            magnetic.forEach((moves, button) => {
+              moves.x.tween.kill();
+              moves.y.tween.kill();
+              gsap.set(button, { clearProps: 'transform' });
+            });
           };
         }
       );
-      return () => media.revert();
+      let frame = 0;
+      const resize = new ResizeObserver(() => {
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          if (!document.hidden) ScrollTrigger.refresh();
+        });
+      });
+      resize.observe(container);
+      return () => {
+        cancelAnimationFrame(frame);
+        resize.disconnect();
+        media.revert();
+      };
     },
     { scope: root, dependencies: [locale], revertOnUpdate: true }
   );

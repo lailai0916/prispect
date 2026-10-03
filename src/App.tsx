@@ -143,13 +143,13 @@ const DocsHome = lazyPage(
 );
 const publicPages = ['/', '/query', '/company', '/docs', '/login', '/register', ...documentPaths];
 
-function pageResource(path: string, signedIn: boolean) {
+function pageResource(path: string) {
   const page = path.split('?')[0];
   if (documentPaths.includes(page as DocumentPath)) return DocumentationPage;
   if (page.startsWith('/tasks/')) return TaskPage;
   switch (page) {
     case '/':
-      return signedIn ? CompanyQueryPage : Home;
+      return Home;
     case '/docs':
       return DocsHome;
     case '/query':
@@ -425,7 +425,7 @@ export function App() {
         return;
       const path = appLinkPath(link.getAttribute('href')!, location.origin);
       if (path)
-        void pageResource(path, committedAccount.current)
+        void pageResource(path)
           ?.preload()
           .catch(() => {});
     };
@@ -600,7 +600,7 @@ export function App() {
   const experienceRun =
     page === '/company' ? new URLSearchParams(route.split('?')[1]).get('run') : null;
   const liteLink = experienceRun ? `${companyPath(experienceRun)}&experience=lite` : '/';
-  const proLink = experienceRun ? companyPath(experienceRun) : '/query';
+  const proLink = experienceRun ? `${companyPath(experienceRun)}&cached=1` : '/query';
   const business = Boolean(
     sessionAvailable &&
       user &&
@@ -953,7 +953,7 @@ export function App() {
                 </Suspense>
               </RouteErrorBoundary>
             </main>
-            {!business && (
+            {!business && !showcaseHome && (
               <footer className="site-footer">
                 <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
                 <div>
