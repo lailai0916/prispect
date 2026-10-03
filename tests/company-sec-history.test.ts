@@ -8,7 +8,7 @@ import type { AddressInfo } from 'node:net';
 import type { AuthSession, CompanyIdentity, CompanyResearchRun } from '../shared/contracts.js';
 import { createApp } from '../server/app.js';
 import { initialCompanyGraphProgress, runCompanyResearch } from '../server/company-agent.js';
-import { searchCompanies } from '../server/company-sources.js';
+import { secSearchCompanies } from '../server/company-sec.js';
 import type { CompanyService } from '../server/company-routes.js';
 import type { CompanyContextService } from '../server/company-context-routes.js';
 import type { CompanyChallengeRouteService } from '../server/company-challenge-routes.js';
@@ -18,39 +18,40 @@ import { ApiFault } from '../server/validation.js';
 const unsupported = (error: unknown) =>
   error instanceof ApiFault && error.status === 400 && error.code === 'COMPANY_MARKET_UNSUPPORTED';
 
-test('English and ticker inputs resolve via SEC; Chinese misses keep supported results plus the unlisted marker', async (t) => {
+test('standalone SEC lookup resolves aliases from official rows and caches the public ticker table', async (t) => {
   const requests: string[] = [];
   const fetchMock: typeof fetch = async (url) => {
-    const host = new URL(String(url)).hostname;
-    if (host === 'www.sec.gov') {
-      return Response.json({
-        AAPL: { cik_str: 320193, ticker: 'AAPL', title: 'Apple Inc.' },
-        TSLA: { cik_str: 1318605, ticker: 'TSLA', title: 'Tesla, Inc.' },
-        NVDA: { cik_str: 1045810, ticker: 'NVDA', title: 'NVIDIA Corp' },
-        'BRK.B': { cik_str: 1067983, ticker: 'BRK.B', title: 'Berkshire Hathaway Inc' },
-      });
-    }
-    assert.equal(host, 'www.cninfo.com.cn');
+    assert.equal(new URL(String(url)).hostname, 'www.sec.gov');
     requests.push(String(url));
-    return Response.json([]);
+    return Response.json({
+      AAPL: { cik_str: 320193, ticker: 'AAPL', title: 'Apple Inc.' },
+      TSLA: { cik_str: 1318605, ticker: 'TSLA', title: 'Tesla, Inc.' },
+      NVDA: { cik_str: 1045810, ticker: 'NVDA', title: 'NVIDIA Corp' },
+      'BRK.B': { cik_str: 1067983, ticker: 'BRK.B', title: 'Berkshire Hathaway Inc' },
+    });
   };
   t.mock.method(globalThis, 'fetch', fetchMock);
-  const english = ['AAPL', 'tsla', 'BRK.B', '英伟达', '苹果', 'Apple Inc.'];
-  for (const query of english) {
-    const result = await searchCompanies(query, { fetch: fetchMock });
+  const expectedCodes = new Map([
+    ['AAPL', 'AAPL'],
+    ['tsla', 'TSLA'],
+    ['BRK.B', 'BRK.B'],
+    ['英伟达', 'NVDA'],
+    ['苹果', 'AAPL'],
+    ['Apple Inc.', 'AAPL'],
+  ]);
+  for (const [query, code] of expectedCodes) {
+    const result = await secSearchCompanies(query);
     assert.equal(result.source, 'sec');
-    assert.ok(result.candidates.length > 0, `${query} should resolve through the SEC ticker table`);
+    assert.equal(result.candidates[0]?.securityCode, code);
+    assert.equal(new URL(result.candidates[0]!.sourceUrl).hostname, 'www.sec.gov');
   }
-  for (const query of ['abc', '你好']) {
-    const result = await searchCompanies(query, { fetch: fetchMock });
-    assert.equal(result.source, 'cninfo');
+  for (const query of ['abc', '你好', '未上市企业']) {
+    const result = await secSearchCompanies(query);
+    assert.equal(result.source, 'sec');
     assert.deepEqual(result.candidates, []);
+    assert.equal(result.unlisted, undefined);
   }
-  const unlisted = await searchCompanies('未上市企业', { fetch: fetchMock });
-  assert.equal(unlisted.source, 'cninfo');
-  assert.deepEqual(unlisted.candidates, []);
-  assert.equal(unlisted.unlisted, true);
-  assert.equal(requests.length, 9);
+  assert.deepEqual(requests, ['https://www.sec.gov/files/company_tickers.json']);
 });
 
 test('supported search accepts all terms while unsupported research routes preserve account-owned historical records', async () => {

@@ -86,7 +86,7 @@ test('public directory matches need no upstream; misses retain the bounded offic
   assert.deepEqual(queries, ['目录外企业', 'AAPL', '你好']);
 });
 
-test('official search accepts English text; unmatched queries fall back to SEC or the unlisted marker', async (t) => {
+test('official search accepts English text and keeps only supported live A-share candidates', async () => {
   const queries: string[] = [];
   const rows = [
     { code: '600001', orgId: 'ABCFixture', zwjc: 'ABC科技', category: 'A股', delisted: 'false' },
@@ -98,30 +98,13 @@ test('official search accepts English text; unmatched queries fall back to SEC o
     queries.push(query);
     return Response.json(query === 'abc' ? rows : []);
   };
-  const secFetch: typeof fetch = async (url) => {
-    assert.equal(new URL(String(url)).hostname, 'www.sec.gov');
-    return Response.json({
-      AAPL: { cik_str: 320193, ticker: 'AAPL', title: 'Apple Inc.' },
-      TSLA: { cik_str: 1318605, ticker: 'TSLA', title: 'Tesla, Inc.' },
-    });
-  };
-  t.mock.method(globalThis, 'fetch', secFetch);
   const found = await searchCompanies(' abc ', { fetch: sourceFetch });
   assert.deepEqual(
     found.candidates.map((item) => item.securityCode),
     ['600001']
   );
-  // 巨潮无匹配时回落 SEC EDGAR 官方主体表
-  const apple = await searchCompanies('AAPL', { fetch: sourceFetch });
-  assert.deepEqual(
-    apple.candidates.map((item) => item.securityCode),
-    ['AAPL']
-  );
-  assert.equal(apple.source, 'sec');
-  // 中文未命中保留支持的源，并标记疑似未上市（接口预留）
-  const chinese = await searchCompanies('你好', { fetch: sourceFetch });
-  assert.deepEqual(chinese.candidates, []);
-  assert.equal(chinese.unlisted, true);
+  for (const query of ['AAPL', '你好'])
+    assert.deepEqual((await searchCompanies(query, { fetch: sourceFetch })).candidates, []);
   assert.deepEqual(queries, ['abc', 'AAPL', '你好']);
 });
 

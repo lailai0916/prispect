@@ -236,18 +236,6 @@ export async function searchCompanies(
       sourceUrl: `https://www.cninfo.com.cn/new/snapshot/companyDetailCn?code=${row.code}`,
     });
   }
-  // 巨潮无匹配时，若关键词像中文公司名，标记"疑似未上市主体"，
-  // 供前端提示未上市数据源接口已预留（见 contracts.ts CompanySearchResponse）。
-  if (!candidates.length) {
-    return {
-      query,
-      candidates: [],
-      limitedToListed: true,
-      source: 'cninfo',
-      truncated: false,
-      unlisted: /[\u4e00-\u9fff]/.test(query),
-    };
-  }
   return {
     query,
     candidates,
