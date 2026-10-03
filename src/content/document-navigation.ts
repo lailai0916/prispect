@@ -43,7 +43,7 @@ export const documentMetadata = {
   '/docs/privacy': {
     title: documentTitles['/docs/privacy'],
     description: ['数据处理、AI 使用与保存规则。', 'Data processing, AI use and retention.'],
-    version: '1.4',
+    version: '1.5',
     updatedAt: '2026-10-03',
   },
   '/docs/terms': {

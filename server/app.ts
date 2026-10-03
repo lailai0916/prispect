@@ -82,7 +82,7 @@ export async function createApp(options: AppOptions = {}) {
     res.setHeader('Referrer-Policy', 'same-origin');
     res.setHeader(
       'Content-Security-Policy',
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
+      "default-src 'self'; script-src 'self' https://analytics.lailai.one; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://analytics.lailai.one; frame-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'"
     );
     if (process.env.NODE_ENV === 'production')
       res.setHeader('Strict-Transport-Security', 'max-age=31536000');

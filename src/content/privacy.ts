@@ -328,8 +328,12 @@ export const privacyDocument: ProductDocument = {
           'The assistant conversation and draft stay in the current page’s memory and survive closing the panel or navigating within the site. Reloading, signing out or switching accounts clears them. Company answers are also stored with their research record, up to fifty answers, and removed when that record is deleted.',
         ],
         [
-          '这些浏览器存储不是云端备份。浏览器恢复标签页时可能恢复会话草稿，清理站点数据则可能删除草稿和偏好；未保存的完整表单也不保证能恢复。当前站点没有广告跟踪或第三方统计脚本。',
-          'Browser storage is not a cloud backup. Browser tab restoration may restore a session draft, while clearing site data may remove drafts and preferences. Full unsaved forms are not guaranteed to recover. The current site has no advertising-tracking or third-party analytics scripts.',
+          '这些浏览器存储不是云端备份。浏览器恢复标签页时可能恢复会话草稿，清理站点数据则可能删除草稿和偏好；未保存的完整表单也不保证能恢复。',
+          'Browser storage is not a cloud backup. Browser tab restoration may restore a session draft, while clearing site data may remove drafts and preferences. Full unsaved forms are not guaranteed to recover.',
+        ],
+        [
+          '网站使用 Umami 进行访客统计，包括页面路径、页面标题、来源页和设备、浏览器等基础访问信息。我们不通过自定义事件向统计添加研究材料、对话内容或账号资料。',
+          'The website uses Umami for visitor statistics, including page paths, page titles, referring pages and basic access information such as device and browser details. We do not add research materials, conversation content or account profile information through custom analytics events.',
         ],
       ],
     },
