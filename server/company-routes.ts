@@ -12,6 +12,7 @@ import {
   searchCompanies,
 } from './company-agent.js';
 import { companyReputation } from './company-reputation.js';
+import { secCompanyQuarter } from './company-sec.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
 
@@ -372,6 +373,20 @@ export function installCompanyRoutes(
       const q = String(req.query.q || '').trim();
       if (!q || q.length > 80) throw new ApiFault(400, 'REPUTATION_QUERY_INVALID', '需要公司名称');
       const result = await companyReputation(q);
+      res.json(result);
+    })
+  );
+  app.get(
+    '/api/company-quarter',
+    wrap(async (req, res) => {
+      const orgId = String(req.query.orgId || '').trim();
+      if (!/^\d{1,10}$/.test(orgId))
+        throw new ApiFault(400, 'SEC_INPUT_INVALID', '美股季度查询需要有效的 SEC CIK');
+      const name =
+        String(req.query.name || '')
+          .trim()
+          .slice(0, 80) || '该主体';
+      const result = await secCompanyQuarter(orgId, name, options.root);
       res.json(result);
     })
   );

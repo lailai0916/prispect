@@ -51,6 +51,31 @@ interface ReputationData {
   items: { title: string; url: string }[];
 }
 
+/** 美股最新季度（10-Q）数据，来自 /api/company-quarter（SEC XBRL 结构化） */
+interface SecQuarterData {
+  available: boolean;
+  periodLabel: string;
+  fiscalLabel: string;
+  reportDate: string;
+  filingDate: string;
+  sourceUrl: string;
+  netProfit: string | null;
+  operatingCashFlow: string | null;
+  cashConversion: string | null;
+  quoteProfit: string;
+  quoteCash: string;
+}
+
+/** 从报告快照中识别 SEC 材料并提取 CIK（美股专用，A股返回 null 不打扰） */
+function secCikOf(report: Report): string | null {
+  for (const material of report.snapshot ?? []) {
+    const url = material.sourceUrl ?? '';
+    const match = /sec\.gov\/Archives\/edgar\/data\/(\d{1,10})\//.exec(url);
+    if (match) return match[1];
+  }
+  return null;
+}
+
 function metricNumber(value: string): number | null {
   const m = /^(\d+(?:\.\d+)?)\s*(%|条|项|处)?$/.exec(value.trim());
   return m ? Number(m[1]) : null;
@@ -72,10 +97,44 @@ export function RiskOverviewRing({ report }: { report: Report }) {
   const [current, setCurrent] = useState(-1);
   const [hoverDim, setHoverDim] = useState(-1);
   const [autoOn, setAutoOn] = useState(false);
+  const [period, setPeriod] = useState<'annual' | 'quarter'>('annual');
+  const [quarter, setQuarter] = useState<SecQuarterData | null>(null);
   const autoTimer = useRef<number | null>(null);
   const ringRef = useRef<HTMLDivElement>(null);
   const touchX = useRef(0);
   const touchY = useRef(0);
+
+  /* 美股最新季度（10-Q）：从报告快照识别 CIK，拉取季度口径财务数据 */
+  useEffect(() => {
+    const cik = secCikOf(report);
+    if (!cik) return;
+    let alive = true;
+    void fetch(`/api/company-quarter?orgId=${cik}&name=${encodeURIComponent(report.company)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<SecQuarterData>) : null))
+      .then((data) => {
+        if (alive) setQuarter(data);
+      })
+      .catch(() => {
+        if (alive) setQuarter(null);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [report]);
+
+  /* 季度口径下财务段状态（年初至今累计，阈值与年报一致） */
+  const quarterFinanceStatus: RiskStatus | null = useMemo(() => {
+    if (!quarter?.cashConversion) return null;
+    const conversion = Number(quarter.cashConversion);
+    const net = quarter.netProfit != null ? Number(quarter.netProfit) : null;
+    if (net != null && net < 0) return 'bad';
+    if (Number.isFinite(conversion)) {
+      if (conversion >= 100) return 'good';
+      if (conversion >= 70) return 'warn';
+      return 'bad';
+    }
+    return null;
+  }, [quarter]);
 
   /* X-Ray 扫描开场 → 显影 */
   useEffect(() => {
@@ -211,6 +270,26 @@ export function RiskOverviewRing({ report }: { report: Report }) {
       <div className="ringp-head">
         <span className="ringp-kicker">{t('四维透视 · 第一眼结论', 'Risk at a glance')}</span>
         <span className="ringp-scope">{t(overall.scope.zh, overall.scope.en)}</span>
+        {quarter?.available && (
+          <span className="ringp-period" role="group" aria-label={t('数据期间', 'Period')}>
+            <button
+              type="button"
+              className={period === 'annual' ? 'is-on' : ''}
+              onClick={() => setPeriod('annual')}
+              title={t('依据年度年报', 'Based on annual report')}
+            >
+              {report.year} {t('年报', 'FY')}
+            </button>
+            <button
+              type="button"
+              className={period === 'quarter' ? 'is-on' : ''}
+              onClick={() => setPeriod('quarter')}
+              title={`${quarter.fiscalLabel}（${quarter.periodLabel}）`}
+            >
+              {t('最新季度', 'Latest Q')} · {quarter.fiscalLabel.replace(/（.*/, '')}
+            </button>
+          </span>
+        )}
         <button
           type="button"
           className={`ringp-auto${autoOn ? ' is-on' : ''}`}
@@ -283,7 +362,12 @@ export function RiskOverviewRing({ report }: { report: Report }) {
                 cy="120"
                 r="92"
                 transform={`rotate(${i * 90 - 90} 120 120)`}
-                style={{ stroke: statusColor[d.status] }}
+                style={{
+                  stroke:
+                    i === 0 && period === 'quarter' && quarterFinanceStatus
+                      ? statusColor[quarterFinanceStatus]
+                      : statusColor[d.status],
+                }}
               />
             ))}
             <circle r="2.4" fill="#eaf6ff" className="ringp-comet">
@@ -311,12 +395,33 @@ export function RiskOverviewRing({ report }: { report: Report }) {
                 </strong>
               </div>
             ) : (
-              <DimensionCenter key={dim!.key} dimension={dim!} reportCompany={report.company} />
+              <DimensionCenter
+                key={`${dim!.key}-${period}`}
+                dimension={dim!}
+                reportCompany={report.company}
+                quarter={quarter}
+                period={period}
+              />
             )}
             <div className="ringp-hint">
-              {current < 0
-                ? t('点四个圆圈看细节', 'Tap the four circles for details')
-                : t('点环回总览', 'Tap the ring to return')}
+              {current < 0 ? (
+                t('点四个圆圈看细节', 'Tap the four circles for details')
+              ) : period === 'quarter' && dim?.key === 'finance' && quarter?.sourceUrl ? (
+                <>
+                  <a
+                    className="ringp-src"
+                    href={quarter.sourceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t('10-Q 原文 ↗', '10-Q filing ↗')}
+                  </a>
+                  <span className="ringp-hint-sep">·</span>
+                  <span>{t('点环回总览', 'Tap the ring to return')}</span>
+                </>
+              ) : (
+                t('点环回总览', 'Tap the ring to return')
+              )}
             </div>
           </div>
 
@@ -329,7 +434,11 @@ export function RiskOverviewRing({ report }: { report: Report }) {
         <div className="ringp-nodes">
           {perspective.dimensions.map((d, i) => {
             const Icon = dimIcons[d.key];
-            const word = plainTitle[d.status];
+            const effStatus =
+              i === 0 && period === 'quarter' && quarterFinanceStatus
+                ? quarterFinanceStatus
+                : d.status;
+            const word = plainTitle[effStatus];
             const on = current === i;
             return (
               <button
@@ -341,11 +450,11 @@ export function RiskOverviewRing({ report }: { report: Report }) {
                 onMouseLeave={() => setHoverDim(-1)}
                 aria-label={`${t(d.plain.zh, d.plain.en)} · ${t(word.zh, word.en)}`}
               >
-                <span className="ringp-node-ico" style={{ color: statusColor[d.status] }}>
+                <span className="ringp-node-ico" style={{ color: statusColor[effStatus] }}>
                   <Icon size={25} strokeWidth={1.8} />
                 </span>
-                <span className="ringp-node-status" style={{ color: statusColor[d.status] }}>
-                  <i style={{ background: statusColor[d.status] }} />
+                <span className="ringp-node-status" style={{ color: statusColor[effStatus] }}>
+                  <i style={{ background: statusColor[effStatus] }} />
                   {t(word.zh, word.en)}
                 </span>
                 <span className="ringp-node-label">{t(d.plain.zh, d.plain.en)}</span>
@@ -369,9 +478,13 @@ export function RiskOverviewRing({ report }: { report: Report }) {
 function DimensionCenter({
   dimension,
   reportCompany,
+  quarter,
+  period,
 }: {
   dimension: RiskDimension;
   reportCompany: string;
+  quarter: SecQuarterData | null;
+  period: 'annual' | 'quarter';
 }) {
   const { t, locale } = useApp();
   const index = repMetricIndex[dimension.key] ?? 0;
@@ -379,6 +492,22 @@ function DimensionCenter({
   const number = metric ? metricNumber(metric.value) : null;
 
   if (dimension.key === 'finance') {
+    /* 最新季度（10-Q）：中心显示季度现金利润比，口径为年初至今累计 */
+    if (period === 'quarter' && quarter?.cashConversion != null) {
+      const qv = `${quarter.cashConversion}%`;
+      const qn = Math.min(Number(quarter.cashConversion), 100);
+      return (
+        <div className="ringp-core">
+          <AnimatedNumber value={qv} />
+          <span className="ringp-meter">
+            <i style={{ width: `${qn}%` }} />
+          </span>
+          <span className="ringp-sub">
+            {t('最新季度 · 年初至今累计', 'Latest quarter · YTD cumulative')}
+          </span>
+        </div>
+      );
+    }
     return (
       <div className="ringp-core">
         <AnimatedNumber value={metric?.value ?? '—'} />

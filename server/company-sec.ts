@@ -326,6 +326,128 @@ async function companyFacts(cik: string, year: number): Promise<SecFacts> {
   };
 }
 
+/* ---------- 最新季度（10-Q，SEC XBRL 结构化） ---------- */
+
+export interface SecQuarterData {
+  available: boolean;
+  periodLabel: string;
+  fiscalLabel: string;
+  reportDate: string;
+  filingDate: string;
+  sourceUrl: string;
+  netProfit: string | null;
+  operatingCashFlow: string | null;
+  cashConversion: string | null;
+  quoteProfit: string;
+  quoteCash: string;
+}
+
+/** 从 submissions 拿最近一份 10-Q（recent 数组按时间倒序，第一份即最新）。 */
+async function latestTenQ(cik: string, name: string): Promise<TenKRecord> {
+  const body = await jsonOf(`https://data.sec.gov/submissions/CIK${padCik(cik)}.json`);
+  const recent = (body.filings as { recent?: { [key: string]: string[] } }).recent;
+  const forms = recent?.form || [];
+  const accessions = recent?.accessionNumber || [];
+  const primary = recent?.primaryDocument || [];
+  const filingDates = recent?.filingDate || [];
+  const reportDates = recent?.reportDate || [];
+  for (let index = 0; index < forms.length; index++) {
+    if (forms[index] !== '10-Q') continue;
+    const reportDate = reportDates[index];
+    const accession = accessions[index];
+    const primaryDocument = primary[index];
+    const filingDate = filingDates[index];
+    if (!accession || !primaryDocument || !filingDate || !reportDate) continue;
+    return { accession, primaryDocument, filingDate, reportDate };
+  }
+  throw new ApiFault(
+    404,
+    'SEC_10Q_NOT_FOUND',
+    `SEC 未找到 ${name} 的最新 10-Q 季报；季度数据暂不可用`
+  );
+}
+
+/** 取与 reportDate（季度末）完全同期的 XBRL 累计值：form=10-Q 且 end=reportDate。 */
+function quarterlyValue(
+  units: Record<string, { end?: string; val?: number; form?: string; fp?: string; fy?: string }[]>,
+  reportDate: string
+): { value: string; filedFrame: string; fiscalYear: string } | null {
+  let best: { value: string; filedFrame: string; fiscalYear: string } | null = null;
+  for (const entries of Object.values(units)) {
+    for (const item of entries) {
+      if (item.form !== '10-Q') continue;
+      if (item.end !== reportDate) continue;
+      if (typeof item.val !== 'number') continue;
+      best = {
+        value: String(item.val),
+        filedFrame: item.fp ? item.fp : 'Q?',
+        fiscalYear: item.fy ? item.fy : reportDate.slice(0, 4),
+      };
+    }
+  }
+  return best;
+}
+
+/** 美股最新季度（10-Q）：净利润 / 经营现金 / 现金利润比，均为年初至今累计口径。 */
+export async function secCompanyQuarter(
+  orgId: string,
+  name: string,
+  root: string
+): Promise<SecQuarterData> {
+  if (!/^\d{1,10}$/.test(orgId))
+    throw new ApiFault(400, 'SEC_INPUT_INVALID', '美股季度查询需要有效的 SEC CIK');
+  const directory = path.join(root, 'data', 'sec-cache');
+  const rows = await loadTickers(directory);
+  let ticker = '';
+  for (const [, row] of rows) {
+    if (row.cik === orgId) {
+      ticker = row.ticker.toUpperCase();
+      break;
+    }
+  }
+  if (!ticker) throw new ApiFault(404, 'SEC_COMPANY_NOT_FOUND', 'SEC 未收录该 CIK 对应的主体');
+  const tenQ = await latestTenQ(orgId, name);
+  const body = await jsonOf(`https://data.sec.gov/api/xbrl/companyfacts/CIK${padCik(orgId)}.json`);
+  const gaap = (body.facts as { 'us-gaap'?: Record<string, { units?: unknown }> } | undefined)?.[
+    'us-gaap'
+  ];
+  const read = (key: string) => {
+    const group = gaap?.[key] as
+      | { units?: Record<string, { end?: string; val?: number; form?: string; fp?: string }[]> }
+      | undefined;
+    return group?.units ? quarterlyValue(group.units, tenQ.reportDate) : null;
+  };
+  const profit = read('NetIncomeLoss');
+  const cash = read('NetCashProvidedByUsedInOperatingActivities');
+  const profitNum = profit?.value != null ? Number(profit.value) : null;
+  const cashNum = cash?.value != null ? Number(cash.value) : null;
+  const conversion =
+    profitNum != null && cashNum != null && profitNum > 0
+      ? ((cashNum / profitNum) * 100).toFixed(2)
+      : null;
+  const filingUrl = `https://www.sec.gov/Archives/edgar/data/${orgId}/${tenQ.accession.replace(/-/g, '')}/${tenQ.primaryDocument}`;
+  /* SEC XBRL 的 fp 是官方财季（Q1-Q3），fy 是财年，避免日历季与财季混淆 */
+  const fp = profit?.filedFrame ?? cash?.filedFrame ?? 'Q?';
+  const fy = profit?.fiscalYear ?? cash?.fiscalYear ?? tenQ.reportDate.slice(0, 4);
+  return {
+    available: true,
+    periodLabel: `${tenQ.reportDate.slice(0, 7)} · 年初至今`,
+    fiscalLabel: `FY${fy} ${fp}（10-Q 累计）`,
+    reportDate: tenQ.reportDate,
+    filingDate: tenQ.filingDate,
+    sourceUrl: filingUrl,
+    netProfit: profit?.value ?? null,
+    operatingCashFlow: cash?.value ?? null,
+    cashConversion: conversion,
+    quoteProfit: profit
+      ? `SEC EDGAR XBRL companyfacts：us-gaap NetIncomeLoss（10-Q ${fy} ${fp}，截止 ${tenQ.reportDate} 年初至今累计）`
+      : 'SEC EDGAR XBRL companyfacts 未披露该期间 NetIncomeLoss',
+    quoteCash: cash
+      ? `SEC EDGAR XBRL companyfacts：us-gaap NetCashProvidedByUsedInOperatingActivities（10-Q ${fy} ${fp}，截止 ${tenQ.reportDate} 年初至今累计）`
+      : 'SEC EDGAR XBRL companyfacts 未披露该期间经营现金净额',
+  };
+}
+
 export interface SecResearchOutput {
   identity: CompanyIdentity;
   announcements: CompanyAnnouncement[];
