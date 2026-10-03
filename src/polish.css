@@ -434,18 +434,6 @@ kbd {
 .app-shell .list-toolbar .segmented-control {
   margin-bottom: 0;
 }
-.reading-top.icon-button {
-  position: fixed;
-  right: 88px;
-  bottom: max(30px, env(safe-area-inset-bottom));
-  z-index: 59;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  box-shadow: 0 2px 8px var(--shadow-button);
-  animation: toast-enter var(--motion-medium) var(--motion-ease);
-}
 .app-shell .company-assistant-panel:not([hidden]) {
   transform-origin: right bottom;
   animation: assistant-enter var(--motion-medium) var(--motion-ease);
@@ -729,8 +717,7 @@ kbd {
     width: 100%;
     background: var(--action);
   }
-  .app-shell .company-assistant-panel:not([hidden]),
-  .app-shell .reading-top {
+  .app-shell .company-assistant-panel:not([hidden]) {
     animation: none;
   }
   .toast-lifetime {

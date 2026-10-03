@@ -37,7 +37,7 @@ import type { DocumentPath } from './pages/Documentation';
 import { CompanySidebar } from './CompanySidebar';
 import { CompanyRecordsProvider } from './CompanyRecordsContext';
 import { CommandMenu } from './CommandMenu';
-import { PageLoading, ReadingTop, ToastNotice, usePageEntrance } from './Experience';
+import { PageLoading, ToastNotice, usePageEntrance } from './Experience';
 import './polish.css';
 import './company-workspace.css';
 import './research-shell.css';
@@ -761,9 +761,6 @@ export function App() {
                   <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
                 </Suspense>
               </AssistantErrorBoundary>
-            )}
-            {(documentationRoute || page === '/company' || page.startsWith('/tasks/')) && (
-              <ReadingTop route={route} />
             )}
             {toast && !loadError && confirmFailure?.request !== confirmRequest && (
               <ToastNotice key={toast.id} notice={toast} onDismiss={() => setToast(null)} />
