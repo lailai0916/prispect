@@ -95,6 +95,10 @@ export const guideDocument: ProductDocument = {
           'The default selects the previous year, subject to finding its complete annual report; a missing report is stated. If you specify a year, that year is used. AI automatically assists retrieval and analysis. Lookup options let you adjust the year and review purpose.',
         ],
         [
+          '再次搜索相同披露主体、年度和用途时，直接打开已保存的研究，并优先显示本地缓存的公开资料和报告。资料取得日期保留，不会因为再次打开而自动变新；需要最新资料时点击“刷新资料”。上传原件与私人内容不进入本地企业缓存。退出、切换账号、删除记录或清空工作区会清理相应缓存；浏览器清理或空间不足也可能移除缓存，研究记录仍可从服务器读取。',
+          'Searching the same issuer, year and purpose again opens the saved research and first displays locally cached public sources and reports. The acquisition date remains unchanged; reopening does not make the data fresh. Select Refresh sources when you need updated information. Uploaded originals and private content are excluded from this company cache. Signing out, switching accounts, deleting a record or clearing the workspace removes the corresponding cache. Browser cleanup or limited space may also remove it, while server-side research records remain available.',
+        ],
+        [
           '执行中查看各任务轨道与实际活动；完成、失败、取消和可恢复状态分别显示。取消保留已取得内容；只有可恢复的运行提供恢复操作。返回已有运行不会要求重新创建它。',
           'During execution, inspect task tracks and actual activity. Completion, failure, cancellation and recoverability have distinct states. Cancellation retains obtained content; resume is offered only for recoverable runs. Returning to an existing run does not require creating it again.',
         ],

@@ -28,7 +28,7 @@ The [version-pinned competitive engineering record](docs/competitive-research/RE
 
 ## Website Features
 
-🔎 **Public Homepage** — A continuous spatial scroll story separates real annual-report papers from a glass inspection surface, assembles original rows into a signed cash bridge, and presents untested explanations before the existing research entry. Dynamic WebGL renders transitions; accessible DOM/SVG supplies reading holds and static fallback. Chinese and English retain the same evidence. See [the homepage implementation](docs/cinematic-home.md).
+💾 **Saved Company Research** — Repeated selection of the same company, annual year and purpose opens the owner's existing research without new retrieval or model work. Up to twelve public snapshots render from bounded browser storage across reloads, retaining their original dates until an explicit refresh. Private originals, questions and user goals are excluded; deletion, reset, logout and account changes clear the corresponding local copies.
 
 🔍 **Evidence Review and Action Feedback** — Evidence drawers connect stored excerpts to their supported fields and separate calculated metrics from quoted values. Selected financial fields expose both recorded source amounts, scope and differences in the same drawer. Payment exposure has an on-demand explanation using the current branch's amounts, and editing a saved item marks meaningful changes as pending recalculation. Research in progress or after failure retains links to acquired data and its actual dates; cancelling a specific public-research revision preserves sources and reports, and late callbacks cannot overwrite a retry. Assistant suggestions fill an editable draft, while dependency practice distinguishes missed and extra predictions and exposes actual dependency paths. These enhance existing flows; universal PDF sentence localization and account-wide material full-text search are not implemented.
 
@@ -69,6 +69,8 @@ The [version-pinned competitive engineering record](docs/competitive-research/RE
 🔬 **Evidence Lab** — Inspect the links between source facts, calculations, competing explanations and requested materials. Temporarily withdraw or restore a fact to pause only its dependent paths. Company web snapshots use year-end balance changes. Trials run locally without model calls or changes to saved evidence, reports or grades. See [the method and walkthrough](docs/evidence-lab.md).
 
 🧭 **Challenge an Explanation** — For a saved company, examine expansion stocking, inventory sell-through pressure or collection pressure through actual targeted public searches and bounded official-PDF reads. The configured model organizes supporting and counter clues with source links and clearly unobtained distinguishing materials. Missing configuration still permits the fixed public research steps and rule clues; failures do not become invented results or confidence scores. Local withdrawal state and private working papers are excluded from challenge inputs.
+
+🔎 **Public Homepage** — A continuous spatial scroll story separates real annual-report papers from a glass inspection surface, assembles original rows into a signed cash bridge, and presents untested explanations before the existing research entry. Dynamic WebGL renders transitions; accessible DOM/SVG supplies reading holds and static fallback. Chinese and English retain the same evidence. See [the homepage implementation](docs/cinematic-home.md).
 
 ## Getting Started
 

@@ -312,6 +312,14 @@ export const privacyDocument: ProductDocument = {
           'Language preference is stored in the browser’s localStorage. Appearance follows the system on page load and system color changes; manual theme changes are not persisted. Short starting-input drafts are stored in the tab’s sessionStorage and associated with account state. An anonymous draft may continue after sign-in; signing out or switching accounts clears the corresponding account draft.',
         ],
         [
+          '已取得的企业公开资料、行业数据和分析报告可保存在当前浏览器的 localStorage，并按账号、披露主体、年度和用途隔离。再次搜索相同企业时优先显示已有版本及其取得日期，手动刷新后才重新取数和分析。最多保留十二份，浏览器空间不足时会移除较早使用的版本；存储不可用时仅在当前页面内存中保留。上传原件、候选预览、私人材料、问答、备注和研究目标不写入这份缓存。',
+          'Acquired public-company sources, industry data and analysis reports may be saved in the current browser’s localStorage, separated by account, issuer, year and purpose. Searching the same company again first shows the saved version and its acquisition date; manual refresh retrieves and analyzes data again. Up to twelve versions are retained, with less recently used versions removed when space is limited. If browser storage is unavailable, the cache stays in page memory only. Uploaded originals, candidate previews, private materials, questions and answers, notes and research goals are excluded from this cache.',
+        ],
+        [
+          '退出或切换账号会清理离开账号的企业缓存；删除研究记录或清空工作区后，当前浏览器也移除相应缓存。其他浏览器在重新读取账号记录时核对删除状态。清理站点数据会移除本地缓存，但不会删除服务器上的研究记录。',
+          'Signing out or switching accounts clears the departing account’s company cache. Deleting a research record or clearing the workspace also removes its cache in the current browser. Other browsers reconcile deletions when they next read the account’s records. Clearing site data removes local caches without deleting server-side research records.',
+        ],
+        [
           '析光助手的对话列表与输入草稿保留在当前页面内存中，关闭助手或站内导航可以接续，刷新页面、退出或切换账号会清空。企业回答另按对应研究记录保存，最多五十条；删除研究记录时一并移除。',
           'The assistant conversation and draft stay in the current page’s memory and survive closing the panel or navigating within the site. Reloading, signing out or switching accounts clears them. Company answers are also stored with their research record, up to fifty answers, and removed when that record is deleted.',
         ],

@@ -11,6 +11,14 @@ import type { CompanyRecordSummary } from '../shared/company-workspace';
 import { api, requestErrorText } from './api';
 import { useApp } from './context';
 import { COMPANY_RECORDS_EVENT } from './company-record-events';
+import {
+  activateCompanyRunCache,
+  removeCachedCompanyRun,
+  retainCachedCompanyRuns,
+  cachedCompanyRunIds,
+  COMPANY_CACHE_EVENT,
+  type CompanyCacheInvalidation,
+} from './company-run-cache';
 
 interface CompanyRecordsState {
   owner: string | null;
@@ -63,6 +71,7 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
     const controller = new AbortController();
     request.current = controller;
     const ticket = ++generation.current;
+    const cachedAtRequest = cachedCompanyRunIds(owner);
     setRefreshing(true);
     try {
       const next = await api<CompanyRecordSummary[]>('/company-records', {
@@ -70,6 +79,11 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
       });
       if (!mounted.current || controller.signal.aborted || ticket !== generation.current) return;
       const available = next.filter((record) => !removedIds.current.has(record.id));
+      retainCachedCompanyRuns(
+        owner,
+        available.map((record) => record.id),
+        cachedAtRequest
+      );
       setRecords(available);
       setError('');
       if (
@@ -97,13 +111,19 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
   }, [owner]);
   useEffect(() => {
     mounted.current = true;
+    activateCompanyRunCache(owner);
+    removedIds.current.clear();
     setRecords([]);
     setError('');
     setLoading(Boolean(owner));
     void reload();
     const update = () => void reload();
+    const invalidate = (event: Event) => {
+      if ((event as CustomEvent<CompanyCacheInvalidation>).detail?.owner === owner) void reload();
+    };
     window.addEventListener(COMPANY_RECORDS_EVENT, update);
     window.addEventListener('prispect:company-run-updated', update);
+    window.addEventListener(COMPANY_CACHE_EVENT, invalidate);
     return () => {
       mounted.current = false;
       ++generation.current;
@@ -113,12 +133,17 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
       if (timer.current) clearTimeout(timer.current);
       window.removeEventListener(COMPANY_RECORDS_EVENT, update);
       window.removeEventListener('prispect:company-run-updated', update);
+      window.removeEventListener(COMPANY_CACHE_EVENT, invalidate);
     };
   }, [owner, reload]);
-  const removeLocal = useCallback((id: string) => {
-    removedIds.current.add(id);
-    setRecords((current) => current.filter((record) => record.id !== id));
-  }, []);
+  const removeLocal = useCallback(
+    (id: string) => {
+      if (owner) removeCachedCompanyRun(owner, id);
+      removedIds.current.add(id);
+      setRecords((current) => current.filter((record) => record.id !== id));
+    },
+    [owner]
+  );
   const isCurrentOwner = useCallback(
     () => Boolean(owner && mounted.current && currentOwner.current === owner),
     [owner]

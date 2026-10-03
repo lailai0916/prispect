@@ -37,6 +37,7 @@ import { api, setCsrfToken, RequestError, requestErrorText } from './api';
 import { type Locale, setDisplayTimeZone } from './format';
 import { changeComposerOwner } from './start-draft';
 import { companyReadingMemory } from './company-reading-memory';
+import { activateCompanyRunCache, clearCompanyRunCache } from './company-run-cache';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { AssistantErrorBoundary } from './AssistantErrorBoundary';
 import { lazyPage, resetFailedLazyPages } from './lazy-page';
@@ -247,6 +248,7 @@ export function App() {
       if (controller.signal.aborted || generation !== refreshGeneration.current) return;
       const owner = session.user?.id || null;
       if (owner !== committedOwner.current) {
+        if (committedOwner.current) clearCompanyRunCache(committedOwner.current);
         setAssistantCompany(null);
         setEvidence(null);
         setConfirmRequest(null);
@@ -255,6 +257,7 @@ export function App() {
         setToast(null);
       }
       changeComposerOwner(committedOwner.current, owner);
+      activateCompanyRunCache(owner);
       committedOwner.current = owner;
       setDisplayTimeZone(session.user?.timezone);
       setCsrfToken(session.csrfToken);
@@ -289,6 +292,13 @@ export function App() {
           throw error;
         }
         setLoadError(text);
+        if (
+          error instanceof RequestError &&
+          ['AUTH_REQUIRED', 'UNAUTHORIZED'].includes(error.code)
+        ) {
+          if (committedOwner.current) clearCompanyRunCache(committedOwner.current);
+          activateCompanyRunCache(null);
+        }
         setEvidence(null);
         setConfirmRequest(null);
         setMenuOpen(false);
@@ -563,6 +573,8 @@ export function App() {
         refreshGeneration.current++;
         refreshController.current?.abort();
         refreshController.current = null;
+        if (committedOwner.current) clearCompanyRunCache(committedOwner.current);
+        activateCompanyRunCache(null);
         changeComposerOwner(committedOwner.current, null);
         committedOwner.current = null;
         setDisplayTimeZone();

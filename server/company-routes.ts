@@ -14,6 +14,7 @@ import {
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
 import { assertCompanyResearchSupported } from './company-sources.js';
+import { findReusableCompanyRun } from '../shared/company-run-reuse.js';
 
 export interface CompanyService {
   searchCompanies: typeof searchCompanies;
@@ -40,6 +41,7 @@ export function installCompanyRoutes(
         .max(new Date().getUTCFullYear() - 1),
       purpose: z.enum(['external', 'handover']).default('external'),
       useModel: modelEnabledSchema,
+      reuseExisting: z.boolean().optional(),
     })
     .strict();
   const wrap =
@@ -333,6 +335,7 @@ export function installCompanyRoutes(
       if (!input.success)
         throw new ApiFault(400, 'INVALID_COMPANY_RUN', '公司代码、标识、年度或研究选项无效');
       assertCompanyResearchSupported(input.data.securityCode);
+      const { reuseExisting, ...runInput } = input.data;
       const store = res.locals.store as WorkspaceStore;
       const requestKey = req.get('Idempotency-Key');
       if (requestKey && !/^[a-f0-9-]{36}$/.test(requestKey))
@@ -341,13 +344,22 @@ export function installCompanyRoutes(
         ? records(store).find((item) => item.agent?.requestKey === requestKey)
         : undefined;
       if (existing) {
-        if (JSON.stringify(existing.input) !== JSON.stringify(input.data))
+        if (JSON.stringify(existing.input) !== JSON.stringify(runInput))
           throw new ApiFault(
             409,
             'COMPANY_REQUEST_KEY_REUSED',
             '相同请求标识不能用于另一主体或年度'
           );
-        res.status(200).json(structuredClone(existing));
+        res
+          .status(200)
+          .json({ ...structuredClone(existing), ...(reuseExisting ? { reused: true } : {}) });
+        return;
+      }
+      // Opening saved research is read-only, including during other jobs or at the record limit.
+      // Legacy API clients retain explicit new-record creation unless they request reuse.
+      const cached = reuseExisting ? findReusableCompanyRun(records(store), runInput) : undefined;
+      if (cached) {
+        res.status(200).json({ ...structuredClone(cached), reused: true });
         return;
       }
       if (records(store).length >= 30)
@@ -362,7 +374,7 @@ export function installCompanyRoutes(
       const now = new Date().toISOString();
       const run: CompanyResearchRun = {
         id: randomUUID(),
-        input: input.data,
+        input: runInput,
         status: 'queued',
         createdAt: now,
         updatedAt: now,

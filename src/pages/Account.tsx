@@ -28,6 +28,8 @@ import { useApp } from '../context';
 import { PageHeading } from '../components';
 import { date } from '../format';
 import { ROUTE_CHANGE_EVENT } from '../routing';
+import { activateCompanyRunCache, clearCompanyRunCache } from '../company-run-cache';
+import { COMPANY_RECORDS_EVENT } from '../company-record-events';
 import { PasswordMeter } from './Auth';
 import { useFileDrop, validateFileSelection, type FileSelectionError } from '../useFileDrop';
 import '../account.css';
@@ -443,6 +445,8 @@ export function AccountPage() {
     await submitOnce(async () => {
       await execute(async () => {
         const result = await post('/auth/logout', {});
+        if (user) clearCompanyRunCache(user.id);
+        activateCompanyRunCache(null);
         navigate('/');
         return result;
       });
@@ -1482,6 +1486,8 @@ export function AccountPage() {
                       ),
                       action: async () => {
                         await post('/reset', { confirm: 'RESET_DEMO' });
+                        if (user) clearCompanyRunCache(user.id);
+                        window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
                         await refresh();
                       },
                     })

@@ -25,6 +25,13 @@ import { date } from '../format';
 import { COMPANY_RECORDS_EVENT } from '../company-record-events';
 import { useCompanyRecords } from '../CompanyRecordsContext';
 import {
+  cacheCompanyRun,
+  readCachedCompanyRun,
+  removeCachedCompanyRun,
+  COMPANY_CACHE_EVENT,
+  type CompanyCacheInvalidation,
+} from '../company-run-cache';
+import {
   CompanyContextOverview,
   CompanyProfileView,
   CompanySourcesView,
@@ -64,7 +71,21 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     query.get('section'),
     query.get('focus')
   );
-  const [run, setRun] = useState<CompanyResearchRun | null>(null);
+  const [loadedRun, setLoadedRun] = useState<{
+    owner: string | null;
+    run: CompanyResearchRun | null;
+  }>(() => ({
+    owner: user?.id || null,
+    run: user && id ? readCachedCompanyRun(user.id, id) : null,
+  }));
+  const run = loadedRun.owner === (user?.id || null) ? loadedRun.run : null;
+  const setRun = (next: CompanyResearchRun | null) => {
+    setLoadedRun({ owner: user?.id || null, run: next });
+    if (user && next) cacheCompanyRun(user.id, next);
+  };
+  const savedOnly = query.get('cached') === '1';
+  const savedScope = useRef<string | null>(null);
+  const manualScope = useRef<string | null>(null);
   const [failure, setFailure] = useState<{ kind: ResearchRequestKind; text: string } | null>(null);
   const error = failure?.text || '';
   const errorKind = failure?.kind || 'status';
@@ -86,7 +107,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     );
   useEffect(() => setFailure(null), [id, user?.id]);
   useEffect(() => {
-    if (!id) return;
+    if (!id || !user) return;
+    const owner = user.id;
+    const scope = `${owner}:${id}`;
+    const cached = readCachedCompanyRun(owner, id);
+    if (cached || savedOnly) savedScope.current = scope;
+    if ((!run || run.id !== id) && cached) setRun(cached);
     const controller = new AbortController();
     request.current = controller;
     cancelOperation.current = null;
@@ -104,6 +130,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         clearResolvedFailure(next);
         if (
           section === 'overview' &&
+          (savedScope.current !== scope || manualScope.current === scope) &&
           !contextRequested &&
           researchSupported(next) &&
           !next.informationGap &&
@@ -123,6 +150,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         const assessmentKey = next.context ? `${id}:${next.context.fetchedAt}` : '';
         if (
           section === 'overview' &&
+          (savedScope.current !== scope || manualScope.current === scope) &&
           assessmentKey &&
           researchSupported(next) &&
           !next.informationGap &&
@@ -155,8 +183,18 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           next.assessmentStatus === 'loading'
         )
           timer = setTimeout(() => void load(), 1500);
+        else if (manualScope.current === scope) manualScope.current = null;
       } catch (cause) {
         if (!controller.signal.aborted) {
+          if (manualScope.current === scope) manualScope.current = null;
+          if (
+            cause instanceof RequestError &&
+            ['COMPANY_RUN_NOT_FOUND', 'AUTH_REQUIRED', 'UNAUTHORIZED'].includes(cause.code)
+          ) {
+            removeCachedCompanyRun(owner, id);
+            removeLocal(id);
+            setRun(null);
+          }
           setFailure({ kind, text: requestErrorText(cause, locale) });
         }
       }
@@ -166,7 +204,20 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [id, locale, version, user?.id]);
+  }, [id, locale, version, user?.id, savedOnly]);
+  useEffect(() => {
+    const invalidate = (event: Event) => {
+      const detail = (event as CustomEvent<CompanyCacheInvalidation>).detail;
+      if (!detail || detail.owner !== user?.id || !id || !detail.ids.includes(id)) return;
+      savedScope.current = `${detail.owner}:${id}`;
+      manualScope.current = null;
+      request.current?.abort();
+      setRun(null);
+      setVersion((value) => value + 1);
+    };
+    window.addEventListener(COMPANY_CACHE_EVENT, invalidate);
+    return () => window.removeEventListener(COMPANY_CACHE_EVENT, invalidate);
+  }, [id, user?.id]);
   useEffect(() => {
     const update = (event: Event) => {
       if (event instanceof CustomEvent && event.detail === id) setVersion((value) => value + 1);
@@ -231,6 +282,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus]);
   const refresh = async () => {
     if (!run || !researchSupported(run) || updating) return;
+    if (user) manualScope.current = `${user.id}:${run.id}`;
     const signal = request.current?.signal;
     setUpdating(true);
     setFailure(null);
@@ -246,6 +298,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       }
     } catch (cause) {
       if (!signal?.aborted) {
+        manualScope.current = null;
         setFailure({ kind: 'sources', text: requestErrorText(cause, locale) });
       }
     } finally {
