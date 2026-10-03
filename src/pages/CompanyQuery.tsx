@@ -1,4 +1,3 @@
-import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
 import { useEffect, useRef, useState } from 'react';
 import { Settings2, LoaderCircle, Search } from 'lucide-react';
@@ -8,7 +7,6 @@ import { findReusableCompanyRun } from '../../shared/company-run-reuse';
 import { StartInput } from '../StartInput';
 import { Dialog, Logo } from '../components';
 import { useApp } from '../context';
-import { CompanyRecentResearch } from '../CompanyRecentResearch';
 import { api, requestErrorText } from '../api';
 import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
 import { clearComposerDraft } from '../start-draft';
@@ -20,7 +18,6 @@ import '../query.css';
 export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
   const { t, locale, navigate, user } = useApp();
   const { records, loading: recordsLoading } = useCompanyRecords();
-  const hasRecords = records.length > 0;
   const latest = new Date().getFullYear() - 1;
   const requestedYear = Number(query?.get('year'));
   const [year, setYear] = useState(
@@ -108,14 +105,10 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
     }
   };
   return (
-    <div
-      className="company-query-page query-create-page"
-      data-query-state={hasRecords ? 'recent' : recordsLoading ? 'loading' : 'empty'}
-      aria-busy={recordsLoading || creating}
-    >
+    <div className="company-query-page query-create-page" aria-busy={recordsLoading || creating}>
       <div className="query-create-content">
-        <header className={`query-create-heading${hasRecords ? '' : ' query-create-brand'}`}>
-          {hasRecords ? <h1>{t(...productTerms.newResearch)}</h1> : <Logo />}
+        <header className="query-create-heading query-create-brand">
+          <Logo />
         </header>
         <div className="query-create-search">
           <Search size={18} className="query-create-search-icon" aria-hidden="true" />
@@ -157,7 +150,6 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
             {error}
           </p>
         )}
-        <CompanyRecentResearch />
       </div>
       {options && (
         <Dialog title={t('研究设置', 'Research settings')} onClose={() => setOptions(false)}>
