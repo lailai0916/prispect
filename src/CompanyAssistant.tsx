@@ -1,68 +1,128 @@
-import { productTerms } from '../shared/product-terms';
-import { Select } from './Select';
 import { useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
-import { ArrowUp, BookOpen, LoaderCircle, MessageCircle, RefreshCw, X } from 'lucide-react';
-import type { CompanyResearchRun } from '../shared/contracts';
-import type { CompanyReadingBasis } from '../shared/company-analysis';
-import type { CompanyQuestionAnswer } from '../shared/company-workspace';
+import {
+  ArrowUp,
+  ArrowUpRight,
+  LoaderCircle,
+  MessageCircle,
+  RefreshCw,
+  Square,
+  X,
+} from 'lucide-react';
+import type { AssistantAnswer, AssistantRequest } from '../shared/assistant';
 import { companyPath } from '../shared/company-workspace';
 import { api, requestErrorText } from './api';
 import { useApp } from './context';
 import { CompanyAssistantContext } from './company-assistant-context';
-import { CompanyQuestionsView } from './CompanyQuestionsView';
 import { appendCompanyAnswer } from './company-question-state';
 import { useCompanyRecords } from './CompanyRecordsContext';
-import './home.css';
+import { COMPANY_RECORDS_EVENT } from './company-record-events';
 import './company-assistant.css';
+
+interface AssistantMessage {
+  id: number;
+  request: AssistantRequest;
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  answer?: AssistantAnswer;
+  cause?: unknown;
+}
+
+interface AssistantConversation {
+  owner: string | null;
+  draft: string;
+  messages: AssistantMessage[];
+}
+
+function readableSource(url: string, page?: number) {
+  try {
+    const source = new URL(url, location.origin);
+    if (!['http:', 'https:'].includes(source.protocol)) return null;
+    if (page && !source.hash) source.hash = `page=${page}`;
+    return { href: source.href, external: source.origin !== location.origin };
+  } catch {
+    return null;
+  }
+}
 
 export function CompanyAssistant({ route }: { route: string }) {
   const { user, t, locale, navigate } = useApp();
   const { company, publish } = useContext(CompanyAssistantContext);
+  const { records } = useCompanyRecords();
+  const owner = user?.id || null;
   const query = new URLSearchParams(route.split('?')[1]);
   const routeRun = route.split('?')[0] === '/company' ? query.get('run') : null;
+  const current =
+    routeRun && company?.owner === owner && company.run.id === routeRun ? company : null;
   const [open, setOpen] = useState(false);
-  const {
-    records: savedRecords,
-    loading: recordsLoading,
-    error: recordsError,
-    reload,
-  } = useCompanyRecords();
-  const records = [...savedRecords].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  const recordsLoaded = !recordsLoading;
-  const [selected, setSelected] = useState(routeRun || company?.run.id || '');
-  const [loadedRun, setLoadedRun] = useState<CompanyResearchRun | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadError, setLoadError] = useState('');
-  const [retry, setRetry] = useState(0);
-  const [basis, setBasis] = useState<CompanyReadingBasis>('parent');
-  const [mode, setMode] = useState<'company' | 'help'>(routeRun || company ? 'company' : 'help');
-  const [helpQuestion, setHelpQuestion] = useState('');
-  const [helpAnswers, setHelpAnswers] = useState<{ question: string; text: string }[]>([]);
+  const [conversation, setConversation] = useState<AssistantConversation>({
+    owner,
+    draft: '',
+    messages: [],
+  });
+  const messages = conversation.owner === owner ? conversation.messages : [];
+  const draft = conversation.owner === owner ? conversation.draft : '';
+  const pending = messages.find((message) => message.status === 'pending');
+  const previousCompany = [...messages].reverse().find((message) => message.answer?.company)
+    ?.answer?.company;
+  const recent = [...records].sort((a, b) =>
+    (b.updatedAt || b.createdAt).localeCompare(a.updatedAt || a.createdAt)
+  )[0];
+  const currentRecord = records.find((record) => record.id === routeRun);
+  const backgroundCompany = current
+    ? {
+        name:
+          current.run.identity?.shortName ||
+          current.run.context?.companyName ||
+          currentRecord?.name ||
+          current.run.input.securityCode,
+        year: current.run.input.year,
+      }
+    : currentRecord
+      ? { name: currentRecord.name, year: currentRecord.input.year }
+      : previousCompany || (recent ? { name: recent.name, year: recent.input.year } : null);
+  const backgroundLabel =
+    current || currentRecord
+      ? t('当前页面', 'Current page')
+      : previousCompany
+        ? t('上次回答', 'Previous answer')
+        : t('最近研究', 'Latest research');
   const panelId = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
-  const helpScrolling = useRef<HTMLDivElement>(null);
-  const current =
-    routeRun &&
-    company &&
-    company.owner === user?.id &&
-    company.run.id === selected &&
-    selected === routeRun
-      ? company
-      : null;
-  const run = current?.run || (loadedRun?.id === selected ? loadedRun : null);
-  const latestCompany = useRef({ run, current, owner: user?.id });
-  latestCompany.current = { run, current, owner: user?.id };
+  const input = useRef<HTMLTextAreaElement>(null);
+  const scrolling = useRef<HTMLDivElement>(null);
+  const following = useRef(true);
+  const mounted = useRef(false);
+  const revision = useRef(0);
+  const sequence = useRef(0);
+  const request = useRef<{
+    owner: string | null;
+    id: number;
+    controller: AbortController;
+  } | null>(null);
+  const latest = useRef({ owner, current, routeRun, locale, publish, conversation });
+  latest.current = { owner, current, routeRun, locale, publish, conversation };
+
   const close = () => {
     setOpen(false);
     trigger.current?.focus();
   };
-
   useEffect(() => {
-    if (!routeRun) return;
-    setSelected(routeRun);
-    setMode('company');
-  }, [routeRun]);
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      request.current?.controller.abort();
+      request.current = null;
+    };
+  }, []);
+  useEffect(() => {
+    if (conversation.owner === owner) return;
+    request.current?.controller.abort();
+    request.current = null;
+    revision.current++;
+    setConversation({ owner, draft: '', messages: [] });
+    setOpen(false);
+    following.current = true;
+  }, [owner, conversation.owner]);
   useEffect(() => {
     if (routeRun && query.get('section') === 'qa') {
       setOpen(true);
@@ -70,136 +130,148 @@ export function CompanyAssistant({ route }: { route: string }) {
     }
   }, [route, navigate]);
   useEffect(() => {
-    if (!selected && company && company.owner === user?.id) setSelected(company.run.id);
-  }, [company?.run.id, user?.id]);
-  useEffect(() => {
-    if (current) setBasis(current.basis);
-  }, [current?.basis, selected]);
-  useEffect(() => {
-    if (open && mode === 'help' && helpScrolling.current)
-      helpScrolling.current.scrollTop = helpScrolling.current.scrollHeight;
-  }, [open, mode, helpAnswers.length]);
-  useEffect(() => {
     if (!open) return;
-    const frame = requestAnimationFrame(() => {
-      const input = panel.current?.querySelector<HTMLTextAreaElement>(
-        '.company-assistant-content:not([hidden]) textarea'
-      );
-      if (input) input.focus();
-      else panel.current?.focus();
-    });
+    const frame = requestAnimationFrame(() => input.current?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [open, mode, run?.id, Boolean(run?.context)]);
+  }, [open]);
   useEffect(() => {
-    if (!open || !user || recordsLoading || recordsError) return;
-    setSelected((previous) =>
-      savedRecords.some((record) => record.id === previous) || previous === routeRun
-        ? previous
-        : [...savedRecords].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]?.id || ''
-    );
-  }, [open, user?.id, savedRecords, recordsLoading, recordsError, routeRun]);
-  useEffect(() => {
-    if (!open || !user) return;
-    if (!selected || current) {
-      setLoading(false);
-      setLoadError('');
-      return;
-    }
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    setLoading(true);
-    setLoadError('');
-    const load = async () => {
-      try {
-        const next = await api<CompanyResearchRun>(
-          `/company-runs/${encodeURIComponent(selected)}`,
-          {
-            signal: controller.signal,
-          }
-        );
-        if (controller.signal.aborted) return;
-        setLoadedRun(next);
-        if (
-          next.status === 'queued' ||
-          next.status === 'running' ||
-          next.contextStatus === 'loading'
-        )
-          timer = setTimeout(() => void load(), 1500);
-      } catch (cause) {
-        if (!controller.signal.aborted) setLoadError(requestErrorText(cause, locale));
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    };
-    void load();
-    return () => {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [open, user?.id, selected, locale, retry, Boolean(current)]);
+    if (open && following.current && scrolling.current)
+      scrolling.current.scrollTop = scrolling.current.scrollHeight;
+  }, [open, messages]);
 
-  const onAnswer = (answer: CompanyQuestionAnswer) => {
-    if (!run || !user) return;
-    const latest = latestCompany.current;
-    if (latest.owner !== user.id || latest.run?.id !== run.id) return;
-    const next = appendCompanyAnswer(latest.run, answer);
-    setLoadedRun(next);
-    if (latest.current?.owner === user.id && latest.current.run.id === run.id)
-      publish({ ...latest.current, run: next });
-    window.dispatchEvent(new CustomEvent('prispect:company-run-updated', { detail: run.id }));
+  const perform = async (message: AssistantMessage) => {
+    const session = latest.current;
+    if (
+      request.current ||
+      session.conversation.owner !== session.owner ||
+      !message.request.question.trim()
+    )
+      return;
+    const controller = new AbortController();
+    const operation = { owner: session.owner, id: message.id, controller };
+    request.current = operation;
+    const submittedRevision = revision.current;
+    const submittedFromDraft = session.conversation.draft.trim() === message.request.question;
+    following.current = true;
+    setConversation((previous) => {
+      if (previous.owner !== operation.owner) return previous;
+      const next = { ...message, status: 'pending' as const, answer: undefined, cause: undefined };
+      return {
+        ...previous,
+        messages: previous.messages.some((item) => item.id === message.id)
+          ? previous.messages.map((item) => (item.id === message.id ? next : item))
+          : [...previous.messages, next],
+      };
+    });
+    const isCurrent = () =>
+      mounted.current &&
+      request.current === operation &&
+      !controller.signal.aborted &&
+      latest.current.owner === operation.owner;
+    try {
+      const answer = await api<AssistantAnswer>('/assistant/messages', {
+        method: 'POST',
+        signal: controller.signal,
+        body: JSON.stringify(message.request),
+      });
+      if (!isCurrent()) return;
+      setConversation((previous) => {
+        if (previous.owner !== operation.owner) return previous;
+        return {
+          ...previous,
+          draft: submittedFromDraft && revision.current === submittedRevision ? '' : previous.draft,
+          messages: previous.messages.map((item) =>
+            item.id === message.id
+              ? { ...item, status: 'completed', answer, cause: undefined }
+              : item
+          ),
+        };
+      });
+      if (answer.kind === 'company' && answer.company && operation.owner) {
+        const context = latest.current.current;
+        if (context?.owner === operation.owner && context.run.id === answer.company.runId) {
+          latest.current.publish({
+            ...context,
+            run: appendCompanyAnswer(context.run, answer),
+          });
+          window.dispatchEvent(
+            new CustomEvent('prispect:company-run-updated', { detail: answer.company.runId })
+          );
+        } else window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
+      }
+    } catch (cause) {
+      if (!isCurrent()) return;
+      setConversation((previous) =>
+        previous.owner !== operation.owner
+          ? previous
+          : {
+              ...previous,
+              messages: previous.messages.map((item) =>
+                item.id === message.id ? { ...item, status: 'failed', cause } : item
+              ),
+            }
+      );
+    } finally {
+      if (request.current === operation) request.current = null;
+    }
   };
-  const help = (value: string) => {
+  const ask = (value: string) => {
+    const session = latest.current;
     const question = value.trim();
-    if (!question) return;
-    const text = /查询|搜索|开始|search|start|query/i.test(question)
-      ? t(
-          '登录后点击“新建研究”，输入公司名称或证券代码，确认候选企业。报告会展示公开资料分析，年报原件在后台继续核查。',
-          'Log in, open New research, and enter a company name or security code. Confirm the entity to see public-source analysis while originals are checked in the background.'
-        )
-      : /来源|数据|出处|缺失|source|data|missing/i.test(question)
-        ? t(
-            '在企业页打开“来源比对”或数字旁的“字段与来源”，查看报告期、原始金额和来源。未取得的数据保持未知；网页数据不会自动成为已确认的原件证据。',
-            'Open Source comparison or Fields and sources to inspect report periods, source amounts and links. Missing data stays unknown; web data is not automatically adopted as original evidence.'
-          )
-        : /材料|导入|付款|交接|工具|import|material|payment|handover|tool/i.test(question)
-          ? t(
-              '侧边栏提供材料和付款与交接；“核查工具”中有财报核查和核查比较。材料可以先预览，确认后再保存和核查。',
-              'The sidebar provides Materials and Payments and handovers; Review tools contains Financial reviews and Compare reviews. Preview materials before confirming and saving them.'
-            )
-          : /问答|企业|公司|口径|规则|模型|company|question|model|profit|rules/i.test(question)
-            ? t(
-                '选择上方“企业问答”和已载入企业，即可由 AI 结合企业公开资料回答，回答和引用保存在该研究记录中。',
-                'Choose Company questions and a loaded company above. AI answers using the company’s public evidence; answers and citations stay with that research record.'
-              )
-            : t(
-                '我可以介绍公司研究、数据来源、核查工具和企业问答的使用方法。具体企业财务问题，请切换“企业问答”并选择已载入企业；更多说明见使用指南。',
-                'I can explain company research, sources, review tools and company questions. For financial questions, choose Company questions and a loaded company. See the user guide for more help.'
-              );
-    setHelpAnswers((previous) => [...previous, { question, text }].slice(-20));
-    setHelpQuestion('');
+    if (!question || request.current || session.conversation.owner !== session.owner) return;
+    const previous = [...session.conversation.messages]
+      .reverse()
+      .find((message) => message.answer?.company)?.answer?.company;
+    const payload: AssistantRequest = {
+      question,
+      locale: session.locale === 'en' ? 'en' : 'zh',
+      basis: session.current?.basis || 'consolidated',
+      ...(session.routeRun ? { currentRunId: session.routeRun } : {}),
+      ...(previous ? { previousRunId: previous.runId } : {}),
+      previousQuestions: session.conversation.messages
+        .slice(-4)
+        .map((message) => message.request.question),
+    };
+    void perform({ id: ++sequence.current, request: payload, status: 'pending' });
   };
-  const submitHelp = (event: FormEvent) => {
+  const cancel = () => {
+    const operation = request.current;
+    if (!operation || operation.owner !== latest.current.owner) return;
+    operation.controller.abort();
+    request.current = null;
+    setConversation((previous) =>
+      previous.owner !== operation.owner
+        ? previous
+        : {
+            ...previous,
+            messages: previous.messages.map((message) =>
+              message.id === operation.id ? { ...message, status: 'cancelled' } : message
+            ),
+          }
+    );
+    input.current?.focus();
+  };
+  const submit = (event: FormEvent) => {
     event.preventDefault();
-    help(helpQuestion);
+    ask(draft);
   };
-  const choices = records.filter(
-    (record, index) =>
-      record.id === routeRun ||
-      record.id === selected ||
-      records.findIndex(
-        (item) =>
-          item.input.securityCode === record.input.securityCode &&
-          item.input.orgId === record.input.orgId &&
-          item.name === record.name
-      ) === index
-  );
-  const selectedChoice = choices.find((record) => record.id === selected);
-  const name =
-    run?.informationGap?.name ||
-    run?.identity?.shortName ||
-    run?.context?.companyName ||
-    selectedChoice?.name ||
-    '';
+  const suggestions = backgroundCompany
+    ? [
+        t(
+          `${backgroundCompany.name}的利润与经营现金有什么差异？`,
+          `How do ${backgroundCompany.name}'s profit and operating cash differ?`
+        ),
+        t(
+          `${backgroundCompany.name}最近有哪些需要核实的公告？`,
+          `Which recent disclosures from ${backgroundCompany.name} need verification?`
+        ),
+        t('如何核对数据来源？', 'How can I verify data sources?'),
+      ]
+    : [
+        t('如何开始公司研究？', 'How do I start company research?'),
+        t('财务评级如何计算？', 'How is the financial grade calculated?'),
+        t('如何核对数据来源？', 'How can I verify data sources?'),
+      ];
   return (
     <>
       <div
@@ -221,13 +293,11 @@ export function CompanyAssistant({ route }: { route: string }) {
       >
         <header className="company-assistant-header">
           <div>
-            <MessageCircle size={18} />
-            <div>
-              <h2 id={`${panelId}-title`}>{t('析光助手', 'Prispect assistant')}</h2>
-              <p>{t('使用帮助与企业资料', 'Product help and company evidence')}</p>
-            </div>
+            <MessageCircle size={18} aria-hidden="true" />
+            <h2 id={`${panelId}-title`}>{t('析光助手', 'Prispect assistant')}</h2>
           </div>
           <button
+            type="button"
             className="icon-button"
             aria-label={t('收起助手', 'Close assistant')}
             onClick={close}
@@ -235,211 +305,189 @@ export function CompanyAssistant({ route }: { route: string }) {
             <X size={17} />
           </button>
         </header>
+        {backgroundCompany && (
+          <p className="company-assistant-context">
+            <span>{backgroundLabel}</span>
+            <span>
+              {backgroundCompany.name} · {backgroundCompany.year}
+            </span>
+          </p>
+        )}
         <div
-          className="company-assistant-context-controls"
-          role="group"
-          aria-label={t('助手功能', 'Assistant mode')}
+          className="company-assistant-history"
+          ref={scrolling}
+          role="log"
+          aria-label={t('助手对话', 'Assistant conversation')}
+          aria-live="polite"
+          aria-relevant="additions text"
+          onScroll={() => {
+            const element = scrolling.current;
+            if (element)
+              following.current =
+                element.scrollHeight - element.scrollTop - element.clientHeight < 48;
+          }}
         >
-          <button
-            type="button"
-            className="text-link"
-            aria-pressed={mode === 'company'}
-            onClick={() => setMode('company')}
-          >
-            {t(...productTerms.companyQuestions)}
-          </button>
-          <button
-            type="button"
-            className="text-link"
-            aria-pressed={mode === 'help'}
-            onClick={() => setMode('help')}
-          >
-            {t('使用帮助', 'Product help')}
-          </button>
-        </div>
-        <div className="company-assistant-content" hidden={mode !== 'company'}>
-          {user ? (
-            <>
-              <div className="company-assistant-company-picker">
-                <label htmlFor={`${panelId}-company`}>{t('企业', 'Company')}</label>
-                <Select
-                  id={`${panelId}-company`}
-                  value={selected}
-                  disabled={!choices.length}
-                  onValueChange={(selectedValue) => {
-                    setSelected(selectedValue);
-                    setLoadError('');
-                    setBasis('parent');
-                  }}
-                >
-                  {!choices.length && (
-                    <option value={selected}>
-                      {name || t('请选择已载入企业', 'Select a loaded company')}
-                    </option>
-                  )}
-                  {selected &&
-                    !choices.some((record) => record.id === selected) &&
-                    choices.length > 0 && <option value={selected}>{name || selected}</option>}
-                  {choices.map((record) => (
-                    <option key={record.id} value={record.id}>
-                      {record.name} · {record.input.year}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              {run?.context && (
-                <div className="company-assistant-context-controls">
-                  <label htmlFor={`${panelId}-basis`}>{t('利润口径', 'Profit basis')}</label>
-                  <Select
-                    id={`${panelId}-basis`}
-                    value={basis}
-                    onValueChange={(selectedValue) => {
-                      const next = selectedValue as CompanyReadingBasis;
-                      setBasis(next);
-                      current?.changeBasis(next);
-                    }}
-                  >
-                    <option value="parent">{t('归母净利润', 'Attributable net profit')}</option>
-                    <option value="consolidated">
-                      {t('合并净利润', 'Consolidated net profit')}
-                    </option>
-                  </Select>
-                </div>
-              )}
-              {(recordsError || loadError) && (
-                <p className="context-data-note" role="alert">
-                  {recordsError || loadError}
-                  <button
-                    className="text-link"
-                    onClick={() => {
-                      setRetry((value) => value + 1);
-                      if (recordsError) void reload();
-                    }}
-                  >
-                    <RefreshCw size={12} />
-                    {t('重试', 'Retry')}
-                  </button>
-                </p>
-              )}
-              {run?.context ? (
-                <CompanyQuestionsView
-                  key={run.id}
-                  compact
-                  run={run}
-                  basis={basis}
-                  onAnswer={onAnswer}
-                />
-              ) : (
-                <div className="company-assistant-empty">
-                  {(loading || (!recordsLoaded && !recordsError)) && (
-                    <LoaderCircle size={17} className="spinner" />
-                  )}
-                  <p>
-                    {selected
-                      ? t(
-                          '企业公开资料尚未取得。可先查看原件核查，资料就绪后再提问。',
-                          'Public company context is not ready. Inspect original verification, then ask when context is available.'
-                        )
-                      : t(
-                          '先查询一家企业，或切换“使用帮助”了解如何操作。',
-                          'Search for a company first, or open Product help to learn how.'
-                        )}
-                  </p>
-                  <a href={selected ? companyPath(selected) : '/query'}>
-                    {selected
-                      ? t('查看研究报告', 'View research report')
-                      : t(...productTerms.newResearch)}
-                  </a>
-                </div>
-              )}
-            </>
-          ) : (
+          {!messages.length && (
             <div className="company-assistant-empty">
               <p>
                 {t(
-                  '登录后，可以查询企业并继续已保存的问答。使用帮助无需登录。',
-                  'Log in to research companies and continue saved answers. Product help is available without logging in.'
+                  '询问企业公开资料、财报口径或使用方法。',
+                  'Ask about public company evidence, financial definitions or product use.'
                 )}
               </p>
-              <a href="/login">{t('登录', 'Log in')}</a>
-              <button className="text-link" onClick={() => setMode('help')}>
-                {t('查看使用帮助', 'Open product help')}
-              </button>
+              <div className="company-assistant-suggestions">
+                {suggestions.map((question) => (
+                  <button type="button" key={question} onClick={() => ask(question)}>
+                    {question}
+                    <ArrowUpRight size={12} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
             </div>
           )}
+          {messages.map((message) => {
+            const answer = message.answer;
+            const sources = answer
+              ? [...answer.citations, ...(answer.research?.sources || [])].filter(
+                  (source, index, all) => all.findIndex((item) => item.url === source.url) === index
+                )
+              : [];
+            return (
+              <article className="company-assistant-message" key={message.id}>
+                <h3 className="company-assistant-question">{message.request.question}</h3>
+                {message.status === 'pending' ? (
+                  <p className="company-assistant-pending" role="status">
+                    <LoaderCircle size={13} className="spinner" aria-hidden="true" />
+                    {t('正在查阅资料', 'Looking up sources')}
+                  </p>
+                ) : answer ? (
+                  <div className="company-assistant-answer">
+                    {answer.company && (
+                      <a
+                        className="company-assistant-answer-company"
+                        href={companyPath(answer.company.runId)}
+                      >
+                        {answer.company.name} · {answer.company.year}
+                        <ArrowUpRight size={11} aria-hidden="true" />
+                      </a>
+                    )}
+                    <p className="company-assistant-answer-text">{answer.text}</p>
+                    {answer.warning && (
+                      <p className="company-assistant-warning">{answer.warning}</p>
+                    )}
+                    {sources.length > 0 && (
+                      <div
+                        className="company-assistant-sources"
+                        aria-label={t('回答依据', 'Answer sources')}
+                      >
+                        {sources.map((source) => {
+                          const page =
+                            'page' in source && typeof source.page === 'number'
+                              ? source.page
+                              : undefined;
+                          const link = readableSource(source.url, page);
+                          return link ? (
+                            <a
+                              key={source.url}
+                              href={link.href}
+                              target={link.external ? '_blank' : undefined}
+                              rel={link.external ? 'noopener noreferrer' : undefined}
+                            >
+                              {source.label}
+                              {page ? ` · ${t('第', 'p. ')}${page}${t('页', '')}` : ''}
+                              <ArrowUpRight size={11} aria-hidden="true" />
+                            </a>
+                          ) : null;
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="company-assistant-message-error">
+                    <p role={message.status === 'failed' ? 'alert' : 'status'}>
+                      {message.status === 'cancelled'
+                        ? t('已取消', 'Cancelled')
+                        : requestErrorText(message.cause, locale)}
+                    </p>
+                    <button
+                      type="button"
+                      className="text-link"
+                      disabled={Boolean(pending)}
+                      onClick={() => void perform(message)}
+                    >
+                      <RefreshCw size={12} />
+                      {t('重试', 'Retry')}
+                    </button>
+                  </div>
+                )}
+              </article>
+            );
+          })}
         </div>
-        <div
-          className="company-assistant-content context-questions-compact"
-          hidden={mode !== 'help'}
-        >
-          <div className="context-question-scroll" ref={helpScrolling} aria-live="polite">
-            <p className="context-data-note">
-              {t(
-                '你好，我可以帮你了解析光的使用方法。',
-                'Hello. I can help you find your way around Prispect.'
-              )}
-            </p>
-            <div className="context-question-suggestions">
-              {[
-                t('如何开始查询？', 'How do I start a query?'),
-                t('在哪里核对来源？', 'Where can I check sources?'),
-                t('核查工具在哪里？', 'Where are the review tools?'),
-              ].map((question) => (
-                <button type="button" key={question} onClick={() => help(question)}>
-                  {question}
-                </button>
-              ))}
-            </div>
-            <div className="context-question-history">
-              {helpAnswers.map((answer, index) => (
-                <article key={index}>
-                  <h3>{answer.question}</h3>
-                  <p className="context-answer-text">{answer.text}</p>
-                </article>
-              ))}
-            </div>
-            <a className="text-link" href="/docs/guide">
-              <BookOpen size={13} />
-              {t('查看使用指南', 'Open the user guide')}
-            </a>
-          </div>
-          <div className="context-question-footer">
-            <form className="start-input context-question-composer" onSubmit={submitHelp}>
-              <label className="sr-only" htmlFor={`${panelId}-help`}>
-                {t('使用问题', 'Product question')}
-              </label>
-              <textarea
-                id={`${panelId}-help`}
-                value={helpQuestion}
-                rows={2}
-                maxLength={500}
-                placeholder={t('有什么可以帮你？', 'How can I help?')}
-                onChange={(event) => setHelpQuestion(event.target.value)}
-                onKeyDown={(event) => {
-                  if (
-                    event.key === 'Enter' &&
-                    !event.shiftKey &&
-                    !event.nativeEvent.isComposing &&
-                    event.keyCode !== 229
-                  ) {
-                    event.preventDefault();
-                    event.currentTarget.form?.requestSubmit();
-                  }
-                }}
-              />
-              <div className="start-input-toolbar">
-                <small>{t('本地使用帮助', 'Local product help')}</small>
-                <button
-                  type="submit"
-                  className="start-submit"
-                  disabled={!helpQuestion.trim()}
-                  aria-label={t('发送使用问题', 'Send product question')}
-                >
-                  <ArrowUp size={18} />
-                </button>
+        <div className="company-assistant-footer">
+          <form className="company-assistant-composer" onSubmit={submit}>
+            <label className="sr-only" htmlFor={`${panelId}-question`}>
+              {t('向析光助手提问', 'Ask Prispect assistant')}
+            </label>
+            <textarea
+              ref={input}
+              id={`${panelId}-question`}
+              value={draft}
+              rows={2}
+              maxLength={500}
+              placeholder={t('输入问题', 'Ask a question')}
+              onChange={(event) => {
+                const value = event.target.value;
+                revision.current++;
+                setConversation((previous) =>
+                  previous.owner === owner ? { ...previous, draft: value } : previous
+                );
+              }}
+              onKeyDown={(event) => {
+                if (
+                  event.key === 'Enter' &&
+                  !event.shiftKey &&
+                  !event.nativeEvent.isComposing &&
+                  event.keyCode !== 229
+                ) {
+                  event.preventDefault();
+                  event.currentTarget.form?.requestSubmit();
+                }
+              }}
+            />
+            <div className="company-assistant-composer-toolbar">
+              <div className="company-assistant-composer-meta">
+                <small>
+                  {t('Enter 发送 · Shift+Enter 换行', 'Enter to send · Shift+Enter for a new line')}
+                </small>
+                <a href="/docs/privacy">{t('隐私政策', 'Privacy policy')}</a>
               </div>
-            </form>
-          </div>
+              {pending ? (
+                <button
+                  key="cancel"
+                  type="button"
+                  className="company-assistant-send"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    cancel();
+                  }}
+                  aria-label={t('取消本次查询', 'Cancel this request')}
+                >
+                  <Square size={13} />
+                </button>
+              ) : (
+                <button
+                  key="send"
+                  type="submit"
+                  className="company-assistant-send"
+                  disabled={!draft.trim() || conversation.owner !== owner}
+                  aria-label={t('发送问题', 'Send question')}
+                >
+                  <ArrowUp size={17} />
+                </button>
+              )}
+            </div>
+          </form>
         </div>
       </div>
       <button

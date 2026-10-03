@@ -154,6 +154,51 @@ test('Grok Q&A explains the server grade with accurate numeric templates and a f
   assert.deepEqual(run, before);
 });
 
+test('recent source questions do not get mistaken for interim financial questions', () => {
+  const run = company();
+  const news = answerCompanyRules(run, '查一下最新新闻', 'consolidated');
+  assert.ok(news.text.includes('重要新闻线索'));
+  assert.equal(news.citations[0]?.url, run.context!.news[0]!.url);
+  assert.ok(!news.text.includes('中报或季报'));
+  const disclosures = answerCompanyRules(run, '最新公告有哪些风险？', 'consolidated');
+  assert.ok(disclosures.text.includes('公告'));
+  assert.ok(!disclosures.text.includes('中报或季报'));
+});
+
+test('the unified assistant keeps follow-ups concise while preserving validated amounts and sources', async () => {
+  const run = company();
+  const question = '那现金呢？';
+  const output = await answerCompanyQuestion(
+    run,
+    question,
+    'consolidated',
+    true,
+    {
+      apiKey: 'test-key',
+      fetch: async (_url, init) => {
+        const payload = JSON.parse(String(init?.body));
+        assert.ok(payload.messages[0].content.includes('析光助手'));
+        const supplied = JSON.parse(payload.messages[1].content);
+        assert.deepEqual(supplied.previousQuestions, ['公司盈利怎么样？']);
+        assert.equal(supplied.locale, 'zh');
+        return response({
+          text: '经营现金与利润差距较大，现金利润比为 {{metric:cash-profit}}，需要核对期后回款。',
+          citations: ['financial-2025-ocf'],
+          metricIds: ['cash-profit'],
+        });
+      },
+    },
+    undefined,
+    { concise: true, locale: 'zh', previousQuestions: ['公司盈利怎么样？'] }
+  );
+  assert.equal(output.mode, 'model');
+  assert.ok(output.text.includes('需要核对期后回款'));
+  assert.ok(!output.text.includes('{{metric:'));
+  assert.ok(!output.text.includes(answerCompanyRules(run, question, 'consolidated').text));
+  assert.equal(output.citations.length, 1);
+  assert.equal(output.snapshotFetchedAt, run.context!.fetchedAt);
+});
+
 test('English questions render English metric displays without dropping the original rule working paper', async () => {
   const run = company(),
     seed = deriveCompanyAssessment(run);

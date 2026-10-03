@@ -14,6 +14,9 @@ export class RequestError extends Error {
 }
 
 const errorMessages: Record<string, string> = {
+  ASSISTANT_INPUT: 'Enter a question of up to 500 characters.',
+  ASSISTANT_BUSY: 'The assistant is handling other questions. Please retry shortly.',
+  ASSISTANT_TIMEOUT: 'The answer timed out. Please retry.',
   CONTEXT_INPUT: 'Enter a supported company name, year and refresh options.',
   CONTEXT_BUSY: 'Public sources are busy. Please retry shortly.',
   CONTEXT_IDENTITY: 'Select a supported listed entity before continuing.',

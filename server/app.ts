@@ -16,6 +16,8 @@ import { AuthStore, authentication, type AuthContext } from './auth.js';
 import { installDecisionRoutes } from './decision-routes.js';
 import { installCompanyRoutes, type CompanyService } from './company-routes.js';
 import { installCompanySearchRoutes } from './company-search.js';
+import { installAssistantRoutes } from './assistant-routes.js';
+import type { AssistantService } from './assistant.js';
 import type { CompanyDirectory } from '../shared/company-directory.js';
 import {
   installCompanyChallengeRoutes,
@@ -35,6 +37,7 @@ export interface AppOptions {
   companyDirectory?: CompanyDirectory | null;
   companyContextService?: CompanyContextService;
   companyChallengeService?: CompanyChallengeRouteService;
+  assistantService?: AssistantService;
   registrationEnabled?: boolean;
 }
 export async function createApp(options: AppOptions = {}) {
@@ -362,6 +365,12 @@ export async function createApp(options: AppOptions = {}) {
       res.json(await auth.changePassword(req.body, res.locals.auth as AuthContext, req, res));
     })
   );
+  const assistant = installAssistantRoutes(app, {
+    auth,
+    model,
+    workspaceForUser,
+    service: options.assistantService,
+  });
   app.use('/api', authentication(auth));
   await installCompanySearchRoutes(app, {
     root,
@@ -840,6 +849,7 @@ export async function createApp(options: AppOptions = {}) {
     auth,
     workspaceForUser,
     waitForIdle: async () => {
+      await assistant.waitForIdle();
       await company.waitForIdle();
       await companyContext.waitForIdle();
       await companyChallenge.waitForIdle();

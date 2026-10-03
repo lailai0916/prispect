@@ -76,8 +76,8 @@ export const guideDocument: ProductDocument = {
           'The × beside a loaded-company record deletes that research record and its answers while keeping adopted materials. Active research, analysis or explanation research must finish first. New company research and saved work require an account.',
         ],
         [
-          '右下角助手在公司页面沿用当前企业和利润口径；在其他页面，可以选择账号内已保存的企业。企业问答使用 AI 结合当前公开快照回答，回答与来源随企业记录保存；模型失败时保留规则底稿并显示实际状态。未登录或尚未载入企业时，助手提供本地产品帮助，以及文档、登录或新建研究入口。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
-          'The lower-right assistant uses the current company and profit basis on company pages. Elsewhere, you can select a company saved in your account. Company questions use AI with the current public snapshot, saving answers and sources with the company record. Model failures retain rule results and show the actual status. Signed-out visitors and accounts without a loaded company receive local product help and links to documentation, sign-in or new research. Missing fields stay unknown. The coverage page does not infer “no risk” from missing information. Failed refreshes retain earlier timestamps rather than labeling old data as newly updated.',
+          '右下角的析光助手只有一个对话框。直接问已经研究的公司即可：问题中明确提到的企业优先，其次沿用当前企业、上一轮企业或最近的研究；有歧义时会追问。你也可以问网站功能、隐私政策或使用方法，回答附文档链接。需要新的企业资料时，可在同一对话中要求补查，助手说明实际来源和缺口。企业回答随对应研究记录保存；未登录时可检索产品文档。模型失败保留规则回答或文档原文，未取得的字段保持未知。',
+          'The lower-right Prispect assistant has one conversation. Ask directly about a researched company: an explicitly named company takes priority, then the current company, the previous conversation company or the latest research; ambiguity prompts a follow-up. You can also ask about features, privacy or how to use the site, with document links in the answer. Ask for fresh company material in the same conversation to see actual sources and gaps. Company answers stay with their research record; signed-out visitors can search product documents. Model failures retain rules-based answers or document excerpts, and missing fields stay unknown.',
         ],
         [
           '输入准确公司名称或证券代码。准确唯一匹配可直接开始；简称有歧义时选择披露主体。当前覆盖巨潮大陆 A 股披露，未匹配不等于公司不存在或没有风险。',

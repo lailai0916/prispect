@@ -175,8 +175,8 @@ export const privacyDocument: ProductDocument = {
       emphasis: true,
       paragraphs: [
         [
-          'AI 是公司研究、财报核查和企业问答的默认处理环节，无需单独启用，也不提供关闭选项。提交相应研究或问题时，系统会按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统会保留信息缺口或规则结果，并如实记录模型未完成的状态。析光助手的本地使用帮助不调用外部模型。',
-          'AI is an automatic part of company research, financial reviews and company questions, with no separate enable or disable option. Submitting research or a question sends data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model service retain evidence gaps or rules-based results with the model’s actual incomplete status. Local product help in the Prispect assistant does not call an external model.',
+          'AI 是公司研究、财报核查和登录后的析光助手的默认处理环节，无需单独启用。提交相应研究或问题时，系统会按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统保留信息缺口、规则回答或文档原文，并显示实际状态。未登录时，助手只检索产品文档，不调用外部模型或读取个人研究记录。',
+          'AI is an automatic part of company research, financial reviews and the signed-in Prispect assistant, with no separate enable option. Submitting research or a question sends data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model retain evidence gaps, rules-based answers or document excerpts with their actual status. Signed-out assistant questions only search product documents, without calling a model or accessing personal research records.',
         ],
         [
           '企业证据实验室的本地撤回与恢复选择不上传，也不发送给模型。明确点击“挑战这个解释”后，服务端按已匹配公司的年度与固定解释补查，并可向模型发送相关公开字段、已知来源、已读短摘录和公开检索结果；不发送本地试验状态、上传预览、私人备注、账号资料或私人现金计划。挑战目标、实际步骤与结果随公司记录保存。',
@@ -215,8 +215,8 @@ export const privacyDocument: ProductDocument = {
           [
             ['企业问答与析光助手', 'Company questions and the Prispect assistant'],
             [
-              '你提交的企业问题、当前企业与利润口径、已取得的公开快照、公开字段及来源引用。问题按原文发送，请勿包含私人信息。本地产品帮助不发送模型请求。',
-              'Your submitted company question, the current company and profit basis, retrieved public snapshots, public fields and source references. Questions are sent as entered; do not include private information. Local product help does not send model requests.',
+              '你提交的问题、为理解追问而提供的最近最多四条问题，以及相关产品文档。企业问题还使用自动匹配的企业与利润口径、已取得的公开快照、公开字段及来源引用；需要补查时使用本次取得的公开资料。问题按原文发送，请勿包含私人信息。未登录的文档检索不调用模型。',
+              'Your submitted question, up to four preceding questions for follow-ups, and relevant product documents. Company questions also use the automatically matched company and profit basis, retrieved public snapshots, public fields and source references; requested follow-ups can use newly retrieved public material. Questions are sent as entered; do not include private information. Signed-out document searches do not call a model.',
             ],
             [
               '账号标识与安全凭据、私人核查材料、付款安排、现金计划、私人备注，以及其他账号的企业记录。',
@@ -308,8 +308,12 @@ export const privacyDocument: ProductDocument = {
           'Necessary cookies support sessions, two-step verification and passkey challenges. Session cookies on the production HTTPS service use Secure, HttpOnly and SameSite restrictions. Blocking or deleting these cookies may sign you out or prevent authentication.',
         ],
         [
-          '语言和外观偏好保存在当前浏览器的 localStorage；起始输入和模式等短草稿保存在当前标签页的 sessionStorage，并与账号状态关联。匿名草稿可以在你登录后接续；退出或切换账号会清理相应账号草稿。',
-          'Language and appearance preferences are stored in the browser’s localStorage. Short starting-input drafts and their modes are stored in the tab’s sessionStorage and associated with account state. An anonymous draft may continue after sign-in; signing out or switching accounts clears the corresponding account draft.',
+          '语言偏好保存在当前浏览器的 localStorage；外观在打开网页和系统配色变化时跟随系统，手动切换不持久保存。起始输入等短草稿保存在当前标签页的 sessionStorage，并与账号状态关联。匿名草稿可以在登录后接续；退出或切换账号会清理相应账号草稿。',
+          'Language preference is stored in the browser’s localStorage. Appearance follows the system on page load and system color changes; manual theme changes are not persisted. Short starting-input drafts are stored in the tab’s sessionStorage and associated with account state. An anonymous draft may continue after sign-in; signing out or switching accounts clears the corresponding account draft.',
+        ],
+        [
+          '析光助手的对话列表与输入草稿保留在当前页面内存中，关闭助手或站内导航可以接续，刷新页面、退出或切换账号会清空。企业回答另按对应研究记录保存，最多五十条；删除研究记录时一并移除。',
+          'The assistant conversation and draft stay in the current page’s memory and survive closing the panel or navigating within the site. Reloading, signing out or switching accounts clears them. Company answers are also stored with their research record, up to fifty answers, and removed when that record is deleted.',
         ],
         [
           '这些浏览器存储不是云端备份。浏览器恢复标签页时可能恢复会话草稿，清理站点数据则可能删除草稿和偏好；未保存的完整表单也不保证能恢复。当前站点没有广告跟踪或第三方统计脚本。',
