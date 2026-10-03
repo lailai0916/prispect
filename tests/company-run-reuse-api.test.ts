@@ -15,6 +15,10 @@ async function fixture() {
   let calls = 0;
   let gate: Promise<void> | undefined;
   let release!: () => void;
+  let notifyStarted!: () => void;
+  const started = new Promise<void>((resolve) => {
+    notifyStarted = resolve;
+  });
   const application = await createApp({
     root: process.cwd(),
     dataDir: directory,
@@ -29,6 +33,7 @@ async function fixture() {
       }),
       runCompanyResearch: async (scope) => {
         calls++;
+        notifyStarted();
         if (gate) await gate;
         return {
           identity: {
@@ -87,6 +92,17 @@ async function fixture() {
     register,
     call,
     calls: () => calls,
+    waitForStarted: () =>
+      new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(
+          () => reject(new Error('Research service did not start')),
+          10_000
+        );
+        void started.then(() => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      }),
     hold: () => {
       gate = new Promise<void>((resolve) => {
         release = resolve;
@@ -117,6 +133,7 @@ test('opt-in repeat search reuses own record during active work, at limits, with
     const created = (await first.json()) as CompanyResearchRun & { reused?: boolean };
     assert.equal(created.reused, undefined);
     assert.equal('reuseExisting' in created.input, false);
+    await f.waitForStarted();
     const repeat = await f.call(alice, '/company-runs', { ...input, reuseExisting: true });
     assert.equal(repeat.status, 200);
     const reused = (await repeat.json()) as CompanyResearchRun & { reused?: boolean };
@@ -133,6 +150,7 @@ test('opt-in repeat search reuses own record during active work, at limits, with
     assert.notEqual(((await bobRun.json()) as CompanyResearchRun).id, created.id);
     f.release();
     await f.waitForIdle();
+    assert.equal(f.calls(), 2, 'each owner starts exactly one research execution');
     const store = await f.workspaceForUser(alice.userId);
     assert.equal('reused' in store.state.companyRuns![0]!, false);
     assert.equal(store.state.companyRuns!.length, 1);
