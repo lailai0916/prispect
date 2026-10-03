@@ -54,10 +54,6 @@ export function SearchField({
 export function PageLoading({ label }: { label: string }) {
   return (
     <div className="page-loading" role="status" aria-busy="true">
-      <span className="page-loading-label">
-        <LoaderCircle size={14} className="spinner" />
-        {label}
-      </span>
       <div className="page-skeleton" aria-hidden="true">
         <span className="skeleton skeleton-heading" />
         <span className="skeleton skeleton-subheading" />
@@ -76,6 +72,39 @@ export function PageLoading({ label }: { label: string }) {
           </div>
         ))}
       </div>
+      <span className="page-loading-label">
+        <LoaderCircle size={14} className="spinner" aria-hidden="true" />
+        {label}
+      </span>
+    </div>
+  );
+}
+
+export function RecordListLoading({
+  label,
+  compact = false,
+}: {
+  label: string;
+  compact?: boolean;
+}) {
+  return (
+    <div
+      className={`record-list-loading${compact ? ' record-list-loading-compact' : ''}`}
+      role="status"
+      aria-busy="true"
+    >
+      <span className="sr-only">{label}</span>
+      <div aria-hidden="true">
+        {[0, 1, 2].map((key) => (
+          <div className="record-loading-row" key={key}>
+            {!compact && <span className="skeleton record-loading-icon" />}
+            <div className="record-loading-copy">
+              <span className="skeleton" />
+              <span className="skeleton" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -83,9 +112,13 @@ export function PageLoading({ label }: { label: string }) {
 export function ToastNotice({
   notice,
   onDismiss,
+  onRetry,
+  retrying,
 }: {
   notice: { text: string; error?: boolean };
   onDismiss: () => void;
+  onRetry?: () => void;
+  retrying?: boolean;
 }) {
   const { t } = useApp();
   const [hovered, setHovered] = useState(false);
@@ -127,6 +160,11 @@ export function ToastNotice({
       <span className="toast-message" tabIndex={0}>
         {notice.text}
       </span>
+      {onRetry && (
+        <button className="text-link" disabled={retrying} onClick={onRetry}>
+          {retrying ? t('正在读取…', 'Loading…') : t('重新读取', 'Reload')}
+        </button>
+      )}
       <button
         className="icon-button"
         onClick={onDismiss}
@@ -146,7 +184,7 @@ export function ToastNotice({
   );
 }
 
-/** Animate the incoming page, never live financial values or the fixed-overlay container. */
+/** A short opacity transition never moves content or changes fixed-overlay positioning. */
 export function usePageEntrance(route: string) {
   useEffect(() => {
     const main = document.getElementById('main');
@@ -159,24 +197,18 @@ export function usePageEntrance(route: string) {
       if (child === current) return;
       current = child;
       animation?.cancel();
-      // A translated ancestor changes the cinematic stage's fixed containing block.
-      // Its scroll timeline already owns the entrance and must remain viewport-bound.
+      // The cinematic timeline owns its entrance; keep generic route effects off
+      // its root so opacity and fixed-stage positioning have one owner.
       if (
         !preference.matches &&
         child &&
         !child.classList.contains('page-loading') &&
         !child.classList.contains('cinematic-home')
       ) {
-        animation = child.animate(
-          [
-            { opacity: 0, translate: '0 5px' },
-            { opacity: 1, translate: '0 0' },
-          ],
-          {
-            duration: 220,
-            easing: 'cubic-bezier(.2,.8,.2,1)',
-          }
-        );
+        animation = child.animate([{ opacity: 0.85 }, { opacity: 1 }], {
+          duration: 120,
+          easing: 'cubic-bezier(.2,.8,.2,1)',
+        });
       }
     };
     const frame = requestAnimationFrame(enter);

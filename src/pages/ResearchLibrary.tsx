@@ -4,7 +4,7 @@ import { ArrowRight, Building2, FileText, LoaderCircle, Plus, RefreshCw } from '
 import type { CompanyRecordSummary } from '../../shared/company-workspace';
 import { companyPath } from '../../shared/company-workspace';
 import { PageHeading, Tag } from '../components';
-import { SearchField } from '../Experience';
+import { RecordListLoading, SearchField } from '../Experience';
 import { Select } from '../Select';
 import { useCompanyRecords } from '../CompanyRecordsContext';
 import { useApp } from '../context';
@@ -57,47 +57,69 @@ export function ResearchLibraryPage() {
     <div className="research-library">
       <PageHeading
         title={t(...productTerms.researchLibrary)}
-        description={t(
-          '已保存的研究报告与研究记录。',
-          'Saved research reports and research records.'
-        )}
         action={
           <button className="button button-primary" onClick={() => navigate('/query')}>
             <Plus size={15} /> {t(...productTerms.newResearch)}
           </button>
         }
       />
-      {!loading && !error && (
-        <div className="research-library-overview" aria-label={t('研究概览', 'Research overview')}>
-          <div className="research-library-stat">
-            <span className="research-library-stat-icon" aria-hidden="true">
-              <Building2 size={19} />
-            </span>
-            <div>
-              <span>{t('研究记录', 'Research records')}</span>
-              <strong>{records.length}</strong>
-            </div>
-          </div>
-          <div className="research-library-stat">
-            <span className="research-library-stat-icon" aria-hidden="true">
-              <FileText size={19} />
-            </span>
-            <div>
-              <span>{t('已保存分析', 'Saved analyses')}</span>
-              <strong>{savedCount}</strong>
-            </div>
-          </div>
-          <div className="research-library-stat">
-            <span className="research-library-stat-icon" aria-hidden="true">
-              <LoaderCircle size={19} />
-            </span>
-            <div>
-              <span>{t('处理中', 'Processing')}</span>
-              <strong>{activeCount}</strong>
-            </div>
+      <div
+        className="research-library-overview"
+        aria-label={t('研究概览', 'Research overview')}
+        aria-busy={loading || undefined}
+      >
+        <div className="research-library-stat">
+          <span className="research-library-stat-icon" aria-hidden="true">
+            <Building2 size={19} />
+          </span>
+          <div>
+            <span>{t('研究记录', 'Research records')}</span>
+            <strong>
+              {loading ? (
+                <span className="skeleton research-stat-placeholder" aria-hidden="true" />
+              ) : error && !records.length ? (
+                '—'
+              ) : (
+                records.length
+              )}
+            </strong>
           </div>
         </div>
-      )}
+        <div className="research-library-stat">
+          <span className="research-library-stat-icon" aria-hidden="true">
+            <FileText size={19} />
+          </span>
+          <div>
+            <span>{t('已保存分析', 'Saved analyses')}</span>
+            <strong>
+              {loading ? (
+                <span className="skeleton research-stat-placeholder" aria-hidden="true" />
+              ) : error && !records.length ? (
+                '—'
+              ) : (
+                savedCount
+              )}
+            </strong>
+          </div>
+        </div>
+        <div className="research-library-stat">
+          <span className="research-library-stat-icon" aria-hidden="true">
+            <LoaderCircle size={19} />
+          </span>
+          <div>
+            <span>{t('处理中', 'Processing')}</span>
+            <strong>
+              {loading ? (
+                <span className="skeleton research-stat-placeholder" aria-hidden="true" />
+              ) : error && !records.length ? (
+                '—'
+              ) : (
+                activeCount
+              )}
+            </strong>
+          </div>
+        </div>
+      </div>
       <div className="research-library-toolbar">
         <SearchField
           label={t('搜索研究记录', 'Search research records')}
@@ -136,9 +158,14 @@ export function ResearchLibraryPage() {
         </div>
       )}
       {loading ? (
-        <p className="research-library-state" role="status">
-          {t('正在读取研究记录…', 'Loading research records…')}
-        </p>
+        <>
+          <p className="research-library-count" aria-hidden="true">
+            <span className="skeleton research-count-placeholder" />
+          </p>
+          <div className="research-library-list">
+            <RecordListLoading label={t('正在读取研究记录…', 'Loading research records…')} />
+          </div>
+        </>
       ) : visible.length ? (
         <>
           <p className="research-library-count">

@@ -38,6 +38,7 @@ function inputs(input: DecisionInput): Rows {
   for (const claim of input.claims || []) {
     add(`claim:${claim.id}:text`, claim.text, ['待核对说法', 'Statement to examine']);
     add(`claim:${claim.id}:target`, claim.target, ['说法核验目标', 'Statement check target']);
+    add(`claim:${claim.id}:question`, claim.question, ['具体核查问题', 'Specific review question']);
   }
   const externalLabels = {
     asOf: ['核查基准日', 'Review date'],
@@ -99,6 +100,15 @@ function evidence(version: DecisionVersion): Rows {
       ['observationId', record.observationId, ['绑定观测', 'Linked observation'], 'text'],
       ['page', record.page, ['原件页码', 'Original page'], 'text'],
       ['flowId', record.flowId, ['关联现金事件', 'Linked cash event'], 'text'],
+      ['claimId', record.claimId, ['关联问询', 'Linked question'], 'text'],
+      ['claimQuestion', record.claimQuestion, ['提交时问题', 'Question at submission'], 'text'],
+      ['claimText', record.claimText, ['提交时原话', 'Quotation at submission'], 'text'],
+      [
+        'claimTarget',
+        record.claimTarget,
+        ['提交时核验目标', 'Review target at submission'],
+        'text',
+      ],
       ['amount', record.values.amount, ['记录金额', 'Recorded amount'], 'CNY'],
       ['day', record.values.day, ['记录事件日', 'Recorded event day'], 'text'],
       ['terms', record.values.terms, ['记录条款', 'Recorded terms'], 'text'],

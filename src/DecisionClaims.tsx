@@ -5,6 +5,7 @@ import type {
   DecisionDependency,
   DecisionDetail,
   DecisionEvidenceSlot,
+  DecisionEvidenceInput,
   DecisionInput,
 } from '../shared/decision-contracts';
 import {
@@ -17,6 +18,8 @@ import { Tag } from './components';
 import { Select } from './Select';
 import { decisionText } from './decisionTranslations';
 import './decision-claims.css';
+import { decisionClaimQuestion, deriveDecisionFollowUpRecords } from '../shared/decision-followup';
+import { date } from './format';
 
 const dependencyState = (state: DecisionDependency['state'], t: Translate) =>
   ({
@@ -40,7 +43,10 @@ export function DecisionClaimsEditor({
   const claims = input.claims ?? [];
   // Keep indices stable while a selected unavailable target becomes an available one.
   const options = Object.keys(decisionClaimTargets) as DecisionClaimTarget[];
-  const update = (id: string, values: Partial<{ text: string; target: DecisionClaimTarget }>) =>
+  const update = (
+    id: string,
+    values: Partial<{ text: string; target: DecisionClaimTarget; question: string }>
+  ) =>
     onChange({
       ...input,
       claims: claims.map((claim) => (claim.id === id ? { ...claim, ...values } : claim)),
@@ -51,15 +57,11 @@ export function DecisionClaimsEditor({
       aria-labelledby={`${baseId}-heading`}
     >
       <div className="report-section-title">
-        <h3 id={`${baseId}-heading`}>{t('逐条核对对方说法', 'Review individual statements')}</h3>
+        <h3 id={`${baseId}-heading`}>
+          {t('问询与对方说法', 'Questions and counterparty statements')}
+        </h3>
         <span className="field-note">{claims.length}/12</span>
       </div>
-      <p className="field-note">
-        {t(
-          '摘录你想核对的原话，并选择要核对的字段。这里只记录待核验说法，不自动判断真假；材料匹配也不认证承诺履行。',
-          'Quote the statement you want to examine and choose its review field. These are statements to review, not automatic truth judgments; matching records does not verify performance.'
-        )}
-      </p>
       {claims.map((claim, index) => {
         const compatible = claimTargetAllowed(claim.target, input.purpose);
         const prefix = `${baseId}-${claim.id}`;
@@ -67,18 +69,35 @@ export function DecisionClaimsEditor({
           <div className="decision-claim-edit" key={claim.id}>
             <div className="form-field">
               <label htmlFor={`${prefix}-text`}>
-                {t(`说法 ${index + 1} · 原话`, `Statement ${index + 1} · quotation`)}
+                {t(
+                  `问询 ${index + 1} · 对方原话（可选）`,
+                  `Question ${index + 1} · counterparty quotation (optional)`
+                )}
               </label>
               <textarea
                 id={`${prefix}-text`}
                 maxLength={1000}
-                required
+                required={!claim.question?.trim()}
                 value={claim.text}
                 placeholder={t(
                   '例如：提前退出可以退款（请保留实际原话）',
                   'For example: an early exit allows a refund (retain the actual wording)'
                 )}
                 onChange={(event) => update(claim.id, { text: event.target.value })}
+              />
+            </div>
+            <div className="form-field">
+              <label htmlFor={`${prefix}-question`}>
+                {t('想向对方核对什么', 'Question for the counterparty')}
+              </label>
+              <textarea
+                id={`${prefix}-question`}
+                maxLength={2000}
+                required={!claim.text.trim()}
+                rows={2}
+                value={claim.question || ''}
+                placeholder={t(...decisionClaimTargets[claim.target].request)}
+                onChange={(event) => update(claim.id, { question: event.target.value })}
               />
             </div>
             <div className="decision-claim-edit-controls">
@@ -90,9 +109,15 @@ export function DecisionClaimsEditor({
                   value={claim.target}
                   aria-invalid={!compatible}
                   aria-describedby={!compatible ? `${prefix}-scope` : undefined}
-                  onValueChange={(target) =>
-                    update(claim.id, { target: target as DecisionClaimTarget })
-                  }
+                  onValueChange={(target) => {
+                    const nextTarget = target as DecisionClaimTarget;
+                    update(claim.id, {
+                      target: nextTarget,
+                      ...(claim.question === t(...decisionClaimTargets[claim.target].request)
+                        ? { question: t(...decisionClaimTargets[nextTarget].request) }
+                        : {}),
+                    });
+                  }}
                 >
                   {options.map((target) => {
                     const allowed = claimTargetAllowed(target, input.purpose);
@@ -135,21 +160,21 @@ export function DecisionClaimsEditor({
         onClick={() =>
           onChange({
             ...input,
-            claims: [...claims, { id: crypto.randomUUID(), text: '', target: 'terms' }],
+            claims: [
+              ...claims,
+              {
+                id: crypto.randomUUID(),
+                text: '',
+                target: 'terms',
+                question: t(...decisionClaimTargets.terms.request),
+              },
+            ],
           })
         }
       >
         <Plus size={14} />
-        {t('加入一条待核验说法', 'Add a statement to review')}
+        {t('提出一条核查问题', 'Add a review question')}
       </button>
-      {!claims.length && (
-        <p className="field-note">
-          {t(
-            '可选。没有摘录说法时，现有材料核查与条件演算照常保留。',
-            'Optional. Evidence review and condition calculations remain available without quoted statements.'
-          )}
-        </p>
-      )}
     </section>
   );
 }
@@ -161,13 +186,27 @@ export function DecisionClaims({
 }: {
   detail: DecisionDetail;
   onEvidence: (id: string) => void;
-  onAddEvidence?: (slot: DecisionEvidenceSlot, role?: 'contract' | 'payee' | 'refund') => void;
+  onAddEvidence?: (
+    slot: DecisionEvidenceSlot,
+    role?: 'contract' | 'payee' | 'refund',
+    claimId?: string,
+    kind?: DecisionEvidenceInput['kind']
+  ) => void;
 }) {
   const { t, locale } = useApp();
   const [copyFeedback, setCopyFeedback] = useState<{ id: string; failed: boolean } | null>(null);
   const reviews = deriveDecisionClaims(detail.version, detail.evaluation);
   if (!reviews.length) return null;
   const translated = (text: string) => (locale === 'en' ? decisionText(text) : text);
+  const statusName = (status: (typeof reviews)[number]['status']) =>
+    ({
+      matched: t('字段可核对', 'Fields available for review'),
+      unknown: t('尚待核对', 'Review needed'),
+      conflict: t('记录冲突', 'Record conflict'),
+      'out-of-scope': t('范围不符', 'Out of scope'),
+      withdrawn: t('依据已撤回', 'Evidence withdrawn'),
+      'condition-unmet': t('条件未满足', 'Condition unmet'),
+    })[status];
   const copy = async (id: string, text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -187,25 +226,15 @@ export function DecisionClaims({
           V{detail.version.revision} · {reviews.length} {t('条', 'statements')}
         </span>
       </div>
-      <p className="field-note">
-        {t(
-          '原话由你摘录，目标由你选择。下面展示对应字段与已有依据的状态，未对原话作语义鉴定，也不认证真实性、同意或履行。',
-          'You quoted these statements and selected their targets. The review below reports the corresponding fields and evidence; it does not semantically authenticate the quotation, consent or performance.'
-        )}
-      </p>
       {reviews.map((review) => {
-        const statusLabel = {
-          matched: t('字段可核对', 'Fields available for review'),
-          unknown: t('尚待核对', 'Review needed'),
-          conflict: t('记录冲突', 'Record conflict'),
-          'out-of-scope': t('范围不符', 'Out of scope'),
-          withdrawn: t('依据已撤回', 'Evidence withdrawn'),
-          'condition-unmet': t('条件未满足', 'Condition unmet'),
-        }[review.status];
+        const statusLabel = statusName(review.status);
         const requests = review.requests.length
           ? review.requests.map(translated)
           : [t(...review.fallbackRequest)];
-        const requestText = requests.join('\n');
+        const question = decisionClaimQuestion(review.claim);
+        const requestText = `${detail.version.input.transactionEntity}：${question}`;
+        const records = deriveDecisionFollowUpRecords(detail.version, review.claim);
+        const change = detail.followUpChanges?.find((item) => item.claimId === review.claim.id);
         return (
           <details
             className={`decision-gate decision-claim decision-gate-${review.status}`}
@@ -217,7 +246,40 @@ export function DecisionClaims({
               <Tag>{statusLabel}</Tag>
               <ChevronDown size={14} />
             </summary>
-            <blockquote className="decision-claim-quote">{review.claim.text}</blockquote>
+            {review.claim.text && (
+              <blockquote className="decision-claim-quote">{review.claim.text}</blockquote>
+            )}
+            {change && (
+              <div className="decision-followup-change" role="status">
+                <span>
+                  V{change.fromRevision} → V{change.toRevision}
+                </span>
+                <p>
+                  {change.before === null
+                    ? t('新增核查问题。', 'Review question added.')
+                    : change.before !== change.after
+                      ? t('对应字段的核对状态已改变。', 'The corresponding field review changed.')
+                      : change.addedReplyIds.length
+                        ? t(
+                            '已补充对方回复，字段核对状态保持不变。',
+                            'A reply was added; the field review remains unchanged.'
+                          )
+                        : change.questionChanged
+                          ? t(
+                              '问题已修改；此前回复保留原问题。',
+                              'The question changed; earlier replies retain their original question.'
+                            )
+                          : t(
+                              '关联材料已更新，字段核对状态保持不变。',
+                              'Linked evidence changed; the field review remains unchanged.'
+                            )}{' '}
+                  {change.before && change.before !== change.after
+                    ? `${statusName(change.before)} → `
+                    : ''}
+                  {statusLabel}
+                </p>
+              </div>
+            )}
             {!review.scopeApplicable ? (
               <p>
                 {t(
@@ -238,8 +300,8 @@ export function DecisionClaims({
             {review.explanationOpen === false && (
               <p className="field-note">
                 {t(
-                  '历史财务依据未形成适用解释信号。材料状态单独展示，不据此裁定经营原因或填补当前现金。',
-                  'Historical financial evidence does not provide an applicable explanatory signal. Material status is shown separately; it does not establish an operating cause or fill current cash.'
+                  '历史财务信号不适用；本次材料单独核对。',
+                  'Historical signal unavailable; review these records separately.'
                 )}
               </p>
             )}
@@ -295,10 +357,8 @@ export function DecisionClaims({
             )}
             {review.scopeApplicable && (
               <div className="decision-claim-next">
-                <strong>{t('下一步核对', 'Next review step')}</strong>
-                {requests.map((request, index) => (
-                  <p key={index}>{request}</p>
-                ))}
+                <strong>{t('向对方核对', 'Ask the counterparty')}</strong>
+                <p>{question}</p>
                 <div className="decision-entry-actions">
                   <button
                     type="button"
@@ -312,7 +372,26 @@ export function DecisionClaims({
                     <button
                       type="button"
                       className="text-link"
-                      onClick={() => onAddEvidence(review.slot, review.role)}
+                      onClick={() =>
+                        onAddEvidence(
+                          review.slot,
+                          review.role,
+                          review.claim.id,
+                          'counterparty-statement'
+                        )
+                      }
+                    >
+                      <Plus size={14} />
+                      {t('补充对方回复', 'Add counterparty reply')}
+                    </button>
+                  )}
+                  {onAddEvidence && (
+                    <button
+                      type="button"
+                      className="text-link"
+                      onClick={() =>
+                        onAddEvidence(review.slot, review.role, review.claim.id, 'source-record')
+                      }
                     >
                       <Plus size={14} />
                       {t('补录对应材料', 'Add corresponding evidence')}
@@ -328,6 +407,69 @@ export function DecisionClaims({
                         )
                       : t('核查请求已复制。', 'Review request copied.')}
                   </p>
+                )}
+                {!!records.length && (
+                  <div className="decision-followup-records">
+                    {records.map(({ evidence, priorQuestion }) => (
+                      <article className="decision-followup-record" key={evidence.id}>
+                        <div className="decision-followup-record-heading">
+                          <strong>
+                            {evidence.kind === 'counterparty-statement'
+                              ? t('对方回复', 'Counterparty reply')
+                              : t('对应材料', 'Related evidence')}
+                          </strong>
+                          <Tag>
+                            {evidence.state === 'withdrawn'
+                              ? t('已撤回', 'Withdrawn')
+                              : evidence.kind === 'counterparty-statement'
+                                ? t('待核验陈述', 'Unverified statement')
+                                : t('原文记录', 'Source record')}
+                          </Tag>
+                        </div>
+                        <p>{evidence.quote}</p>
+                        <span className="field-note">
+                          {evidence.sourceLabel} · {date(evidence.createdAt, locale)}
+                          {evidence.page ? ` · ${t('页', 'p.')} ${evidence.page}` : ''}
+                        </span>
+                        {priorQuestion && (
+                          <details className="decision-prior-question">
+                            <summary>
+                              {t('对应此前问题', 'Responds to an earlier question')}
+                            </summary>
+                            <p>
+                              {evidence.claimQuestion ||
+                                t('问题快照未保存', 'Question snapshot unavailable')}
+                            </p>
+                            {evidence.claimTarget &&
+                              evidence.claimTarget !== review.claim.target && (
+                                <p className="field-note">
+                                  {t('当时核对', 'Original target')} ·{' '}
+                                  {t(...decisionClaimTargets[evidence.claimTarget].label)}
+                                </p>
+                              )}
+                            {evidence.claimText !== review.claim.text && evidence.claimText && (
+                              <blockquote>{evidence.claimText}</blockquote>
+                            )}
+                          </details>
+                        )}
+                        <button
+                          type="button"
+                          className="text-link"
+                          onClick={() => onEvidence(evidence.id)}
+                        >
+                          {t('查看记录', 'View record')}
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                )}
+                {review.status !== 'matched' && (
+                  <details className="decision-followup-needed">
+                    <summary>{t('仍需核对的依据', 'Evidence still to review')}</summary>
+                    {requests.map((request, index) => (
+                      <p key={index}>{request}</p>
+                    ))}
+                  </details>
                 )}
               </div>
             )}

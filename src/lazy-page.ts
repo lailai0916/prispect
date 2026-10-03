@@ -241,13 +241,13 @@ export function resetFailedLazyPages(): void {
 export function lazyPage<Module, Component extends ComponentType<any>>(
   importer: () => Promise<Module>,
   pick: (module: Module) => Component
-): ComponentType<ComponentProps<Component>> {
+): ComponentType<ComponentProps<Component>> & { preload: () => Promise<void> } {
   // Keep this component's actual CSS dependencies across manual lazy resets.
   const requiredStylesheets = new Set<string>();
   const makePage = () => {
     const generation = ++loaderGeneration;
     let resourceAttempt = 0;
-    return lazy(async () => {
+    const load = async () => {
       try {
         const module = await loadPageModule(
           importer,
@@ -266,15 +266,22 @@ export function lazyPage<Module, Component extends ComponentType<any>>(
         if (error instanceof PageResourceError) failedPages.add(reset);
         throw error;
       }
-    });
+    };
+    // Intent preloading and React share one request and the same recovery state.
+    let pending: ReturnType<typeof load> | undefined;
+    const preload = () => (pending ||= load());
+    return { Page: lazy(preload), preload };
   };
-  let Page = makePage();
+  let resource = makePage();
   const reset = () => {
-    Page = makePage();
+    resource = makePage();
   };
   function LazyPage(props: ComponentProps<Component>) {
     useSyncExternalStore(subscribe, snapshot, snapshot);
-    return createElement(Page, props);
+    return createElement(resource.Page, props);
   }
+  LazyPage.preload = async () => {
+    await resource.preload();
+  };
   return LazyPage;
 }

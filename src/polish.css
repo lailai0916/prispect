@@ -4,6 +4,9 @@
   --motion-medium: 220ms;
   --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
+html {
+  scrollbar-gutter: stable;
+}
 .app-shell :is(.button, .icon-button, .account-action, .select-trigger) {
   transition:
     background var(--motion-fast) ease,
@@ -121,6 +124,9 @@ kbd {
   overflow: hidden;
   animation: toast-enter var(--motion-medium) var(--motion-ease) both;
 }
+.toast > .text-link {
+  flex-shrink: 0;
+}
 .toast-lifetime {
   position: absolute;
   bottom: 0;
@@ -149,7 +155,8 @@ kbd {
 }
 .page-loading {
   max-width: var(--workspace-content-width);
-  padding-block: 24px;
+  min-height: 460px;
+  padding-block: 0 24px;
   margin-inline: auto;
 }
 .page-loading-label {
@@ -158,7 +165,7 @@ kbd {
   gap: 8px;
   color: var(--muted);
   font-size: var(--text-secondary);
-  margin-bottom: 28px;
+  margin-top: 20px;
 }
 .skeleton {
   display: block;
@@ -169,11 +176,44 @@ kbd {
 }
 .skeleton-heading {
   width: 28%;
+  min-width: 120px;
   height: 28px;
 }
 .skeleton-subheading {
   width: 45%;
   margin-top: 15px;
+}
+.record-loading-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-height: 110px;
+  padding: var(--card-padding);
+  border-bottom: 1px solid var(--line-soft);
+}
+.record-loading-row:last-child {
+  border-bottom: 0;
+}
+.record-loading-icon {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.record-loading-copy {
+  flex: 1;
+  min-width: 0;
+}
+.record-loading-copy .skeleton:first-child {
+  width: 45%;
+  height: 16px;
+}
+.record-loading-copy .skeleton:last-child {
+  width: 65%;
+  margin-top: 12px;
+}
+.record-list-loading-compact .record-loading-row {
+  min-height: 58px;
+  padding: 12px 0;
 }
 .skeleton-metrics {
   display: grid;

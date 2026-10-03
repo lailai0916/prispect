@@ -1,5 +1,13 @@
 import { productTagline, productTerms } from '../shared/product-terms';
-import { useCallback, useEffect, useRef, useState, Suspense } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useTransition,
+  Suspense,
+} from 'react';
 import {
   Activity,
   Building2,
@@ -28,6 +36,7 @@ import type {
 import { api, setCsrfToken, RequestError, requestErrorText } from './api';
 import { type Locale, setDisplayTimeZone } from './format';
 import { changeComposerOwner } from './start-draft';
+import { companyReadingMemory } from './company-reading-memory';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { AssistantErrorBoundary } from './AssistantErrorBoundary';
 import { lazyPage, resetFailedLazyPages } from './lazy-page';
@@ -127,18 +136,61 @@ const DocsHome = lazyPage(
 );
 const publicPages = ['/', '/docs', '/login', '/register', ...documentPaths];
 
+function pageResource(path: string, signedIn: boolean) {
+  const page = path.split('?')[0];
+  if (documentPaths.includes(page as DocumentPath)) return DocumentationPage;
+  if (page.startsWith('/tasks/')) return TaskPage;
+  switch (page) {
+    case '/':
+      return signedIn ? CompanyQueryPage : Home;
+    case '/docs':
+      return DocsHome;
+    case '/query':
+      return CompanyQueryPage;
+    case '/research':
+      return ResearchLibraryPage;
+    case '/company':
+      return CompanyWorkspacePage;
+    case '/workspace':
+      return WorkspacePage;
+    case '/materials':
+      return MaterialsPage;
+    case '/decisions':
+      return Decisions;
+    case '/new':
+      return NewReview;
+    case '/compare':
+      return ComparePage;
+    case '/account':
+      return AccountPage;
+    case '/login':
+    case '/register':
+      return AuthPage;
+  }
+}
+
 export function App() {
+  const [openingPage, startPageTransition] = useTransition();
+  const navigationTarget = useRef<string | null>(null);
   const [locale, setLocale] = useState<Locale>(storedLocale);
   const localeRef = useRef(locale);
   localeRef.current = locale;
   const [route, setRoute] = useState(readBrowserRoute);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
+  useLayoutEffect(() => companyReadingMemory.changeOwner(user?.id || null), [user?.id]);
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [cases, setCases] = useState<DemoCase[]>([]);
   const [loadError, setLoadError] = useState('');
-  const [toast, setToast] = useState<{ text: string; error?: boolean; id: number } | null>(null);
+  const [toast, setToast] = useState<{
+    text: string;
+    error?: boolean;
+    id: number;
+    retryWorkspace?: boolean;
+  } | null>(null);
+  const [refreshingWorkspace, setRefreshingWorkspace] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
   const [pending, setPending] = useState(0);
   const [confirmRequest, setConfirmRequest] = useState<ConfirmRequest | null>(null);
   const [confirmFailure, setConfirmFailure] = useState<{
@@ -152,24 +204,41 @@ export function App() {
   const [assistantCompany, setAssistantCompany] = useState<AssistantCompany | null>(null);
   const refreshGeneration = useRef(0);
   const refreshController = useRef<AbortController | null>(null);
+  const refreshFailureCause = useRef<unknown>(null);
   const committedOwner = useRef<string | null>(null);
   const publishAssistantCompany = useCallback((company: AssistantCompany) => {
     if (company.owner === committedOwner.current) setAssistantCompany(company);
   }, []);
   const t: Translate = useCallback((zh, en) => (locale === 'en' ? en : zh), [locale]);
   const navigate = useCallback((path: string, options?: { replace?: boolean }) => {
+    const previous = readBrowserRoute();
     if (!writeBrowserRoute(path, options?.replace)) return;
-    window.scrollTo(0, 0);
+    const next = readBrowserRoute();
+    navigationTarget.current = next === previous ? null : next;
+    if (next === previous) window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     setMenuOpen(false);
   }, []);
+  useLayoutEffect(() => {
+    // Scroll only once the destination has committed, never the outgoing page.
+    if (navigationTarget.current !== route) return;
+    navigationTarget.current = null;
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [route]);
   const refresh = useCallback(async () => {
     const generation = ++refreshGeneration.current;
     refreshController.current?.abort();
     const controller = new AbortController();
     refreshController.current = controller;
+    setRefreshingWorkspace(true);
+    let sameOwnerConfirmed = false;
     try {
       const [session, nextCases] = await Promise.all([
-        api<AuthSession>('/auth/session', { signal: controller.signal }),
+        api<AuthSession>('/auth/session', { signal: controller.signal }).then((session) => {
+          sameOwnerConfirmed = Boolean(
+            session.user?.id && session.user.id === committedOwner.current
+          );
+          return session;
+        }),
         api<DemoCase[]>('/cases', { signal: controller.signal }),
       ]);
       const nextWorkspace = session.user
@@ -194,10 +263,32 @@ export function App() {
       setWorkspace(nextWorkspace);
       setCases(nextCases);
       setLoadError('');
+      setRefreshFailed(false);
+      refreshFailureCause.current = null;
+      setToast((current) => (current?.retryWorkspace ? null : current));
       setLoaded(true);
     } catch (error) {
       if (!controller.signal.aborted && generation === refreshGeneration.current) {
-        setLoadError(requestErrorText(error, localeRef.current));
+        const text = requestErrorText(error, localeRef.current);
+        if (
+          sameOwnerConfirmed &&
+          !(error instanceof RequestError && ['AUTH_REQUIRED', 'UNAUTHORIZED'].includes(error.code))
+        ) {
+          setLoadError('');
+          setRefreshFailed(true);
+          refreshFailureCause.current = error;
+          setToast({
+            text:
+              (localeRef.current === 'en'
+                ? 'Workspace refresh failed. Previously loaded data remains visible. '
+                : '工作区刷新失败，仍显示上次读取的资料。') + text,
+            error: true,
+            retryWorkspace: true,
+            id: performance.now(),
+          });
+          throw error;
+        }
+        setLoadError(text);
         setEvidence(null);
         setConfirmRequest(null);
         setMenuOpen(false);
@@ -206,7 +297,10 @@ export function App() {
         throw error;
       }
     } finally {
-      if (refreshController.current === controller) refreshController.current = null;
+      if (refreshController.current === controller) {
+        refreshController.current = null;
+        setRefreshingWorkspace(false);
+      }
     }
   }, []);
   const execute = useCallback(
@@ -222,11 +316,13 @@ export function App() {
         return result;
       } catch (error) {
         if (committedOwner.current !== actionOwner) return undefined;
-        setToast({
-          text: requestErrorText(error, locale),
-          error: true,
-          id: performance.now(),
-        });
+        if (refreshFailureCause.current !== error) {
+          setToast({
+            text: requestErrorText(error, locale),
+            error: true,
+            id: performance.now(),
+          });
+        }
         if (
           error instanceof RequestError &&
           ['AUTH_REQUIRED', 'UNAUTHORIZED'].includes(error.code)
@@ -247,8 +343,23 @@ export function App() {
   useEffect(() => {
     const sync = () => {
       resetFailedLazyPages();
-      setRoute(readBrowserRoute());
+      startPageTransition(() => setRoute(readBrowserRoute()));
       setMenuOpen(false);
+    };
+    const preloadLink = (event: Event) => {
+      const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+      if (
+        !(link instanceof HTMLAnchorElement) ||
+        link.hasAttribute('download') ||
+        (link.target && link.target !== '_self') ||
+        link.rel.split(/\s+/).includes('external')
+      )
+        return;
+      const path = appLinkPath(link.getAttribute('href')!, location.origin);
+      if (path)
+        void pageResource(path, Boolean(committedOwner.current))
+          ?.preload()
+          .catch(() => {});
     };
     const followLink = (event: MouseEvent) => {
       if (
@@ -277,16 +388,21 @@ export function App() {
     window.addEventListener('hashchange', sync);
     window.addEventListener(ROUTE_CHANGE_EVENT, sync);
     document.addEventListener('click', followLink);
+    document.addEventListener('pointerover', preloadLink);
+    document.addEventListener('focusin', preloadLink);
     return () => {
       window.removeEventListener('popstate', sync);
       window.removeEventListener('hashchange', sync);
       window.removeEventListener(ROUTE_CHANGE_EVENT, sync);
       document.removeEventListener('click', followLink);
+      document.removeEventListener('pointerover', preloadLink);
+      document.removeEventListener('focusin', preloadLink);
     };
   }, [navigate]);
   useEffect(() => {
     if (
       loadError ||
+      refreshFailed ||
       !workspace?.tasks.some((task) => task.status === 'running' || task.status === 'queued')
     )
       return;
@@ -294,7 +410,7 @@ export function App() {
       if (!refreshController.current) void refresh().catch(() => {});
     }, 1000);
     return () => clearInterval(timer);
-  }, [workspace, refresh, loadError]);
+  }, [workspace, refresh, loadError, refreshFailed]);
   useEffect(() => {
     storePreference(LOCALE_STORAGE_KEY, locale);
     document.documentElement.lang = locale;
@@ -617,11 +733,15 @@ export function App() {
                   </a>
                 ) : null}
               </div>
-              {pending > 0 && (
+              {(pending > 0 || openingPage || (loaded && refreshingWorkspace)) && (
                 <div
                   className="operation-progress"
                   role="status"
-                  aria-label={t('正在处理…', 'Processing…')}
+                  aria-label={
+                    openingPage
+                      ? t('正在打开页面…', 'Opening page…')
+                      : t('正在处理…', 'Processing…')
+                  }
                 >
                   <span />
                 </div>
@@ -657,6 +777,7 @@ export function App() {
             <main
               key={user?.id || 'anonymous'}
               id="main"
+              aria-busy={openingPage || undefined}
               className={
                 documentationRoute
                   ? 'main-documents'
@@ -767,7 +888,13 @@ export function App() {
               </AssistantErrorBoundary>
             )}
             {toast && !loadError && confirmFailure?.request !== confirmRequest && (
-              <ToastNotice key={toast.id} notice={toast} onDismiss={() => setToast(null)} />
+              <ToastNotice
+                key={toast.id}
+                notice={toast}
+                onDismiss={() => setToast(null)}
+                onRetry={toast.retryWorkspace ? () => void refresh().catch(() => {}) : undefined}
+                retrying={refreshingWorkspace}
+              />
             )}
             {commandOpen && sessionAvailable && (
               <CommandMenu

@@ -27,7 +27,7 @@
 }
 .research-library-stat > div {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
   min-width: 0;
 }
@@ -37,11 +37,22 @@
   line-height: 1.5;
 }
 .research-library-stat strong {
+  display: inline-block;
+  min-width: 2ch;
   font-size: 28px;
   line-height: 1.2;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
+}
+.research-stat-placeholder {
+  width: 2ch;
+  height: 1.2em;
+}
+.research-count-placeholder {
+  width: 180px;
+  max-width: 100%;
+  height: 1lh;
 }
 .research-library-toolbar {
   display: flex;

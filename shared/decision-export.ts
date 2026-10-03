@@ -1,6 +1,7 @@
 import type { DecisionDetail } from './decision-contracts.js';
 import { deriveDecisionClaims } from './decision-claims.js';
 import { derivePaymentBoundary } from './payment-boundary.js';
+import { decisionClaimQuestion, deriveDecisionFollowUpRecords } from './decision-followup.js';
 
 /** Escapes every user-supplied value. This export is a static record, with no executable content. */
 const escape = (value: unknown): string =>
@@ -217,7 +218,19 @@ export function renderDecisionExport(
             label(key),
             key === 'role' && typeof raw === 'string' ? label(raw) : raw,
           ])
-        )}<p class="note">${t('材料ID', 'Material ID')}: ${value(record.materialId)} · ${t('页码', 'Page')}: ${value(record.page)} · ${t('观测ID', 'Observation ID')}: ${value(record.observationId)} · ${t('关联现金事件ID', 'Linked cash event ID')}: ${value(record.flowId)}</p></article>`
+        )}<p class="note">${t('材料ID', 'Material ID')}: ${value(record.materialId)} · ${t('页码', 'Page')}: ${value(record.page)} · ${t('观测ID', 'Observation ID')}: ${value(record.observationId)} · ${t('关联现金事件ID', 'Linked cash event ID')}: ${value(record.flowId)}</p>${
+          record.claimId
+            ? table(
+                [t('问询关联', 'Question association'), t('提交时保存值', 'Saved at submission')],
+                [
+                  [t('问询ID', 'Question ID'), record.claimId],
+                  [t('具体问题', 'Review question'), record.claimQuestion],
+                  [t('对方原话', 'Counterparty quotation'), record.claimText],
+                  [t('核对目标', 'Review target'), record.claimTarget],
+                ]
+              )
+            : ''
+        }</article>`
     )
     .join('');
   return `<!doctype html><html lang="${en ? 'en' : 'zh-CN'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'"><title>${escape(input.title)} · Prispect</title><style>:root{color-scheme:light;--ink:#202124;--muted:#656970;--line:#e4e5e8;--paper:#fff;--canvas:#f5f6f8}*{box-sizing:border-box}body{font:15px/1.7 system-ui,sans-serif;color:var(--ink);background:var(--paper);max-width:980px;margin:24px auto;padding:0 24px}h1{font-size:26px}h2{font-size:19px}h3{font-size:16px}section{border-top:1px solid var(--line);margin-top:24px;padding-top:12px}.note{color:var(--muted);font-size:13px}p,blockquote,td{overflow-wrap:anywhere;white-space:pre-wrap}blockquote{margin:12px 0;padding:12px;border-left:3px solid var(--line)}.table{overflow:auto}table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;vertical-align:top;border-bottom:1px solid var(--line);padding:8px}article{margin:20px 0;break-inside:avoid}@media(max-width:450px){body{padding:0 12px}th,td{padding:6px}}@media print{:root{color-scheme:light;--ink:#202124;--muted:#656970;--line:#ccc;--paper:#fff}body{max-width:none;margin:0;background:white;color:#202124}.table{overflow:visible}thead{display:table-header-group}}</style></head><body><header><p>析光 Prispect · ${t('核查事项版本', 'Review item version')}</p><h1>${escape(input.title)}</h1><p>${escape(input.transactionEntity)} · V${detail.version.revision} · ${escape(detail.version.createdAt)}</p><p class="note">${t('静态离线记录。原件文件未打包；材料ID与摘录保留。恢复联网后在本账号核对原件。此记录不认证资料真伪，不批准付款，历史版本按当前规则重算。', 'Static offline record. Original files are not bundled; material IDs and excerpts are retained. Review originals in the owning account when online. This record does not authenticate sources or approve payment. Historical versions use current rules.')}</p></header>
@@ -237,13 +250,16 @@ export function renderDecisionExport(
         table(
           [
             t('待核对说法', 'Statement to examine'),
+            t('具体核查问题', 'Specific review question'),
             t('核验目标', 'Check target'),
             t('字段状态', 'Field state'),
             t('范围与限制', 'Scope and limits'),
             t('下一步核对', 'Next review step'),
+            t('关联回复与材料', 'Linked replies and evidence'),
           ],
           claims.map((review) => [
             review.claim.text,
+            decisionClaimQuestion(review.claim),
             review.targetLabel[en ? 1 : 0],
             claimStatus(review.status),
             [
@@ -266,6 +282,23 @@ export function renderDecisionExport(
                   '目标不适用于本事项类型，请在编辑时重新选择。',
                   'Target unavailable for this purpose; choose another target when editing.'
                 ),
+            deriveDecisionFollowUpRecords(detail.version, review.claim)
+              .map(({ evidence: record, priorQuestion }) =>
+                [
+                  record.id,
+                  record.kind === 'counterparty-statement'
+                    ? t('对方回复 · 待核验陈述', 'Counterparty reply · unverified statement')
+                    : t('原文记录', 'Source record'),
+                  state(record.state),
+                  record.sourceLabel,
+                  priorQuestion
+                    ? t('对应此前问题', 'Responds to an earlier question')
+                    : t('对应本问题', 'Responds to this question'),
+                  record.claimQuestion,
+                  record.quote,
+                ].join(' · ')
+              )
+              .join('\n'),
           ])
         )
     )}

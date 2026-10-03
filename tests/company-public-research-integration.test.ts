@@ -438,6 +438,7 @@ test('a configured planner reads a canonical known news source, reuses its recei
   let turns = 0;
   let target: { sourceId: string; catalogId: string; url: string } | undefined;
   let firstRead: { text: string; sha256: string; readAt: string; url: string } | undefined;
+  let replayStepId: string | undefined;
   const toolPlan = (calls: { id: string; sourceId: string }[]) =>
     Response.json({
       choices: [
@@ -487,6 +488,7 @@ test('a configured planner reads a canonical known news source, reuses its recei
         ok: boolean;
         result?: {
           reused?: boolean;
+          referenceStepId?: string;
           news: {
             id: string;
             contentScope: string;
@@ -527,17 +529,28 @@ test('a configured planner reads a canonical known news source, reuses its recei
         { id: 'block-invented-source', sourceId: 'news-invented-not-in-company-catalog' },
       ]);
     }
-    assert.equal(turns, 3);
+    assert.ok(turns === 3 || turns === 4);
     const reused = replies.get('reuse-canonical-source');
     assert.equal(reused?.ok, true);
     assert.equal(reused!.result!.reused, true);
-    assert.deepEqual(
-      reused!.result!.news.excerpt,
-      firstRead,
-      'reuse keeps the original body, hash and read time'
+    replayStepId = reused!.result!.referenceStepId;
+    assert.match(
+      replayStepId!,
+      /^research-\d+$/,
+      'reuse references the original source-bearing tool step without duplicating its body'
     );
+    assert.equal(reused!.result!.news, undefined);
     assert.equal(replies.get('block-invented-source')?.ok, false);
     assert.ok(replies.get('block-invented-source')?.error);
+    if (turns === 4) {
+      const review = JSON.parse(request.messages.at(-1).content);
+      assert.equal(review.reviewRequested, true);
+      assert.ok(
+        review.reviewAgenda.issues.some(
+          (issue: { dimensionId: string }) => issue.dimensionId === 'cash'
+        )
+      );
+    }
   });
   const result = await runCompanyResearchAgent(
     run,
@@ -545,9 +558,10 @@ test('a configured planner reads a canonical known news source, reuses its recei
     { industry: async () => industry(), fetch: fixture.fetch }
   );
   planning.verify();
-  assert.equal(turns, 3);
-  assert.equal(result.modelCalls, 3);
-  assert.equal(result.toolCalls, 5);
+  assert.equal(turns, 4);
+  assert.equal(result.modelCalls, 4);
+  assert.equal(result.toolCalls, 4, 'cache replay is not another tool execution');
+  assert.equal(result.steps.find((step) => step.id === replayStepId)?.tool, 'read_news');
   assert.equal(
     fixture.calls.length,
     19,

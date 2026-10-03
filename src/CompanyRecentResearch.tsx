@@ -2,6 +2,7 @@ import { ArrowRight, ChevronRight, RefreshCw } from 'lucide-react';
 import { companyPath, type CompanyRecordSummary } from '../shared/company-workspace';
 import { useCompanyRecords } from './CompanyRecordsContext';
 import { useApp } from './context';
+import { RecordListLoading } from './Experience';
 
 export function CompanyRecentResearch() {
   const { t, user } = useApp();
@@ -40,11 +41,7 @@ export function CompanyRecentResearch() {
           <ArrowRight size={13} />
         </a>
       </header>
-      {loading ? (
-        <p className="research-list-state" role="status">
-          {t('正在读取研究记录…', 'Loading research records…')}
-        </p>
-      ) : error ? (
+      {error && (
         <div className="research-list-error">
           <p role="alert">{error}</p>
           <button className="button button-secondary" onClick={() => void reload()}>
@@ -52,7 +49,10 @@ export function CompanyRecentResearch() {
             {t('重新读取', 'Reload')}
           </button>
         </div>
-      ) : (
+      )}
+      {loading ? (
+        <RecordListLoading compact label={t('正在读取研究记录…', 'Loading research records…')} />
+      ) : records.length > 0 ? (
         <div className="research-recent-list">
           {records.map((record) => {
             const status = statusLabel(record);
@@ -71,7 +71,7 @@ export function CompanyRecentResearch() {
             );
           })}
         </div>
-      )}
+      ) : null}
     </section>
   );
 }

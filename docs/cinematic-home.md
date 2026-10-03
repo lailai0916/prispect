@@ -52,7 +52,7 @@ The light/dark transition composites a single background layer. Foreground
 palettes change at luminance thresholds instead of interpolating through the same
 gray as the background; subdued colors return at the reading holds.
 
-The cinematic root skips the application's generic translated page entrance.
+The cinematic root skips the application's generic page entrance.
 Animating an ancestor's CSS `translate` would change the fixed stage's containing
 block and move it out of the viewport when scrolling immediately after loading.
 

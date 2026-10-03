@@ -142,6 +142,20 @@
   font-weight: 650;
   letter-spacing: -0.055em;
 }
+.research-grade-placeholder {
+  width: 1em;
+  height: 1.1em;
+}
+.research-source-placeholder {
+  display: flex;
+  align-items: center;
+  font-size: var(--text-meta);
+  height: calc(1lh + 12px);
+  margin-top: auto;
+}
+.research-source-placeholder .skeleton {
+  width: 65px;
+}
 .research-grade-c .research-grade-rating {
   color: var(--amber);
 }
@@ -510,6 +524,48 @@
 .research-next-checks li p {
   color: var(--muted);
 }
+.research-pending-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+.research-pending-checks {
+  margin-top: 12px;
+}
+.research-pending-checks > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 36px;
+  color: var(--muted);
+  font-size: var(--text-ui);
+  list-style: none;
+  cursor: pointer;
+}
+.research-pending-checks > summary::-webkit-details-marker {
+  display: none;
+}
+.research-pending-checks > summary > svg {
+  flex-shrink: 0;
+  transition: transform 140ms ease;
+}
+.research-pending-checks[open] > summary > svg {
+  transform: rotate(180deg);
+}
+.research-pending-checks > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--control-radius);
+}
+.research-pending-snapshot {
+  margin: 8px 0 0;
+  color: var(--subtle);
+  font-size: var(--text-meta);
+  line-height: 1.8;
+}
 .research-report-coverage {
   display: flex;
   gap: 7px 16px;
@@ -620,7 +676,14 @@
   .research-public-followup .text-link {
     min-height: 44px;
   }
+  .research-source-placeholder {
+    height: 44px;
+  }
   .research-progress > summary {
+    min-height: 44px;
+  }
+  .research-pending-link,
+  .research-pending-checks > summary {
     min-height: 44px;
   }
 }
@@ -720,7 +783,8 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .research-progress > summary > svg {
+  .research-progress > summary > svg,
+  .research-pending-checks > summary > svg {
     transition: none;
   }
 }
@@ -851,6 +915,14 @@ button.research-grade:hover {
   }
   .research-grade-limits > summary {
     display: none;
+  }
+  .research-pending-checks::details-content {
+    display: block !important;
+    content-visibility: visible !important;
+  }
+  .research-pending-link,
+  .research-pending-checks > summary {
+    display: none !important;
   }
 }
 .research-availability {

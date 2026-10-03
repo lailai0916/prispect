@@ -55,6 +55,8 @@ import { PaymentBoundary } from '../PaymentBoundary';
 import { UndeliveredExposureExplanation } from '../TermExplanation';
 import { renderDecisionExport } from '../../shared/decision-export';
 import { hasDecisionInputChanges } from '../../shared/decision-input-change';
+import { decisionClaimTargets } from '../../shared/decision-claims';
+import { decisionClaimQuestion } from '../../shared/decision-followup';
 
 const EvidenceRecordContext = createContext<(id: string) => void>(() => {});
 
@@ -197,8 +199,17 @@ export function Decisions({ query }: { query: URLSearchParams }) {
   }, [editing, focusInput]);
   const [evidenceSlot, setEvidenceSlot] = useState<DecisionEvidenceSlot | null>(null);
   const [evidenceRole, setEvidenceRole] = useState<'contract' | 'payee' | 'refund' | undefined>();
-  const openEvidence = (slot: DecisionEvidenceSlot, role?: 'contract' | 'payee' | 'refund') => {
+  const [evidenceClaimId, setEvidenceClaimId] = useState<string | undefined>();
+  const [evidenceKind, setEvidenceKind] = useState<DecisionEvidenceInput['kind']>('source-record');
+  const openEvidence = (
+    slot: DecisionEvidenceSlot,
+    role?: 'contract' | 'payee' | 'refund',
+    claimId?: string,
+    kind: DecisionEvidenceInput['kind'] = 'source-record'
+  ) => {
     setEvidenceRole(role);
+    setEvidenceClaimId(claimId);
+    setEvidenceKind(kind);
     setEvidenceSlot(slot);
   };
   const [scopeEvidence, setScopeEvidence] = useState<DecisionEvidence | null>(null);
@@ -323,6 +334,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
       setDetail(result);
       setEvidenceSlot(null);
       setEvidenceRole(undefined);
+      setEvidenceClaimId(undefined);
     }
   };
   const restore = () =>
@@ -548,17 +560,10 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 <input
                   required
                   aria-labelledby="decision-company-label"
-                  aria-describedby="decision-company-note"
                   maxLength={200}
                   value={input.transactionEntity}
                   onChange={(e) => setInput({ ...input, transactionEntity: e.target.value })}
                 />
-                <small id="decision-company-note" className="field-note">
-                  {t(
-                    '暂按你提供的名称保存；尚未确认合同责任主体。',
-                    'Saved under the name you provide; the contract-responsible entity is not yet confirmed.'
-                  )}
-                </small>
               </label>
               <MoneyField
                 label={t('本次拟付款', 'Proposed payment')}
@@ -608,12 +613,6 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 value={input.tradingName || ''}
                 onChange={(event) => setInput({ ...input, tradingName: event.target.value })}
               />
-              <small className="field-note">
-                {t(
-                  '经营名义不自动等于签约、收款或退款主体；请分别核对。',
-                  'A trading name does not establish the contract, payee or refund entity. Check each separately.'
-                )}
-              </small>
             </label>
             <DecisionClaimsEditor input={input} onChange={setInput} />
             {input.purpose === 'handover' && (
@@ -666,12 +665,6 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                       ))}
                   </Select>
                 </label>
-                <p className="field-note">
-                  {t(
-                    '集团年报不能代替子公司的合同责任或当前资金。',
-                    'A group annual report does not establish a subsidiary’s contract responsibility or current funds.'
-                  )}
-                </p>
               </details>
             </details>
             <div className="decision-form-actions">
@@ -1185,12 +1178,6 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                   </button>
                 )}
               </div>
-              <p className="field-note">
-                {t(
-                  '撤回会创建新版本，原版本保留。',
-                  'Withdrawing creates a new version; the original version remains.'
-                )}
-              </p>
               {detail.version.evidence.length ? (
                 <div className="decision-evidence-list">
                   {detail.version.evidence.map((evidence) => (
@@ -1282,10 +1269,13 @@ export function Decisions({ query }: { query: URLSearchParams }) {
         <EvidenceDialog
           initialSlot={evidenceSlot}
           initialRole={evidenceRole}
+          initialClaimId={evidenceClaimId}
+          initialKind={evidenceKind}
           input={detail.version.input}
           onClose={() => {
             setEvidenceSlot(null);
             setEvidenceRole(undefined);
+            setEvidenceClaimId(undefined);
           }}
           onSave={addEvidence}
         />
@@ -1358,20 +1348,26 @@ function DecisionEvidenceRecord({
         {evidence.entity} · {evidence.asOf || t('日期未提供', 'Date missing')} ·{' '}
         {evidence.sourceLabel}
       </p>
-      {evidence.kind === 'source-record' && (
+      {evidence.kind === 'source-record' && !evidence.materialId && (
         <p className="field-note">
-          {evidence.materialId
-            ? t(
-                '文本定位结果见“条件”，原件需另行核对。',
-                'See Conditions for text-location results; originals need separate review.'
-              )
-            : t(
-                '用户转录，按所供输入测算；未进入已关联记录字段分支。',
-                'User transcription, calculated from supplied inputs; excluded from the linked-records branch.'
-              )}
+          {t('用户转录 · 未关联原件', 'User transcription · no original linked')}
         </p>
       )}
       <blockquote>{evidence.quote}</blockquote>
+      {evidence.claimId && (
+        <div className="decision-reply-question">
+          <strong>{t('提交时对应问题', 'Question at submission')}</strong>
+          <p>
+            {evidence.claimQuestion || t('旧记录未保存问题快照', 'Question snapshot unavailable')}
+          </p>
+          {evidence.claimText && <blockquote>{evidence.claimText}</blockquote>}
+          {evidence.claimTarget && (
+            <span className="field-note">
+              {t(...decisionClaimTargets[evidence.claimTarget].label)}
+            </span>
+          )}
+        </div>
+      )}
       <div className="decision-evidence-values">
         {Object.entries(evidence.values).map(([key, value]) => (
           <span key={key}>
@@ -2350,12 +2346,16 @@ function fieldName(key: string, t: Translate) {
 function EvidenceDialog({
   initialSlot,
   initialRole,
+  initialClaimId,
+  initialKind = 'source-record',
   input,
   onClose,
   onSave,
 }: {
   initialSlot: DecisionEvidenceSlot;
   initialRole?: 'contract' | 'payee' | 'refund';
+  initialClaimId?: string;
+  initialKind?: DecisionEvidenceInput['kind'];
   input: DecisionInput;
   onClose: () => void;
   onSave: (evidence: DecisionEvidenceInput) => Promise<void>;
@@ -2363,13 +2363,21 @@ function EvidenceDialog({
   const { t, locale, workspace, busy } = useApp();
   const [evidence, setEvidence] = useState<DecisionEvidenceInput>({
     slot: initialSlot,
-    kind: 'source-record',
-    entity: '',
-    asOf: null,
+    kind: initialKind,
+    entity: initialClaimId
+      ? initialRole === 'payee'
+        ? input.external?.payeeEntity || ''
+        : initialRole === 'refund'
+          ? input.external?.refundEntity || ''
+          : input.transactionEntity
+      : '',
+    asOf: initialClaimId ? input.external?.asOf || input.datedCash?.asOf || null : null,
+    ...(initialClaimId ? { claimId: initialClaimId } : {}),
     values: initialSlot === 'identity' && initialRole ? { role: initialRole } : {},
     quote: '',
     sourceLabel: '',
   });
+  const claim = input.claims?.find((item) => item.id === evidence.claimId);
   const material = workspace?.materials.find((item) => item.id === evidence.materialId);
   const monetary = ['paid', 'delivered', 'refunded', 'opening-cash', 'cash-flow'].includes(
     evidence.slot
@@ -2378,7 +2386,11 @@ function EvidenceDialog({
     setEvidence({ ...evidence, values: { ...evidence.values, ...patch } });
   return (
     <Dialog
-      title={t('记录核查事项依据', 'Record review item evidence')}
+      title={
+        evidence.kind === 'counterparty-statement'
+          ? t('补充对方回复', 'Add counterparty reply')
+          : t('记录核查事项依据', 'Record review item evidence')
+      }
       onClose={onClose}
       closeDisabled={busy}
     >
@@ -2391,11 +2403,18 @@ function EvidenceDialog({
         }}
       >
         <fieldset className="decision-save-fields" disabled={busy}>
+          {claim && (
+            <div className="decision-reply-question">
+              <strong>{t('对应问题', 'Related question')}</strong>
+              <p>{decisionClaimQuestion(claim)}</p>
+            </div>
+          )}
           <div className="decision-form-grid">
             <label className="form-field">
               <span>{t('材料用途', 'Material purpose')}</span>
               <Select
                 value={evidence.slot}
+                disabled={Boolean(evidence.claimId)}
                 onValueChange={(selectedValue) =>
                   setEvidence({
                     ...evidence,
@@ -2424,7 +2443,9 @@ function EvidenceDialog({
                 <option value="counterparty-statement">
                   {t('对方陈述或承诺', 'Counterparty statement or promise')}
                 </option>
-                <option value="assumption">{t('情景假设', 'Scenario assumption')}</option>
+                <option value="assumption" disabled={Boolean(evidence.claimId)}>
+                  {t('情景假设', 'Scenario assumption')}
+                </option>
               </Select>
             </label>
             <label className="form-field">
@@ -2445,12 +2466,13 @@ function EvidenceDialog({
               />
             </label>
           </div>
-          {evidence.slot === 'identity' && (
+          {evidence.slot === 'identity' && evidence.kind !== 'counterparty-statement' && (
             <div className="decision-form-grid">
               <label className="form-field">
                 <span>{t('主体角色', 'Entity role')}</span>
                 <Select
                   value={evidence.values.role || 'contract'}
+                  disabled={Boolean(evidence.claimId)}
                   onValueChange={(selectedValue) =>
                     setValue({ role: selectedValue as 'contract' | 'payee' | 'refund' })
                   }
@@ -2475,7 +2497,7 @@ function EvidenceDialog({
               </label>
             </div>
           )}
-          {evidence.slot === 'terms' && (
+          {evidence.slot === 'terms' && evidence.kind !== 'counterparty-statement' && (
             <label className="form-field">
               <span>
                 {t('原文付款、交付或退款条件', 'Payment, delivery or refund terms in the source')}
@@ -2489,7 +2511,7 @@ function EvidenceDialog({
               />
             </label>
           )}
-          {monetary && (
+          {monetary && evidence.kind !== 'counterparty-statement' && (
             <>
               <MoneyField
                 label={t('记录中的金额', 'Amount in the record')}
@@ -2530,15 +2552,21 @@ function EvidenceDialog({
                   ))}
                 </Select>
               </label>
-              <DayField
-                label={t('原文对应事件日', 'Event day supported by the source')}
-                value={evidence.values.day ?? null}
-                onChange={(value) => setValue({ day: value })}
-              />
+              {evidence.kind !== 'counterparty-statement' && (
+                <DayField
+                  label={t('原文对应事件日', 'Event day supported by the source')}
+                  value={evidence.values.day ?? null}
+                  onChange={(value) => setValue({ day: value })}
+                />
+              )}
             </div>
           )}
           <label className="form-field">
-            <span>{t('来源名称', 'Source label')}</span>
+            <span>
+              {evidence.kind === 'counterparty-statement'
+                ? t('回复来自', 'Reply from')
+                : t('来源名称', 'Source label')}
+            </span>
             <input
               required
               maxLength={200}
@@ -2551,7 +2579,11 @@ function EvidenceDialog({
             />
           </label>
           <label className="form-field">
-            <span>{t('原文摘录', 'Source excerpt')}</span>
+            <span>
+              {evidence.kind === 'counterparty-statement'
+                ? t('对方回复原文', 'Counterparty reply text')
+                : t('原文摘录', 'Source excerpt')}
+            </span>
             <textarea
               required
               rows={4}
@@ -2633,12 +2665,6 @@ function EvidenceDialog({
               </>
             )}
           </details>
-          <p className="field-note">
-            {t(
-              '未关联材料文本时保存为用户转录；对方陈述与假设不作为实际退款或现金依据。',
-              'Without linked material text, this is saved as a user transcription. Counterparty statements and assumptions do not establish actual refunds or available cash.'
-            )}
-          </p>
           <div className="dialog-actions">
             <button type="button" className="button button-secondary" onClick={onClose}>
               {t('取消', 'Cancel')}
