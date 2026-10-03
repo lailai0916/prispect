@@ -505,7 +505,6 @@ export function App() {
               <strong>{user.name}</strong>
               <small>{user.email}</small>
             </span>
-            <ChevronDown size={14} />
           </ActionMenu>
         )}
       </div>
