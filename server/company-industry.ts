@@ -1,5 +1,10 @@
-import type { CompanyIndustrySnapshot, IndustryMetricKey } from '../shared/company-workspace.js';
-import { industryMetricKeys } from '../shared/company-workspace.js';
+import type {
+  CompanyIndustrySnapshot,
+  IndustryMetricKey,
+  IndustryChartMetricKey,
+  IndustryMetricSummary,
+} from '../shared/company-workspace.js';
+import { industryMetricKeys, industryChartMetricKeys } from '../shared/company-workspace.js';
 import {
   PublicCompanyReader,
   CONTEXT_ENDPOINT,
@@ -65,6 +70,63 @@ export function industryValues(
     revenueGrowth: finiteValue(income.YSTZ),
   };
 }
+export function industryChartValues(
+  income: Record<string, unknown>,
+  balance: Record<string, unknown>,
+  cash: Record<string, unknown>
+): Record<IndustryChartMetricKey, number | null> {
+  const shortLoan = finiteValue(balance.SHORT_LOAN),
+    currentPortionDebt = finiteValue(balance.NONCURRENT_LIAB_1YEAR);
+  return {
+    revenue: finiteValue(income.TOTAL_OPERATE_INCOME),
+    netProfit: finiteValue(income.NETPROFIT),
+    parentProfit: finiteValue(income.PARENT_NETPROFIT),
+    ocf: finiteValue(cash.NETCASH_OPERATE),
+    cash: finiteValue(balance.MONETARYFUNDS),
+    shortDebt:
+      shortLoan !== null && currentPortionDebt !== null && shortLoan >= 0 && currentPortionDebt >= 0
+        ? finiteValue(shortLoan + currentPortionDebt)
+        : null,
+    inventory: finiteValue(balance.INVENTORY),
+    receivables: finiteValue(balance.ACCOUNTS_RECE),
+    netMargin: ratio(income.NETPROFIT, income.TOTAL_OPERATE_INCOME),
+    parentNetMargin: ratio(income.PARENT_NETPROFIT, income.TOTAL_OPERATE_INCOME),
+  };
+}
+function aggregateValues(
+  company: number | null,
+  peers: (number | null | undefined)[]
+): IndustryMetricSummary {
+  const values = peers
+    .filter(
+      (value): value is number => value !== null && value !== undefined && Number.isFinite(value)
+    )
+    .sort((a, b) => a - b);
+  // Compensated summation retains zero, negative and extreme values.
+  let sum = 0,
+    correction = 0;
+  for (const value of values) {
+    const y = value - correction,
+      next = sum + y;
+    correction = next - sum - y;
+    sum = next;
+  }
+  const mean = values.length >= minimumSamples ? finiteValue(sum / values.length) : null;
+  const median =
+    values.length >= minimumSamples
+      ? values.length % 2
+        ? values[Math.floor(values.length / 2)]!
+        : finiteValue(values[values.length / 2 - 1]! / 2 + values[values.length / 2]! / 2)
+      : null;
+  return {
+    company: finiteValue(company),
+    mean,
+    median,
+    count: values.length,
+    missing: peers.length - values.length,
+    difference: company !== null && mean !== null ? finiteValue(company - mean) : null,
+  };
+}
 export function aggregateIndustry(
   samples: CompanyIndustrySnapshot['samples'],
   code: string
@@ -72,41 +134,30 @@ export function aggregateIndustry(
   const target = samples.find((sample) => sample.code === code),
     peers = samples.filter((sample) => sample.code !== code);
   return Object.fromEntries(
-    industryMetricKeys.map((key) => {
-      const values = peers
-        .map((sample) => sample.values[key])
-        .filter((value): value is number => value !== null && Number.isFinite(value))
-        .sort((a, b) => a - b);
-      // Compensated summation retains zero, negative and extreme values.
-      let sum = 0,
-        correction = 0;
-      for (const value of values) {
-        const y = value - correction,
-          next = sum + y;
-        correction = next - sum - y;
-        sum = next;
-      }
-      const mean = values.length >= minimumSamples ? finiteValue(sum / values.length) : null;
-      const median =
-        values.length >= minimumSamples
-          ? values.length % 2
-            ? values[Math.floor(values.length / 2)]!
-            : (values[values.length / 2 - 1]! + values[values.length / 2]!) / 2
-          : null;
-      const company = target?.values[key] ?? null;
-      return [
-        key,
-        {
-          company,
-          mean,
-          median,
-          count: values.length,
-          missing: peers.length - values.length,
-          difference: company !== null && mean !== null ? company - mean : null,
-        },
-      ];
-    })
+    industryMetricKeys.map((key) => [
+      key,
+      aggregateValues(
+        target?.values[key] ?? null,
+        peers.map((sample) => sample.values[key])
+      ),
+    ])
   ) as CompanyIndustrySnapshot['metrics'];
+}
+export function aggregateIndustryCharts(
+  samples: CompanyIndustrySnapshot['samples'],
+  code: string
+): Record<IndustryChartMetricKey, IndustryMetricSummary> {
+  const target = samples.find((sample) => sample.code === code),
+    peers = samples.filter((sample) => sample.code !== code);
+  return Object.fromEntries(
+    industryChartMetricKeys.map((key) => [
+      key,
+      aggregateValues(
+        target?.chartValues?.[key] ?? null,
+        peers.map((sample) => sample.chartValues?.[key])
+      ),
+    ])
+  ) as Record<IndustryChartMetricKey, IndustryMetricSummary>;
 }
 export async function industryRows(
   reader: PublicCompanyReader,
@@ -234,13 +285,28 @@ export async function retrieveIndustrySnapshot(
     warnings.push('资产负债表本次未完整取得，相关指标保留未知。');
   if (results[1].status === 'rejected')
     warnings.push('现金流量表本次未完整取得，相关指标保留未知。');
+  // Optional chart amounts share the same reader, deadline and cohort. Read
+  // them after the required tables so they cannot consume the core budget.
+  // CPD's attributable profit never substitutes for consolidated NETPROFIT.
+  let chartIncome = new Map<string, Record<string, unknown>>();
+  try {
+    chartIncome = await statements('RPT_DMSK_FN_INCOME');
+  } catch {
+    warnings.push('利润表图表参照本次未完整取得，相关金额和净利率保留未知。');
+  }
   const samples = codes.map((item) => ({
     code: item,
     name: textValue(income.get(item)!.SECURITY_NAME_ABBR) || item,
     noticeDate: dateValue(income.get(item)!.NOTICE_DATE) || null,
     values: industryValues(income.get(item)!, balance.get(item) || {}, cash.get(item) || {}),
+    chartValues: industryChartValues(
+      chartIncome.get(item) || {},
+      balance.get(item) || {},
+      cash.get(item) || {}
+    ),
   }));
   const metrics = aggregateIndustry(samples, code);
+  const chartMetrics = aggregateIndustryCharts(samples, code);
   if (industryMetricKeys.some((key) => metrics[key].count < minimumSamples))
     warnings.push('部分指标有效同行不足五家，不输出均值或差异。');
   warnings.push(
@@ -262,6 +328,7 @@ export async function retrieveIndustrySnapshot(
     peerCount: codes.length - 1,
     minimumSamples,
     metrics,
+    chartMetrics,
     samples,
     sources,
     warnings,

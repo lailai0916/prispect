@@ -264,6 +264,27 @@ export const industryMetricKeys = [
   'revenueGrowth',
 ] as const;
 export type IndustryMetricKey = (typeof industryMetricKeys)[number];
+export const industryChartMetricKeys = [
+  'revenue',
+  'netProfit',
+  'parentProfit',
+  'ocf',
+  'cash',
+  'shortDebt',
+  'inventory',
+  'receivables',
+  'netMargin',
+  'parentNetMargin',
+] as const;
+export type IndustryChartMetricKey = (typeof industryChartMetricKeys)[number];
+export interface IndustryMetricSummary {
+  company: number | null;
+  mean: number | null;
+  median: number | null;
+  count: number;
+  missing: number;
+  difference: number | null;
+}
 export interface CompanyIndustrySnapshot {
   version: 1;
   securityCode: string;
@@ -274,22 +295,18 @@ export interface CompanyIndustrySnapshot {
   status: 'available' | 'partial';
   peerCount: number;
   minimumSamples: number;
-  metrics: Record<
-    IndustryMetricKey,
-    {
-      company: number | null;
-      mean: number | null;
-      median: number | null;
-      count: number;
-      missing: number;
-      difference: number | null;
-    }
-  >;
+  metrics: Record<IndustryMetricKey, IndustryMetricSummary>;
+  /** Additive chart references: amounts are yuan; margins are percentages
+   * and margin differences are percentage points.
+   * netProfit/netMargin use consolidated profit, parentProfit/parentNetMargin
+   * use attributable profit. Absent on legacy snapshots, never backfilled. */
+  chartMetrics?: Partial<Record<IndustryChartMetricKey, IndustryMetricSummary>>;
   samples: {
     code: string;
     name: string;
     noticeDate: string | null;
     values: Record<IndustryMetricKey, number | null>;
+    chartValues?: Partial<Record<IndustryChartMetricKey, number | null>>;
   }[];
   sources: { url: string; sha256: string }[];
   warnings: string[];

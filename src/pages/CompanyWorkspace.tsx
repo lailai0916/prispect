@@ -29,9 +29,8 @@ import {
   CompanySourcesView,
   CompanyCoverageView,
 } from '../CompanyContextViews';
-import { CompanyContextHistory } from '../CompanyContextHistory';
+import { CompanyFinancialChartsSection } from '../CompanyFinancialChartsSection';
 import { CompanyDisclosuresView } from '../CompanyDisclosuresView';
-import { CompanyIndustryView } from '../CompanyIndustryView';
 import { CompanyAssistantContext } from '../company-assistant-context';
 import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
@@ -51,26 +50,6 @@ const OriginalReview = lazyPage(
 
 const researchSupported = (run: CompanyResearchRun) =>
   /^\d{6}$/.test(run.input.securityCode) && run.identity?.exchange !== 'us';
-
-function CompanyIndustrySection({ run }: { run: CompanyResearchRun }) {
-  const { t } = useApp();
-  const [revealed, setRevealed] = useState(false);
-  return (
-    <details
-      id="company-industry"
-      className="company-review-details"
-      onToggle={(event) => {
-        if (event.currentTarget.open) setRevealed(true);
-      }}
-    >
-      <summary>
-        <ChevronDown size={14} />
-        {t('行业对比', 'Industry comparison')}
-      </summary>
-      {revealed && <CompanyIndustryView run={run} />}
-    </details>
-  );
-}
 
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const { t, locale, navigate, confirm, user } = useApp();
@@ -606,12 +585,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               )}
               {section === 'financial' && (
                 <>
-                  <section id="company-financial-history" className="company-workspace-section">
-                    <h2 className="company-workspace-section-title">
-                      {t('历史财务走势', 'Financial history')}
-                    </h2>
-                    <CompanyContextHistory snapshot={snapshot} basis={basis} />
-                  </section>
+                  <CompanyFinancialChartsSection
+                    key={`${user?.id}:${run.id}`}
+                    run={run}
+                    snapshot={snapshot}
+                    basis={basis}
+                  />
                   <details id="company-financial-data" className="company-review-details">
                     <summary>
                       <ChevronDown size={14} />
@@ -636,7 +615,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                       <CompanyFinancialTrends run={run} onPage={originalPage} />
                     </details>
                   )}
-                  <CompanyIndustrySection key={run.id} run={run} />
                 </>
               )}
               {section === 'sources' && (

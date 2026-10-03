@@ -12,6 +12,7 @@ import {
 import { AppContext, type AppContextValue } from '../src/context.js';
 import { CompanyContextOverview, CompanyCoverageView } from '../src/CompanyContextViews.js';
 import { CompanyContextHistory } from '../src/CompanyContextHistory.js';
+import { IndustryPairChart } from '../src/FinancialCharts.js';
 
 function fixture(profit: string | null): CompanyResearchRun {
   const row: CompanyContextPeriod = {
@@ -126,24 +127,60 @@ test('financial-history axes show distinct ticks with matching currency units ac
         )
       );
       const $ = load(html);
-      const labels = $('.context-chart-scroll svg > g > text[text-anchor="end"]')
+      const chart = $('.financial-chart-card').first();
+      const labels = chart
+        .find('.financial-chart-scroll svg > g > text[text-anchor="end"]')
         .map((_index, element) => $(element).text())
         .get();
-      assert.equal(labels.length, 5);
-      assert.equal(new Set(labels).size, 5, `${locale}, profit ${profit}: ${labels.join(', ')}`);
+      assert.ok(labels.length >= 3 && labels.length <= 7);
+      assert.equal(
+        new Set(labels).size,
+        labels.length,
+        `${locale}, profit ${profit}: ${labels.join(', ')}`
+      );
       const numbers = labels.map((label) => Number(label.replaceAll(',', '')));
       assert.ok(numbers.every(Number.isFinite));
       assert.ok(numbers.every((value, index) => index === 0 || value > numbers[index - 1]!));
       const unit = locale === 'en' ? enUnit : zhUnit;
       assert.equal(
-        $('.context-chart-plot > span').text(),
+        chart.find('.financial-chart-unit').text(),
         locale === 'en' ? unit : `人民币 · ${unit}`
       );
-      assert.ok($('.context-chart-scroll svg').attr('aria-label')?.includes(unit));
+      assert.ok(chart.find('.financial-chart-scroll svg').attr('aria-label')?.includes(unit));
+      const cashTicks = $('.financial-chart-card')
+        .eq(1)
+        .find('.financial-chart-scroll svg > g > text[text-anchor="end"]')
+        .map((_index, element) => $(element).text())
+        .get();
+      assert.deepEqual(cashTicks, labels, 'profit and cash must use identical amount scales');
       assert.equal(
         $('.context-exact-fields article').first().find('strong').text().includes('—'),
         false
       );
     }
+  }
+});
+
+test('small percentage comparison ticks stay distinct instead of rounding every mark to zero', () => {
+  for (const locale of ['zh-Hans', 'en'] as const) {
+    const html = renderToStaticMarkup(
+      createElement(
+        AppContext.Provider,
+        {
+          value: {
+            locale,
+            t: (zh: string, en: string) => (locale === 'en' ? en : zh),
+          } as AppContextValue,
+        },
+        createElement(IndustryPairChart, { company: 0.01, peer: 0.03, label: 'ratio' })
+      )
+    );
+    const $ = load(html);
+    const ticks = $('svg > g > text[text-anchor="middle"]')
+      .map((_index, element) => $(element).text())
+      .get();
+    assert.ok(ticks.length >= 3);
+    assert.equal(new Set(ticks).size, ticks.length);
+    assert.ok(ticks.some((tick) => tick.includes('0.01')));
   }
 });
