@@ -61,6 +61,7 @@ import {
 } from './content/document-navigation';
 import { CompanySidebar } from './CompanySidebar';
 import { CompanyRecordsProvider } from './CompanyRecordsContext';
+import { CompanyHeaderContext } from './CompanyHeaderContext';
 import { CommandMenu } from './CommandMenu';
 import { PageLoading, ToastNotice, usePageEntrance } from './Experience';
 import './polish.css';
@@ -585,10 +586,6 @@ export function App() {
     ['/decisions', t(...productTerms.paymentsAndHandovers)],
     ['/compare', t(...productTerms.compareReviews)],
   ] as const;
-  const companySection = resolveCompanySection(
-    new URLSearchParams(route.split('?')[1]).get('section')
-  );
-  const companySectionName = companySections.find(([id]) => id === companySection)!;
   const sessionAvailable = loaded && !loadError;
   const business = Boolean(
     sessionAvailable && user && !['/login', '/register', '/docs', ...documentPaths].includes(page)
@@ -602,7 +599,7 @@ export function App() {
         : documentationRoute
           ? t(...documentationTitle)
           : page === '/company'
-            ? t(companySectionName[1], companySectionName[2])
+            ? t(...productTerms.companyResearch)
             : page === '/' || page === '/query'
               ? t(...productTerms.newResearch)
               : navigation.find(([path]) => path === page)?.[1];
@@ -680,7 +677,7 @@ export function App() {
               <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
                 <Logo />
               </a>
-              {business && <span className="header-context">{currentSection}</span>}
+              {business && <CompanyHeaderContext route={route} label={currentSection} />}
               {!business && !documentationRoute && (
                 <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
                   <a href="/docs">{t(...documentationTitle)}</a>
