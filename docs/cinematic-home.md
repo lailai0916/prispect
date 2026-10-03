@@ -2,84 +2,66 @@
 
 ## Story and composition
 
-The anonymous homepage follows one fixed historical finding through its original
-pages, signed cash reconciliation and unresolved explanations. The composition
-changes with the material: a central inspection object, a full-frame original crop,
-a wide cash bridge, two inquiry branches, then the existing research entry.
+The anonymous homepage uses the restored desktop composition: explanatory copy
+on the left and an animated evidence presentation on the right. Narrow screens
+stack the copy and presentation. Five chapters follow one fixed historical
+finding through its original pages, signed cash reconciliation and unresolved
+explanations, then return to the existing research entry.
 
-The opening keeps the canonical product headline and direct entry action.
-Songyuan's 2025 consolidated net profit of CNY 366,373,098.93 and operating cash
-flow of CNY 26,197,123.70 establish the example. Copy describes the pages, amounts,
-adjustments and missing materials rather than repeating product slogans.
+The opening retains the canonical headline, “Make company judgments traceable.”,
+and a direct entry action. The example uses Songyuan's 2025 consolidated net
+profit of CNY 366,373,098.93 and operating cash flow of CNY 26,197,123.70. These are
+historical annual-report amounts, not a current company assessment.
 
-| Chapter     | Material                                                     | Reading position |
-| ----------- | ------------------------------------------------------------ | ---------------- |
-| Discovery   | Original-report papers under a glass inspection surface      | 0.00             |
-| Sources     | Page 190, then page 191, with original row apertures         | 0.26 / 0.3475    |
-| Calculation | Original rows assemble into a signed cumulative bridge       | 0.555            |
-| Inquiry     | Two untested explanations and their distinguishing materials | 0.775            |
-| Begin       | Direct action to research another company                    | 0.95             |
+| Chapter     | Presentation                                                         | Start progress |
+| ----------- | -------------------------------------------------------------------- | -------------- |
+| Discovery   | Research finding with consolidated profit and operating cash         | 0.00           |
+| Sources     | Original crops from pages 190 and 191 with highlighted reported rows | 0.14           |
+| Calculation | Signed cumulative cash bridge from the original adjustments          | 0.37           |
+| Inquiry     | Two untested explanations and materials needed to distinguish them   | 0.64           |
+| Begin       | The finding returns alongside the existing company-research entry    | 0.84           |
 
-The rendered inspection object is illustrative. It does not represent a physical
-Prispect device. Its paper textures are the retained original-report crops.
+The report and original-page layers use CSS perspective, transforms and opacity.
+The cash bridge is an accessible SVG with neutral amounts. `OpticalField.tsx`
+supplies a decorative SVG background using the existing logo geometry; its
+signal and shading follow the same scroll progress. This implementation has no
+Three.js dependency, WebGL model or canvas renderer.
 
-## One scroll clock
+## Native scrolling and timeline
 
-`src/cinematic/useStoryTimeline.ts` owns the native-scroll GSAP timeline, chapter
+`src/cinematic/useStoryTimeline.ts` owns one GSAP ScrollTrigger timeline, chapter
 navigation and active/inert semantics. It does not intercept wheel, touch or
-keyboard scrolling. An eight-viewport scroll range supplies transitions and
-reading holds; narrow screens use 7.8 viewports. Locale changes preserve the
-current position. Responsive geometry refreshes without rebuilding the pin.
+keyboard scrolling. The pinned timeline spans seven stage heights on desktop
+and 6.4 on narrow screens, using a stage-height floor of 520px. Chapter buttons
+use native smooth scrolling to positions within the corresponding chapters.
 
-The timeline emits `storyframe` events from its progress. `EvidenceSculpture.tsx`
-uses that same progress for the glass separation, page movement, source-row
-extraction, six bridge bodies, inquiry paths and retirement. It has no autonomous
-rotation, numeric counting or independent progress smoothing.
+The timeline moves the report, original crops, amount labels, cash-bridge columns
+and explanation paths. It writes scroll progress to CSS custom properties for
+`OpticalField`; animation does not require React state updates on each frame.
+Financial figures retain their source values rather than counting up.
 
-Canvas and DOM have complementary roles. The physical transition uses WebGL;
-source-reading holds use exact DOM crops, and the calculation hold uses an
-accessible SVG with DOM labels on narrow screens. Decorative paper and chart
-bodies retire during these holds so they cannot compete with readable content.
+`useGSAP` scopes the timeline to the homepage. Its `matchMedia` lifecycle reverts
+the animation and pin and restores panel accessibility attributes when the
+animated mode ends. The cinematic root continues to skip the application's
+generic translated page entrance, which would change the fixed stage's
+containing block.
 
-The source-page handoff curve and chapter reading positions live in `story.ts`.
-The DOM and renderer share the page curve; reading copies do not translate
-independently beneath moving papers. The 3D bridge projects into the SVG's step,
-amount scale and zero-line position before retiring ahead of the reading figure.
-Inquiry paths retire before the explanatory text enters. Paper turns and the final
-glass closure stay within the stage rather than crossing the title or bottom bar.
+## Responsive and static reading
 
-The light/dark transition composites a single background layer. Foreground
-palettes change at luminance thresholds instead of interpolating through the same
-gray as the background; subdued colors return at the reading holds.
+Reduced motion, desktop heights at or below 560px, and narrow-screen heights at
+or below 750px use the complete static reading sequence. It includes the same
+finding, source access, cash bridge, unresolved explanations and research entry
+without the long pinned scroll range.
 
-The cinematic root skips the application's generic page entrance.
-Animating an ancestor's CSS `translate` would change the fixed stage's containing
-block and move it out of the viewport when scrolling immediately after loading.
+Original-page images are local crops that preserve the PDF layout. Source
+actions open both crops, exact amounts and the full original PDF link. The
+presentation and source access use DOM, CSS and SVG; they do not depend on GPU
+model initialization or shader compilation.
 
-## Rendering and fallback
-
-Three.js and its geometry/environment helpers load dynamically only for the
-animated homepage. Both original textures are local. The renderer uses a local
-studio environment, a thin transmitting glass surface and restrained neutral
-materials, without video, remote media, bloom or a postprocessing chain.
-
-- Progress renders in the same GSAP tick as the DOM. Texture, size and visibility
-  changes coalesce into a requested frame instead of starting another loop.
-- Fixed opaque and fading material variants compile asynchronously before the
-  canvas replaces its paper fallback. Scrolling does not change shader defines.
-- Reading holds clear the decorative canvas once and stop submitting empty scenes.
-- Desktop pixel ratio is capped at 1.5; narrow screens are capped at 1.
-- Hidden and offscreen scenes stop drawing.
-- Leaving the route or switching to static reading releases listeners,
-  observers, animation frames, textures, geometries, materials and the renderer.
-- WebGL or texture failure retains a simple paper illustration and the complete
-  DOM story; original-source and research actions remain available.
-- Reduced motion, desktop heights at or below 560px, and mobile heights at or
-  below 750px use the complete static reading sequence without loading Three.js.
-
-The material implementation follows the official
-[MeshPhysicalMaterial documentation](https://threejs.org/docs/pages/MeshPhysicalMaterial.html)
-and [WebGLRenderer documentation](https://threejs.org/docs/pages/WebGLRenderer.html).
+The existing application header, logo, documentation, themes, assistant and
+business routes remain shared. Compact chapter controls retain accessible
+labels. Responsive acceptance must check text wrapping, effective SVG label
+sizes, control targets and clearance around the assistant.
 
 ## Evidence boundary
 
@@ -88,48 +70,36 @@ Issuer, annual period, consolidated basis, CNY unit and PDF identity are checked
 The original adjustments reconcile in integer fen before presentation.
 
 The CNY 217,235,539.32 group independently sums 13 disclosed rows; it is not the
-annual report's single “Other” row. The source dialog exposes exact bridge values,
-all 13 components, page crops and the full original PDF link. Component names
-retain their recorded shortened Chinese labels. Provenance and rights remain in
-`public/landing/SOURCES.md`.
+annual report's single “Other” row. The source dialog retains exact bridge
+values, all 13 components, page crops and the full original PDF link. Component
+names retain their recorded shortened Chinese labels. Provenance and rights
+remain in `public/landing/SOURCES.md`.
 
 The example establishes amounts, not their operating cause. Both explanations
 remain untested and distinguishing materials remain not obtained. Historical
 operating cash does not enter current cash, future receipts or private plans.
+Scrolling through the example does not start retrieval or model research.
 
 ## Product integration
 
 Anonymous `/` renders the story; authenticated `/` retains the research workbench.
-All entry actions open one existing `StartInput`, preserving company matching,
+Entry actions open one existing `StartInput`, preserving company matching,
 editable drafts, authentication continuation and account isolation. The optional
 hypothetical payment-timing example remains separate in that entry dialog and
 returns to its collapsed state after the dialog closes.
 
-The existing application header, logo, documentation, themes, assistant and
-business routes remain shared. The narrow homepage header retains Documentation
-and Login; at 360px and below its search icon is omitted, while command-search
-keyboard access remains available. Chapter controls have at least 44px touch
-height and narrow screens show compact numbered controls with full accessible
-labels. The assistant's lower-right interaction area remains clear.
-
 ## Verification
 
-Browser checks on 2026-10-03 cover desktop and narrow layouts, both languages,
-intermediate and stable frames, original crops and precise amounts, modal focus
-restoration, draft persistence, static reading, dynamic reduced-motion changes,
-route cleanup and the anonymous research-to-login continuation. The source dialog
-contains both complete crops and all 13 group components. Visible financial SVG
-text stays above the effective 12px floor on the inspected narrow viewports.
+This restoration requires fresh TypeScript, research-record, test, build and
+format checks. Browser acceptance must cover Chinese and English, desktop and
+narrow layouts, intermediate and stable frames, reverse scrolling, responsive
+resizing, reduced-motion/static reading, original amounts and all 13 components,
+modal focus restoration, draft persistence, route cleanup and anonymous
+research-to-login continuation.
 
-The preview uses an isolated temporary database. Browser checks do not verify a
-production release, SMTP, model-provider output or a new real research report.
-The pull request records the current build and CI results. Linux deployment
+The pull request records results for the current revision. Previous checks do
+not establish acceptance of the restored presentation. Browser checks using an
+isolated temporary database do not verify a production release, SMTP,
+model-provider output or a newly retrieved company report. Linux deployment
 retention fixtures remain a Linux CI gate; their mount and cgroup safety checks
-are not relaxed for macOS.
-
-A 14-second continuous-scroll check on M3 Max, Chrome/ANGLE Metal, 1440×960 and
-DPR 1 measured a maximum frame interval of 234.2ms before the material fix and
-11.5ms afterward; the latter had no frame intervals above 25ms or main-thread long
-tasks during scrolling. Initialization separately included a 74.8ms interval.
-These measurements describe this local workload, not a frame-rate guarantee for
-other devices or first-load performance.
+remain unchanged.

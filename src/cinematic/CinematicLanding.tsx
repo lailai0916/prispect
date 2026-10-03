@@ -1,12 +1,21 @@
 import { Suspense, useId, useRef, useState } from 'react';
-import { ArrowDown, ArrowRight, ArrowUpRight, ChevronDown } from 'lucide-react';
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUpRight,
+  Check,
+  ChevronDown,
+  FileSearch,
+  Focus,
+  Layers3,
+} from 'lucide-react';
 import { productTagline } from '../../shared/product-terms';
 import { useApp } from '../context';
 import { Dialog } from '../components';
 import { StartInput } from '../StartInput';
 import { lazyPage } from '../lazy-page';
 import { landingExample, type LandingText, type LandingSourceCrop } from './landing-content';
-import { EvidenceSculpture } from './EvidenceSculpture';
+import { OpticalField } from './OpticalField';
 import { storyChapters } from './story';
 import { useStoryTimeline } from './useStoryTimeline';
 import './cinematic-landing.css';
@@ -70,16 +79,16 @@ function BridgeFigure() {
     steps.push({ start, end });
     running = end;
   });
-  const y = (value: number) => 126 - value * 18;
+  const y = (value: number) => 183 - value * 27;
   const x = (index: number) => 61 + index * 80;
   return (
     <figure className="bridge-figure">
       <div className="bridge-heading">
-        <span>{t('松原安全 · 2025 年报', 'SONGYUAN · 2025 ANNUAL REPORT')}</span>
+        <span>{t('松原安全 · 2025 / 原件现金桥', 'SONGYUAN · 2025 / ORIGINAL REPORT')}</span>
         <span>{t('亿元 · 合并口径', 'CNY 100m · consolidated')}</span>
       </div>
       <svg
-        viewBox="0 0 540 280"
+        viewBox="0 0 540 390"
         role="img"
         aria-labelledby={`${figureId}-title ${figureId}-description`}
       >
@@ -100,10 +109,10 @@ function BridgeFigure() {
         {rows.map((row, index) => {
           const step = steps[index]!;
           const top = y(Math.max(step.start, step.end));
-          const height = Math.max(2, Math.abs(step.end - step.start) * 18);
+          const height = Math.max(2, Math.abs(step.end - step.start) * 27);
           const lines = english
-            ? ['Profit', 'Inv. adj.', 'Receiv. adj.', 'Payab. adj.', '13 items', 'Op. CF']
-            : ['净利润', '存货调整', '应收调整', '应付调整', '13 项', '经营现金'];
+            ? ['Profit', 'Inv.', 'Receiv.', 'Payab.', '13 items', 'Op. CF']
+            : ['净利润', '存货', '应收', '应付', '13 项', '经营现金'];
           return (
             <g key={row.id}>
               {index < rows.length - 1 && (
@@ -142,7 +151,7 @@ function BridgeFigure() {
               >
                 {amount(row.amount, index > 0 && index < rows.length - 1)}
               </text>
-              <text className="bridge-label" x={x(index) + 21} y="250" textAnchor="middle">
+              <text className="bridge-label" x={x(index) + 21} y="354" textAnchor="middle">
                 {english && index === 4 ? (
                   <>
                     <tspan x={x(index) + 21}>13</tspan>
@@ -158,17 +167,12 @@ function BridgeFigure() {
           );
         })}
       </svg>
-      <div className="bridge-mobile-labels" aria-hidden="true">
-        {(english
-          ? ['Profit', 'Inv.', 'Receiv.', 'Payab.', '13 items', 'Op. CF']
-          : ['净利润', '存货', '应收', '应付', '13 项', '经营现金']
-        ).map((label) => (
-          <span key={label}>{label}</span>
-        ))}
-      </div>
       <figcaption>
         <span>{t('原件 p.190–191。', 'Source: p.190–191.')} </span>
-        {t('其余 13 项由原表分项求和。', 'Other 13 adjustments sum the original rows.')}
+        {t(
+          '其余 13 项按原表分项求和。金额核对不代表经营原因已证实。',
+          'Other 13 items summed. Amounts reconcile; causes remain unconfirmed.'
+        )}
       </figcaption>
     </figure>
   );
@@ -233,31 +237,6 @@ function SourceDetails() {
   );
 }
 
-function InquiryBranches() {
-  const { t } = useApp();
-  return (
-    <div className="inquiry-branches">
-      <article>
-        <span className="inquiry-index">01</span>
-        <h3>{t('扩张备货', 'Stocking for expansion')}</h3>
-        <p>
-          {t('订单执行、期后交付与销售记录', 'Order execution, subsequent deliveries and sales')}
-        </p>
-      </article>
-      <article>
-        <span className="inquiry-index">02</span>
-        <h3>{t('存货去化压力', 'Slower inventory sell-through')}</h3>
-        <p>
-          {t(
-            '存货分类与库龄、可变现净值及减值测试',
-            'Inventory categories and aging, net realizable value and impairment tests'
-          )}
-        </p>
-      </article>
-    </div>
-  );
-}
-
 export function CinematicLanding() {
   const { t, locale, user } = useApp();
   const root = useRef<HTMLDivElement>(null);
@@ -271,161 +250,288 @@ export function CinematicLanding() {
   return (
     <div ref={root} className="cinematic-home" data-locale={locale}>
       <div className="landing-stage">
-        <div className="scene-darkness" aria-hidden="true" />
-        <div className="scene-backdrop" aria-hidden="true" />
-        <EvidenceSculpture />
-        <div className="sculpture-fallback" aria-hidden="true">
-          <img src={firstCrop.src} alt="" />
-          <div className="fallback-glass" />
-        </div>
+        <OpticalField />
+        <div className="final-paper" aria-hidden="true" />
         <div className="landing-topline">
-          <span className="landing-signature">PRISPECT</span>
+          <span className="landing-signature">
+            <span className="landing-signal" />
+            PRISPECT / {t('企业研究', 'COMPANY RESEARCH')}
+          </span>
           <button className="landing-top-action" onClick={() => setEntryOpen(true)}>
-            {t('开始研究', 'Start research')} <ArrowUpRight size={14} />
+            {t('开始研究', 'Start research')}
+            <ArrowUpRight size={14} />
           </button>
         </div>
 
-        <section className="scene-copy landing-hero" aria-labelledby="landing-headline">
-          <div className="hero-heading">
+        <div className="landing-copy-stack">
+          <section className="landing-copy landing-hero" aria-labelledby="landing-headline">
+            <p className="landing-eyebrow">
+              {t('析光 · 从发现到依据', 'PRISPECT · FROM FINDINGS TO EVIDENCE')}
+            </p>
             <h1 id="landing-headline" aria-label={t(...productTagline)}>
               {locale === 'en' ? (
                 <>
-                  Make company judgments
-                  <br />
+                  <span>Make company</span>
+                  <span>judgments</span>
                   <em>traceable.</em>
                 </>
               ) : (
                 <>
-                  让企业判断，
-                  <br />
+                  <span>让企业判断，</span>
                   <em>有据可查。</em>
                 </>
               )}
             </h1>
-            <p>{t('输入公司名称或股票代码。', 'Enter a company name or stock code.')}</p>
+            <p className="landing-description">
+              {t(
+                '从一家公司的名称开始。看见关键发现，追到原文依据，继续查清尚未解决的问题。',
+                'Find what matters. Trace it to the original. Keep investigating.'
+              )}
+            </p>
             <div className="landing-actions">
               <button className="landing-primary" onClick={() => setEntryOpen(true)}>
-                {t('开始研究', 'Start research')} <ArrowRight size={16} />
+                {t('开始研究', 'Start research')}
+                <ArrowRight size={17} />
               </button>
               <button className="landing-secondary" onClick={() => goToChapter(1)}>
-                {t('展开这个案例', 'Explore this case')} <ArrowDown size={15} />
+                {t('展开一份判断', 'Explore a finding')}
+                <ArrowDown size={15} />
               </button>
             </div>
-          </div>
-          <p className="discovery-question">
-            {t('差额由哪些调整构成？', 'Which adjustments reconcile the difference?')}
-          </p>
-        </section>
-
-        <section className="scene-copy scene-source" aria-labelledby="landing-source-heading">
-          <div className="scene-heading">
-            <p className="scene-kicker">01 / {t('原件', 'ORIGINAL')}</p>
-            <h2 id="landing-source-heading">
-              {t('回到第 190—191 页。', 'Back to pages 190–191.')}
-            </h2>
-            <p>{t('现金流量表补充资料 · 单位：元', 'Cash-flow reconciliation · amounts in CNY')}</p>
-          </div>
-          <div className="source-reading">
-            <div className="source-page source-page-first">
-              <OriginalPage crop={firstCrop} field="netProfit" />
-              <span className="source-page-number">p.190</span>
-            </div>
-            <div className="source-page source-page-second">
-              <OriginalPage crop={secondCrop} field="operatingCashFlow" />
-              <span className="source-page-number">p.191</span>
-            </div>
-          </div>
-          <button className="landing-text-action source-open" onClick={() => setSourceOpen(true)}>
-            {t('查看原文与精确金额', 'View originals and exact amounts')} <ArrowUpRight size={15} />
-          </button>
-        </section>
-
-        <section
-          className="scene-copy scene-calculation"
-          aria-labelledby="landing-calculation-heading"
-        >
-          <div className="scene-heading">
-            <p className="scene-kicker">02 / {t('原件现金桥', 'ORIGINAL-REPORT RECONCILIATION')}</p>
-            <h2 id="landing-calculation-heading">
-              {t('从 3.66 亿，核对至 0.26 亿。', 'From CNY 366.37m to CNY 26.20m.')}
-            </h2>
-          </div>
-          <div className="bridge-structure">
-            <BridgeFigure />
-          </div>
-          <button className="landing-text-action bridge-open" onClick={() => setSourceOpen(true)}>
-            {t('查看原文与计算依据', 'View originals and reconciliation')}{' '}
-            <ArrowUpRight size={15} />
-          </button>
-        </section>
-
-        <section className="scene-copy scene-inquiry" aria-labelledby="landing-questions-heading">
-          <div className="scene-heading">
-            <p className="scene-kicker">03 / {t('待检验解释', 'UNTESTED EXPLANATIONS')}</p>
-            <h2 id="landing-questions-heading">
-              {t('扩张备货，还是去化承压？', 'Stocking for expansion, or slower sell-through?')}
-            </h2>
-            <p>{t('区分材料尚未取得。', 'Distinguishing materials have not been obtained.')}</p>
-          </div>
-          <InquiryBranches />
-          <p className="inquiry-boundary">
-            {t(
-              '金额核对，不等于经营原因已证实。',
-              'Reconciled amounts do not establish an operating cause.'
-            )}
-          </p>
-        </section>
-
-        <section className="scene-copy landing-ending" aria-labelledby="landing-research-heading">
-          <div className="ending-content">
-            <p className="scene-kicker">PRISPECT</p>
-            <h2 id="landing-research-heading">
-              {t('研究哪家公司？', 'Which company are you researching?')}
-            </h2>
-            <p>{t('输入公司名称或股票代码。', 'Enter a company name or stock code.')}</p>
-            <button className="landing-primary ending-start" onClick={() => setEntryOpen(true)}>
-              {t('开始研究', 'Start research')} <ArrowRight size={18} />
-            </button>
             <a className="landing-coverage" href="/docs/guide?section=company">
-              {t('支持 A 股上市公司 · 使用指南', 'A-share listed companies · Guide')}{' '}
-              <ArrowUpRight size={13} />
+              {t('目前支持 A 股上市公司', 'Currently supports A-share listed companies')}
+              <ArrowUpRight size={12} />
             </a>
-          </div>
-        </section>
+          </section>
 
-        <div className="initial-amounts" data-story-panel="0 1">
-          <div className="amount-profit">
-            <span>{t('合并净利润', 'Consolidated profit')}</span>
-            <strong>
-              {amount(landingExample.summary.profit)}
-              <small>{t('亿元', 'CNY 100m')}</small>
-            </strong>
-          </div>
-          <div className="amount-cash">
-            <span>{t('经营现金净额', 'Operating cash flow')}</span>
-            <strong>
-              {amount(landingExample.summary.cash)}
-              <small>{t('亿元', 'CNY 100m')}</small>
-            </strong>
-          </div>
+          <section className="landing-copy" aria-labelledby="landing-source-heading">
+            <p className="landing-eyebrow">01 / {t('回到出处', 'BACK TO THE SOURCE')}</p>
+            <h2 id="landing-source-heading">
+              {t('每一个数字，', 'Every number.')}
+              <em>{t('都有来处。', 'An original source.')}</em>
+            </h2>
+            <p className="landing-description">
+              {t(
+                '打开摘要背后的原件。年份、合并口径、页码与金额，一起保留下来。',
+                'Open the original behind the summary. Keep the year, consolidated scope, page and exact amount together.'
+              )}
+            </p>
+            <div className="landing-source-label">
+              <FileSearch size={17} />
+              <span>
+                {text(landingExample.company.shortName)} · {landingExample.year}
+                <small>
+                  {t('现金流量表补充资料 · p.190–191', 'Cash-flow supplementary table · p.190–191')}
+                </small>
+              </span>
+            </div>
+            <button className="landing-text-action" onClick={() => setSourceOpen(true)}>
+              {t('查看原文与精确金额', 'View originals and exact amounts')}
+              <ArrowUpRight size={15} />
+            </button>
+          </section>
+
+          <section className="landing-copy" aria-labelledby="landing-calculation-heading">
+            <p className="landing-eyebrow">02 / {t('核对计算', 'FOLLOW THE CALCULATION')}</p>
+            <h2 id="landing-calculation-heading">
+              {t('让数字，', 'Let the figures')}
+              <em>{t('彼此对得上。', 'connect.')}</em>
+            </h2>
+            <p className="landing-description">
+              {t(
+                '从合并净利润出发，沿原件披露的调整，核对至经营现金。每一段变化，仍然连接着出处。',
+                'Follow reported adjustments from consolidated profit to operating cash. Every step stays connected to its source.'
+              )}
+            </p>
+            <p className="landing-boundary">
+              <Layers3 size={16} />
+              {t('原件调整 · 同年度 · 同口径', 'Reported adjustments · same year · same scope')}
+            </p>
+            <button className="landing-text-action" onClick={() => setSourceOpen(true)}>
+              {t('展开计算依据', 'Open the calculation basis')}
+              <ArrowUpRight size={15} />
+            </button>
+          </section>
+
+          <section className="landing-copy" aria-labelledby="landing-questions-heading">
+            <p className="landing-eyebrow">03 / {t('继续追问', 'KEEP INVESTIGATING')}</p>
+            <h2 id="landing-questions-heading">
+              {t('算清楚之后，', 'Beyond the figures,')}
+              <em>{t('继续问为什么。', 'ask why.')}</em>
+            </h2>
+            <p className="landing-description">
+              {t(
+                '金额可以核对，经营原因仍需检验。把可能解释与待补材料放在一起，看清判断能够走到哪里。',
+                'Amounts reconcile. Operating causes still need testing. See the possible explanations, missing materials and limits of the finding together.'
+              )}
+            </p>
+            <p className="landing-boundary">
+              <Focus size={16} />
+              {t('解释待检验 · 材料尚未取得', 'Untested explanations · materials not obtained')}
+            </p>
+          </section>
+
+          <section
+            className="landing-copy landing-ending"
+            aria-labelledby="landing-research-heading"
+          >
+            <p className="landing-eyebrow">04 / {t('回到你的问题', 'BACK TO YOUR QUESTION')}</p>
+            <h2 id="landing-research-heading">
+              {t('下一份判断，', 'Your next finding.')}
+              <em>{t('从这里开始。', 'Start here.')}</em>
+            </h2>
+            <p className="landing-description">
+              {t(
+                '带着出处、边界与下一步，研究一家你真正关心的公司。',
+                'Research a company that matters to you—with sources, boundaries and a clear next step.'
+              )}
+            </p>
+            <div className="landing-actions">
+              <button className="landing-primary" onClick={() => setEntryOpen(true)}>
+                {t('开始研究', 'Start research')}
+                <ArrowRight size={17} />
+              </button>
+              <a className="landing-secondary" href="/docs/guide">
+                {t('了解如何使用', 'Read the guide')}
+                <ArrowUpRight size={15} />
+              </a>
+            </div>
+          </section>
         </div>
 
-        <div className="scene-identity" data-story-panel="0 1 2 3 4">
-          <span>
-            {text(landingExample.company.shortName)} · {landingExample.company.code} ·{' '}
-            {t('2025 年报', '2025 annual report')}
-          </span>
-          <span>
-            {t(
-              '历史示例 · 年度 · 合并口径 · 人民币',
-              'Historical example · Annual · Consolidated · CNY'
-            )}
-          </span>
+        <div className="evidence-scene">
+          <div className="evidence-model">
+            <div className="document-sheet" data-story-panel="1">
+              <div className="document-sheet-label">
+                <span>{t('原件', 'ORIGINAL')}</span>
+                <span>{landingExample.year} / p.190–191</span>
+              </div>
+              <div className="document-window">
+                <div className="document-crop">
+                  <OriginalPage crop={firstCrop} field="netProfit" />
+                  <OriginalPage crop={secondCrop} field="operatingCashFlow" />
+                </div>
+              </div>
+              <button className="document-source-button" onClick={() => setSourceOpen(true)}>
+                {t('查看原件', 'View original')}
+                <ArrowUpRight size={13} />
+              </button>
+            </div>
+            <article
+              className="report-sheet"
+              data-story-panel="0 4"
+              aria-label={t(
+                '固定历史样例的研究发现',
+                'Research finding from a fixed historical example'
+              )}
+            >
+              <div className="report-sheet-header">
+                <span className="report-monogram" aria-hidden="true">
+                  <Focus size={18} />
+                </span>
+                <span>{t('研究发现', 'Research finding')}</span>
+                <span className="report-date">2025</span>
+              </div>
+              <div className="report-identity">
+                <strong>{text(landingExample.company.shortName)}</strong>
+                <span>
+                  {landingExample.company.code} · {t('合并口径', 'Consolidated')}
+                </span>
+              </div>
+              <h3>
+                {t('利润与经营现金之间，', 'Profit and operating cash.')}
+                <br />
+                {t('差距从何而来？', 'What explains the gap?')}
+              </h3>
+              <div className="report-metric-space" />
+              <div className="report-discovery">
+                <span>{t('下一步核查', 'Next check')}</span>
+                <p>{t('对照营运资金调整，核查存货与回款。', 'Check inventory and collections.')}</p>
+              </div>
+              <button className="report-basis-link" onClick={() => setSourceOpen(true)}>
+                <span>
+                  <Check size={13} />
+                  {t('原件金额可追溯', 'Amounts trace to the original')}
+                </span>
+                <span>
+                  p.190–191
+                  <ArrowUpRight size={12} />
+                </span>
+              </button>
+              <p className="report-sample-note">
+                {t(
+                  '历史年报示例 · 不代表当前企业判断',
+                  'Historical annual-report example · not a current assessment'
+                )}
+              </p>
+            </article>
+            <div className="evidence-values" data-story-panel="0 1 2 4">
+              <div className="amount-profit">
+                <span>{t('合并净利润', 'Consolidated profit')}</span>
+                <strong>
+                  {amount(landingExample.summary.profit)}
+                  <small>{t('亿元', 'CNY 100m')}</small>
+                </strong>
+              </div>
+              <div className="amount-cash">
+                <span>{t('经营现金净额', 'Operating cash')}</span>
+                <strong>
+                  {amount(landingExample.summary.cash)}
+                  <small>{t('亿元', 'CNY 100m')}</small>
+                </strong>
+              </div>
+            </div>
+            <span className="source-connector" aria-hidden="true" />
+            <div className="bridge-structure" data-story-panel="2">
+              <BridgeFigure />
+            </div>
+            <div className="explanation-layer" data-story-panel="3">
+              <div className="explanation-origin">
+                <span className="explanation-small-label">
+                  {t('历史年报示例 / 松原安全 · 2025', 'HISTORICAL EXAMPLE / SONGYUAN · 2025')}
+                </span>
+                <strong>{t('利润与经营现金的差距', 'The profit–cash gap')}</strong>
+              </div>
+              <div className="explanation-branches">
+                {landingExample.hypotheses.map((hypothesis, index) => (
+                  <div key={hypothesis.id} className="explanation-branch">
+                    <div className="explanation-path" aria-hidden="true" />
+                    <span className="explanation-index">0{index + 1}</span>
+                    <h3>{text(hypothesis.title)}</h3>
+                    <span className="explanation-state">
+                      {t('待检验解释', 'Untested explanation')}
+                    </span>
+                    <p>
+                      {index === 0
+                        ? t('核对订单、库龄与期后销售。', 'Check orders, stock aging and sales.')
+                        : t('核对库龄、跌价及期后去化。', 'Check aging, write-downs and sales.')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="explanation-open">
+                <span aria-hidden="true">+</span>
+                <div>
+                  <strong>{t('还需要区分材料', 'Further evidence needed')}</strong>
+                  <p>
+                    {t(
+                      '上述材料尚未取得，现有金额不能确认原因。',
+                      'Not obtained. Causes unconfirmed.'
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p className="evidence-scene-caption">
+            {t('历史年报示例 / 松原安全 · 2025', 'HISTORICAL EXAMPLE / SONGYUAN · 2025')}
+          </p>
         </div>
+
         <div className="landing-bottomline">
           <span className="landing-scroll-note">
-            <ArrowDown size={14} />
-            {t('滚动展开', 'SCROLL TO EXPLORE')}
+            <ArrowDown size={15} />
+            {t('向下滚动，展开依据', 'SCROLL TO EXPLORE THE EVIDENCE')}
           </span>
           <nav className="story-nav" aria-label={t('首页故事章节', 'Homepage story chapters')}>
             {storyChapters.map((chapter, index) => (
@@ -439,75 +545,103 @@ export function CinematicLanding() {
               </button>
             ))}
           </nav>
-          <span className="story-track" aria-hidden="true">
-            <i />
+          <span className="landing-edition">
+            {t('发现 · 依据 · 下一步', 'FINDING · SOURCE · NEXT STEP')}
           </span>
         </div>
       </div>
 
       <div className="landing-static-story">
         <section>
-          <p className="scene-kicker">PRISPECT</p>
+          <p className="landing-eyebrow">PRISPECT / {t('企业研究', 'COMPANY RESEARCH')}</p>
           <h1>{t(...productTagline)}</h1>
-          <p>{t('输入公司名称或股票代码。', 'Enter a company name or stock code.')}</p>
+          <p className="landing-description">
+            {t(
+              '从一家公司的名称开始。看见关键发现，追到原文依据，继续查清尚未解决的问题。',
+              'Find what matters. Trace it to the original. Keep investigating.'
+            )}
+          </p>
           <div className="landing-actions">
             <button className="landing-primary" onClick={() => setEntryOpen(true)}>
-              {t('开始研究', 'Start research')} <ArrowRight size={16} />
+              {t('开始研究', 'Start research')}
+              <ArrowRight size={17} />
             </button>
             <a className="landing-secondary" href="/docs/guide?section=company">
-              {t('使用指南', 'Guide')} <ArrowUpRight size={15} />
+              {t('支持范围', 'Coverage')}
+              <ArrowUpRight size={15} />
             </a>
           </div>
         </section>
         <section>
-          <p className="scene-kicker">
-            {text(landingExample.company.shortName)} · {landingExample.company.code} ·{' '}
-            {t('2025 年报', '2025 annual report')}
-          </p>
-          <h2>
-            {t('3.66 亿利润。0.26 亿经营现金。', 'CNY 366.37m profit. CNY 26.20m operating cash.')}
-          </h2>
-          <p>
+          <p className="landing-eyebrow">01 / {t('回到出处', 'BACK TO THE SOURCE')}</p>
+          <h2>{t('利润与经营现金的差距，从何而来？', 'What explains the profit–cash gap?')}</h2>
+          <p className="landing-description">
             {t(
-              '历史示例 · 年度 · 合并口径 · 人民币',
-              'Historical example · Annual · Consolidated · CNY'
+              '松原安全 2025 年度原件示例，合并净利润 3.66 亿元，经营现金净额 0.26 亿元。这项历史信号需要继续核查。',
+              'A historical original-report example: Songyuan, 2025. Consolidated profit is CNY 366.37m, operating cash CNY 26.20m. This signal calls for further checks.'
             )}
           </p>
-          <p>{t('差额由哪些调整构成？', 'Which adjustments reconcile the difference?')}</p>
-          <OriginalPage crop={firstCrop} field="netProfit" />
+          <img
+            src={firstCrop.src}
+            width={firstCrop.width}
+            height={firstCrop.height}
+            alt={text(firstCrop.alt)}
+          />
           <button className="landing-text-action" onClick={() => setSourceOpen(true)}>
-            {t(
-              '查看第 190—191 页原文与精确金额',
-              'View originals on pages 190–191 and exact amounts'
-            )}{' '}
+            {t('查看原文与精确金额', 'View originals and exact amounts')}
             <ArrowUpRight size={15} />
           </button>
         </section>
         <section>
-          <h2>{t('从 3.66 亿，核对至 0.26 亿。', 'From CNY 366.37m to CNY 26.20m.')}</h2>
+          <p className="landing-eyebrow">02 / {t('核对计算', 'FOLLOW THE CALCULATION')}</p>
+          <h2>{t('让数字，彼此对得上。', 'Let the figures connect.')}</h2>
+          <p className="landing-description">
+            {t(
+              '原件现金桥沿披露的调整核对。年份、合并口径与来源一并保留。',
+              'Follow the adjustments disclosed in the original. Keep the year, consolidated scope and sources together.'
+            )}
+          </p>
           <BridgeFigure />
         </section>
         <section>
-          <p className="scene-kicker">{t('待检验解释', 'UNTESTED EXPLANATIONS')}</p>
+          <p className="landing-eyebrow">03 / {t('继续追问', 'KEEP INVESTIGATING')}</p>
           <h2>
-            {t('扩张备货，还是去化承压？', 'Stocking for expansion, or slower sell-through?')}
+            {t('金额核对之后，经营原因仍需检验。', 'Amounts reconcile. Causes still need testing.')}
           </h2>
-          <InquiryBranches />
-          <p>
+          <div className="explanation-branches">
+            {landingExample.hypotheses.map((hypothesis, index) => (
+              <div className="explanation-branch" key={hypothesis.id}>
+                <span className="explanation-index">0{index + 1}</span>
+                <h3>{text(hypothesis.title)}</h3>
+                <span className="explanation-state">{t('待检验解释', 'Untested explanation')}</span>
+                <p>{text(hypothesis.materials[0]!)}</p>
+              </div>
+            ))}
+          </div>
+          <p className="landing-description">
             {t(
-              '区分材料尚未取得，现有金额不能确认经营原因。',
-              'Distinguishing materials have not been obtained. The amounts do not establish an operating cause.'
+              '上述材料尚未取得，现有金额不能确认原因。',
+              'These materials have not been obtained. The amounts do not establish a cause.'
             )}
           </p>
         </section>
         <section>
-          <h2>{t('研究哪家公司？', 'Which company are you researching?')}</h2>
+          <p className="landing-eyebrow">04 / {t('回到你的问题', 'BACK TO YOUR QUESTION')}</p>
+          <h2>{t('下一份判断，从这里开始。', 'Your next finding. Start here.')}</h2>
+          <p className="landing-description">
+            {t(
+              '带着出处、边界与下一步，研究一家你真正关心的公司。',
+              'Research a company that matters to you—with sources, boundaries and a clear next step.'
+            )}
+          </p>
           <div className="landing-actions">
             <button className="landing-primary" onClick={() => setEntryOpen(true)}>
-              {t('开始研究', 'Start research')} <ArrowRight size={16} />
+              {t('开始研究', 'Start research')}
+              <ArrowRight size={17} />
             </button>
             <a className="landing-secondary" href="/docs/guide">
-              {t('使用指南', 'Guide')} <ArrowUpRight size={15} />
+              {t('了解如何使用', 'Read the guide')}
+              <ArrowUpRight size={15} />
             </a>
           </div>
         </section>
