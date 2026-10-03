@@ -77,12 +77,13 @@ The local server uses a separate temporary database. These checks do not verify
 production deployment, SMTP, model providers or a real company research result.
 Type checking, research-record validation, build and formatting checks passed.
 
-The standard local test run encountered unchanged deployment-retention fixtures
-that require Linux mount/cgroup identities, plus three cancellations from an
-unreferenced deadline timer in an in-memory public-source fixture. Keeping that
-test process alive without changing its code made all 12 public-source cases
-pass. Deployment safety checks were not relaxed. Ubuntu CI is the applicable
-full-suite gate; the pull request records its actual status.
+The initial local test run encountered deployment-retention fixtures that require
+Linux mount/cgroup identities, plus three cancellations from an unreferenced
+deadline timer in an in-memory public-source fixture. Ubuntu also reproduced
+those cancellations. That fixture now retains a simulated transport handle until
+completion, with an independent 1-second test timeout and the original 15ms
+request deadline. Deployment safety checks remain unchanged. Ubuntu CI is the
+applicable full-suite gate; the pull request records its actual status.
 
 ## Pending visual acceptance
 
