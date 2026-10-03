@@ -597,7 +597,7 @@ pre {
   border-bottom: 1px solid transparent;
   margin-bottom: 14px;
 }
-.sidebar-create {
+.button.sidebar-create {
   margin: 0 4px 18px;
   justify-content: flex-start;
 }
