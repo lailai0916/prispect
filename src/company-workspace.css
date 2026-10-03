@@ -1258,6 +1258,13 @@
   min-width: 0;
   scroll-margin-top: calc(var(--site-header-height) + 20px);
 }
+.company-workspace-section#company-industry {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
 .company-workspace-section + .company-workspace-section {
   margin-top: var(--card-gap);
 }
