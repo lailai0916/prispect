@@ -28,7 +28,7 @@ test('fixed company destinations include every F page in the same order', () => 
   );
   assert.deepEqual(
     companyNavigationItems.map(([id]) => id),
-    ['overview', 'trends', 'industry', 'disclosures', 'profile', 'qa', 'coverage', 'sources']
+    ['overview', 'trends', 'industry', 'disclosures', 'profile', 'coverage', 'sources']
   );
 });
 

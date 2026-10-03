@@ -11,11 +11,7 @@ export const companyNavigationSections = [
   ['sources', '来源比对', 'Source comparison'],
 ] as const;
 
-export const companyNavigationItems = [
-  ...companyNavigationSections.slice(0, 5),
-  ['qa', '企业问答', 'Company questions'],
-  ...companyNavigationSections.slice(5),
-] as const;
+export const companyNavigationItems = companyNavigationSections;
 
 export const OPEN_COMPANY_ASSISTANT_EVENT = 'prispect:open-company-assistant';
 export interface OpenCompanyAssistantDetail {

@@ -42,20 +42,13 @@ test('initial loading and empty routes retain all fixed items as real disabled c
         .children()
         .toArray()
         .map((element) => $(element).text()),
-      [
-        '公司概览',
-        '历史财务走势',
-        '行业对比',
-        '公告线索',
-        '扩展核查',
-        '企业问答',
-        '数据覆盖',
-        '来源比对',
-      ],
+      ['公司概览', '历史财务走势', '行业对比', '公告线索', '扩展核查', '数据覆盖', '来源比对'],
       route
     );
-    assert.equal(menu.find('button:disabled').length, 8, route);
+    assert.equal(menu.find('button:disabled').length, 7, route);
     assert.equal(menu.find('[href]').length, 0, route);
+    assert.equal($('.sidebar-company-context > .sidebar-group-label').length, 0, route);
+    assert.equal($('.sidebar-company-context').text().includes('企业研究'), false, route);
     assert.equal($('.sidebar-tools-group').length, 0, route);
     assert.equal($('.sidebar-company-list').text().includes('正在读取'), true, route);
   }

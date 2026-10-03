@@ -7,7 +7,6 @@ import {
   Database,
   FileSearch,
   GitCompareArrows,
-  MessageSquare,
   ScanSearch,
   LoaderCircle,
   RefreshCw,
@@ -19,9 +18,7 @@ import { companyPath } from '../shared/company-workspace';
 import {
   companyNavigationItems,
   companyRecordsByCreation,
-  OPEN_COMPANY_ASSISTANT_EVENT,
   selectCompanyNavigationTarget,
-  type OpenCompanyAssistantDetail,
 } from '../shared/company-navigation';
 import { api } from './api';
 import { useCompanyRecords } from './CompanyRecordsContext';
@@ -37,7 +34,6 @@ const icons: Record<(typeof companyNavigationItems)[number][0], LucideIcon> = {
   industry: Columns3,
   disclosures: FileSearch,
   profile: ScanSearch,
-  qa: MessageSquare,
   coverage: Database,
   sources: GitCompareArrows,
 };
@@ -147,40 +143,12 @@ export function CompanySidebar({ route, onClose }: { route: string; onClose: () 
   return (
     <>
       <section className="sidebar-company-context" aria-label={t('企业研究', 'Company research')}>
-        <span className="sidebar-group-label" title={current?.name}>
-          {current?.name || t('企业研究', 'Company research')}
-        </span>
         <nav
           className="sidebar-navigation company-sidebar-navigation"
           aria-label={t('企业功能', 'Company pages')}
         >
           {companyNavigationItems.map(([id, zh, en]) => {
             const Icon = icons[id];
-            if (id === 'qa')
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  disabled={!current}
-                  title={
-                    !current
-                      ? t('新建研究后可提问', 'Available after starting research')
-                      : undefined
-                  }
-                  onClick={() => {
-                    if (!current || !user || !isCurrentOwner()) return;
-                    onClose();
-                    window.dispatchEvent(
-                      new CustomEvent<OpenCompanyAssistantDetail>(OPEN_COMPANY_ASSISTANT_EVENT, {
-                        detail: { owner: user.id, runId: current.id },
-                      })
-                    );
-                  }}
-                >
-                  <Icon size={16} aria-hidden="true" />
-                  <span>{t(zh, en)}</span>
-                </button>
-              );
             if (!current)
               return (
                 <button
