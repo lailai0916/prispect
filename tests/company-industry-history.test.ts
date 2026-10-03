@@ -344,10 +344,11 @@ test('failed persistence restores the target year and preserves independent upda
   assert.equal(savedIndustryHistoryResult(run, old.period)!.failure, null);
 });
 
-test('annual history endpoint checks ownership and scope, durably retains outcomes, and ignores cache age', async () => {
+test('peer endpoints preserve ownership and saved outcomes while allowing more than twenty hourly refreshes', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-peer-history-api-'));
   let calls = 0;
   let fail = false;
+  const bypasses: (boolean | undefined)[] = [];
   const app = await createApp({
     dataDir: directory,
     model: {},
@@ -382,8 +383,9 @@ test('annual history endpoint checks ownership and scope, durably retains outcom
         truncated: false,
       }),
       context: async () => historyRun().context!,
-      industry: async (_code, period) => {
+      industry: async (_code, period, dependencies) => {
         calls++;
+        bypasses.push(dependencies?.bypassCache);
         if (fail) throw Error('fixture source unavailable');
         return historySnapshot(period);
       },
@@ -448,6 +450,36 @@ test('annual history endpoint checks ownership and scope, durably retains outcom
     const retry = await post(url, { period: '2024-12-31', refresh: true });
     assert.equal((await retry.json()).failure, null);
     assert.equal(calls, 3);
+    const industryUrl = `/company-runs/${run.id}/industry`;
+    assert.equal((await post(industryUrl, { period: '2025-12-31' }, other)).status, 404);
+    const callsBeforeRefreshes = calls;
+    const refreshStartedAt = Date.now();
+    for (const endpoint of [url, industryUrl]) {
+      for (let index = 0; index < 21; index++) {
+        const refreshed = await post(endpoint, { period: '2025-12-31', refresh: true });
+        assert.equal(refreshed.status, 200, `${endpoint} refresh ${index + 1}`);
+        const result = await refreshed.json();
+        assert.equal(result.cached, false, 'every explicit refresh retrieves a new cohort');
+        assert.equal(result.snapshot.period, '2025-12-31');
+        assert.equal(result.snapshot.securityCode, researchDemoIdentity.securityCode);
+        if (endpoint === url) assert.equal(result.failure, null);
+        else assert.equal(result.stale, false);
+      }
+    }
+    assert.ok(
+      Date.now() - refreshStartedAt < 3_600_000,
+      'both refresh series finish within one hour'
+    );
+    assert.equal(
+      calls,
+      callsBeforeRefreshes + 42,
+      'both endpoints retrieve all twenty-one refreshes'
+    );
+    assert.deepEqual(
+      bypasses.slice(callsBeforeRefreshes),
+      Array.from({ length: 42 }, () => true),
+      'unlimited hourly refreshes still bypass the public and cohort caches'
+    );
   } finally {
     await app.waitForIdle();
     await new Promise<void>((resolve) => server.close(() => resolve()));

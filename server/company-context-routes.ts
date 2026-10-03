@@ -833,7 +833,6 @@ export function installCompanyContextRoutes(
         throw new ApiFault(409, 'ASSESSMENT_BUSY', '公司研究正在执行，完成后可更新同行资料');
       if (sourceJobs.has(key) || sourceJobs.size >= 3)
         throw new ApiFault(429, 'CONTEXT_BUSY', '行业来源正在读取，请稍后重试');
-      limits(res, 'company-industry', 20);
       const controller = new AbortController();
       const cancel = () => {
         if (!res.writableEnded) controller.abort();
@@ -881,7 +880,6 @@ export function installCompanyContextRoutes(
         throw new ApiFault(409, 'ASSESSMENT_BUSY', '公司研究正在执行，完成后可更新同行资料');
       if (sourceJobs.has(key) || sourceJobs.size >= 3)
         throw new ApiFault(429, 'CONTEXT_BUSY', '行业来源正在读取，请稍后重试');
-      limits(res, 'company-industry', 20);
       sourceJobs.add(key);
       try {
         const snapshot = await service.industry(run.input.securityCode, body.data.period, {
