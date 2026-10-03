@@ -535,9 +535,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               onClick={() => void refresh()}
             >
               <RefreshCw size={14} />
-              {section === 'overview'
-                ? t('更新', 'Refresh')
-                : t('更新公开数据', 'Refresh public data')}
+              {t('更新', 'Refresh')}
             </button>
           )}
           <button
