@@ -1495,26 +1495,15 @@ export function AccountPage() {
           {tab === 'data' && (
             <>
               <Section
-                title={t('私人工作区', 'Private workspace')}
+                title={t('数据使用说明', 'Data use')}
                 description={t(
-                  '数据按服务器会话识别的账号隔离。',
-                  'Data is isolated by the account identified in your server session.'
+                  '查看账号、工作区数据与 AI 分析的使用范围。',
+                  'Review how account data, workspace data and AI analysis are used.'
                 )}
               >
-                <div className="account-notice">
-                  <ShieldCheck size={18} />
-                  <p>
-                    {t(
-                      '账号资料、身份验证密钥和核查事项中的私人输入不会发送到分析模型。公司研究与企业问答会自动使用 AI 分析取得的公开资料；详细说明见隐私政策。',
-                      'Account details, authentication secrets and private review-item inputs are not sent to analysis models. Company research and company questions automatically use AI to analyze retrieved public information. See the privacy policy for details.'
-                    )}
-                  </p>
-                </div>
                 <p className="account-muted">
                   {t('注册于', 'Joined')} {date(overview.user.createdAt, locale)} ·{' '}
-                  <a href="/docs/privacy">
-                    {t('查看数据与来源边界', 'Read data and source boundaries')}
-                  </a>
+                  <a href="/docs/privacy">{t('隐私政策', 'Privacy policy')}</a>
                 </p>
               </Section>
               <Section

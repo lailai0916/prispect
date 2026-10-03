@@ -472,10 +472,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
       )}
       {!run && (
         <p className="company-coverage-note">
-          {t(
-            '来源：巨潮资讯大陆 A 股披露。未匹配不代表无风险，也不覆盖所有企业。',
-            'Source: CNINFO mainland A-share disclosures. No match does not mean no risk; coverage is limited.'
-          )}
+          {t('来源：巨潮资讯 A 股披露。', 'Source: CNINFO A-share disclosures.')}
         </p>
       )}
       {!run && !creating && (
@@ -1406,12 +1403,6 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               </div>
             ) : null}
             {source.quote && <blockquote>{source.quote}</blockquote>}
-            <p className="field-note">
-              {t(
-                '定位文本与字段核对不代表材料真实性已经独立验证。',
-                'Text location and field checks do not independently authenticate a document.'
-              )}
-            </p>
             <div className="inline-actions">
               {source.sha256 && source.sha256 === run?.preview?.material.sha256 && (
                 <a

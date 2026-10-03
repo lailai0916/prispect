@@ -205,8 +205,8 @@ export function CompanyDisclosuresView({ snapshot }: { snapshot: CompanyContextS
       {!filtered.length ? (
         <p className="context-empty">
           {t(
-            '当前范围没有匹配事项，可扩大日期或类别。没有结果不代表没有风险。',
-            'No matching items in this range. Broaden the period or category; no results do not mean no risk.'
+            '当前范围没有匹配事项，可扩大日期或类别。',
+            'No matching items in this range. Broaden the period or category.'
           )}
         </p>
       ) : (
@@ -286,8 +286,8 @@ export function CompanyDisclosuresView({ snapshot }: { snapshot: CompanyContextS
           ))}
           <p className="muted">
             {t(
-              '关注点与下一步问题为规则提示，摘录不代表全文核验。',
-              'Attention and follow-up questions are rule prompts; excerpts do not represent full-document verification.'
+              '规则核查提示 · 摘录范围见上方标注。',
+              'Rule-based check prompts · excerpt scope is labeled above.'
             )}
           </p>
         </Dialog>

@@ -19,20 +19,9 @@ export function CompanyResearchLauncher({
     <section className="research-launcher" aria-labelledby="research-entry-title">
       <header className="research-entry-heading">
         <h1 id="research-entry-title">{t(...productTerms.companyResearch)}</h1>
-        <p>
-          {t(
-            '输入公司名称或证券代码，核对主体后查看研究报告。',
-            'Enter a company name or ticker. Confirm the entity, then open its research report.'
-          )}
-        </p>
       </header>
       {children}
-      <div className="research-entry-meta">
-        <span>
-          {t('财务披露 · 行业 · 新闻与公开讨论', 'Financials · industry · news and public posts')}
-        </span>
-        {metadata}
-      </div>
+      <div className="research-entry-meta">{metadata}</div>
       {feedback && <div className="research-entry-feedback">{feedback}</div>}
       <nav className="research-entry-shortcuts" aria-label={t('其他核查入口', 'Other reviews')}>
         <a href="/new?case=custom">

@@ -416,9 +416,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               </p>
             )}
             <p className="account-auth-fineprint">
-              {register && (
-                <span>{t('创建账号前，请阅读', 'Before creating an account, read')} </span>
-              )}
+              <span>{t('继续即表示接受', 'By continuing, you accept the')} </span>
               <a
                 href="/docs/terms"
                 target="_blank"
@@ -427,7 +425,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               >
                 {t(...documentTitles['/docs/terms'])}
               </a>
-              <span> · </span>
+              <span>{t('，并已阅读', ' and have read the')} </span>
               <a
                 href="/docs/privacy"
                 target="_blank"

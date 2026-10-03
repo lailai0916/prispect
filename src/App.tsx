@@ -35,7 +35,6 @@ import { ThemeControl } from './ThemeControl';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
 import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
 import {
-  documentNavigation,
   documentPaths,
   documentationTitle,
   type DocumentPath,
@@ -724,11 +723,6 @@ export function App() {
                 <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
                 <div>
                   <a href="/docs">{t(...documentationTitle)}</a>
-                  {documentNavigation.slice(3).map((item) => (
-                    <a key={item.path} href={item.path}>
-                      {t(item.label[0], item.label[1])}
-                    </a>
-                  ))}
                 </div>
               </footer>
             )}

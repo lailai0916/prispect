@@ -1,10 +1,12 @@
 import { ArrowRight } from 'lucide-react';
 import { useApp } from '../context';
 import { productTerms } from '../../shared/product-terms';
+import { ASSESSMENT_METHODOLOGY } from '../../shared/company-assessment';
 import { documentTitles } from '../content/document-navigation';
 
 export const methodSections = [
   { id: 'scope', title: ['核查范围', 'Review scope'] },
+  { id: 'financial-rating', title: ['财务评级标准', 'Financial grade criteria'] },
   { id: 'decision', title: ['付款事项', 'Payment matters'] },
   { id: 'math', title: ['计算公式', 'Calculations'] },
   { id: 'evidence', title: ['来源与冲突', 'Sources and conflicts'] },
@@ -46,6 +48,12 @@ export function MethodContent() {
             )}
           </p>
         </details>
+      </section>
+      <section className="document-section" id="method-financial-rating">
+        <h2>{t('财务评级标准', 'Financial grade criteria')}</h2>
+        {ASSESSMENT_METHODOLOGY.map((paragraph, index) => (
+          <p key={index}>{t(...paragraph)}</p>
+        ))}
       </section>
       <section className="document-section" id="method-decision">
         <h2>{t('付款事项', 'Payment matters')}</h2>
@@ -203,6 +211,21 @@ export function MethodContent() {
             {t(
               '解释保留引用与依据，但仍需人工复核；AI 文字不是新增证据。',
               'Explanations retain their references and basis, but still need human review. AI text is not new evidence.'
+            )}
+          </p>
+        </details>
+        <details>
+          <summary>{t('新闻与公开讨论', 'News and public discussions')}</summary>
+          <p>
+            {t(
+              '新闻与公开讨论保留来源、日期及标题、摘要或正文节选的取得范围。目录条数不等于已读全文，媒体报道、公司自述与官方披露需分别看待；标题不能直接证明事件属实，转载不构成独立证据。',
+              'News and public discussions retain their sources, dates and acquired content scope: title, digest or body excerpt. Catalog counts do not mean full texts were read. Distinguish media reports, company statements and official disclosures; titles do not establish events, and reposts are not independent evidence.'
+            )}
+          </p>
+          <p>
+            {t(
+              '公开帖子属于未核实观点，存在参与偏差，一个平台的样本不代表整体舆论。帖子不能证明公司违法、违约或没有风险；样本数量与讨论倾向不构成公司信誉评分，也不会自动改变财务评级。没有查到新闻或公告同样不代表没有风险。',
+              'Public posts are unverified opinions with participation bias; one platform’s sample is not representative of public opinion. Posts do not establish misconduct, default or absence of risk. Sample counts and discussion sentiment do not constitute a company reputation score or automatically change its financial grade. No news or disclosure found does not establish absence of risk.'
             )}
           </p>
         </details>

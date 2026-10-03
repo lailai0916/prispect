@@ -155,10 +155,7 @@ function PublicEntryContent({ entry }: { entry: PublicEntry }) {
             <p className="public-info-reader-note">
               {t('读取于 ', 'Read ') + date(entry.excerpt.readAt, locale)}
               {' · '}
-              {t(
-                '仅展示已取得节选，未确认全文覆盖。',
-                'Retrieved excerpt; full-text coverage has not been established.'
-              )}
+              {t('全文覆盖未确认。', 'Full-text coverage is unconfirmed.')}
             </p>
           </>
         ) : entry.scope === 'digest' && entry.digest ? (
@@ -173,12 +170,7 @@ function PublicEntryContent({ entry }: { entry: PublicEntry }) {
           <div className="public-info-title-only">
             <FileText size={20} aria-hidden="true" />
             <h4>{t('本条仅取得标题', 'Only the title was retrieved')}</h4>
-            <p>
-              {t(
-                '可以打开来源继续核对。标题不能直接证明事件或观点属实。',
-                'Open the source to check further. A title alone does not establish an event or verify an opinion.'
-              )}
-            </p>
+            <p>{t('打开来源核对全文。', 'Open the source to check the full text.')}</p>
           </div>
         )}
       </section>
@@ -628,12 +620,12 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
                       )
                     : tab === 'discussions' && !coverage
                       ? t(
-                          '本轮尚未读取公开讨论。缺少样本不代表没有讨论。',
-                          'Public discussions were not retrieved in this run. Missing samples do not establish an absence of discussion.'
+                          '本轮未取得公开讨论样本。',
+                          'No public discussion samples were retrieved in this run.'
                         )
                       : t(
-                          '本轮未取得可显示的内容，不能据此判断没有相关事件或负面观点。',
-                          'No displayable content was retrieved. This does not establish an absence of relevant events or negative views.'
+                          '本轮未取得可显示的内容。',
+                          'No displayable content was retrieved in this run.'
                         )}
                 </p>
                 {entries.length > 0 && (
@@ -802,17 +794,6 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
             </p>
           </details>
         )}
-        <p className="public-info-footnote">
-          {tab === 'news'
-            ? t(
-                '标题、摘要、正文节选分开标注。转载不构成独立证据；样本数量不代表结论可信度。',
-                'Headlines, digests and excerpts are labeled separately. Reposts are not independent evidence; sample counts do not measure conclusion confidence.'
-              )
-            : t(
-                '公开讨论保留为未核实观点。帖子数量与讨论倾向不构成公司信誉评分。',
-                'Public discussions remain unverified opinions. Post counts and discussion tone do not constitute a company reputation score.'
-              )}
-        </p>
       </div>
       {drawerEntry && (
         <Dialog

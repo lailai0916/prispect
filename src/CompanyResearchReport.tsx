@@ -195,10 +195,8 @@ export function CompanyResearchReport({
       </button>
     ) : null;
   const gradeTitle = assessment
-    ? t(
-        '所选年度合并财务的规则筛选，不属于信用评级。',
-        'A rule-based screen of selected-year consolidated financials, not a credit rating.'
-      ) + (assessment.ratingConstraints?.map((item) => t(...item)).join(' ') || '')
+    ? t('所选年度合并财务筛选。', 'Selected-year consolidated financial screening.') +
+      (assessment.ratingConstraints?.map((item) => t(...item)).join(' ') || '')
     : '';
   const ratio = amounts.ratio === null ? '—' : `${(amounts.ratio * 100).toFixed(2)}%`;
   const coverage = brief.coverage;

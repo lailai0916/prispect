@@ -205,8 +205,8 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   <CircleAlert size={19} />
                   <p>
                     {t(
-                      '所选报告含非人民币或币种、单位不一致的金额。相关历史计算暂停展示，旧解释的增删暂不比较；停止展示不代表已保存的解释被撤回。原始金额及来源可在报告中查看，记录未被改写。',
-                      'Selected reports contain non-CNY amounts or inconsistent currencies and units. Dependent historical calculations and explanation changes are withheld; withholding a display does not withdraw a saved explanation. Inspect original amounts and sources in each report; saved records are unchanged.'
+                      '币种或单位待核对，相关计算与解释差异暂不比较。原始金额、来源及已保存解释仍保留在各报告中。',
+                      'Currencies or units need review; dependent calculations and explanation differences are withheld. Original amounts, sources and saved interpretations remain in each report.'
                     )}
                   </p>
                 </div>
@@ -226,22 +226,12 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   <CircleAlert size={19} />
                   <p>
                     {t(
-                      '不同公司只并列展示历史现金结构，不作健康或安全排名。',
-                      'Different companies are shown side by side without health or safety rankings.'
+                      '不同公司的历史金额按各自披露口径并列展示。',
+                      'Historical amounts for different companies use each company’s reporting scope.'
                     )}
                   </p>
                 </div>
-              ) : (
-                <div className="info-strip">
-                  <Layers size={19} />
-                  <p>
-                    {t(
-                      '两份任务的原件与历史结果均保留。',
-                      'Sources and historical results are retained for both reviews.'
-                    )}
-                  </p>
-                </div>
-              )}
+              ) : null}
               {!sameYear && (
                 <div className="warning-box" role="status">
                   <CircleAlert size={19} />

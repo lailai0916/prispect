@@ -329,12 +329,6 @@ export function CompanyAssistant({ route }: { route: string }) {
         >
           {!messages.length && (
             <div className="company-assistant-empty">
-              <p>
-                {t(
-                  '询问企业公开资料、财报口径或使用方法。',
-                  'Ask about public company evidence, financial definitions or product use.'
-                )}
-              </p>
               <div className="company-assistant-suggestions">
                 {suggestions.map((question) => (
                   <button type="button" key={question} onClick={() => ask(question)}>
@@ -460,7 +454,6 @@ export function CompanyAssistant({ route }: { route: string }) {
                 <small>
                   {t('Enter 发送 · Shift+Enter 换行', 'Enter to send · Shift+Enter for a new line')}
                 </small>
-                <a href="/docs/privacy">{t('隐私政策', 'Privacy policy')}</a>
               </div>
               {pending ? (
                 <button

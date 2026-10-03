@@ -4,17 +4,27 @@ import { useApp } from './context';
 import { Tag } from './components';
 import { translateRule } from './ruleTranslations';
 
-const warningTranslations: Record<string, string> = {
-  '本次查询未取得可用于定位的年报原件；不能视为没有审计意见。':
-    'No annual-report source was retrieved for this lookup. This does not establish that no audit opinion exists.',
-  '年报原件的主体或年度与本次查询不一致，未采用审计意见段落。':
-    'The entity or year in the annual report differs from this review. Its opinion was not adopted.',
-  '未定位到与本次年度相符的财务报表审计意见正文；这不表示没有审计意见。':
-    'No financial-statement opinion for this year was located. This does not establish that no opinion exists.',
-  '已保留候选原文，但主体、年报年度、审计期间或唯一段落尚未全部确认，请逐项核对。':
-    'A candidate excerpt is retained. Check its entity, report year and audited period; the relevant passage is not fully confirmed.',
-  '这里只定位审计意见原文，不确认审计类别、资料真实性、当前偿付能力或公司是否可靠。':
-    'Check the opinion and its source. Locating an excerpt does not establish an audit classification, document authenticity, current payment capacity or company reliability.',
+const warningCopy: Record<string, readonly [string, string]> = {
+  '本次查询未取得可用于定位的年报原件；不能视为没有审计意见。': [
+    '未取得用于定位审计意见的年报原件。',
+    'The annual-report original needed to locate the opinion was not retrieved.',
+  ],
+  '年报原件的主体或年度与本次查询不一致，未采用审计意见段落。': [
+    '原件主体或年度不符，未采用意见段落。',
+    'The original has a different entity or year; its opinion was not adopted.',
+  ],
+  '未定位到与本次年度相符的财务报表审计意见正文；这不表示没有审计意见。': [
+    '未定位到本年度财务报表审计意见正文。',
+    'The financial-statement audit opinion for this year was not located.',
+  ],
+  '已保留候选原文，但主体、年报年度、审计期间或唯一段落尚未全部确认，请逐项核对。': [
+    '候选待核对：主体、年度、审计期间与唯一段落。',
+    'Candidate checks needed: entity, year, audited period and a unique opinion passage.',
+  ],
+  '这里只定位审计意见原文，不确认审计类别、资料真实性、当前偿付能力或公司是否可靠。': [
+    '审计意见类别需另行核对原文。',
+    'Check the original separately to identify the audit-opinion type.',
+  ],
 };
 
 export function CompanyAuditOpinion({
@@ -110,12 +120,14 @@ export function CompanyAuditOpinion({
               {result.warnings.map((warning, index) => (
                 <li key={index}>
                   {locale === 'en' &&
-                    !warningTranslations[warning] &&
+                    !warningCopy[warning] &&
                     translateRule(warning) === warning &&
                     /[\u4e00-\u9fff]/.test(warning) && <span>Retrieval note (Chinese): </span>}
-                  {locale === 'en'
-                    ? warningTranslations[warning] || translateRule(warning)
-                    : warning}
+                  {warningCopy[warning]
+                    ? t(...warningCopy[warning])
+                    : locale === 'en'
+                      ? translateRule(warning)
+                      : warning}
                 </li>
               ))}
             </ul>

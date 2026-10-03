@@ -13,6 +13,10 @@ export const termsDocument: ProductDocument = {
           'These terms apply to the Prispect online service operated by the Prispect team (“we”). Please read these terms and the privacy policy before use. You can ask about important provisions using the contact information on this page.',
         ],
         [
+          '登录或注册页面提供本协议与隐私政策的入口；继续登录或注册，表示你接受本协议并已阅读隐私政策。使用指南与核查方法用于解释功能和结果，不是额外的数据处理授权。依法需要单独告知或取得同意的事项，仍须另行履行，不能以继续使用或接受本协议代替。',
+          'The login and registration pages link to these terms and the privacy policy. Continuing to log in or register indicates acceptance of these terms and acknowledgement of the privacy policy. The user guide and review methodology explain features and results; they do not grant additional permission to process data. Separate notices or consent required by law must still be provided or obtained; continued use or acceptance of these terms does not replace them.',
+        ],
+        [
           '本服务不面向不满14周岁者。你应具备与使用行为相适应的民事行为能力；已满14周岁的未成年人应在监护人指导下阅读与使用。依法需要同意或代理的事项，应由监护人同意或代理。代组织使用时，应具备相应授权。',
           'The service is not intended for children under 14. You should have the legal capacity appropriate to your use. Minors aged 14 or older should read and use it with a guardian’s guidance; obtain consent or representation when legally required. Use on behalf of an organization requires appropriate authorization.',
         ],

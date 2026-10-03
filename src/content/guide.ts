@@ -148,8 +148,8 @@ export const guideDocument: ProductDocument = {
           'Base grades are A: at least 80; B: 60–79.99; C: 40–59.99; D: below 40. One core dimension below 40 caps the final grade at C; two or more cap it at D. The original score remains visible alongside the cap reason. Missing or conflicting key data in any core dimension produces NR (not rated), without filling zeros or redistributing missing weights.',
         ],
         [
-          '“依据”和“指标与计算依据”展示精确金额、公式与对应来源；“评级方法与阈值”说明具体规则。评级属于析光公开财务筛选方法，不是评级机构的信用等级。历史金额不代表当前可用现金；标题线索、网页字段和已取得的原文节选分别标注。',
-          'Evidence and Metrics and calculations show exact amounts, formulas and supporting sources; Grade methodology and thresholds explains the rules. The grade is Prispect’s public-financial screening method, not a credit-agency rating. Historical amounts are not current available cash. Headline leads, web fields and retrieved source excerpts are labeled separately.',
+          '“依据”和“指标与计算依据”展示精确金额、公式与对应来源；完整评级规则集中在“核查方法”的“财务评级标准”章节，可通过下方链接查看。评级属于析光公开财务筛选方法，不是评级机构的信用等级。历史金额不代表当前可用现金；标题线索、网页字段和已取得的原文节选分别标注。',
+          'Evidence and Metrics and calculations show exact amounts, formulas and supporting sources. The full grading rules are in Financial grade criteria within Review methodology, linked below. The grade is Prispect’s public-financial screening method, not a credit-agency rating. Historical amounts are not current available cash. Headline leads, web fields and retrieved source excerpts are labeled separately.',
         ],
         [
           '需要补查时打开“进一步研究”，填写重点，例如“比较现金质量与同行，梳理近一年重大事项”，再点击“开始研究”。研究目标会发送给分析模型，请只填写公开公司问题。留空回到常规研究范围；不需要填写目标才能得到默认分析。',
@@ -160,7 +160,13 @@ export const guideDocument: ProductDocument = {
           'Research steps distinguish running, completed and failed states. An unconfigured or failed model retains rule-based financial grades and metrics with missing fields left unknown. If counterargument review fails, an already validated draft is retained with that limitation stated. An incomplete retry retains the prior analysis and its snapshot and generation times. No news or disclosure does not establish absence of risk; a saved result does not mean a fresh search occurred.',
         ],
       ],
-      links: [{ label: productTerms.companyResearch, href: '/query' }],
+      links: [
+        { label: productTerms.companyResearch, href: '/query' },
+        {
+          label: ['财务评级标准', 'Financial grade criteria'],
+          href: '/docs/methodology?section=financial-rating',
+        },
+      ],
     },
     {
       id: 'evidence-lab',

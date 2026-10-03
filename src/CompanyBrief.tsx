@@ -312,8 +312,8 @@ export function CompanyBrief({
               }
               key={source.provider}
               title={t(
-                `${source.complete} 项完整、${source.partial} 项部分取得、${source.unavailable} 项未取得；表示取数状态，不代表企业风险。`,
-                `${source.complete} complete, ${source.partial} partial, ${source.unavailable} unavailable; retrieval status does not indicate company risk.`
+                `${source.complete} 项完整、${source.partial} 项部分取得、${source.unavailable} 项未取得`,
+                `${source.complete} complete, ${source.partial} partial, ${source.unavailable} unavailable`
               )}
             >
               <i aria-hidden="true" />

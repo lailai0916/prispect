@@ -149,8 +149,8 @@ export function TaskPage({ id }: { id: string }) {
             {t('本次人工移除：', 'Excluded for this review:')}{' '}
             {task.excludedMetrics.map((key) => metricName(key, locale)).join(' / ')}。
             {t(
-              '仅限制本次使用的指标，不表示公司未披露；原财报核查和原件保留。',
-              'Only the inputs used in this run are restricted. This does not imply non-disclosure; original reviews and sources remain.'
+              '仅本次不采用，原财报核查与原件保留。',
+              'Excluded for this review; the original review and sources remain.'
             )}
           </p>
         </div>
@@ -380,7 +380,7 @@ export function ReportView({
       ? 'Source fields or bridge reconciliation conflict. Review the failed checks and original observations before attributing operating causes.'
       : report.verdict === 'insufficient'
         ? 'Some required observations are missing or cannot be confirmed. The review retains supported numbers and withholds unsupported ratios or explanations.'
-        : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
+        : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}.`;
   return (
     <div className="report-content report-content-summary">
       {currencyView.issues.length > 0 && (
@@ -389,8 +389,8 @@ export function ReportView({
           <div>
             <p>
               {t(
-                '这份报告包含非人民币或币种、单位不一致的金额。相关历史比例、同比和现金桥已暂停展示；可独立核对的人民币金额与比例保留。原始记录与来源未改动。',
-                'This report contains non-CNY amounts or inconsistent currencies and units. Dependent historical ratios, annual changes and cash bridges are withheld; independently valid CNY amounts and ratios remain. Original records and sources are unchanged.'
+                '币种或单位待核对，相关比例、同比与现金桥暂停展示。可独立核对的人民币金额与原始来源保留。',
+                'Currencies or units need review; dependent ratios, annual changes and cash bridges are withheld. Independently valid CNY amounts and original sources remain.'
               )}
             </p>
             <details>
@@ -480,14 +480,6 @@ export function ReportView({
               currencyView.issues.length
                 ? 'Currency-dependent interpretation is paused.'
                 : englishHeadline
-            )}
-          </p>
-          <p>
-            {t(
-              report.summary,
-              currencyView.issues.length
-                ? 'Original records and sources are retained; no currency conversion is performed.'
-                : englishSummary
             )}
           </p>
         </details>
@@ -602,8 +594,8 @@ export function ReportView({
             {nextQuestion
               ? t(nextQuestion.question.text, translateRule(nextQuestion.question.text))
               : t(
-                  '继续核对本次付款或交接所需的直接材料；跟进状态不代表事项已证实。',
-                  'Continue checking the direct evidence for this payment or handover; follow-up status does not authenticate a matter.'
+                  '核对本次付款或交接所需的直接材料。',
+                  'Check the direct records needed for this payment or handover.'
                 )}
           </p>
           <div className="company-review-actions">
@@ -617,12 +609,6 @@ export function ReportView({
             </button>
           </div>
         </section>
-        <p className="company-review-footnote">
-          {t(
-            '本报告核对所采用材料中的历史金额；当前付款和履约需要另取直接依据。',
-            'This report checks historical amounts in adopted evidence; current payments and fulfilment need separate direct records.'
-          )}
-        </p>
       </div>
       <details className="report-purpose-details">
         <summary>
@@ -666,12 +652,12 @@ export function ReportView({
               <p>
                 {purpose === 'handover'
                   ? t(
-                      '历史利润和经营现金净额用于定位核查事项。当前余额、未来回款和到期义务，需要另取材料并逐笔确认。',
-                      'Historical profit and operating cash help locate questions. Current balances, future collections and obligations due require separate records and reconciliation.'
+                      '逐笔核对当前可用余额、预计回款与到期义务。',
+                      'Reconcile current available cash, expected receipts and obligations due.'
                     )
                   : t(
-                      '财报能支持经营线索，不能证明这次付款的本金安全或交付承诺。先确认对方是谁、钱付给谁，以及交付与退出条件。',
-                      'Financial statements support operating clues, but do not establish the safety of this payment or a delivery promise. Confirm the entities, receiving account, delivery and exit terms.'
+                      '核对签约与收款主体、交付节点和退出条件，取得本次付款的直接材料。',
+                      'Check the contracting and receiving entities, delivery milestones and exit terms against direct records for this payment.'
                     )}
               </p>
               <button
@@ -705,12 +691,12 @@ export function ReportView({
                   ? t(nextQuestion.orderReason.zh, nextQuestion.orderReason.en)
                   : questions.length
                     ? t(
-                        '跟进完成不代表结论已经证实。核对本次付款或接手安排所需的直接材料。',
-                        'Recorded follow-up does not authenticate a conclusion. Review the direct records needed for this payment or handover.'
+                        '下一步核对本次付款或接手安排的直接材料。',
+                        'Next, check the direct records for this payment or handover.'
                       )
                     : t(
-                        '本报告没有已保存的询证项。请核对场景材料，不从空清单推断本次安排可靠。',
-                        'This report has no saved evidence requests. Check the context records; an empty checklist does not establish that this arrangement is reliable.'
+                        '本报告没有保存询证项，请核对本次安排所需材料。',
+                        'This report has no saved evidence requests. Check the records needed for this arrangement.'
                       )}
               </p>
               <button type="button" className="text-link" onClick={openRequests}>
@@ -804,8 +790,8 @@ export function ReportView({
                         <summary>{t('图表口径', 'Chart scope')}</summary>
                         <p>
                           {t(
-                            '调整项不是现金余额或未来预测。图形标签已舍入，精确金额显示在所选项中；经营性应收调整不等于单一应收账款余额变化，负向调整不能直接证明坏账或滞销。',
-                            'Adjustments are not cash balances or forecasts. Plot labels are rounded; the selected item shows exact amounts. Operating receivables adjustments are not simply changes in accounts receivable, and negative adjustments alone do not prove bad debt or slow inventory.'
+                            '标签已舍入，所选项显示精确金额。经营性应收调整范围大于单一应收账款；负向调整的原因需原文支持。',
+                            'Labels are rounded; the selected item shows exact amounts. Operating receivables adjustments cover more than accounts receivable; causes of negative adjustments need source evidence.'
                           )}
                         </p>
                       </details>
@@ -907,8 +893,8 @@ export function ReportView({
               </div>
               <p className="section-intro">
                 {t(
-                  '只有所需的同口径金额齐全、现金桥闭合时才显示组合。它提出核查方向，不给企业打分。',
-                  'Combinations appear only when comparable amounts are present and the cash bridge reconciles. They suggest checks, not a company score.'
+                  '组合条件按同口径金额与现金桥核对，缺失材料见下方。',
+                  'Combination checks use comparable amounts and the cash bridge; missing records are listed below.'
                 )}
               </p>
               <CrossSignalChecks report={report} />
@@ -1019,15 +1005,15 @@ export function ReportView({
                 <p className="cross-signal-empty">
                   {t(
                     report.crossSignalChecks === undefined
-                      ? '本次没有显示组合线索。单项事实与待询证事项仍见下方，未显示组合不表示企业没有风险。'
+                      ? '本次未显示组合线索，单项事实与待询证事项见下方。'
                       : report.crossSignalChecks.some((check) => check.status === 'blocked')
-                        ? '部分组合条件暂不能核对，所需材料与缺口见上方。未显示组合不表示企业没有风险。'
-                        : '已核对的组合条件未全部满足。未显示组合不表示企业没有风险，单项事实与待询证事项仍见下方。',
+                        ? '部分组合条件暂不能核对，所需材料与缺口见上方。'
+                        : '已核对的组合条件未全部满足，单项事实与待询证事项见下方。',
                     report.crossSignalChecks === undefined
-                      ? 'No combination is displayed. Individual facts and evidence requests remain below. This does not imply the company has no risk.'
+                      ? 'No combination is displayed. Individual facts and evidence requests are listed below.'
                       : report.crossSignalChecks.some((check) => check.status === 'blocked')
-                        ? 'Some combinations cannot be evaluated yet. Required evidence and gaps are listed above. No displayed combination does not imply no risk.'
-                        : 'The evaluated combination conditions are not all met. No displayed combination does not imply no risk; individual facts and evidence requests remain below.'
+                        ? 'Some combinations cannot be evaluated yet. Required evidence and gaps are listed above.'
+                        : 'The evaluated combination conditions are not all met. Individual facts and evidence requests are listed below.'
                   )}
                 </p>
               )}
@@ -1114,8 +1100,8 @@ export function ReportView({
               </div>
               <p className="section-intro">
                 {t(
-                  '勾选仅记录跟进完成，不代表财务问题已证实或解决。',
-                  'Checking an item records follow-up only; it does not prove a financial issue is resolved.'
+                  '勾选记录跟进完成，事项是否证实仍需材料支持。',
+                  'Checking an item records completed follow-up; confirming the matter still needs evidence.'
                 )}
               </p>
               <div className="question-list">
@@ -1208,18 +1194,10 @@ export function ReportView({
                 </h3>
                 <p className="scope-line">
                   {t(
-                    '仅核对历史年度合并报表，不作投资、授信或合作决策。',
-                    'Historical consolidated financial evidence only; no investment, credit or partnership decisions.'
+                    `核对范围：${report.year} 年度合并报表。`,
+                    `Review scope: ${report.year} annual consolidated statements.`
                   )}
                 </p>
-                <details>
-                  <summary>{t('范围详情', 'Scope details')}</summary>
-                  <ul>
-                    {report.limitations.map((item, index) => (
-                      <li key={index}>{t(item, translateRule(item))}</li>
-                    ))}
-                  </ul>
-                </details>
                 <p className="model-status">
                   <Activity size={15} />
                   {report.model.status === 'not-requested'
@@ -1241,23 +1219,14 @@ export function ReportView({
                 {currencyView.interpretationWithheld && (
                   <p className="field-note">
                     {t(
-                      '上方保留当时的模型执行状态；旧解读可能依赖本次暂停的计算，因此不再作为当前分析展示。模型原文仍保存在完整 JSON 中。',
-                      'The recorded model execution status is retained above. Its historical text may depend on the withheld calculations and is not shown as current analysis; the original text remains in the full JSON.'
+                      '旧解读可能依赖已暂停的计算，暂不展示；原文与执行状态保存在完整 JSON 中。',
+                      'The historical interpretation may depend on withheld calculations and is hidden. Its text and execution status remain in the full JSON.'
                     )}
                   </p>
                 )}
                 {report.model.text && !currencyView.interpretationWithheld && (
                   <details className="model-explanation">
                     <summary>{t('查看 AI 解读', 'View AI interpretation')}</summary>
-                    <div className="info-strip">
-                      <CircleAlert size={16} />
-                      <p>
-                        {t(
-                          '解读不是新增证据，可沿引用核对原始材料。',
-                          'Interpretation is not new evidence. Follow its references to inspect the source.'
-                        )}
-                      </p>
-                    </div>
                     <ModelExplanation
                       report={report}
                       onSource={(_title, refs) => showEvidence(refs, report)}

@@ -1,4 +1,5 @@
 import { productTerms } from '../../shared/product-terms';
+import { documentTitles } from '../content/document-navigation';
 import { Select } from '../Select';
 import { createContext, useContext, useEffect, useState, type FormEvent } from 'react';
 import {
@@ -595,12 +596,6 @@ export function Decisions({ query }: { query: URLSearchParams }) {
             )}
             <details className="decision-input-details" open={!isNew}>
               <summary>{t('补充计算条件', 'Add calculation conditions')}</summary>
-              <p className="field-note">
-                {t(
-                  '暂缺的付款、交付、退款与现金记录保留未知，保存不会填零。',
-                  'Missing payment, delivery, refund and cash records stay unknown. Saving does not fill them with zero.'
-                )}
-              </p>
               <label className="form-field">
                 <span>{t('核查事项名称（可选）', 'Review item name (optional)')}</span>
                 <input
@@ -662,10 +657,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               )}
             </div>
             <p className="field-note">
-              {t(
-                '留空为未知，0须明确填写。事项说明和材料记录仅保存在本账号，不发送到外部模型。',
-                'Blank means unknown; enter zero explicitly. Descriptions and evidence stay in your account and are not sent to an external model.'
-              )}
+              {t('留空为未知，0须明确填写。', 'Blank means unknown; enter zero explicitly.')}
             </p>
           </fieldset>
         </form>
@@ -878,8 +870,8 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                   {blocking
                     ? translated(blocking.summary)
                     : t(
-                        '字段匹配不等于平台鉴真，也不是付款批准。',
-                        'Field matching is not authentication or payment approval.'
+                        '记录字段已匹配；请复核原件及付款条件。',
+                        'Record fields match; review the originals and payment conditions.'
                       )}
                 </p>
               </div>
@@ -1145,8 +1137,8 @@ export function Decisions({ query }: { query: URLSearchParams }) {
               </div>
               <p className="field-note">
                 {t(
-                  '来源记录、对方陈述与假设分别保留。撤回会创建新版本；无关财报事实保留。',
-                  'Records, counterparty statements and assumptions remain distinct. Withdrawing creates a new version; unrelated financial facts remain.'
+                  '撤回会创建新版本，原版本保留。',
+                  'Withdrawing creates a new version; the original version remains.'
                 )}
               </p>
               {detail.version.evidence.length ? (
@@ -1201,10 +1193,7 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 </a>
               ) : (
                 <p className="field-note">
-                  {t(
-                    '没有关联年报；这不会自动证明付款主体或当前现金。',
-                    'No annual report linked. A report would not automatically establish transaction identity or current cash.'
-                  )}
+                  {t('尚未关联历史财报核查。', 'No historical financial review linked.')}
                 </p>
               )}
               <button
@@ -1215,20 +1204,10 @@ export function Decisions({ query }: { query: URLSearchParams }) {
                 <ArrowUpRight size={14} />
               </button>
             </details>
-            <details className="decision-boundaries">
-              <summary>{t('计算范围与边界', 'Calculation scope and limits')}</summary>
-              <ul>
-                {detail.evaluation.limitations.map((text, i) => (
-                  <li key={i}>{translated(text)}</li>
-                ))}
-              </ul>
-              <p>
-                {t(
-                  '测算供你核对条件，不作公司安全评级，不批准或执行付款，也不代发请求。',
-                  'Use these calculations to review conditions. They do not rate safety, approve payments, or send requests.'
-                )}
-              </p>
-            </details>
+            <a href="/docs/methodology" className="text-link">
+              {t(...documentTitles['/docs/methodology'])}
+              <ArrowUpRight size={14} />
+            </a>
           </div>
         </EvidenceRecordContext.Provider>
       )}
@@ -1318,8 +1297,8 @@ function DecisionEvidenceRecord({
         <p className="field-note">
           {evidence.materialId
             ? t(
-                '字段仅与保存的材料文本核对；不认证材料。定位结果见“条件”。',
-                'Fields are compared with saved text, without authentication. See Conditions for location results.'
+                '文本定位结果见“条件”，原件需另行核对。',
+                'See Conditions for text-location results; originals need separate review.'
               )
             : t(
                 '用户转录，按所供输入测算；未进入已关联记录字段分支。',
@@ -1397,8 +1376,8 @@ function ScopeDialog({
         <fieldset className="decision-save-fields" disabled={busy}>
           <p className="field-note">
             {t(
-              '只更正这条记录的主体与日期，金额、摘录与来源保留。新范围须能在保存的材料文本中定位；更正不认证材料真实性。',
-              'Only the entity and date change; amounts, excerpts and source remain. The corrected scope must be located in the saved material text. Correction does not authenticate the material.'
+              '只更正主体与日期，金额、摘录与来源保留。新范围须能在保存的材料文本中定位。',
+              'Only the entity and date change; amounts, excerpts and source remain. The corrected scope must be located in the saved material text.'
             )}
           </p>
           <label className="form-field">
@@ -1532,8 +1511,8 @@ function DecisionInputs({
       <h3>{t('本次付款与未交付金额', 'This payment and undelivered value')}</h3>
       <p className="field-note">
         {t(
-          '仅测算你这笔款项的暴露；不推测对方账本。退款承诺不抵实际退款。',
-          'Measures exposure from your payment, not the counterparty’s books. A refund promise is not an actual refund.'
+          '按这笔付款计算未交付暴露；退款只填实际已收金额。',
+          'Calculate undelivered exposure for this payment; enter only refunds actually received.'
         )}
       </p>
       <div className="decision-form-grid">
@@ -1810,8 +1789,8 @@ function DecisionScenarios({ detail }: { detail: DecisionDetail }) {
             </summary>
             <p className="field-note">
               {t(
-                '未关联保存材料文本的记录属于用户转录；字段匹配不代表资金或履约已被独立核实。',
-                'Records not linked to saved material text are user transcriptions. Field matching does not independently verify funds or performance.'
+                '未关联材料文本的记录为用户转录；原件需另行核对。',
+                'Records without linked material text are user transcriptions; originals need separate review.'
               )}
             </p>
             <div className="decision-options">
@@ -1850,8 +1829,8 @@ function DecisionScenarios({ detail }: { detail: DecisionDetail }) {
             </summary>
             <p className="field-note">
               {t(
-                '这是依据所供记录字段的测算，不是银行鉴真或资金可执行批准。',
-                'A calculation based on supplied record fields, not bank authentication or payment approval.'
+                '按所供记录中的金额与日期计算；原件需另行核对。',
+                'Calculated from amounts and dates in supplied records; originals need separate review.'
               )}
             </p>
             {detail.evaluation.recordedCash && (
@@ -1874,8 +1853,8 @@ function CashComparison({ value, input }: { value: DatedCashComparison; input: D
     <div className="decision-cash-comparison">
       <p className="field-note">
         {t(
-          '仅按已列事件测算，未列义务不等于零。只改变本次付款日，假设采购允许延期且其他收付金额、日期不变；需核对同意、供货及回款影响。',
-          'Calculated only from listed events; unlisted obligations are not zero. Only this payment date changes, assuming consent to delay and unchanged other amounts and dates; review delivery and collection impacts.'
+          '按已列事件测算，未列义务不等于零。方案只改变本次付款日，其他金额与日期不变；改期需确认同意及供货、回款影响。',
+          'Calculated from listed events; unlisted obligations are not zero. Only this payment date changes; other amounts and dates stay fixed. Confirm consent and delivery or collection impacts before rescheduling.'
         )}
       </p>
       <div className="decision-options">
@@ -2421,9 +2400,16 @@ function EvidenceDialog({
               />
               <p className="field-note">
                 {t(
-                  '金额和覆盖日期需由原文明示；0也要有记录。年报年度现金净额不是当前可用余额，退款承诺不是实际退款。',
-                  'The source must explicitly state the amount and covered date, including zero. Annual operating cash is not current available cash; a refund promise is not an actual refund.'
+                  '原文须明示金额与覆盖日期，0也需记录支持。',
+                  'The source must state the amount and covered date, including zero.'
                 )}
+                {evidence.slot === 'opening-cash' &&
+                  t(
+                    ' 年度经营现金净额不能填作当前可用余额。',
+                    ' Annual operating cash cannot serve as current available cash.'
+                  )}
+                {evidence.slot === 'refunded' &&
+                  t(' 退款承诺不能填作实际退款。', ' A refund promise is not an actual refund.')}
               </p>
             </>
           )}
@@ -2551,8 +2537,8 @@ function EvidenceDialog({
           </details>
           <p className="field-note">
             {t(
-              '提供字段与原文的匹配不等于银行鉴真或履约核实。未关联保存材料文本时，仅记录你转录的文本；对方陈述与假设不会当作实际退款或现金依据。',
-              'Matching supplied fields to text does not authenticate banking records or performance. Without linked saved material text, this records your transcription. Counterparty statements and assumptions do not establish actual refunds or available cash.'
+              '未关联材料文本时保存为用户转录；对方陈述与假设不作为实际退款或现金依据。',
+              'Without linked material text, this is saved as a user transcription. Counterparty statements and assumptions do not establish actual refunds or available cash.'
             )}
           </p>
           <div className="dialog-actions">

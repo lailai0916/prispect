@@ -69,9 +69,7 @@ export function CashScenarioPreview() {
           <ChevronRight size={12} />
           {t('采购付款', 'Procurement')}
         </span>
-        <span className="preview-label">
-          {t('情景演算 · 假设收付款计划', 'Scenario analysis · hypothetical cash plan')}
-        </span>
+        <span className="preview-label">{t('假设收付款计划', 'Hypothetical cash plan')}</span>
       </div>
       <div className="product-preview-body">
         <div className="preview-title">
@@ -243,8 +241,8 @@ export function CashScenarioPreview() {
             />
             <p className="preview-assumption">
               {t(
-                '改期为条件对照，尚待协商；其他收付款金额和日期保持不变。',
-                'Rescheduling remains subject to agreement; other listed amounts and dates stay fixed.'
+                '只调整采购付款日；改期需协商，其他收付金额和日期不变。',
+                'Only the procurement payment day changes; rescheduling needs agreement, and other amounts and dates stay fixed.'
               )}
             </p>
           </div>

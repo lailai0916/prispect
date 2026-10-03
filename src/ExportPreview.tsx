@@ -184,12 +184,6 @@ export function ExportPreview({
             : t('保存文件', 'Save file')}
         </button>
       </div>
-      <p className="field-note">
-        {t(
-          '先查看本次导出内容，再保存到你的设备。文件可能包含个人备注和原文摘录。',
-          'Review this export before saving it to your device. The file may include personal notes and source excerpts.'
-        )}
-      </p>
       {source && (
         <div className="export-preview-file">
           <FileText size={14} aria-hidden="true" />

@@ -136,8 +136,8 @@ export function CompanyFinancialTrends({
                 'Historical financial fields have not been saved in this run yet. They will appear here when retrieved.'
               )
             : t(
-                '这次历史查询没有保存第三方财务字段；没有为旧结果补算或补取。',
-                'This older lookup has no saved third-party financial fields. No data was reconstructed or retrieved for its historical result.'
+                '这份历史记录未保存网页财务字段。',
+                'This older record has no saved web financial fields.'
               )}
         </p>
       </details>
@@ -174,25 +174,16 @@ export function CompanyFinancialTrends({
           </span>
         </div>
       </div>
-      <p className="company-history-boundary">
-        {t(
-          '接口字段尚未与原件逐项核对；一致也只表示金额相同，不认证资料、不自动采用。',
-          'Web fields have not been checked against documents item by item. A match establishes amount consistency only; it does not authenticate or adopt evidence.'
-        )}
-      </p>
       {context.status === 'unsupported' ? (
         <p className="company-history-empty">
           {t(
-            '本次机构或报表类型不适用，未混用其他行业报表。可继续核对已下载的年报原件。',
-            'The institution or statement type is unsupported. Statements from another industry were not substituted. Continue checking the downloaded annual report.'
+            '该机构或报表类型暂不支持，可继续核对已下载的年报原件。',
+            'This institution or statement type is unsupported. Continue checking the downloaded annual report.'
           )}
         </p>
       ) : !rows.length ? (
         <p className="company-history-empty">
-          {t(
-            '本次没有取得可绘制的年度记录。空结果不表示公司没有风险，也不会绘成零。',
-            'No annual records were retrieved for a plot. An empty result does not establish absence of risk and is not plotted as zero.'
-          )}
+          {t('本次未取得可绘制的年度记录。', 'No annual records were retrieved for a plot.')}
         </p>
       ) : (
         <>
@@ -299,17 +290,17 @@ export function CompanyFinancialTrends({
             <p className="company-history-chart-note">
               {tab === 'debt'
                 ? t(
-                    '负债合计仅为短期借款＋一年内到期非流动负债；任一项缺失则未知。货币资金不是当前可用余额，不计算偿付覆盖或缺口。',
-                    'The liability total combines short-term loans and non-current liabilities due within one year only. A missing component leaves the total unknown. Monetary funds are not today’s available cash; no coverage or funding gap is calculated.'
+                    '货币资金为年末账面金额；负债合计仅含短期借款＋一年内到期非流动负债，缺项时合计未知。',
+                    'Monetary funds are year-end book amounts. The liability total includes only short-term loans and non-current liabilities due within one year; a missing component leaves it unknown.'
                   )
                 : tab === 'income'
                   ? t(
-                      '两图年度对齐，各自使用金额尺度，避免用双轴制造同步变化。空缺年度或字段没有补值。',
-                      'Both plots align by year and use their own amount scales, without dual axes. Missing years and fields have not been filled.'
+                      '按年度对齐，各图金额尺度独立；缺失值为未知。',
+                      'Aligned by year, with an independent amount scale for each plot. Missing values remain unknown.'
                     )
                   : t(
-                      '两项使用同一金额尺度；经营现金净额不是销售回款，也不是年末现金余额。缺项没有补零。',
-                      'Both series use one amount scale. Operating cash flow is neither sales collections nor year-end cash. Missing values are not filled with zero.'
+                      '两项使用同一金额尺度；经营现金净额为全年经营收付净额，缺失值为未知。',
+                      'Both series use one amount scale. Operating cash flow is the annual net of operating receipts and payments; missing values remain unknown.'
                     )}
             </p>
             {selectedRow && (
@@ -344,12 +335,7 @@ export function CompanyFinancialTrends({
           {t('接口来源与响应记录', 'Web sources and response records')}
           <ChevronDown size={13} />
         </summary>
-        <p>
-          {t(
-            '下方 SHA-256 属于当次接口响应，不是 PDF 原件的认证。',
-            'The SHA-256 hashes below identify the retrieved web responses. They do not authenticate a PDF document.'
-          )}
-        </p>
+        <p>{t('SHA-256 标识当次网页响应。', 'SHA-256 identifies the retrieved web response.')}</p>
         {context.sources.map((source) => (
           <div className="company-history-source-record" key={source.id}>
             <strong>
@@ -745,8 +731,8 @@ function YearDetail({
                         'At least one component is missing; the total was not calculated.'
                       )
                     : t(
-                        '两项均已取得，按人民币分相加；不是全部到期付款。',
-                        'Both components were retrieved and summed in exact CNY cents. This is not all payments due.'
+                        '合计仅含短期借款与一年内到期非流动负债。',
+                        'The total includes only short-term loans and non-current liabilities due within one year.'
                       )}
                 </p>
               )}
@@ -828,8 +814,8 @@ function YearDetail({
                 ) : (
                   <p>
                     {t(
-                      '该年度没有取得对应表字段；没有补造来源。',
-                      'The relevant statement fields were not retrieved for this year; no source was invented.'
+                      '该年度未取得对应报表字段。',
+                      'The relevant statement fields were not retrieved for this year.'
                     )}
                   </p>
                 )}

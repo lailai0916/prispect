@@ -661,15 +661,6 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
           })}
         </div>
       )}
-      <div className="info-strip">
-        <ShieldCheck size={18} />
-        <p>
-          {t(
-            '哈希用于核对文件内容；原件与确认后的指标分别保留。扫描件或不明确的表格需人工核对。',
-            'Hashes identify file content. Source files and confirmed values remain separate. Scans and unclear tables need manual review.'
-          )}
-        </p>
-      </div>
       <ImportDialog
         open={materialImport.open}
         onClose={() => materialImport.setOpen(false)}
@@ -1023,8 +1014,8 @@ export function MaterialImporter({
           )}
           <p className="field-note">
             {t(
-              '导入仅生成预览；点击「确认并保存」后才写入工作区。PDF 不确定的字段需手动确认，不支持扫描件 OCR。单文件最多 25MB，账号总上传额度 250MB；未确认的预览原件 24 小时后过期。',
-              'Importing creates a preview only. Nothing is saved until you confirm. Ambiguous PDF fields need manual confirmation; scanned-PDF OCR is unsupported. Files are limited to 25 MB each and 250 MB per account. Unconfirmed preview uploads expire after 24 hours.'
+              '预览并确认字段后保存到材料库。不支持扫描件 OCR；账号总上传额度为 250 MB。',
+              'Preview and confirm the fields before saving to your materials. Scanned-PDF OCR is unsupported. The total upload limit is 250 MB per account.'
             )}
           </p>
           <details className="input-format">
@@ -1168,8 +1159,8 @@ export function MaterialImporter({
                 </button>
                 <p>
                   {t(
-                    '这会显式移除母公司、未知范围或非年度观测，不是后台自动选择。请先核对原文，再确认保留。',
-                    'This explicitly removes parent, unconfirmed-scope, and non-annual observations. It is not a silent background selection. Verify the source before choosing.'
+                    '将移除母公司、范围待确认或非年度观测。请先核对原文，再确认保留。',
+                    'This removes parent-company, unconfirmed-scope and non-annual observations. Verify the source before choosing.'
                   )}
                 </p>
               </div>

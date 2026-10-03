@@ -333,6 +333,9 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </p>
         </div>
         <div className="context-page-actions">
+          <a className="text-link" href="/docs/methodology">
+            {t('方法说明', 'Methodology')}
+          </a>
           {section === 'overview' && (
             <button className="button button-secondary" onClick={() => window.print()}>
               <Printer size={14} />
@@ -565,8 +568,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               {run.contextStatus === 'loading' ? <LoaderCircle className="spinner" /> : null}
               <p>
                 {t(
-                  '未取得的字段保持未知。可以先查看原件核查过程，或重试公开数据。',
-                  'Unavailable fields stay unknown. Open the original review or retry public sources.'
+                  '可以查看原件核查过程，或重试公开数据。',
+                  'Open the original review or retry public sources.'
                 )}
               </p>
             </div>
