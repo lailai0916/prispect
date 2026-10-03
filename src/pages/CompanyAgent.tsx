@@ -417,6 +417,8 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
           'Before paying, also obtain the contract, full payee account name and entity responsible for refunds. Annual reports do not establish responsibility for this payment or refund.'
         );
   const fileUrl = run ? `/api/company-runs/${run.id}/file` : '';
+  const originalIsPdf = /\.pdf$/i.test(run?.preview?.material.filename || '');
+  const pausedMarket = run?.identity?.exchange === 'us';
   const status = (item: CompanyResearchRun) =>
     item.agent?.cancelRequested
       ? activeRun(item)
@@ -694,7 +696,7 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   {t('取消', 'Cancel')}
                 </button>
               )}
-              {run.status === 'failed' && run.agent?.recoverable && (
+              {!pausedMarket && run.status === 'failed' && run.agent?.recoverable && (
                 <button
                   type="button"
                   className="button button-primary"
@@ -707,6 +709,17 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
               )}
             </div>
           </section>
+          {pausedMarket && (
+            <div className="warning-box" role="note">
+              <CircleAlert size={17} aria-hidden="true" />
+              <p>
+                {t(
+                  '美股研究暂未开放。这份历史记录及原件仍可查看；外币金额不参与当前人民币核查。',
+                  'US research is paused. This saved record and its original remain available; foreign-currency amounts are excluded from current CNY reviews.'
+                )}
+              </p>
+            </div>
+          )}
           {run.agent && <CompanyRunOverview run={run} />}
           {(run.stoppedReason || run.error) && (
             <section className="company-stopped">
@@ -803,7 +816,9 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                   rel="noopener noreferrer"
                 >
                   <Download size={15} />
-                  {t('打开下载原件', 'Open downloaded original')}
+                  {originalIsPdf
+                    ? t('打开原件', 'Open original')
+                    : t('下载原件', 'Download original')}
                 </a>
               </div>
               {run.preview.warnings.length > 0 && (
@@ -1420,15 +1435,17 @@ export function CompanyAgentPage({ query }: { query: URLSearchParams }) {
                 </a>
               )}
             </div>
-            {source.page != null && source.sha256 === run?.preview?.material.sha256 && (
-              <details className="company-inline-pdf">
-                <summary>{t('在此查看 PDF 页', 'View PDF page here')}</summary>
-                <iframe
-                  src={`${fileUrl}#page=${source.page}`}
-                  title={`${source.title} · PDF ${source.page}`}
-                />
-              </details>
-            )}
+            {originalIsPdf &&
+              source.page != null &&
+              source.sha256 === run?.preview?.material.sha256 && (
+                <details className="company-inline-pdf">
+                  <summary>{t('在此查看 PDF 页', 'View PDF page here')}</summary>
+                  <iframe
+                    src={`${fileUrl}#page=${source.page}`}
+                    title={`${source.title} · PDF ${source.page}`}
+                  />
+                </details>
+              )}
             {source.sha256 && (
               <details className="company-file-metadata">
                 <summary>{t('文件标识', 'File identity')}</summary>

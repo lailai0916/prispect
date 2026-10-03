@@ -74,6 +74,12 @@ const rules: Record<string, string> = {
     'Parent-company and consolidated scopes cannot be mixed. Supply consolidated evidence.',
   '币种不是人民币；本次不进行汇率转换或混币种计算。':
     'The currency is not CNY. This review does not convert exchange rates or combine currencies.',
+  '同一指标存在不同币种；本次不进行汇率转换或混币种计算。':
+    'This metric has different currencies. No currency conversion or mixed-currency calculation is performed.',
+  '币种不是已确认的人民币；本次只核查人民币年度合并材料，不进行汇率转换或混币种计算。':
+    'The currency is not confirmed CNY. This review accepts annual consolidated CNY evidence and does not convert or combine currencies.',
+  '金额单位声明为美元，与人民币币种不一致；停止采用，请核对原表币种和单位。':
+    'The USD amount unit conflicts with the CNY currency. Adoption is stopped; check the source currency and unit.',
   '同一指标存在不同数值，保留双方来源并停止采用，不静默覆盖。':
     'This metric has conflicting values. Both sources are retained and neither is silently adopted.',
   '主体不一致，不能跨公司计算。':

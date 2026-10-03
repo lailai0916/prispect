@@ -66,8 +66,8 @@ export function RiskOverview({
       </nav>
       <p className="risk-overview-note">
         {t(
-          '状态依据已核验材料，不构成公司评级、授信决策或投资建议。',
-          'Statuses reflect checked evidence, not a company rating, credit decision or investment advice.'
+          '状态说明本报告的材料与计算核对情况，不构成公司评级、授信决策或投资建议。',
+          'Statuses describe the evidence and calculation checks in this report, not a company rating, credit decision or investment advice.'
         )}
       </p>
     </section>

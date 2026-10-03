@@ -13,6 +13,7 @@ import type { AnalysisTask, CreateTaskInput, CrossSignalCheck } from '../../shar
 import { post } from '../api';
 import { reviewVariantTitle, date, metricName, metricValue } from '../format';
 import { translateRule } from '../ruleTranslations';
+import { reportCurrencyView } from '../../shared/report-currency-view';
 
 import { useApp } from '../context';
 import { RiskCompareMatrix } from '../RiskCompareMatrix';
@@ -41,8 +42,13 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
   const recoveredSelection = Boolean(
     (leftId && left?.id !== leftId) || (rightId && right?.id !== rightId)
   );
-  const leftReport = left?.report;
-  const rightReport = right?.report;
+  const leftCurrency = left?.report ? reportCurrencyView(left.report) : null;
+  const rightCurrency = right?.report ? reportCurrencyView(right.report) : null;
+  const leftReport = leftCurrency?.report;
+  const rightReport = rightCurrency?.report;
+  const currencyComparisonPaused = Boolean(
+    leftCurrency?.issues.length || rightCurrency?.issues.length
+  );
   const withdrawn =
     leftReport && rightReport
       ? leftReport.findings.filter(
@@ -202,6 +208,17 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                   )}
                   {left && right && leftReport && rightReport && (
                     <>
+                      {currencyComparisonPaused ? (
+                        <div className="warning-box" role="status">
+                          <CircleAlert size={19} />
+                          <p>
+                            {t(
+                              '所选报告含非人民币或币种、单位不一致的金额。相关历史计算暂停展示，旧解释的增删暂不比较；停止展示不代表已保存的解释被撤回。原始金额及来源可在报告中查看，记录未被改写。',
+                              'Selected reports contain non-CNY amounts or inconsistent currencies and units. Dependent historical calculations and explanation changes are withheld; withholding a display does not withdraw a saved explanation. Inspect original amounts and sources in each report; saved records are unchanged.'
+                            )}
+                          </p>
+                        </div>
+                      ) : null}
                       {left.id === right.id ? (
                         <div className="warning-box">
                           <CircleAlert size={19} />
@@ -344,10 +361,17 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                                             {t(signal.title.zh, signal.title.en)}
                                           </p>
                                         ))
-                                      : t(
-                                          '未触发已实现的组合规则',
-                                          'No implemented combination rule triggered'
-                                        )}
+                                      : report.crossSignalChecks?.some(
+                                            (check) => check.status === 'blocked'
+                                          )
+                                        ? t(
+                                            '口径待核对，组合暂停展示',
+                                            'Scope needs review; combinations withheld'
+                                          )
+                                        : t(
+                                            '未触发已实现的组合规则',
+                                            'No implemented combination rule triggered'
+                                          )}
                                 </td>
                               ))}
                             </tr>
@@ -427,30 +451,33 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                           </tbody>
                         </table>
                       </div>
-                      {left.company === right.company && checkChanges.length > 0 && (
-                        <div className="info-strip">
-                          <Layers size={19} />
-                          <div className="compare-rule-changes">
-                            {checkChanges.map(({ baseline, comparison }) => (
-                              <p key={baseline.id}>
-                                <strong>{t(comparison.title.zh, comparison.title.en)}</strong>
-                                <span>
-                                  {checkStatus(baseline.status)}{' '}
-                                  <ArrowRight size={12} aria-hidden="true" />{' '}
-                                  {checkStatus(comparison.status)}
-                                </span>
-                              </p>
-                            ))}
-                            <small>
-                              {t(
-                                '这是两份已保存报告的条件结果；核对各自的金额、采用材料与缺口。',
-                                'These are saved condition results. Check each review’s amounts, adopted evidence and gaps.'
-                              )}
-                            </small>
+                      {!currencyComparisonPaused &&
+                        left.company === right.company &&
+                        checkChanges.length > 0 && (
+                          <div className="info-strip">
+                            <Layers size={19} />
+                            <div className="compare-rule-changes">
+                              {checkChanges.map(({ baseline, comparison }) => (
+                                <p key={baseline.id}>
+                                  <strong>{t(comparison.title.zh, comparison.title.en)}</strong>
+                                  <span>
+                                    {checkStatus(baseline.status)}{' '}
+                                    <ArrowRight size={12} aria-hidden="true" />{' '}
+                                    {checkStatus(comparison.status)}
+                                  </span>
+                                </p>
+                              ))}
+                              <small>
+                                {t(
+                                  '这是两份已保存报告的条件结果；核对各自的金额、采用材料与缺口。',
+                                  'These are saved condition results. Check each review’s amounts, adopted evidence and gaps.'
+                                )}
+                              </small>
+                            </div>
                           </div>
-                        </div>
-                      )}
-                      {left.company === right.company &&
+                        )}
+                      {!currencyComparisonPaused &&
+                        left.company === right.company &&
                         checkChanges.length === 0 &&
                         (withdrawnSignals.length > 0 || addedSignals.length > 0) && (
                           <div className="info-strip">
@@ -478,7 +505,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                             </p>
                           </div>
                         )}
-                      {left.company === right.company && (
+                      {!currencyComparisonPaused && left.company === right.company && (
                         <section className="comparison-changes">
                           <div className="report-section-title">
                             <div>

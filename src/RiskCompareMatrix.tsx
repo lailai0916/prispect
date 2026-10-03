@@ -28,7 +28,10 @@ export function RiskCompareMatrix({ tasks }: { tasks: AnalysisTask[] }) {
   if (rows.length === 0) return null;
 
   return (
-    <section className="risk-matrix" aria-label={t('多公司风险对比', 'Company risk matrix')}>
+    <section
+      className="risk-matrix"
+      aria-label={t('公司核查状态对比', 'Company review status comparison')}
+    >
       <div className="risk-matrix-head">
         <div className="risk-matrix-row risk-matrix-title-row" aria-hidden="true">
           <span className="risk-matrix-company-col">{t('公司', 'Company')}</span>
@@ -47,7 +50,14 @@ export function RiskCompareMatrix({ tasks }: { tasks: AnalysisTask[] }) {
             type="button"
             className="risk-matrix-row risk-matrix-data-row"
             onClick={() => navigate(`/tasks/${task.id}`)}
-            aria-label={`${task.company} · ${task.year}`}
+            aria-label={`${task.company} · ${task.year} · ${perspective.dimensions
+              .map((dimension) =>
+                t(
+                  `${dimension.label.zh}：${riskStatusText[dimension.status].zh}`,
+                  `${dimension.label.en}: ${riskStatusText[dimension.status].en}`
+                )
+              )
+              .join('；')}`}
           >
             <span className="risk-matrix-company-col">
               <MiniRing dimensions={perspective.dimensions} />
@@ -72,8 +82,8 @@ export function RiskCompareMatrix({ tasks }: { tasks: AnalysisTask[] }) {
       </div>
       <p className="risk-overview-note">
         {t(
-          '状态由已核验的证据推导，不构成评级或投资建议；点击公司查看完整报告与来源。',
-          'Status is derived from verified evidence; it is not a rating or investment advice. Click a company to open its full review.'
+          '状态说明材料与计算的核对进度，不构成公司评级；点击公司查看完整报告与来源。',
+          'Statuses describe evidence and calculation checks, not company ratings. Open a company to inspect its full review and sources.'
         )}
       </p>
     </section>
@@ -94,10 +104,10 @@ function MiniRing({ dimensions }: { dimensions: { key: string; status: RiskStatu
           cy="11"
           r="8"
           className="risk-matrix-ring-seg"
+          transform={`rotate(${index * 90 - 90} 11 11)`}
           style={{
             stroke: statusColor[dimension.status],
             strokeDasharray: `${dash} ${ringLength}`,
-            transform: `rotate(${index * 90 - 90} 11 11)`,
           }}
         />
       ))}

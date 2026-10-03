@@ -11,9 +11,9 @@ import {
   runCompanyResearch,
   searchCompanies,
 } from './company-agent.js';
-import { companyReputation } from './company-reputation.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault, modelEnabledSchema, validateMaterial } from './validation.js';
+import { assertCompanyResearchSupported, assertCompanySearchSupported } from './company-sources.js';
 
 export interface CompanyService {
   searchCompanies: typeof searchCompanies;
@@ -31,7 +31,7 @@ export function installCompanyRoutes(
   const adopting = new Set<string>();
   const schema = z
     .object({
-      securityCode: z.string().regex(/^(?:\d{6}|[A-Za-z]{1,6})$/),
+      securityCode: z.string().regex(/^(?:\d{6}|[A-Za-z]{1,10}(?:[.-][A-Za-z]{1,3})?)$/),
       orgId: z.string().regex(/^[A-Za-z0-9]{1,40}$/),
       year: z
         .number()
@@ -53,6 +53,30 @@ export function installCompanyRoutes(
     if (!run) throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '未找到当前账号的企业查询');
     return run;
   };
+  // Context and challenge routes are installed after these routes. Historical
+  // unsupported records remain readable, but cannot start new research there.
+  const researchOperations = new Set([
+    '/context',
+    '/assessment',
+    '/industry',
+    '/questions',
+    '/challenge',
+  ]);
+  app.use('/api/company-runs/:id', (req, res, next) => {
+    const operation = req.path.toLowerCase().replace(/\/+$/, '');
+    if (req.method !== 'POST' || !researchOperations.has(operation)) {
+      next();
+      return;
+    }
+    try {
+      const run = byId(res.locals.store as WorkspaceStore, String(req.params.id));
+      if (!run.informationGap)
+        assertCompanyResearchSupported(run.input.securityCode, run.identity?.exchange);
+      next();
+    } catch (error) {
+      next(error);
+    }
+  });
   const busy = (store: WorkspaceStore) =>
     records(store).some((run) => active.has(run.id) || adopting.has(run.id));
   const deletionBlocked = (run: CompanyResearchRun) =>
@@ -240,6 +264,7 @@ export function installCompanyRoutes(
     wrap(async (req, res) => {
       const store = res.locals.store as WorkspaceStore;
       const run = byId(store, String(req.params.id));
+      assertCompanyResearchSupported(run.input.securityCode, run.identity?.exchange);
       const body = z.object({ revision: z.number().int().positive() }).strict().safeParse(req.body);
       if (!body.success || body.data.revision !== run.agent?.revision)
         throw new ApiFault(409, 'COMPANY_STALE_REVISION', '查询版本已变化，请刷新后恢复');
@@ -288,6 +313,7 @@ export function installCompanyRoutes(
       const query = z.string().trim().min(1).max(80).safeParse(req.query.q);
       if (!query.success)
         throw new ApiFault(400, 'INVALID_COMPANY_QUERY', '请输入公司简称或六位证券代码');
+      assertCompanySearchSupported(query.data);
       options.auth.rateLimit(
         `company-search:${(res.locals.auth as AuthContext).user.id}`,
         30,
@@ -312,6 +338,7 @@ export function installCompanyRoutes(
       const input = schema.safeParse(req.body);
       if (!input.success)
         throw new ApiFault(400, 'INVALID_COMPANY_RUN', '公司代码、标识、年度或查询选项无效');
+      assertCompanyResearchSupported(input.data.securityCode);
       const store = res.locals.store as WorkspaceStore;
       const requestKey = req.get('Idempotency-Key');
       if (requestKey && !/^[a-f0-9-]{36}$/.test(requestKey))
@@ -367,15 +394,6 @@ export function installCompanyRoutes(
     })
   );
   app.get(
-    '/api/company-reputation',
-    wrap(async (req, res) => {
-      const q = String(req.query.q || '').trim();
-      if (!q || q.length > 80) throw new ApiFault(400, 'REPUTATION_QUERY_INVALID', '需要公司名称');
-      const result = await companyReputation(q);
-      res.json(result);
-    })
-  );
-  app.get(
     '/api/company-runs/:id/file',
     wrap(async (req, res) => {
       const store = res.locals.store as WorkspaceStore;
@@ -388,11 +406,12 @@ export function installCompanyRoutes(
         /['()*]/g,
         (char) => '%' + char.charCodeAt(0).toString(16).toUpperCase()
       );
+      const isPdf = path.extname(file.filename).toLowerCase() === '.pdf';
       res
-        .type('pdf')
+        .type(isPdf ? 'pdf' : 'application/octet-stream')
         .setHeader(
           'Content-Disposition',
-          `inline; filename="company-annual-report.pdf"; filename*=UTF-8''${encodedName}`
+          `${isPdf ? 'inline' : 'attachment'}; filename="company-annual-report${isPdf ? '.pdf' : ''}"; filename*=UTF-8''${encodedName}`
         )
         .send(file.buffer);
     })

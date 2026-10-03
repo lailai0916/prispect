@@ -16,7 +16,7 @@ const dimensionShort: Record<string, { zh: string; en: string }> = {
   finance: { zh: '财务', en: 'Fin' },
   credit: { zh: '来源', en: 'Sources' },
   reputation: { zh: '口碑', en: 'Rep' },
-  risk: { zh: '风险', en: 'Risk' },
+  risk: { zh: '核查', en: 'Checks' },
 };
 
 /** 首页已核查公司的状态摘要。 */
@@ -108,10 +108,10 @@ function MiniRing({ dimensions }: { dimensions: { key: string; status: RiskStatu
           cy="11"
           r="8"
           className="risk-matrix-ring-seg"
+          transform={`rotate(${index * 90 - 90} 11 11)`}
           style={{
             stroke: statusColor[dimension.status],
             strokeDasharray: `${dash} ${ringLength}`,
-            transform: `rotate(${index * 90 - 90} 11 11)`,
           }}
         />
       ))}

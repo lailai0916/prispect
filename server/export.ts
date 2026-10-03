@@ -1,5 +1,6 @@
 import type { AnalysisTask, ContextNoteKey, EvidenceRef, MetricKey } from '../shared/contracts.js';
 import { calculateCashPlan } from '../shared/cash-plan.js';
+import { reportCurrencyView } from '../shared/report-currency-view.js';
 
 export function escapeHtml(input: unknown): string {
   return String(input ?? '').replace(
@@ -48,7 +49,8 @@ footer{border-top:1px solid var(--line);margin-top:36px;padding-top:16px;font-si
 `;
 
 export function reportHtml(task: AnalysisTask): string {
-  const report = task.report!;
+  const currencyView = reportCurrencyView(task.report!);
+  const report = currencyView.report;
   const e = escapeHtml;
   const sourceIndex = new Map(report.snapshot.map((material, index) => [material.id, index + 1]));
   const refs = (items: EvidenceRef[], quotes = false): string =>
@@ -89,18 +91,36 @@ export function reportHtml(task: AnalysisTask): string {
     insufficient: '材料不足',
     conflict: '口径冲突',
   }[report.verdict];
-  const headline = {
-    supported: report.bridge ? '现金桥已核对' : '金额可核对',
-    attention: '经营现金低于合并净利润',
-    insufficient: '材料不足',
-    conflict: '输入存在冲突',
-  }[report.verdict];
-  const summary = {
-    supported: report.bridge ? '利润与调整项之和等于经营现金净额。' : report.summary,
-    attention: '经营现金与利润的差额已核对，经营原因仍需询证。',
-    insufficient: '保留可采用金额；补全材料后重算。',
-    conflict: '保留冲突来源，请修正后重算。',
-  }[report.verdict];
+  const headline = currencyView.issues.length
+    ? report.headline
+    : {
+        supported: report.bridge ? '现金桥已核对' : '金额可核对',
+        attention: '经营现金低于合并净利润',
+        insufficient: '材料不足',
+        conflict: '输入存在冲突',
+      }[report.verdict];
+  const summary = currencyView.issues.length
+    ? report.summary
+    : {
+        supported: report.bridge ? '利润与调整项之和等于经营现金净额。' : report.summary,
+        attention: '经营现金与利润的差额已核对，经营原因仍需询证。',
+        insufficient: '保留可采用金额；补全材料后重算。',
+        conflict: '保留冲突来源，请修正后重算。',
+      }[report.verdict];
+  const currencyReview = currencyView.issues.length
+    ? section(
+        '币种与单位核对',
+        `<p class="muted">相关历史计算暂停展示，原记录与来源保留；以下原始金额未转换为人民币。历史询证问题保留，需先核对触发依据。</p>${table(
+          '<th>年度 / 指标</th><th class="amount">保存金额</th><th>单位 / 币种</th><th>原文依据</th>',
+          currencyView.issues
+            .map(
+              (issue) =>
+                `<tr><td>${e(issue.year)} · ${e(metricLabels[issue.key])}</td><td class="amount">${e(issue.value)}</td><td>${e({ yuan: '元', wan: '万元', yi: '亿元', usd: '美元', USD: '美元' }[issue.unit] || issue.unit)} · ${e(issue.currency || '未确认')}</td><td>${refs(issue.sourceRefs, true) || '未保存原文引用'}</td></tr>`
+            )
+            .join('')
+        )}`
+      )
+    : '';
   const metrics = table(
     `<th>指标</th><th class="amount">${e(report.year)} 年</th><th class="amount">${e(report.previousYear)} 年</th><th>公式 / 口径</th>`,
     report.metrics
@@ -221,5 +241,5 @@ export function reportHtml(task: AnalysisTask): string {
         `<div class="source" id="source-${index + 1}"><h3>来源 ${index + 1} · ${e(material.title)}</h3><div class="source-meta">${e(material.company)} · 披露日期 ${e(material.documentDate)}<br>${e(material.filename)}${material.sourceUrl ? ` · <a href="${e(material.sourceUrl)}">打开公开原始报告</a>` : ''}<div class="hash">SHA-256 ${e(material.sha256)}</div></div>${table('<th>采用状态</th><th>年度 / 指标</th><th class="amount">原始金额</th><th>口径</th><th>定位与摘录</th>', material.observations.map((obs) => `<tr><td>${task.excludedMetrics.includes(obs.key) ? '本次排除' : '已保存输入'}</td><td>${e(obs.year)}<br>${e(metricLabels[obs.key])}</td><td class="amount">${e(obs.value)}<span class="unit">${{ yuan: '元', wan: '万元', yi: '亿元', usd: '美元' }[obs.unit]}</span></td><td>${e(obs.currency)}<br>${{ consolidated: '合并报表', parent: '母公司报表', unknown: '口径未确认' }[obs.scope]}<br>${{ annual: '年度', interim: '半年度', quarterly: '季度', unknown: '期间未确认' }[obs.period ?? 'unknown']}</td><td>${obs.page === null ? '页码未提供' : `PDF 第 ${e(obs.page)} 页`}<div class="quote">${e(obs.quote)}</div>${obs.components?.length ? `<div class="quote">原始分组行：${obs.components.map((c) => `${e(c.label)} = ${e(c.value)}（${c.page === null ? '页码未提供' : `PDF 第 ${e(c.page)} 页`}）`).join('；')}</div>` : ''}</td></tr>`).join(''), 'observations')}<p class="source-meta">保存的输入不等于全部采用；实际采用以口径检查为准。被排除的指标未参与本次计算。</p></div>`
     )
     .join('');
-  return `<!doctype html><html lang="zh-Hans"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>${e(task.title)} · 析光 Prispect</title><style>${style}</style></head><body><main class="document"><header><div class="identity"><span class="brand">析光 Prispect</span><span>核查底稿</span></div><h1>${e(headline)}</h1><div class="meta"><span>${e(report.company)}</span><span>${e(report.year)} 年度 · ${e(report.previousYear)} 比较年度</span><span>${e(verdict)}</span></div><p class="summary">${e(summary)}</p></header>${section('指标与计算', metrics)}${section('现金桥', bridge)}${section('口径检查', checks)}${section('组合规则评估记录', crossSignalChecks)}${crossSignals ? section('组合线索与下一项核查', crossSignals) : ''}${findings ? section('解释与依据', findings) : ''}${section('后续询证', questions || '<p class="muted">本次没有生成询证问题。</p>')}${section('场景核查与用户记录', context)}${cashPlan}${section('模型解释', `<div class="meta"><span>${e(modelStatus)}</span>${report.model.provider ? `<span>${e(report.model.provider)} · ${e(report.model.name)}</span>` : ''}</div><p class="muted">${e(modelDisclosure)}</p>${report.model.text ? `<p class="model-text">${e(report.model.text)}</p>` : report.model.error ? `<p>${e(report.model.error)}</p>` : ''}`)}${section('来源与输入快照', sources)}<div class="closing">${section('适用范围', `<div class="note"><ul>${report.limitations.map((l) => `<li>${e(l)}</li>`).join('')}<li>输入口径一致不等于原件真实性已核验。</li><li>原始报告保留发行人及披露平台权利。本底稿不代表财报的商用再分发授权。</li></ul></div>`)}<footer>任务 ${e(task.id)}<br>生成时间 ${e(task.updatedAt)} · 此文件保存导出时的输入、结果与问题状态。</footer></div></main></body></html>`;
+  return `<!doctype html><html lang="zh-Hans"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light dark"><title>${e(task.title)} · 析光 Prispect</title><style>${style}</style></head><body><main class="document"><header><div class="identity"><span class="brand">析光 Prispect</span><span>核查底稿</span></div><h1>${e(headline)}</h1><div class="meta"><span>${e(report.company)}</span><span>${e(report.year)} 年度 · ${e(report.previousYear)} 比较年度</span><span>${e(verdict)}</span></div><p class="summary">${e(summary)}</p></header>${currencyReview}${section('指标与计算', metrics)}${section('现金桥', bridge)}${section('口径检查', checks)}${section('组合规则评估记录', crossSignalChecks)}${crossSignals ? section('组合线索与下一项核查', crossSignals) : ''}${findings ? section('解释与依据', findings) : ''}${section('后续询证', questions || '<p class="muted">本次没有生成询证问题。</p>')}${section('场景核查与用户记录', context)}${cashPlan}${section('模型解释', `<div class="meta"><span>${e(modelStatus)}</span>${report.model.provider ? `<span>${e(report.model.provider)} · ${e(report.model.name)}</span>` : ''}</div><p class="muted">${e(modelDisclosure)}</p>${currencyView.interpretationWithheld ? '<p class="muted">历史模型解释涉及待核对的币种或单位，暂不展示；原执行状态与完整记录保留。</p>' : report.model.text ? `<p class="model-text">${e(report.model.text)}</p>` : report.model.error ? `<p>${e(report.model.error)}</p>` : ''}`)}${section('来源与输入快照', sources)}<div class="closing">${section('适用范围', `<div class="note"><ul>${report.limitations.map((l) => `<li>${e(l)}</li>`).join('')}<li>输入口径一致不等于原件真实性已核验。</li><li>原始报告保留发行人及披露平台权利。本底稿不代表财报的商用再分发授权。</li></ul></div>`)}<footer>任务 ${e(task.id)}<br>生成时间 ${e(task.updatedAt)} · 此文件保存导出时的输入、结果与问题状态。</footer></div></main></body></html>`;
 }

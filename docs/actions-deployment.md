@@ -103,15 +103,82 @@ git rev-parse HEAD
 sha256sum deploy/prune-deployments.py deploy/ci-deploy.sh
 ```
 
-核对后，持有固定 `/var/lib/cashlens-deploy/deploy.lock`，完成运行时与语法检查，再在 `/usr/local/sbin` 创建 root:root、0755 的临时文件，先原子替换清理 helper，再替换 publisher。更新锁与运行锁是同一把锁，`flock -n` 忙碌时退出；原子替换避免截断正在执行的 Bash 文件。
+安装前，在管理员独立维护的可信目录保存现有 publisher 的副本、权限及哈希，以便管理回退。不要将它写入业务备份目录。把已审查的两个源码哈希分别设为 `reviewed_prune_sha256` 和 `reviewed_publisher_sha256`；不能用现场重新计算出的未知哈希代替审查结果。
+
+核对后，以 `O_NOFOLLOW` 打开并验证固定 `/var/lib/cashlens-deploy/deploy.lock`，不截断锁文件。源码目录、安装目录、部署目录及其祖先必须为 root 持有且他人不可写；锁必须是同一 inode 的 root 常规文件、单硬链接。持锁完成运行时与语法检查，并再次核对临时文件的预期哈希，再先原子替换清理 helper、后替换 publisher。更新锁与运行锁是同一把锁，非阻塞取得失败时退出；原子替换避免截断正在执行的 Bash 文件。
 
 ```bash
-sudo bash -s -- "$PWD" <<'SH'
+sudo /usr/bin/python3 -I - "$PWD" "${reviewed_prune_sha256:?请设置已审查的清理器哈希}" "${reviewed_publisher_sha256:?请设置已审查的发布器哈希}" <<'INSTALL_PY'
+import fcntl, hashlib, os, re, stat, sys
+
+def trusted_directory(path):
+    if not os.path.isabs(path) or os.path.normpath(path) != path:
+        raise ValueError('Expected a canonical absolute directory.')
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+    fd = os.open('/', flags)
+    try:
+        for part in path.split('/')[1:]:
+            info = os.fstat(fd)
+            if info.st_uid != 0 or info.st_mode & 0o022:
+                raise ValueError('Directory ancestry is not trusted.')
+            child = os.open(part, flags, dir_fd=fd)
+            os.close(fd)
+            fd = child
+        info = os.fstat(fd)
+        if info.st_uid != 0 or info.st_mode & 0o022:
+            raise ValueError('Directory is not trusted.')
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+def trusted_file(info):
+    if (not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or
+            info.st_mode & 0o022 or info.st_nlink != 1):
+        raise ValueError('File is not a trusted root regular file.')
+
+if os.geteuid() != 0 or len(sys.argv) != 4:
+    raise SystemExit('An administrator and two reviewed hashes are required.')
+if any(not re.fullmatch(r'[0-9a-f]{64}', value) for value in sys.argv[2:]):
+    raise SystemExit('Invalid reviewed hash.')
+source_fd = trusted_directory(os.path.join(sys.argv[1], 'deploy'))
+try:
+    for name, expected in zip(('prune-deployments.py', 'ci-deploy.sh'), sys.argv[2:]):
+        fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=source_fd)
+        with os.fdopen(fd, 'rb') as source:
+            trusted_file(os.fstat(source.fileno()))
+            if hashlib.file_digest(source, 'sha256').hexdigest() != expected:
+                raise ValueError('Source differs from the reviewed file.')
+finally:
+    os.close(source_fd)
+sbin_fd = trusted_directory('/usr/local/sbin')
+try:
+    for name in ('cashlens-ci-deploy', 'cashlens-prune-deployments'):
+        try:
+            trusted_file(os.stat(name, dir_fd=sbin_fd, follow_symlinks=False))
+        except FileNotFoundError:
+            if name != 'cashlens-prune-deployments':
+                raise
+finally:
+    os.close(sbin_fd)
+inbox_fd = trusted_directory('/var/lib/cashlens-deploy')
+try:
+    lock_fd = os.open('deploy.lock', os.O_RDWR | os.O_NOFOLLOW | os.O_CLOEXEC, dir_fd=inbox_fd)
+    actual = os.fstat(lock_fd)
+    trusted_file(actual)
+    if actual.st_dev != os.fstat(inbox_fd).st_dev:
+        raise ValueError('Deployment lock is on an unexpected filesystem.')
+    named = os.stat('deploy.lock', dir_fd=inbox_fd, follow_symlinks=False)
+    if (actual.st_dev, actual.st_ino) != (named.st_dev, named.st_ino):
+        raise ValueError('Deployment lock changed while opening.')
+    fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    os.dup2(lock_fd, 9, inheritable=True)
+finally:
+    os.close(inbox_fd)
+os.execve('/bin/bash', ['bash', '-c', r'''
 set -euo pipefail
 umask 077
 reviewed_dir=$1
-exec 9>/var/lib/cashlens-deploy/deploy.lock
-flock -n 9
 python3 - <<'PY'
 import os, shutil, stat, sys
 assert sys.version_info >= (3, 11)
@@ -137,11 +204,14 @@ import sys
 compile(Path(sys.argv[1]).read_bytes(), sys.argv[1], 'exec')
 PY
 bash -n "$publisher_stage"
+printf '%s  %s\n' "$2" "$prune_stage" "$3" "$publisher_stage" | sha256sum -c -
 mv -Tf -- "$prune_stage" /usr/local/sbin/cashlens-prune-deployments
 mv -Tf -- "$publisher_stage" /usr/local/sbin/cashlens-ci-deploy
 stat -c '%U:%G %a %n' /usr/local/sbin/cashlens-prune-deployments /usr/local/sbin/cashlens-ci-deploy
 sha256sum /usr/local/sbin/cashlens-prune-deployments /usr/local/sbin/cashlens-ci-deploy
-SH
+''', 'cashlens-admin-install', *sys.argv[1:]],
+    {'PATH': '/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C'})
+INSTALL_PY
 ```
 
 核对已安装文件的权限和哈希。上述安装块退出、释放更新锁后，仍由管理身份独立执行固定 helper 清理既有部署文件；它自行取得同一部署锁，忙碌时拒绝执行，无需传入目录或手工删除文件：
@@ -153,6 +223,8 @@ sudo /usr/local/sbin/cashlens-healthcheck
 ```
 
 核对 helper 输出的删除、跳过和警告，以及 current 和服务健康。以上是安装与操作步骤，不是服务器已经安装或已完成清理的验收记录；不读取或输出备份中的配置内容。
+
+2026-10-03 的管理员只读实测确认清理 helper 尚未安装、旧 publisher 尚未接入清理；磁盘 91% 导致固定健康检查失败。[容量记录与下一轮管理员任务](production-capacity-2026-10-03.md)保留实测、峰值预算、明确的安装授权范围及验收条件。
 
 ## 验收与当前边界
 

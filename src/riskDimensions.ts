@@ -1,14 +1,15 @@
 import type { EvidenceRef, Report } from '../shared/contracts';
-import { metricValue, money, type Locale } from './format';
+import { reportCurrencyView } from '../shared/report-currency-view';
+import { metricValue, type Locale } from './format';
 
 /**
- * 四维风险透视 —— 数据映射。
- * 全部状态由报告真实计算结果推导，不引入任何推断值或虚构数据。
+ * Read-only review states for saved original-report evidence.
+ * Input conflicts pause interpretation; they are not adverse company events.
  *
  * - 财务：净利润 / 经营现金 / 现金利润比（来自引擎计算）
  * - 证据来源：披露记录的可溯源性（来源、页码覆盖、文件哈希记录）
- * - 口碑：媒体报道与舆论（数据源未接入时如实显示"待接入"）
- * - 风险：现金桥结论、证据冲突、未决问题、检查项（来自引擎核对）
+ * - 口碑：本份原件报告的范围，不在渲染时另取新闻
+ * - 核查事项：现金桥结论、证据冲突、未决问题、检查项
  */
 
 export type RiskStatus = 'good' | 'warn' | 'bad' | 'unknown';
@@ -43,57 +44,147 @@ export interface RiskPerspective {
 }
 
 export const riskStatusText: Record<RiskStatus, LocaleText> = {
-  good: { zh: '通过', en: 'Clear' },
-  warn: { zh: '关注', en: 'Watch' },
-  bad: { zh: '风险', en: 'Risk' },
-  unknown: { zh: '未覆盖', en: 'Not covered' },
+  good: { zh: '已核对', en: 'Checked' },
+  warn: { zh: '待核对', en: 'Needs review' },
+  bad: { zh: '需关注', en: 'Attention' },
+  unknown: { zh: '暂不能判断', en: 'Not assessed' },
 };
 
-const statusRank: Record<RiskStatus, number> = { bad: 4, warn: 3, unknown: 2, good: 1 };
-
-export function deriveRiskPerspective(report: Report, locale: Locale): RiskPerspective {
+export function deriveRiskPerspective(savedReport: Report, locale: Locale): RiskPerspective {
+  const currencyView = reportCurrencyView(savedReport);
+  const report = currencyView.report;
   const metric = (key: string) => report.metrics.find((item) => item.key === key);
   const net = metric('netProfit');
   const cash = metric('operatingCashFlow');
   const conversion = metric('cashConversion');
-  const conversionNumber = conversion?.value != null ? Number(conversion.value) : null;
+  const numberOf = (value: string | null | undefined) => {
+    if (value == null || !value.trim()) return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  };
+  const conversionNumber = numberOf(conversion?.value);
+  const netNumber = numberOf(net?.value);
+  const cashNumber = numberOf(cash?.value);
+  const snapshot = report.snapshot ?? [];
+  const checks = report.checks ?? [];
+  const failChecks = checks.filter((item) => item.status === 'fail');
+  const warnChecks = checks.filter((item) => item.status === 'warn');
+  const passChecks = checks.filter((item) => item.status === 'pass');
+  const issuerMatches = (company: string) =>
+    company.trim().toLowerCase() === report.company.trim().toLowerCase();
+  const financialObservations = snapshot.flatMap((material) =>
+    material.observations.filter(
+      (observation) =>
+        observation.year === report.year &&
+        ['netProfit', 'operatingCashFlow'].includes(observation.key)
+    )
+  );
+  const financialScopeConflict =
+    snapshot.some((material) => !issuerMatches(material.company)) ||
+    financialObservations.some(
+      (observation) =>
+        observation.scope === 'parent' ||
+        (observation.period != null && !['annual', 'unknown'].includes(observation.period))
+    );
+  const inputConflict =
+    report.verdict === 'conflict' || failChecks.length > 0 || financialScopeConflict;
+  // Adjustment/bridge and prior-year checks cannot invalidate independently
+  // confirmed current-year profit and cash. Unknown failed checks stay blocked.
+  const financialInputConflict =
+    financialScopeConflict ||
+    (savedReport.verdict === 'conflict' &&
+      failChecks.length === 0 &&
+      !currencyView.bridgeBlocked) ||
+    failChecks.some(
+      (check) =>
+        !['group-sum', 'bridge-balance'].includes(check.id) &&
+        !/^\d{4}-(inventoryAdjustment|receivablesAdjustment|payablesAdjustment|otherAdjustments)$/.test(
+          check.id
+        ) &&
+        ![`${report.previousYear}-netProfit`, `${report.previousYear}-operatingCashFlow`].includes(
+          check.id
+        )
+    );
+  const unsupportedCurrency = currencyView.currentTotalsBlocked;
+  const confirmedFinancialScope =
+    snapshot.length > 0 &&
+    snapshot.every((material) => issuerMatches(material.company)) &&
+    ['netProfit', 'operatingCashFlow'].every((key) =>
+      financialObservations.some((observation) => observation.key === key)
+    ) &&
+    financialObservations.every(
+      (observation) =>
+        observation.scope === 'consolidated' &&
+        observation.period === 'annual' &&
+        observation.currency === 'CNY'
+    );
+  const financialAvailable =
+    !financialInputConflict &&
+    !unsupportedCurrency &&
+    confirmedFinancialScope &&
+    netNumber != null &&
+    cashNumber != null;
+  const ratioAvailable =
+    financialAvailable && netNumber! > 0 && conversionNumber != null && conversion?.unit === '%';
+  const incomplete =
+    report.verdict === 'insufficient' ||
+    !financialAvailable ||
+    (netNumber! > 0 && !ratioAvailable) ||
+    report.coverage.present < report.coverage.total;
 
   // ---------- 财务维度 ----------
-  const netNumber = net?.value != null ? Number(net.value) : null;
   const financeStatus: RiskStatus =
-    netNumber != null && netNumber < 0
-      ? 'bad'
-      : conversionNumber == null
-        ? 'unknown'
-        : conversionNumber >= 100
-          ? 'good'
-          : conversionNumber >= 70
-            ? 'warn'
-            : 'bad';
+    inputConflict ||
+    !financialAvailable ||
+    report.verdict === 'insufficient' ||
+    (netNumber! > 0 && !ratioAvailable)
+      ? 'unknown'
+      : netNumber! <= 0 || conversionNumber! < 100
+        ? 'warn'
+        : 'good';
   const finance: RiskDimension = {
     key: 'finance',
     label: { zh: '财务', en: 'Finance' },
     plain: { zh: '经营现金与利润是否匹配', en: 'How does operating cash compare with profit?' },
     status: financeStatus,
-    summary:
-      netNumber != null && netNumber < 0
-        ? { zh: '公司净利润为负，处于亏损状态', en: 'The company reported a net loss' }
-        : financeStatus === 'good'
+    summary: financialInputConflict
+      ? {
+          zh: '材料主体、期间、币种或数值存在待核对项，暂停财务解读',
+          en: 'Issuer, period, currency or amount checks need review; financial interpretation is paused',
+        }
+      : unsupportedCurrency
+        ? {
+            zh: '本项核查采用人民币年度合并口径；其他币种的历史比例暂不解读',
+            en: 'This review uses annual consolidated CNY evidence; historical ratios in other currencies are not interpreted',
+          }
+        : inputConflict
           ? {
-              zh: '经营现金净额不低于合并净利润',
-              en: 'Operating cash is at least consolidated net profit',
+              zh: '部分材料或现金桥待核对；保留独立支持的核心金额与比例，暂停现金桥归因',
+              en: 'Some evidence or cash-bridge checks remain; independently supported core amounts and ratios are retained while bridge attribution is paused',
             }
-          : financeStatus === 'warn'
+          : !financialAvailable ||
+              report.verdict === 'insufficient' ||
+              (netNumber! > 0 && !ratioAvailable)
             ? {
-                zh: '经营现金净额低于合并净利润，需要关注',
-                en: 'Operating cash is below consolidated net profit',
+                zh: '同年度合并口径或所需材料尚未齐备，已记录金额不代表核查完成',
+                en: 'Matching annual consolidated scope or required metrics are incomplete; no assessment is available',
               }
-            : financeStatus === 'bad'
+            : netNumber! <= 0
               ? {
-                  zh: '经营现金净额与合并净利润存在较大差距',
-                  en: 'Operating cash and consolidated net profit differ substantially',
+                  zh: '合并净利润非正，现金利润比不适用，请直接核对两项金额',
+                  en: 'Consolidated profit is nonpositive; review the two amounts directly instead of a cash-to-profit ratio',
                 }
-              : { zh: '财务指标数据不足', en: 'Financial metrics are insufficient' },
+              : financeStatus === 'good'
+                ? {
+                    zh: '经营现金净额不低于合并净利润',
+                    en: 'Operating cash is at least consolidated net profit',
+                  }
+                : financeStatus === 'warn'
+                  ? {
+                      zh: '经营现金净额低于合并净利润，需要关注',
+                      en: 'Operating cash is below consolidated net profit',
+                    }
+                  : { zh: '财务指标数据不足', en: 'Financial metrics are insufficient' },
     metrics: [
       {
         label: { zh: '合并净利润', en: 'Net profit' },
@@ -104,25 +195,19 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
       {
         label: { zh: '经营现金净额', en: 'Operating cash flow' },
         value: metricValue(cash, locale),
-        tone:
-          cash?.value != null && Number(cash.value) < 0
-            ? 'bad'
-            : financeStatus === 'good'
-              ? 'good'
-              : 'warn',
+        tone: 'plain',
         refs: cash?.sourceRefs ?? [],
       },
       {
         label: { zh: '现金利润比', en: 'Cash-to-profit ratio' },
-        value: metricValue(conversion, locale),
-        tone: financeStatus,
+        value: ratioAvailable ? metricValue(conversion, locale) : '—',
+        tone: ratioAvailable ? financeStatus : 'unknown',
         refs: conversion?.sourceRefs ?? [],
       },
     ],
   };
 
   // ---------- 证据来源维度（披露记录可溯源性） ----------
-  const snapshot = report.snapshot ?? [];
   const official = snapshot.filter((item) => item.origin === 'public-report');
   const withSourceUrl = snapshot.filter((item) => Boolean(item.sourceUrl));
   const withSha = snapshot.filter((item) => Boolean(item.sha256));
@@ -180,87 +265,123 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
       {
         label: { zh: '页码覆盖', en: 'Page coverage' },
         value: observationTotal > 0 ? `${observationWithPage}/${observationTotal}` : '—',
-        tone: observationTotal > 0 && observationWithPage === observationTotal ? 'good' : 'warn',
+        tone:
+          observationTotal === 0
+            ? 'unknown'
+            : observationWithPage === observationTotal
+              ? 'good'
+              : 'warn',
         refs: [],
       },
       {
         label: { zh: '文件哈希记录', en: 'File hash records' },
-        value: withSha.length === snapshot.length && snapshot.length > 0 ? '完整' : '部分',
-        tone: withSha.length === snapshot.length && snapshot.length > 0 ? 'good' : 'warn',
+        value:
+          snapshot.length === 0
+            ? '—'
+            : withSha.length === snapshot.length
+              ? locale === 'en'
+                ? 'Complete'
+                : '完整'
+              : locale === 'en'
+                ? 'Partial'
+                : '部分',
+        tone:
+          snapshot.length === 0 ? 'unknown' : withSha.length === snapshot.length ? 'good' : 'warn',
         refs: [],
       },
     ],
   };
 
-  // ---------- 口碑维度（报道数据由前端实时检索公开新闻源显示） ----------
+  // ---------- 本份原件报告未纳入媒体与讨论快照 ----------
   const reputation: RiskDimension = {
     key: 'reputation',
     label: { zh: '口碑', en: 'Reputation' },
-    plain: { zh: '大家怎么说', en: 'What does the market say?' },
+    plain: { zh: '本报告是否纳入公开报道', en: 'Does this report include public coverage?' },
     status: 'unknown',
     summary: {
-      zh: '检索近期公开报道，展示报道数量与原文链接，不自动判断好坏',
-      en: 'Recent public coverage with original links; no auto sentiment',
+      zh: '本份原件报告未纳入媒体与讨论快照；可在企业研究中查看已有来源和分析',
+      en: 'This original-report review has no media or discussion snapshot; existing sources and analysis are available in company research',
     },
     metrics: [
       {
         label: { zh: '媒体报道', en: 'Media coverage' },
-        value: '公开新闻检索',
+        value: locale === 'en' ? 'Not included' : '未纳入',
         tone: 'unknown',
         refs: [],
       },
     ],
   };
 
-  // ---------- 风险维度 ----------
-  const checks = report.checks ?? [];
-  const failChecks = checks.filter((item) => item.status === 'fail');
-  const warnChecks = checks.filter((item) => item.status === 'warn');
-  const passChecks = checks.filter((item) => item.status === 'pass');
+  // ---------- 核查事项 ----------
   const findings = report.findings ?? [];
   const attentionFindings = findings.filter((item) => item.severity === 'attention');
   const openQuestions = (report.questions ?? []).filter((item) => item.status === 'open');
   const riskStatus: RiskStatus =
-    failChecks.length > 0 || report.verdict === 'conflict'
-      ? 'bad'
+    inputConflict || incomplete || checks.length === 0 || !report.bridge
+      ? 'unknown'
       : warnChecks.length > 0 ||
           attentionFindings.length > 0 ||
           openQuestions.length > 0 ||
-          report.verdict === 'attention' ||
-          report.verdict === 'insufficient'
+          report.verdict === 'attention'
         ? 'warn'
         : 'good';
   const risk: RiskDimension = {
     key: 'risk',
-    label: { zh: '风险', en: 'Risk' },
-    plain: { zh: '有没有可疑信号', en: 'Any suspicious signals?' },
+    label: { zh: '核查事项', en: 'Review matters' },
+    plain: { zh: '材料与计算是否完成核对', en: 'Are evidence and calculations checked?' },
     status: riskStatus,
-    summary:
-      riskStatus === 'good'
+    summary: inputConflict
+      ? {
+          zh: '材料或计算口径待核对，现金桥归因暂停；这不证明企业存在负面事件',
+          en: 'Evidence or calculation scope needs review and bridge attribution is paused; this does not establish an adverse company event',
+        }
+      : riskStatus === 'good'
         ? { zh: '现金桥核对通过，未发现冲突', en: 'Cash bridge reconciled with no conflicts' }
-        : riskStatus === 'bad'
+        : riskStatus === 'unknown'
           ? {
-              zh: '发现证据冲突，现金桥已暂停',
-              en: 'Evidence conflicts; bridge attribution stopped',
+              zh: '材料或核查记录尚未齐备，保留已记录金额，暂停没有依据的解读',
+              en: 'Evidence or review records are incomplete; recorded amounts are retained and unsupported interpretation is paused',
             }
           : { zh: '存在待核实的信号', en: 'Signals need further verification' },
     metrics: [
       {
         label: { zh: '检查项', en: 'Checks' },
-        value: `${passChecks.length}/${checks.length} 通过`,
-        tone: failChecks.length > 0 ? 'bad' : warnChecks.length > 0 ? 'warn' : 'good',
+        value:
+          checks.length === 0
+            ? '—'
+            : `${passChecks.length}/${checks.length} ${locale === 'en' ? 'checked' : '已核对'}`,
+        tone:
+          checks.length === 0 || incomplete || inputConflict
+            ? 'unknown'
+            : warnChecks.length > 0
+              ? 'warn'
+              : 'good',
         refs: [],
       },
       {
         label: { zh: '证据冲突', en: 'Conflicts' },
-        value: `${failChecks.length + (report.verdict === 'conflict' ? 1 : 0)} 处`,
-        tone: failChecks.length > 0 || report.verdict === 'conflict' ? 'bad' : 'good',
+        value:
+          failChecks.length > 0
+            ? `${failChecks.length} ${locale === 'en' ? 'checks' : '处'}`
+            : inputConflict
+              ? locale === 'en'
+                ? 'Needs review'
+                : '待核对'
+              : checks.length === 0
+                ? '—'
+                : `0 ${locale === 'en' ? 'checks' : '处'}`,
+        tone: inputConflict ? 'warn' : checks.length === 0 || incomplete ? 'unknown' : 'good',
         refs: failChecks.flatMap((item) => item.sourceRefs),
       },
       {
         label: { zh: '未决问题', en: 'Open questions' },
-        value: `${openQuestions.length} 项`,
-        tone: openQuestions.length > 0 ? 'warn' : 'good',
+        value: `${openQuestions.length} ${locale === 'en' ? 'items' : '项'}`,
+        tone:
+          openQuestions.length > 0
+            ? 'warn'
+            : incomplete || checks.length === 0
+              ? 'unknown'
+              : 'good',
         refs: openQuestions.flatMap((item) =>
           item.trigger?.sourceRefs ? item.trigger.sourceRefs : []
         ),
@@ -270,32 +391,51 @@ export function deriveRiskPerspective(report: Report, locale: Locale): RiskPersp
 
   // ---------- 总览结论 ----------
   const dimensions: RiskDimension[] = [finance, credit, reputation, risk];
-  const worst = dimensions.reduce<RiskDimension>(
-    (current, item) => (statusRank[item.status] > statusRank[current.status] ? item : current),
-    dimensions[0]
-  );
-  const overallStatus = worst.status;
+  const overallStatus: RiskStatus =
+    inputConflict || incomplete
+      ? 'unknown'
+      : financeStatus === 'warn' || riskStatus === 'warn' || creditStatus === 'warn'
+        ? 'warn'
+        : riskStatus === 'good'
+          ? 'good'
+          : 'unknown';
   const overall: RiskPerspective['overall'] = {
     status: overallStatus,
-    title:
-      overallStatus === 'bad'
-        ? { zh: '发现风险信号', en: 'Risk signals found' }
-        : overallStatus === 'warn'
-          ? { zh: '需要关注', en: 'Needs attention' }
-          : overallStatus === 'unknown'
-            ? { zh: '待补充', en: 'Incomplete' }
-            : { zh: '低风险', en: 'Low risk' },
-    subtitle:
-      overallStatus === 'bad'
+    title: unsupportedCurrency
+      ? { zh: '币种口径待核对', en: 'Currency scope needs review' }
+      : inputConflict
+        ? { zh: '材料口径待核对', en: 'Evidence scope needs review' }
+        : incomplete
+          ? { zh: '材料待补充', en: 'More evidence is needed' }
+          : overallStatus === 'warn'
+            ? { zh: '有待核查事项', en: 'Review matters remain' }
+            : overallStatus === 'unknown'
+              ? { zh: '部分事项暂不能判断', en: 'Some matters cannot be assessed yet' }
+              : { zh: '已完成所列财务核查', en: 'Listed financial checks completed' },
+    subtitle: inputConflict
+      ? {
+          zh: '先核对材料主体、年度、合并范围、币种与数值；输入冲突不等于企业风险',
+          en: 'Check issuer, annual period, consolidation, currency and amounts first; input conflicts are not company risk',
+        }
+      : unsupportedCurrency
         ? {
-            zh: '部分维度查出风险信号，请查看对应维度',
-            en: 'Some dimensions show risk; check the details',
+            zh: '历史金额与来源保持原样，本项人民币核查暂不采用其他币种的比例或归因',
+            en: 'Historical amounts and sources remain unchanged; this CNY review withholds ratios and attribution in other currencies',
           }
         : overallStatus === 'warn'
-          ? { zh: '部分维度需要进一步核实', en: 'Some dimensions need further review' }
+          ? {
+              zh: '结合原文与所需材料继续核对，不从历史信号直接判断本次安排可靠性',
+              en: 'Review the originals and required records; historical signals do not establish the reliability of a current arrangement',
+            }
           : overallStatus === 'unknown'
-            ? { zh: '部分维度数据尚未接入', en: 'Some dimensions are not connected yet' }
-            : { zh: '四维核验未发现明显风险', en: 'No obvious risk found across dimensions' },
+            ? {
+                zh: '缺少或未确认的材料不作通过处理，公开报道不在本份原件报告范围内',
+                en: 'Missing or unconfirmed evidence is not a passed check; public coverage is outside this original-report review',
+              }
+            : {
+                zh: '仅说明本报告所列金额与现金桥核对完成，公开报道仍需另看企业研究',
+                en: 'Only the listed amounts and cash bridge have been checked; public coverage remains part of company research',
+              },
     scope: {
       zh: `${report.company} · ${report.year} 年报 · 覆盖率 ${report.coverage.present}/${report.coverage.total}`,
       en: `${report.company} · FY${report.year} · coverage ${report.coverage.present}/${report.coverage.total}`,

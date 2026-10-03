@@ -43,6 +43,9 @@ const OriginalReview = lazyPage(
   (module) => module.CompanyAgentPage
 );
 
+const researchSupported = (run: CompanyResearchRun) =>
+  /^\d{6}$/.test(run.input.securityCode) && run.identity?.exchange !== 'us';
+
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const { t, locale, navigate, confirm, user } = useApp();
   const { removeLocal, isCurrentOwner } = useCompanyRecords();
@@ -73,6 +76,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         setError('');
         if (
           !contextRequested &&
+          researchSupported(next) &&
           !next.informationGap &&
           !next.context &&
           next.contextStatus !== 'loading' &&
@@ -89,6 +93,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         const assessmentKey = next.context ? `${id}:${next.context.fetchedAt}` : '';
         if (
           assessmentKey &&
+          researchSupported(next) &&
           !next.informationGap &&
           !next.assessment &&
           next.contextStatus !== 'loading' &&
@@ -161,7 +166,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     return () => window.removeEventListener('hashchange', reveal);
   }, [run?.id, id, section, reportFocus]);
   const refresh = async () => {
-    if (!run || updating) return;
+    if (!run || !researchSupported(run) || updating) return;
     const signal = request.current?.signal;
     setUpdating(true);
     try {
@@ -183,6 +188,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const refreshAssessment = async (focus?: string) => {
     if (
       !run?.context ||
+      !researchSupported(run) ||
       run.contextStatus === 'loading' ||
       assessmentUpdating ||
       run.assessmentStatus === 'loading'
@@ -258,6 +264,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       ? run.context
       : undefined;
   const active = run.status === 'queued' || run.status === 'running';
+  const pausedMarket = !run.informationGap && !researchSupported(run);
   const title =
     section === 'evidence'
       ? t('年报原件核查', 'Original-report review')
@@ -295,7 +302,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       <header className="context-page-heading">
         <div>
           <p className="context-eyebrow">
-            {section === 'overview'
+            {section === 'overview' && !pausedMarket
               ? t('分析报告', 'Analysis report')
               : run.informationGap?.name ||
                 run.identity?.companyName ||
@@ -315,7 +322,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               <>{run.input.securityCode || t('主体待定位', 'Entity unconfirmed')} · </>
             )}
             {run.input.year}{' '}
-            {section === 'overview'
+            {section === 'overview' && !pausedMarket
               ? t('年度分析 · 合并口径', 'annual analysis · consolidated scope')
               : t('年度公开资料', 'annual public sources')}{' '}
             ·{' '}
@@ -331,7 +338,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               {t('打印摘要', 'Print summary')}
             </button>
           )}
-          {!run.informationGap && (
+          {!run.informationGap && !pausedMarket && (
             <button
               className="button button-secondary"
               disabled={updating || run.contextStatus === 'loading'}
@@ -392,6 +399,21 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         <Suspense fallback={<LoaderCircle className="spinner" />}>
           <OriginalReview key={run.id} query={new URLSearchParams({ run: run.id })} />
         </Suspense>
+      ) : pausedMarket ? (
+        <section className="company-review-section">
+          <h2>{t('美股研究暂未开放', 'US-company research is paused')}</h2>
+          <p className="context-data-note">
+            {t(
+              '这份历史记录和原件仍可查看。外币金额不参与当前人民币核查，页面不会继续采集数据或生成分析。',
+              'This saved record and its original filing remain available. Foreign amounts are excluded from CNY review; this page will not collect more data or generate analysis.'
+            )}
+          </p>
+          <a className="button button-secondary" href={companyPath(run.id, 'evidence')}>
+            <FileSearch size={14} />
+            {t('查看已保存原件', 'View saved originals')}
+          </a>
+          {snapshot && <CompanySourcesView snapshot={snapshot} />}
+        </section>
       ) : section === 'overview' ? (
         <>
           {run.contextError && (
