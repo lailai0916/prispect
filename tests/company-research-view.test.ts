@@ -254,6 +254,27 @@ test('annual losses, negative operating cash, occupation and debt coverage have 
   }
 });
 
+test('financial-institution leads use observed flows and industry follow-up instead of generic leverage risk claims', () => {
+  const run = financialFixture({ totalLiabilities: '950.00', ocf: '180.00' });
+  run.context!.organizationType = '银行';
+  run.context!.profile.industry = '银行';
+  run.assessment = deriveCompanyAssessment(run);
+  const brief = deriveCompanyResearchBrief(run);
+  assert.match(brief.headline.text.zh, /全年盈利，经营活动净流入/);
+  assert.doesNotMatch(brief.headline.text.zh, /负债率.*承压|现金质量.*较强/);
+  assert.deepEqual(brief.headline.metricIds, ['2025-netProfit', '2025-ocf']);
+  assert.ok(brief.warnings.some((note) => note[0].includes('通用筛选仅作参考')));
+  assert.ok(brief.nextChecks.some((check) => check.text.zh.includes('监管偿付能力')));
+  run.context!.financials.find((row) => row.period === '2025-12-31')!.amounts.ocf = '0.00';
+  run.assessment = deriveCompanyAssessment(run);
+  assert.match(deriveCompanyResearchBrief(run).headline.text.zh, /经营现金净额为零/);
+  run.context!.financials.find((row) => row.period === '2025-12-31')!.amounts.ocf = null;
+  run.assessment = deriveCompanyAssessment(run);
+  const partial = deriveCompanyResearchBrief(run);
+  assert.match(partial.headline.text.zh, /全年盈利，经营现金资料待核对/);
+  assert.doesNotMatch(partial.headline.text.zh, /负债率.*承压/);
+});
+
 test('a favorable lead requires complete comparable data and positive prior profit before claiming profit growth', () => {
   const complete = deriveCompanyResearchBrief(financialFixture());
   assert.equal(complete.headline.text.zh, '合并利润增长，经营现金覆盖利润');

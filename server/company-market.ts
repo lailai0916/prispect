@@ -3,6 +3,8 @@ import type { CompanyIdentity } from '../shared/contracts.js';
 import {
   COMPANY_MARKET_WARNINGS as W,
   FINANCIAL_FIELD_SOURCES,
+  financialStatementTables,
+  financialMethodNote,
   type CompanyFinancialContext,
   type CompanyFinancialMetric,
   type CompanyFinancialSource,
@@ -19,12 +21,7 @@ export const COMPANY_MARKET_LIMITS = {
   rows: 60,
 } as const;
 const ENDPOINT = 'https://datacenter.eastmoney.com/securities/api/data/v1/get';
-const TABLES = {
-  income: 'RPT_F10_FINANCE_GINCOME',
-  cashflow: 'RPT_F10_FINANCE_GCASHFLOW',
-  balance: 'RPT_F10_FINANCE_GBALANCE',
-} as const;
-const sourceIds = Object.keys(TABLES) as CompanyFinancialSourceId[];
+const sourceIds: CompanyFinancialSourceId[] = ['income', 'cashflow', 'balance'];
 const fields = Object.keys(FINANCIAL_FIELD_SOURCES) as CompanyFinancialMetric[];
 const blankAmounts = () =>
   Object.fromEntries(fields.map((field) => [field, null])) as CompanyFinancialYear['amounts'];
@@ -141,9 +138,20 @@ function tableRows(
     throw new MarketFault('MARKET_IDENTITY_MISMATCH');
   const organizationCode = [...organizations][0]!;
   const organizationType = [...industries][0]!;
+  const recentYears = new Set(
+    [
+      ...new Set(
+        rows
+          .filter((row) => row.REPORT_TYPE === '年报')
+          .map((row) => savedDate(row.REPORT_DATE)?.match(/^(\d{4})-12-31(?: |T|$)/)?.[1])
+          .filter((year) => year && Number(year) <= requestedYear && Number(year) >= 2000)
+          .map(Number)
+      ),
+    ]
+      .sort((a, b) => b - a)
+      .slice(0, COMPANY_MARKET_LIMITS.years)
+  );
   const selected = new Map<number, TableYear>();
-  if (organizationType !== '通用')
-    return { rows: selected, organizationCode, organizationType, warnings: [W.industry.zh] };
   const warnings = new Set<string>();
   const conflicts = new Set<number>();
   for (const row of rows) {
@@ -152,7 +160,7 @@ function tableRows(
     if (!date || !/^\d{4}-12-31(?: |T|$)/.test(date))
       throw new MarketFault('MARKET_PERIOD_UNSUPPORTED');
     const year = Number(date.slice(0, 4));
-    if (year > requestedYear || year < 2000) continue;
+    if (year > requestedYear || year < 2000 || !recentYears.has(year)) continue;
     if (row.CURRENCY !== 'CNY') throw new MarketFault('MARKET_CURRENCY_UNSUPPORTED');
     const amounts: TableYear['amounts'] = {};
     for (const key of fields.filter((key) => FINANCIAL_FIELD_SOURCES[key].sourceId === id)) {
@@ -181,7 +189,7 @@ function tableRows(
   return { rows: selected, organizationCode, organizationType, warnings: [...warnings] };
 }
 
-/** Three bounded anonymous GETs. Failures are retained independently of official PDF research. */
+/** Three bounded GETs: income resolves the schema, then cash/balance load in parallel. */
 export async function retrieveCompanyFinancialContext(
   identity: CompanyIdentity,
   requestedYear: number,
@@ -223,93 +231,84 @@ export async function retrieveCompanyFinancialContext(
   const budget = dependencies.budget || { used: 0, maximum: COMPANY_MARKET_LIMITS.requests };
   // Optional context does not spend an incomplete allocation needed by official sources.
   const budgetUnavailable = budget.maximum - budget.used < COMPANY_MARKET_LIMITS.requests;
-  const results = await Promise.all(
-    sourceIds.map(async (id): Promise<TableResult> => {
-      const query = new URLSearchParams({
-        reportName: TABLES[id],
-        columns: 'ALL',
-        filter: `(SECUCODE="${secucode}")(REPORT_TYPE="年报")`,
-        pageNumber: '1',
-        pageSize: String(COMPANY_MARKET_LIMITS.rows),
-        sortTypes: '-1',
-        sortColumns: 'REPORT_DATE',
-        source: 'HSF10',
-        client: 'PC',
+  let tables = financialStatementTables(identity.shortName);
+  const readTable = async (id: CompanyFinancialSourceId): Promise<TableResult> => {
+    const query = new URLSearchParams({
+      reportName: tables[id],
+      columns: 'ALL',
+      filter: `(SECUCODE="${secucode}")(REPORT_TYPE="年报")`,
+      pageNumber: '1',
+      pageSize: String(COMPANY_MARKET_LIMITS.rows),
+      sortTypes: '-1',
+      sortColumns: 'REPORT_DATE',
+      source: 'HSF10',
+      client: 'PC',
+    });
+    const source: CompanyFinancialSource = {
+      id,
+      status: 'failed',
+      requestUrl: `${ENDPOINT}?${query}`,
+      retrievedAt: now(),
+    };
+    const result: TableResult = {
+      source,
+      organizationCode: null,
+      organizationType: null,
+      rows: new Map(),
+      warnings: [],
+    };
+    try {
+      if (dependencies.signal?.aborted) throw new MarketFault('MARKET_CANCELLED');
+      if (budgetUnavailable || budget.used >= budget.maximum)
+        throw new MarketFault('MARKET_REQUEST_BUDGET');
+      budget.used++;
+      const signal = AbortSignal.any([
+        AbortSignal.timeout(COMPANY_MARKET_LIMITS.timeoutMs),
+        ...(dependencies.signal ? [dependencies.signal] : []),
+      ]);
+      const response = await (dependencies.fetch || fetch)(source.requestUrl, {
+        method: 'GET',
+        credentials: 'omit',
+        redirect: 'error',
+        headers: { Accept: 'application/json' },
+        signal,
       });
-      const source: CompanyFinancialSource = {
-        id,
-        status: 'failed',
-        requestUrl: `${ENDPOINT}?${query}`,
-        retrievedAt: now(),
-      };
-      const result: TableResult = {
-        source,
-        organizationCode: null,
-        organizationType: null,
-        rows: new Map(),
-        warnings: [],
-      };
-      try {
-        if (dependencies.signal?.aborted) throw new MarketFault('MARKET_CANCELLED');
-        if (budgetUnavailable || budget.used >= budget.maximum)
-          throw new MarketFault('MARKET_REQUEST_BUDGET');
-        budget.used++;
-        const signal = AbortSignal.any([
-          AbortSignal.timeout(COMPANY_MARKET_LIMITS.timeoutMs),
-          ...(dependencies.signal ? [dependencies.signal] : []),
-        ]);
-        const response = await (dependencies.fetch || fetch)(source.requestUrl, {
-          method: 'GET',
-          credentials: 'omit',
-          redirect: 'error',
-          headers: { Accept: 'application/json' },
-          signal,
-        });
-        if (!response.ok) {
-          await response.body?.cancel().catch(() => {});
-          throw new MarketFault(
-            response.status === 429
-              ? 'MARKET_RATE_LIMITED'
-              : response.status === 403
-                ? 'MARKET_ACCESS_RESTRICTED'
-                : 'MARKET_SOURCE_HTTP'
-          );
-        }
-        const bytes = await boundedBody(response, COMPANY_MARKET_LIMITS.responseBytes);
-        source.sha256 = createHash('sha256').update(bytes).digest('hex');
-        source.retrievedAt = now();
-        const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-        Object.assign(
-          result,
-          tableRows(
-            parseExactFinancialJson(text),
-            id,
-            identity.securityCode,
-            secucode,
-            requestedYear
-          )
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {});
+        throw new MarketFault(
+          response.status === 429
+            ? 'MARKET_RATE_LIMITED'
+            : response.status === 403
+              ? 'MARKET_ACCESS_RESTRICTED'
+              : 'MARKET_SOURCE_HTTP'
         );
-        source.status =
-          result.organizationType && result.organizationType !== '通用'
-            ? 'unsupported'
-            : result.rows.size
-              ? 'available'
-              : 'empty';
-        if (source.status === 'empty' && result.warnings.includes(W.duplicate.zh)) {
-          source.status = 'failed';
-          source.errorCode = 'MARKET_ANNUAL_CONFLICT';
-        }
-      } catch (error) {
-        if (record(error) && error.code === 'COMPANY_PROGRESS_STORAGE') throw error;
-        source.errorCode = dependencies.signal?.aborted
-          ? 'MARKET_CANCELLED'
-          : error instanceof MarketFault
-            ? error.code
-            : signalErrorCode(error);
       }
-      return result;
-    })
-  );
+      const bytes = await boundedBody(response, COMPANY_MARKET_LIMITS.responseBytes);
+      source.sha256 = createHash('sha256').update(bytes).digest('hex');
+      source.retrievedAt = now();
+      const text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      Object.assign(
+        result,
+        tableRows(parseExactFinancialJson(text), id, identity.securityCode, secucode, requestedYear)
+      );
+      source.status = result.rows.size ? 'available' : 'empty';
+      if (source.status === 'empty' && result.warnings.includes(W.duplicate.zh)) {
+        source.status = 'failed';
+        source.errorCode = 'MARKET_ANNUAL_CONFLICT';
+      }
+    } catch (error) {
+      if (record(error) && error.code === 'COMPANY_PROGRESS_STORAGE') throw error;
+      source.errorCode = dependencies.signal?.aborted
+        ? 'MARKET_CANCELLED'
+        : error instanceof MarketFault
+          ? error.code
+          : signalErrorCode(error);
+    }
+    return result;
+  };
+  const income = await readTable('income');
+  if (income.organizationType) tables = financialStatementTables(income.organizationType);
+  const results = [income, ...(await Promise.all(sourceIds.slice(1).map(readTable)))];
   context.sources = results.map((result) => result.source);
   context.retrievedAt = now();
   const organizations = new Set(results.map((result) => result.organizationCode).filter(Boolean));
@@ -328,11 +327,8 @@ export async function retrieveCompanyFinancialContext(
     organizationCode: [...organizations][0] || null,
     organizationType: [...industries][0] || null,
   };
-  if (results.some((result) => result.source.status === 'unsupported')) {
-    context.status = 'unsupported';
-    context.warnings.push(W.industry.zh);
-    return context;
-  }
+  const methodNote = financialMethodNote(context.identity.organizationType || undefined);
+  if (methodNote) context.warnings.push(methodNote[0]);
   const allYears = [...new Set(results.flatMap((result) => [...result.rows.keys()]))]
     .sort((a, b) => b - a)
     .slice(0, COMPANY_MARKET_LIMITS.years)

@@ -18,6 +18,8 @@
 
 当前公司研究支持 A 股，财务核查采用人民币年度合并口径。美股新研究暂不开放；当前账号的历史记录与已保存原件仍可查看。其他币种保留原金额与单位，不作汇率换算，也不重新标注为人民币。
 
+银行、证券与保险公司已纳入公开财务取数和分析。程序按利润表返回的机构类型选择现金流量表与资产负债表；已取得金额、比例和依据正常展示，通用筛选附行业口径说明，缺失字段不补零。详见[金融机构支持记录](docs/financial-institution-support-2026-10-03.md)。
+
 本项目参加学军中学「回响·48H 青年创造营」X-Ray 方向。原件现金桥核对明确的财务问题，公司研究 Agent 扩展公开数据分析。单一历史现金比例不等于整体评级；析光的透明财务筛选等级不属于评级机构信用等级、授信决策或投资建议。用户需求与付费意愿仍属于研究假设。
 
 [文档主页](https://prispect.com/docs)提供六篇文章：[关于析光](https://prispect.com/docs/about)、[使用指南](https://prispect.com/docs/guide)、[核查方法](https://prispect.com/docs/methodology)、[隐私政策](https://prispect.com/docs/privacy)、[用户协议](https://prispect.com/docs/terms)与[版权声明](https://prispect.com/docs/copyright)。旧文章地址与原使用文档的章节链接仍兼容。政策描述已实现的服务，不等于法律合规认证。联系邮箱：`lailai0x394@gmail.com`。

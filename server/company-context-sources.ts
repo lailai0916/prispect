@@ -10,6 +10,7 @@ import {
   type ContextAmountField,
 } from '../shared/company-workspace.js';
 import { contextFen, contextYuan } from '../shared/company-analysis.js';
+import { financialStatementTables } from '../shared/company-market.js';
 import { parseExactFinancialJson, normalizeMarketAmount } from './company-market.js';
 import {
   boundedBody,
@@ -148,12 +149,6 @@ const fields: Record<
     currentLiabilities: 'TOTAL_CURRENT_LIAB',
     equity: 'TOTAL_PARENT_EQUITY',
   },
-};
-const tables = {
-  income: 'RPT_F10_FINANCE_GINCOME',
-  cashflow: 'RPT_F10_FINANCE_GCASHFLOW',
-  balance: 'RPT_F10_FINANCE_GBALANCE',
-  ratios: 'RPT_F10_FINANCE_MAINFINADATA',
 };
 const sinaFields: Record<'income' | 'cashflow' | 'balance', Record<string, ContextAmountField>> = {
   income: {
@@ -315,9 +310,14 @@ export async function retrieveCompanyContext(
   const primary = new Map<string, CompanyContextPeriod>(),
     secondary = new Map<string, CompanyContextPeriod>();
   const organizations = new Set<string>();
+  const organizationTypes = new Set<string>();
+  let tables = {
+    ...financialStatementTables(identity.shortName),
+    ratios: 'RPT_F10_FINANCE_MAINFINADATA',
+  };
   const blockedTables = new Set<string>();
   let invalidFinancialScope = false;
-  const tasks = (Object.keys(tables) as (keyof typeof tables)[]).map(async (kind) => {
+  const retrieveTable = async (kind: keyof typeof tables) => {
     const state = receipt(
       `em-${kind}`,
       '东方财富',
@@ -330,24 +330,35 @@ export async function retrieveCompanyContext(
       const response = await eastmoneyRows(reader, tables[kind], `(SECUCODE="${secucode}")`);
       state.url = response.url;
       state.responseHashes.push(response.sha256);
+      for (const row of response.rows) assertIssuer(row, identity);
+      const periods = [...new Set(response.rows.map((row) => dateValue(row.REPORT_DATE)))]
+        .filter(
+          (period) =>
+            /^20\d{2}-(?:03-31|06-30|09-30|12-31)$/.test(period) && period <= shanghaiDate(now)
+        )
+        .sort();
+      const retainedPeriods = new Set([
+        ...periods.filter((period) => period.endsWith('-12-31')).slice(-6),
+        ...periods.filter((period) => !period.endsWith('-12-31')).slice(-1),
+      ]);
+      const rows = response.rows.filter((row) => retainedPeriods.has(dateValue(row.REPORT_DATE)));
       if (kind !== 'ratios') {
-        for (const row of response.rows) {
+        for (const row of rows) {
           assertIssuer(row, identity);
           if (!/^\d{1,30}$/.test(textValue(row.ORG_CODE)) || !textValue(row.ORG_TYPE))
             throw new ApiFault(422, 'CONTEXT_SUBJECT_UNKNOWN', '无法核对组织主体');
           organizations.add(textValue(row.ORG_CODE));
-          if (textValue(row.ORG_TYPE) !== '通用') invalidFinancialScope = true;
+          organizationTypes.add(textValue(row.ORG_TYPE));
           if (row.CURRENCY !== 'CNY')
             throw new ApiFault(422, 'CONTEXT_CURRENCY', '财务币种未确认为人民币');
         }
       }
-      for (const row of response.rows) {
+      if (kind === 'income' && organizationTypes.size === 1) {
+        snapshot.organizationType = [...organizationTypes][0]!;
+        tables = { ...tables, ...financialStatementTables(snapshot.organizationType) };
+      }
+      for (const row of rows) {
         assertIssuer(row, identity);
-        const orgType = textValue(row.ORG_TYPE);
-        if (['银行', '证券', '保险'].some((word) => orgType.includes(word))) {
-          invalidFinancialScope = true;
-          continue;
-        }
         const period = dateValue(row.REPORT_DATE);
         if (!/^20\d{2}-(?:03-31|06-30|09-30|12-31)$/.test(period) || period > shanghaiDate(now))
           continue;
@@ -401,7 +412,16 @@ export async function retrieveCompanyContext(
             delete entry.fieldSources[field as ContextAmountField];
           }
     }
-  });
+  };
+  const incomeTask = retrieveTable('income');
+  const tasks = [
+    incomeTask,
+    ...(['cashflow', 'balance'] as const).map(async (kind) => {
+      await incomeTask;
+      await retrieveTable(kind);
+    }),
+    retrieveTable('ratios'),
+  ];
   tasks.push(
     ...(Object.keys(sinaFields) as (keyof typeof sinaFields)[]).map(async (kind) => {
       const url = new URL(SINA);
@@ -463,7 +483,7 @@ export async function retrieveCompanyContext(
   );
   const extras = retrieveCompanyExtras(snapshot, identity, reader);
   await Promise.allSettled(tasks);
-  if (organizations.size > 1) invalidFinancialScope = true;
+  if (organizations.size > 1 || organizationTypes.size > 1) invalidFinancialScope = true;
   for (const kind of blockedTables)
     if (kind !== 'ratios')
       for (const entry of secondary.values())
@@ -517,9 +537,7 @@ export async function retrieveCompanyContext(
       interim = snapshot.financials.filter((row) => !row.annual).slice(-1);
     snapshot.financials = [...annual, ...interim].sort((a, b) => a.period.localeCompare(b.period));
   } else
-    snapshot.warnings.push(
-      '金融机构或来源主体未通过通用行业口径检查，未组合财务金额；请继续核对主体和原件。'
-    );
+    snapshot.warnings.push('来源主体或机构类型存在冲突，未组合财务金额；请继续核对主体和原件。');
   snapshot.status = snapshot.financials.length ? 'partial' : 'unavailable';
   await dependencies.onSnapshot?.(structuredClone(snapshot));
   await extras;

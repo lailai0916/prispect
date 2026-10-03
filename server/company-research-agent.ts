@@ -387,6 +387,7 @@ export async function runCompanyResearchAgent(
       coverage: assessment.coverage,
       grade: assessment.grade,
       ratingConstraints: assessment.ratingConstraints,
+      methodNote: assessment.methodNote,
       industryAvailable: availableIndustry(),
       remainingToolCalls: limits.toolCalls - toolCalls,
       remainingPdfReads: limits.pdfReads - pdfReads,

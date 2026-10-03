@@ -481,7 +481,7 @@ test('disclosure providers retain their own request identity and reject another 
   });
 });
 
-test('public context preserves precise fields/provenance and stops financial inference on currency, bank or issuer conflicts', async () => {
+test('public context preserves precise fields/provenance and stops financial inference on currency or issuer conflicts', async () => {
   const snapshot = await retrieveCompanyContext(identity, { fetch: financeFetch() });
   assert.equal(snapshot.financials[0]?.amounts.netProfit, '90071992547409.91');
   assert.equal(snapshot.financials[0]?.amounts.shortLoan, null);
@@ -492,16 +492,60 @@ test('public context preserves precise fields/provenance and stops financial inf
     ),
   });
   assert.equal(foreign.financials[0]?.amounts.netProfit, null);
-  for (const patch of [
-    { ORG_TYPE: '银行' },
-    { SECURITY_CODE: '000001' },
-    { ORG_CODE: 'different' },
-  ]) {
+  for (const patch of [{ SECURITY_CODE: '000001' }, { ORG_CODE: 'different' }]) {
     const invalid = await retrieveCompanyContext(identity, {
       fetch: financeFetch((_kind, row) => ({ ...row, ...patch })),
     });
     assert.equal(invalid.financials.length, 0);
   }
+});
+
+test('public context retains financial-institution amounts and chooses industry-specific statements', async () => {
+  for (const [organizationType, prefix] of [
+    ['银行', 'B'],
+    ['保险', 'I'],
+    ['证券', 'S'],
+  ]) {
+    const kinds: string[] = [];
+    const snapshot = await retrieveCompanyContext(identity, {
+      fetch: financeFetch((kind, row) => {
+        kinds.push(kind);
+        return { ...row, ORG_TYPE: organizationType };
+      }),
+    });
+    assert.equal(snapshot.organizationType, organizationType);
+    assert.equal(snapshot.financials[0]?.amounts.netProfit, '90071992547409.91');
+    assert.equal(snapshot.financials[0]?.amounts.ocf, '80.00');
+    assert.equal(snapshot.financials[0]?.amounts.shortLoan, null);
+    assert.ok(kinds.includes(`RPT_F10_FINANCE_${prefix}CASHFLOW`));
+    assert.ok(kinds.includes(`RPT_F10_FINANCE_${prefix}BALANCE`));
+    assert.equal(companyReviewSummary({ ...run(), context: snapshot }).profit, '90071992547409.91');
+    assert.ok(!snapshot.warnings.some((warning) => warning.includes('未组合财务金额')));
+  }
+});
+
+test('legacy out-of-window currency omissions do not invalidate the current public context', async () => {
+  const baseline = financeFetch((_kind, row) => ({ ...row, ORG_TYPE: '银行' }));
+  const snapshot = await retrieveCompanyContext(identity, {
+    fetch: async (url, init) => {
+      const response = await baseline(url, init);
+      if (new URL(String(url)).hostname !== 'datacenter.eastmoney.com') return response;
+      const body = await response.json();
+      if (body.result?.data.length)
+        body.result.data = [
+          ...Array.from({ length: 6 }, (_, index) => ({
+            ...body.result.data[0],
+            REPORT_DATE: `${2025 - index}-12-31`,
+          })),
+          { ...body.result.data[0], REPORT_DATE: '2004-12-31', CURRENCY: null },
+        ];
+      return new Response(JSON.stringify(body));
+    },
+  });
+  assert.equal(companyReviewSummary({ ...run(), context: snapshot }).profit, '90071992547409.91');
+  assert.equal(companyReviewSummary({ ...run(), context: snapshot }).cash, '80.00');
+  assert.equal(snapshot.financials.length, 6);
+  assert.ok(!snapshot.financials.some((row) => row.period.startsWith('2004')));
 });
 
 test('optional model sees public context only and invalid citations fall back to saved rules', async () => {

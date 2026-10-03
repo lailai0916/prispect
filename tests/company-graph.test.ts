@@ -70,6 +70,7 @@ function fixture(
     requireParallel?: boolean;
     annual?: Buffer;
     market?: boolean;
+    bank?: boolean;
   } = {}
 ) {
   const calls: string[] = [];
@@ -95,7 +96,7 @@ function fixture(
                   SECUCODE: '300750.SZ',
                   SECURITY_CODE: '300750',
                   ORG_CODE: '10000000001',
-                  ORG_TYPE: '通用',
+                  ORG_TYPE: options.bank ? '银行' : '通用',
                   CURRENCY: 'CNY',
                   REPORT_TYPE: '年报',
                   REPORT_DATE: '2025-12-31 00:00:00',
@@ -118,7 +119,13 @@ function fixture(
         : json({ success: true, result: { data: [] } });
     if (address.endsWith('/topSearch/query'))
       return json([
-        { code: '300750', orgId: 'GD165627', zwjc: '测试公司', category: 'A股', delisted: 'false' },
+        {
+          code: '300750',
+          orgId: 'GD165627',
+          zwjc: options.bank ? '测试银行' : '测试公司',
+          category: 'A股',
+          delisted: 'false',
+        },
       ]);
     if (address.endsWith('/hisAnnouncement/query')) {
       const form = new URLSearchParams(String(init?.body));
@@ -328,6 +335,15 @@ test('LangGraph executes actual independent official searches in parallel and re
   assert.ok(output.agent?.evidence.some((item) => item.kind === 'announcement'));
   assert.equal(output.agent?.budget.modelRequests, 0);
   assert.ok(output.agent?.coverage.warnings.some((item) => item.includes('合同相对方')));
+});
+test('a bank name no longer stops original-document retrieval before the annual report', async () => {
+  const source = fixture({ bank: true, market: true });
+  const output = await runCompanyResearch(input, { root, fetch: source.fetch });
+  assert.equal(output.identity?.shortName, '测试银行');
+  assert.ok(source.calls.some((url) => url.endsWith('/15.PDF')));
+  assert.ok(!output.stoppedReason?.includes('金融机构财务口径'));
+  assert.equal(output.agent?.financialContext?.years[0]?.amounts.netProfit, '100000.00');
+  assert.equal(output.agent?.financialContext?.years[0]?.amounts.operatingCashFlow, '70000.00');
 });
 test('durable cancellation resumes only incomplete public nodes, reuses source hash, and refuses another entity or year', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'cashlens-graph-'));

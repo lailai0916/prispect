@@ -1293,12 +1293,7 @@ export async function runCompanyResearch(
           }
         );
         await branch('identity', 'completed', identity.shortName);
-        return {
-          identity,
-          ...(/银行|证券|保险|信托/.test(identity.shortName)
-            ? { stop: '金融机构财务口径需要专门方法，当前工业企业现金桥工具未支持。' }
-            : {}),
-        };
+        return { identity };
       })
     )
     .addNode(

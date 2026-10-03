@@ -8,6 +8,7 @@ import type {
 } from './company-workspace.js';
 import { contextAmountFields } from './company-workspace.js';
 import { contextFen, contextYuan, contextFieldLabels } from './company-analysis.js';
+import { financialMethodNote } from './company-market.js';
 
 export type AssessmentText = readonly [string, string];
 export type AssessmentDimensionId =
@@ -83,6 +84,7 @@ export interface CompanyAssessment {
   grade: 'A' | 'B' | 'C' | 'D' | 'NR';
   score: number | null;
   ratingConstraints?: AssessmentText[];
+  methodNote?: AssessmentText;
   methodologyVersion: 'financial-screen-v1';
   dimensions: AssessmentDimension[];
   metrics: AssessmentMetric[];
@@ -397,10 +399,13 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
   const unsupported =
     !!run.informationGap ||
     (!!run.identity && !['sse', 'szse'].includes(run.identity.exchange)) ||
-    /银行|证券|保险|多元金融/.test(snapshot?.profile.industry || '') ||
-    !!snapshot?.warnings.some((warning) =>
-      warning.includes('金融机构或来源主体未通过通用行业口径检查')
-    );
+    !!snapshot?.warnings.some((warning) => warning.includes('来源主体或机构类型存在冲突'));
+  const methodNote = financialMethodNote(
+    sameEntity ? snapshot?.organizationType : undefined,
+    sameEntity ? snapshot?.profile.industry : undefined,
+    run.identity?.shortName,
+    run.agent?.financialContext?.identity.organizationType || undefined
+  );
   const evidence: AssessmentEvidence[] = [];
   const metrics: AssessmentMetric[] = [];
   const gaps: AssessmentText[] = [];
@@ -1257,8 +1262,8 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
     ]);
   if (unsupported)
     gaps.push([
-      '当前通用行业筛选不适用于该主体或行业，暂不评级。',
-      'This issuer or industry is outside the general-industry screen; no grade is assigned.',
+      '主体或来源范围尚未核对，暂不评级。',
+      'The issuer or source scope is unconfirmed; no grade is assigned.',
     ]);
   if (!publicRows.some((row) => row.period === `${year}-12-31`))
     gaps.push([
@@ -1309,6 +1314,7 @@ export function deriveCompanyAssessment(run: CompanyResearchRun): CompanyAssessm
     ...resolveAssessmentRating(score, core),
     score,
     methodologyVersion: ASSESSMENT_METHODOLOGY_VERSION,
+    ...(methodNote ? { methodNote } : {}),
     dimensions,
     metrics,
     evidence,
@@ -1362,6 +1368,7 @@ export function buildAssessmentPublicPayload(
     },
     grade: assessment.grade,
     ratingConstraints: assessment.ratingConstraints,
+    methodNote: assessment.methodNote,
     score: assessment.score,
     methodologyVersion: assessment.methodologyVersion,
     methodology: ASSESSMENT_METHODOLOGY,

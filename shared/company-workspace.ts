@@ -169,6 +169,7 @@ export interface CompanyContextSnapshot {
   securityCode: string;
   orgId: string;
   companyName: string;
+  organizationType?: string;
   fetchedAt: string;
   status: 'available' | 'partial' | 'unavailable';
   financials: CompanyContextPeriod[];

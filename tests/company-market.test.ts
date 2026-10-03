@@ -30,7 +30,7 @@ const meta = {
   UPDATE_DATE: '2026-08-24 00:00:00',
 };
 const sourceId = (url: string): CompanyFinancialSourceId =>
-  url.includes('GINCOME') ? 'income' : url.includes('GCASHFLOW') ? 'cashflow' : 'balance';
+  url.includes('GINCOME') ? 'income' : url.includes('CASHFLOW') ? 'cashflow' : 'balance';
 const fieldRows = {
   income: { TOTAL_OPERATE_INCOME: '1000.00', NETPROFIT: '100.00', PARENT_NETPROFIT: '90.00' },
   cashflow: {
@@ -179,11 +179,33 @@ test('market source failures remain failures, retain valid tables, and never ret
   );
 });
 
-test('market metadata prevents combining mismatched entities, organization codes or financial-industry rows', async () => {
+test('out-of-window legacy currency omissions do not discard the six recent validated annual periods', async () => {
+  const source = fixture((id) =>
+    response([
+      ...Array.from({ length: 6 }, (_, index) => ({
+        ...meta,
+        ...fieldRows[id],
+        REPORT_DATE: `${2025 - index}-12-31 00:00:00`,
+      })),
+      { ...meta, ...fieldRows[id], REPORT_DATE: '2004-12-31 00:00:00', CURRENCY: null },
+    ])
+  );
+  const context = await retrieveCompanyFinancialContext(identity, 2025, { fetch: source.fetch });
+  assert.deepEqual(
+    context.years.map((row) => row.year),
+    [2020, 2021, 2022, 2023, 2024, 2025]
+  );
+  assert.equal(context.years.at(-1)?.amounts.netProfit, '100.00');
+  assert.equal(context.years.at(-1)?.amounts.operatingCashFlow, '70.00');
+  assert.ok(context.sources.every((source) => source.status === 'available'));
+});
+
+test('market metadata prevents combining mismatched entities, organization codes or organization types', async () => {
   for (const changed of [
     { SECUCODE: '300893.SH' },
     { SECURITY_CODE: '600519' },
     { ORG_CODE: '10000000001' },
+    { ORG_TYPE: '银行' },
   ]) {
     const source = fixture((id, rows) =>
       response(id === 'balance' ? [{ ...rows[0], ...changed }] : rows)
@@ -193,11 +215,6 @@ test('market metadata prevents combining mismatched entities, organization codes
     assert.equal(context.identity.status, 'conflict');
     assert.deepEqual(context.years, []);
   }
-  const bank = fixture((_id, rows) => response(rows.map((row) => ({ ...row, ORG_TYPE: '银行' }))));
-  const unsupported = await retrieveCompanyFinancialContext(identity, 2025, { fetch: bank.fetch });
-  assert.equal(unsupported.status, 'unsupported');
-  assert.equal(unsupported.identity.organizationType, '银行');
-  assert.deepEqual(unsupported.years, []);
   const wrongCurrency = fixture((id, rows) =>
     response(id === 'income' ? [{ ...rows[0], CURRENCY: 'USD' }] : rows)
   );
@@ -206,6 +223,29 @@ test('market metadata prevents combining mismatched entities, organization codes
   });
   assert.equal(partial.years[0]?.amounts.netProfit, null);
   assert.equal(partial.years[0]?.amounts.operatingCashFlow, '70.00');
+});
+
+test('financial institutions resolve their schema from income metadata without extra requests or invented fields', async () => {
+  for (const [organizationType, prefix] of [
+    ['银行', 'B'],
+    ['保险', 'I'],
+    ['证券', 'S'],
+  ]) {
+    const source = fixture((_id, rows) =>
+      response(rows.map((row) => ({ ...row, ORG_TYPE: organizationType })))
+    );
+    const context = await retrieveCompanyFinancialContext(identity, 2025, { fetch: source.fetch });
+    assert.equal(context.identity.organizationType, organizationType);
+    assert.equal(context.status, 'partial');
+    assert.equal(context.years[0]?.amounts.netProfit, '100.00');
+    assert.equal(context.years[0]?.amounts.operatingCashFlow, '70.00');
+    assert.equal(context.years[0]?.amounts.shortLoans, null);
+    assert.equal(source.requests.length, 3);
+    assert.ok(source.requests[0]!.includes('GINCOME'));
+    assert.ok(source.requests.some((url) => url.includes(`${prefix}CASHFLOW`)));
+    assert.ok(source.requests.some((url) => url.includes(`${prefix}BALANCE`)));
+    assert.ok(context.warnings.some((warning) => warning.includes('通用筛选仅作参考')));
+  }
 });
 
 test('market budget and cancellation do not send requests, and concurrent tables use a bounded body', async () => {
@@ -226,16 +266,22 @@ test('market budget and cancellation do not send requests, and concurrent tables
     'optional context cannot consume the last official-source attempts'
   );
   assert.equal(budget.used, 31);
-  let active = 0;
+  let active = 0,
+    peak = 0,
+    calls = 0;
   const parallel = await retrieveCompanyFinancialContext(identity, 2025, {
     fetch: async () => {
       active++;
+      calls++;
+      peak = Math.max(peak, active);
       await new Promise<void>((resolve) => setImmediate(resolve));
-      assert.equal(active, 3);
+      active--;
       return new Response('x', { headers: { 'content-length': '3000000' } });
     },
   });
   assert.ok(parallel.sources.every((item) => item.errorCode === 'MARKET_RESPONSE_TOO_LARGE'));
+  assert.equal(calls, 3);
+  assert.equal(peak, 2);
 });
 
 test('market cross-table profit conflicts and duplicate annual records withhold dependent comparisons', async () => {
