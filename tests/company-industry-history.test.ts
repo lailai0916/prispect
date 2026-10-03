@@ -227,6 +227,24 @@ test('refresh failure preserves the last dated cohort; a partial cohort is not a
   assert.equal(run.industry[old.period]!.fetchedAt, old.fetchedAt);
 });
 
+test('annual retrieval refresh bypasses public and cohort caches while missing years may reuse them', async () => {
+  const run = historyRun();
+  const bypasses: (boolean | undefined)[] = [];
+  const options = {
+    signal: new AbortController().signal,
+    current: () => true,
+    persist: async () => {},
+    retrieve: async (_code: string, period: string, dependencies?: { bypassCache?: boolean }) => {
+      bypasses.push(dependencies?.bypassCache);
+      return historySnapshot(period);
+    },
+  };
+  await retrieveIndustryHistoryYear(run, '2025-12-31', { ...options, refresh: false });
+  await retrieveIndustryHistoryYear(run, '2025-12-31', { ...options, refresh: false });
+  await retrieveIndustryHistoryYear(run, '2025-12-31', { ...options, refresh: true });
+  assert.deepEqual(bypasses, [false, true]);
+});
+
 test('annual window excludes quarters and mismatched subjects and is bounded to six acquired years', () => {
   const run = historyRun();
   run.context!.financials.push({

@@ -194,6 +194,13 @@ export function App() {
   const committedEntry = useRef(entryId);
   const restoringPage = useRef(false);
   const restoreCleanup = useRef<(() => void) | null>(null);
+  useLayoutEffect(() => {
+    const previous = history.scrollRestoration;
+    history.scrollRestoration = 'manual';
+    return () => {
+      history.scrollRestoration = previous;
+    };
+  }, []);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
   useLayoutEffect(() => companyReadingMemory.changeOwner(user?.id || null), [user?.id]);

@@ -101,6 +101,9 @@ export function trackPageScroll(canRemember: () => boolean) {
 export function restorePageScroll(point: PageScroll, finished: () => void) {
   let stopped = false;
   let frame = 0;
+  let previousHeight = -1;
+  let previousWidth = -1;
+  let stableFrames = 0;
   let timer: ReturnType<typeof setTimeout>;
   const stop = () => {
     if (stopped) return;
@@ -123,9 +126,21 @@ export function restorePageScroll(point: PageScroll, finished: () => void) {
     frame = 0;
     if (stopped) return;
     const root = document.documentElement;
-    if (!limit && root.scrollHeight - innerHeight + 1 < point.y) return;
+    if (!limit && root.scrollHeight - innerHeight + 1 < point.y) {
+      stableFrames = 0;
+      return;
+    }
     window.scrollTo({ left: point.x, top: point.y, behavior: 'instant' });
-    stop();
+    // Disclosures and sticky indexes may change layout after the first committed paint.
+    // Keep observing until geometry settles so browser anchoring cannot displace the result.
+    stableFrames =
+      root.scrollHeight === previousHeight && root.clientWidth === previousWidth
+        ? stableFrames + 1
+        : 0;
+    previousHeight = root.scrollHeight;
+    previousWidth = root.clientWidth;
+    if (limit || stableFrames >= 2) stop();
+    else frame = requestAnimationFrame(() => restore());
   };
   const schedule = () => {
     if (!stopped && !frame) frame = requestAnimationFrame(() => restore());

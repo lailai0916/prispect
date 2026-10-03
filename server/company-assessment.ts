@@ -519,7 +519,7 @@ function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
     {
       company: snapshot.companyName,
       securityCode: snapshot.securityCode,
-    organizationType: snapshot.organizationType,
+      organizationType: snapshot.organizationType,
       researchGoal: run.assessmentFocus?.slice(0, 1000),
       requestedYear: run.input.year,
       snapshotFetchedAt: snapshot.fetchedAt,

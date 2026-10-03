@@ -27,6 +27,7 @@ export async function retrieveIndustryHistoryYear(
   try {
     const snapshot = await options.retrieve(run.input.securityCode, period, {
       signal: options.signal,
+      bypassCache: options.refresh,
     });
     options.signal.throwIfAborted();
     if (

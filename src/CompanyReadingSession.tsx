@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import { resolveCompanyFocus, type CompanySection } from '../shared/company-workspace';
+import { useApp } from './context';
 import {
   companyReadingAnchors,
   companyReadingDefaultOpen,
@@ -23,6 +24,7 @@ export function CompanyReadingSession({
   section: CompanySection;
   focus?: string | null;
 }) {
+  const { historyNavigation } = useApp();
   const scope = companyReadingScope(owner, run);
   const previousSnapshot = useRef<string | null>(null);
   useLayoutEffect(() => {
@@ -100,7 +102,7 @@ export function CompanyReadingSession({
         }
       }
       frame = requestAnimationFrame(() => {
-        if (!explicitTarget) {
+        if (!explicitTarget && !historyNavigation) {
           const anchor = saved?.anchor ? document.getElementById(saved.anchor) : null;
           const anchorTop =
             anchor && root.contains(anchor) && anchor.getClientRects().length
@@ -142,6 +144,6 @@ export function CompanyReadingSession({
       // Never read the incoming page's DOM or persist after a scope/account invalidation.
       if (last) companyReadingMemory.save(scope, section, last);
     };
-  }, [owner, run.id, scope.snapshot, section, focus]);
+  }, [owner, run.id, scope.snapshot, section, focus, historyNavigation]);
   return null;
 }

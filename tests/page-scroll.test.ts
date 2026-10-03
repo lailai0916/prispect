@@ -175,11 +175,35 @@ test('history restoration waits for content and stops after returning to the rea
   app.observers[0]!.callback();
   app.paint();
   assert.deepEqual(app.calls, [{ x: 0, y: 900 }]);
+  assert.equal(finished, 0);
+  app.paint();
+  app.paint();
   assert.equal(finished, 1);
   assert.ok(app.observers.every((observer) => observer.disconnected));
+  const completedCalls = app.calls.length;
   app.observers[1]!.callback();
   app.paint();
-  assert.equal(app.calls.length, 1);
+  assert.equal(app.calls.length, completedCalls);
+});
+
+test('history restoration survives a delayed reading-index layout shift before releasing observers', (t) => {
+  const app = browser(t);
+  app.root.scrollHeight = 2000;
+  let finished = 0;
+  const stop = restorePageScroll({ x: 0, y: 900 }, () => finished++);
+  app.cleanups.push(stop);
+  app.paint();
+  app.paint();
+  assert.equal(finished, 0);
+  app.root.scrollHeight += 61;
+  app.observers[0]!.callback();
+  app.paint();
+  assert.equal(finished, 0);
+  app.paint();
+  app.paint();
+  assert.equal(finished, 1);
+  assert.deepEqual(app.calls.at(-1), { x: 0, y: 900 });
+  assert.ok(app.observers.every((observer) => observer.disconnected));
 });
 
 test('user scrolling wins over delayed restoration and late content cannot pull the page back', (t) => {
