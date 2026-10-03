@@ -58,7 +58,7 @@
   margin-bottom: 0;
 }
 .company-review h2,
-.company-review-details > summary {
+:is(.company-review-details, .context-disclosure) > summary {
   margin: 0;
   font-size: 15px;
   font-weight: 550;
@@ -228,11 +228,11 @@
   margin-top: 22px;
   font-size: var(--text-secondary);
 }
-.company-review-details {
+:is(.company-review-details, .context-disclosure) {
   margin-top: var(--card-gap);
   border-top: 1px solid var(--line);
 }
-.company-review-details > summary {
+:is(.company-review-details, .context-disclosure) > summary {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -242,13 +242,13 @@
   list-style: none;
   font-size: var(--text-ui);
 }
-.company-review-details > summary::-webkit-details-marker {
+:is(.company-review-details, .context-disclosure) > summary::-webkit-details-marker {
   display: none;
 }
-.company-review-details > summary svg {
+:is(.company-review-details, .context-disclosure) > summary svg {
   transition: transform 120ms ease;
 }
-.company-review-details[open] > summary svg {
+:is(.company-review-details, .context-disclosure)[open] > summary svg {
   transform: rotate(180deg);
 }
 .company-review-details .context-reading-controls {
@@ -383,7 +383,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .company-review-details > summary svg {
+  :is(.company-review-details, .context-disclosure) > summary svg {
     transition: none;
   }
 }
@@ -507,14 +507,14 @@
   }
 }
 
-.company-review-details[open] {
+:is(.company-review-details, .context-disclosure)[open] {
   padding-bottom: 8px;
 }
-.company-review-details[open] > summary {
+:is(.company-review-details, .context-disclosure)[open] > summary {
   margin-bottom: 14px;
   border-bottom: 1px solid var(--line-soft);
 }
-.company-review-details > summary > svg,
+:is(.company-review-details, .context-disclosure) > summary > svg,
 .company-review-checklist > summary > svg {
   color: var(--muted);
   flex: 0 0 auto;

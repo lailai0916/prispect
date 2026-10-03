@@ -444,11 +444,13 @@ kbd {
   width: 100%;
   text-align: left;
 }
-.app-shell :is(.company-review-details, .report-purpose-details) > summary:hover {
+.app-shell
+  :is(.company-review-details, .report-purpose-details, .context-disclosure)
+  > summary:hover {
   color: var(--accent);
 }
 .app-shell
-  :is(.company-review-details, .cross-signal-checks, .report-purpose-details)
+  :is(.company-review-details, .cross-signal-checks, .report-purpose-details, .context-disclosure)
   > summary
   svg {
   transition:
@@ -456,7 +458,12 @@ kbd {
     transform var(--motion-medium) var(--motion-ease);
 }
 .app-shell
-  :is(.company-review-details, .report-purpose-details, .financial-create-options)[open]
+  :is(
+    .company-review-details,
+    .report-purpose-details,
+    .financial-create-options,
+    .context-disclosure
+  )[open]
   > :not(summary) {
   animation: detail-enter var(--motion-medium) var(--motion-ease);
 }
