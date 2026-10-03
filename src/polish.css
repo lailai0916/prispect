@@ -83,11 +83,6 @@ input[type='radio'] {
     translate: 2px 0;
   }
 }
-.command-trigger {
-  gap: 7px;
-  width: auto;
-  padding-inline: 8px;
-}
 kbd {
   display: inline-flex;
   justify-content: center;
@@ -102,9 +97,6 @@ kbd {
   font-size: 10px;
   font-weight: 450;
   white-space: nowrap;
-}
-.header-actions .command-trigger kbd {
-  font-size: 10px;
 }
 .site-header {
   overflow: visible;
@@ -643,9 +635,6 @@ kbd {
   .app-shell .start-key-hint + .start-submit {
     margin-left: auto;
   }
-  .header-actions .command-trigger kbd {
-    display: none;
-  }
   .header-actions .command-trigger {
     width: 36px;
     padding-inline: 0;
@@ -728,27 +717,16 @@ kbd {
   }
 }
 @media (max-width: 640px) {
-  .business-shell > .site-header {
+  .site-header {
     gap: 8px;
   }
-  .business-shell > .site-header .header-actions {
+  .site-header .header-actions {
     gap: 0;
   }
-  .business-shell
-    > .site-header
-    .header-actions
-    :is(.icon-button, .language-button, .theme-button, .account-link) {
+  .site-header .header-actions :is(.icon-button, .language-button, .theme-button, .account-link) {
     width: 32px;
     min-width: 32px;
     padding-inline: 0;
-  }
-}
-@media (max-width: 420px) {
-  .business-shell > .site-header {
-    padding-inline: 12px;
-  }
-  .business-shell > .site-header .brand-name > span {
-    display: none;
   }
 }
 @media print {

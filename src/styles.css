@@ -11,7 +11,7 @@
   color: var(--ink);
   background: var(--paper);
   --paper: #ffffff;
-  --site-header-height: 60px;
+  --site-header-height: 52px;
   --sidebar-surface: #f7f7f8;
   --ink: #25262b;
   --muted: #63656f;
@@ -344,7 +344,7 @@ pre {
 .site-header {
   height: var(--site-header-height);
   min-height: var(--site-header-height);
-  padding: 0 max(24px, calc((100vw - 1200px) / 2));
+  padding: 0 24px;
   display: flex;
   align-items: center;
   gap: 28px;
@@ -442,6 +442,11 @@ pre {
   background: var(--hover);
   color: var(--ink);
 }
+.account-link > span {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .language-button,
 .theme-button {
   display: inline-flex;
@@ -527,21 +532,15 @@ pre {
 .business-shell {
   display: grid;
   grid-template-columns: var(--sidebar) minmax(0, 1fr);
-  grid-template-rows: 52px 1fr;
+  grid-template-rows: var(--site-header-height) 1fr;
 }
 .business-shell > .site-header {
   grid-column: 2;
-  height: 52px;
-  min-height: 52px;
-  padding: 0 40px;
   position: sticky;
   top: 0;
   border-bottom: 1px solid var(--line-soft);
 }
 .business-shell > .site-header > .brand-link {
-  display: none;
-}
-.business-shell > .site-header .account-link {
   display: none;
 }
 .header-context {
@@ -1510,9 +1509,6 @@ thead th {
   .main-app {
     padding: 28px 28px 48px;
   }
-  .business-shell > .site-header {
-    padding: 0 28px;
-  }
 }
 @media (max-width: 1050px) {
   .page-heading {
@@ -1559,9 +1555,6 @@ thead th {
   .mobile-menu {
     min-width: 44px;
     min-height: 44px;
-  }
-  .business-shell > .site-header .account-link {
-    display: inline-flex;
   }
   .account-link > span,
   .account-link > svg:last-child {
@@ -1743,11 +1736,12 @@ thead th {
   }
 }
 @media (max-width: 480px) {
-  .public-shell > .site-header {
-    gap: 4px;
+  .site-header,
+  .business-shell > .site-header {
+    gap: 8px;
     padding: 0 12px;
   }
-  .public-shell > .site-header .brand-name > span {
+  .site-header .brand-name > span {
     display: none;
   }
   .public-shell > .site-header .navigation a {

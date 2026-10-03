@@ -543,7 +543,7 @@ export function App() {
               )}
               <div className="header-actions">
                 {sessionAvailable && (
-                  <Hint label={t('搜索与跳转 · ⌘ / Ctrl K', 'Search and jump to · ⌘ / Ctrl K')}>
+                  <Hint label={t('搜索与跳转', 'Search and jump to')}>
                     <button
                       className="icon-button command-trigger"
                       onClick={() => setCommandOpen(true)}
@@ -551,9 +551,6 @@ export function App() {
                       aria-keyshortcuts="Meta+K Control+K"
                     >
                       <Search size={17} />
-                      <kbd aria-hidden="true">
-                        {navigator.platform.includes('Mac') ? '⌘ K' : 'Ctrl K'}
-                      </kbd>
                     </button>
                   </Hint>
                 )}
@@ -576,9 +573,19 @@ export function App() {
                   </button>
                 </Hint>
                 <ThemeControl />
+                {business && (
+                  <button
+                    className="icon-button mobile-menu"
+                    aria-label={t('打开导航', 'Open navigation')}
+                    aria-expanded={menuOpen}
+                    onClick={() => setMenuOpen(true)}
+                  >
+                    <Menu size={19} />
+                  </button>
+                )}
                 {sessionAvailable && user ? (
                   <ActionMenu
-                    label={t('账号菜单', 'Account menu')}
+                    label={`${t('账号菜单', 'Account menu')} · ${user.name}`}
                     className="account-link"
                     items={accountItems}
                   >
@@ -591,16 +598,6 @@ export function App() {
                     {t('登录', 'Log in')}
                   </a>
                 ) : null}
-                {business && (
-                  <button
-                    className="icon-button mobile-menu"
-                    aria-label={t('打开导航', 'Open navigation')}
-                    aria-expanded={menuOpen}
-                    onClick={() => setMenuOpen(true)}
-                  >
-                    <Menu size={19} />
-                  </button>
-                )}
               </div>
               {pending > 0 && (
                 <div
