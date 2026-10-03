@@ -482,7 +482,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       )}
       <header className="context-page-heading">
         <div>
-          {section !== 'overview' && (
+          {(section === 'financial' || section === 'evidence') && (
             <p className="context-eyebrow">
               {run.informationGap?.name ||
                 run.identity?.companyName ||
