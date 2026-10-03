@@ -21,18 +21,18 @@
   margin-bottom: 28px;
 }
 .query-create-brand .brand {
-  gap: 10px;
+  gap: 12px;
 }
 .query-create-brand .brand > svg {
-  width: 32px;
-  height: 32px;
+  width: 40px;
+  height: 40px;
 }
 .query-create-brand .brand-name {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 550;
 }
 .query-create-brand .brand-name > span {
-  font-size: var(--text-body);
+  font-size: 16px;
 }
 .query-create-search {
   position: relative;
