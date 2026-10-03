@@ -142,6 +142,20 @@
   font-weight: 650;
   letter-spacing: -0.055em;
 }
+.research-grade-placeholder {
+  width: 1em;
+  height: 1.1em;
+}
+.research-source-placeholder {
+  display: flex;
+  align-items: center;
+  font-size: var(--text-meta);
+  height: calc(1lh + 12px);
+  margin-top: auto;
+}
+.research-source-placeholder .skeleton {
+  width: 65px;
+}
 .research-grade-c .research-grade-rating {
   color: var(--amber);
 }
@@ -619,6 +633,9 @@
   .research-report-coverage .text-link,
   .research-public-followup .text-link {
     min-height: 44px;
+  }
+  .research-source-placeholder {
+    height: 44px;
   }
   .research-progress > summary {
     min-height: 44px;

@@ -38,6 +38,8 @@ const CompanyRecordsContext = createContext<CompanyRecordsState>(emptyState);
 /** One account-scoped subscription for navigation, recent research and the library. */
 export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
   const { user, locale } = useApp();
+  const currentLocale = useRef(locale);
+  currentLocale.current = locale;
   const owner = user?.id || null;
   const [records, setRecords] = useState<CompanyRecordSummary[]>([]);
   const [loading, setLoading] = useState(Boolean(owner));
@@ -79,7 +81,7 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
       }
     } catch (cause) {
       if (mounted.current && !controller.signal.aborted && ticket === generation.current) {
-        setError(requestErrorText(cause, locale));
+        setError(requestErrorText(cause, currentLocale.current));
       }
     } finally {
       if (mounted.current && !controller.signal.aborted && ticket === generation.current) {
@@ -92,7 +94,7 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [owner, locale]);
+  }, [owner]);
   useEffect(() => {
     mounted.current = true;
     setRecords([]);

@@ -7,9 +7,6 @@
   width: min(100%, 600px);
   margin: 0 auto;
 }
-.query-create-empty .query-create-content {
-  padding-top: 40px;
-}
 .query-create-heading {
   margin-bottom: 24px;
 }
@@ -148,9 +145,6 @@
 @media (max-width: 560px) {
   .company-query-page.query-create-page {
     padding: 36px 18px 48px;
-  }
-  .query-create-empty .query-create-content {
-    padding-top: 24px;
   }
   .query-create-heading h1 {
     font-size: 24px;

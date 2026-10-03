@@ -310,6 +310,8 @@ export function CompanyResearchReport({
   const reportGrade = provisionalRating?.grade || assessment?.grade || 'NR';
   useEffect(() => setSelected(null), [run.id, run.assessment?.generatedAt]);
   const loading = refreshing || progress.state === 'running';
+  const gradePending =
+    !assessment && loading && !run.informationGap && progress.snapshot !== 'mismatch';
   const judgmentText = (judgment: AssessmentJudgment) =>
     judgment.text[locale === 'en' ? 'en' : 'zh'];
   const basis = (title: string, judgment: AssessmentJudgment, label?: string) =>
@@ -341,7 +343,12 @@ export function CompanyResearchReport({
     >
       <section className="research-summary" aria-labelledby="research-summary-heading">
         <div className="research-summary-card">
-          <div className={'research-summary-lead' + (assessment ? ' research-summary-rated' : '')}>
+          <div
+            className={
+              'research-summary-lead' +
+              (assessment || gradePending ? ' research-summary-rated' : '')
+            }
+          >
             <div className="research-summary-copy">
               <div className="research-summary-meta">
                 <p className="research-summary-label">
@@ -417,6 +424,18 @@ export function CompanyResearchReport({
                 </div>
               )}
             </div>
+            {gradePending && (
+              <div className="research-grade research-grade-pending" role="status" aria-busy="true">
+                <span>
+                  <ChartNoAxesCombined size={17} aria-hidden="true" />
+                  {t(...productTerms.financialGrade)}
+                </span>
+                <strong aria-hidden="true">
+                  <span className="skeleton research-grade-placeholder" />
+                </strong>
+                <span>{t('正在形成判断…', 'Analysis in progress…')}</span>
+              </div>
+            )}
             {assessment && (
               <button
                 type="button"
@@ -483,6 +502,11 @@ export function CompanyResearchReport({
                   {t('查看来源', 'View sources')}
                 </CompanyContextEvidence>
               )}
+              {!amounts.row && loading && (
+                <span className="research-source-placeholder" aria-hidden="true">
+                  <span className="skeleton" />
+                </span>
+              )}
             </div>
             <div>
               <dt>
@@ -499,6 +523,11 @@ export function CompanyResearchReport({
                 <CompanyContextEvidence snapshot={run.context} row={amounts.row} fields={['ocf']}>
                   {t('查看来源', 'View sources')}
                 </CompanyContextEvidence>
+              )}
+              {!amounts.row && loading && (
+                <span className="research-source-placeholder" aria-hidden="true">
+                  <span className="skeleton" />
+                </span>
               )}
             </div>
             <div>
@@ -521,6 +550,11 @@ export function CompanyResearchReport({
                 >
                   {t('公式与来源', 'Formula and sources')}
                 </CompanyContextEvidence>
+              )}
+              {!amounts.row && loading && (
+                <span className="research-source-placeholder" aria-hidden="true">
+                  <span className="skeleton" />
+                </span>
               )}
             </div>
           </dl>
