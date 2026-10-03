@@ -121,12 +121,6 @@
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
-.document-navigation-label {
-  margin: 24px 12px 6px;
-  color: var(--subtle);
-  font-size: 11px;
-  line-height: 20px;
-}
 .document-mobile-navigation {
   display: none;
 }

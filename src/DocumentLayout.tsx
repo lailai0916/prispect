@@ -127,25 +127,20 @@ export function DocumentLayout({
     };
   }, [path, targets]);
 
-  const articleLinks = (start: number, end: number) =>
-    documentNavigation.slice(start, end).map((item) => (
-      <a key={item.path} href={item.path} aria-current={path === item.path ? 'page' : undefined}>
-        {t(item.label[0], item.label[1])}
-      </a>
-    ));
-
   const documents = (
     <nav className="document-navigation" aria-label={t('文档导航', 'Documents')}>
       <a className="document-navigation-home" href="/docs" aria-current={home ? 'page' : undefined}>
         {t(documentationTitle[0], documentationTitle[1])}
       </a>
-      {articleLinks(0, 3)}
-      <span className="document-navigation-label">{t('条款与政策', 'Policies')}</span>
-      {articleLinks(3, 6)}
+      {documentNavigation.map((item) => (
+        <a key={item.path} href={item.path} aria-current={path === item.path ? 'page' : undefined}>
+          {t(item.label[0], item.label[1])}
+        </a>
+      ))}
     </nav>
   );
   const contents = (
-    <nav className="document-contents" aria-label={t('本页目录', 'On this page')}>
+    <nav className="document-contents" aria-label={t('目录', 'Contents')}>
       {headings.map((heading) => (
         <a
           key={heading.id}
@@ -174,7 +169,7 @@ export function DocumentLayout({
             {hasContents && (
               <details ref={mobileContents} className="document-mobile-contents">
                 <summary>
-                  {t('本页目录', 'On this page')}
+                  {t('目录', 'Contents')}
                   <ChevronDown size={16} aria-hidden="true" />
                 </summary>
                 {contents}
@@ -188,7 +183,7 @@ export function DocumentLayout({
       </div>
       {!home && hasContents && (
         <aside className="document-outline">
-          <p className="document-navigation-title">{t('本页目录', 'On this page')}</p>
+          <p className="document-navigation-title">{t('目录', 'Contents')}</p>
           {contents}
         </aside>
       )}
