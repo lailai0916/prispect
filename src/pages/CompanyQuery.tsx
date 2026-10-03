@@ -8,6 +8,7 @@ import { StartInput } from '../StartInput';
 import { Dialog } from '../components';
 import { useApp } from '../context';
 import { CompanyRecentResearch } from '../CompanyRecentResearch';
+import { useCompanyRecords } from '../CompanyRecordsContext';
 import { api, requestErrorText } from '../api';
 import { COMPANY_RECORDS_EVENT } from '../CompanySidebar';
 import { clearComposerDraft } from '../start-draft';
@@ -16,6 +17,8 @@ import '../query.css';
 
 export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
   const { t, locale, navigate, user } = useApp();
+  const { records, loading: recordsLoading, error: recordsError } = useCompanyRecords();
+  const hasNoRecentResearch = !recordsLoading && !recordsError && records.length === 0;
   const latest = new Date().getFullYear() - 1;
   const requestedYear = Number(query?.get('year'));
   const [year, setYear] = useState(
@@ -87,7 +90,9 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
     }
   };
   return (
-    <div className="company-query-page query-create-page">
+    <div
+      className={`company-query-page query-create-page${hasNoRecentResearch ? ' query-create-empty' : ''}`}
+    >
       <div className="query-create-content">
         <header className="query-create-heading">
           <h1>{t(...productTerms.newResearch)}</h1>
