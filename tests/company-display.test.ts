@@ -224,7 +224,12 @@ test('financial charts begin at the research year and explain a fallback to an a
         )
       );
       const selectedYear = year === 2024 ? '2024' : '2025';
-      assert.equal($('.context-history [aria-pressed="true"]').first().text(), selectedYear);
+      const selectedButton = $('.context-history [aria-pressed="true"]').first();
+      assert.equal(selectedButton.clone().children().remove().end().text(), selectedYear);
+      assert.equal(
+        selectedButton.find('.financial-chart-year-state').text(),
+        locale === 'en' ? 'Pending' : '待获取'
+      );
       assert.match($('.financial-chart-meta').first().text(), new RegExp(selectedYear));
       if (year === 2023)
         assert.match(

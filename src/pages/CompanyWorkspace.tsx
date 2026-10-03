@@ -38,6 +38,7 @@ import {
   CompanyCoverageView,
 } from '../CompanyContextViews';
 import { CompanyFinancialChartsSection } from '../CompanyFinancialChartsSection';
+import type { IndustryHistoryResult } from '../../shared/company-industry-history';
 import { CompanyDisclosuresView } from '../CompanyDisclosuresView';
 import { CompanyAssistantContext } from '../company-assistant-context';
 import { CompanyFinancialFindings } from '../CompanyRunOverview';
@@ -84,6 +85,25 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     if (user && next) cacheCompanyRun(user.id, next);
   };
   const savedOnly = query.get('cached') === '1';
+  const rememberIndustryHistory = (result: IndustryHistoryResult) => {
+    const owner = user?.id;
+    if (!owner || !isCurrentOwner()) return;
+    setLoadedRun((previous) => {
+      if (previous.owner !== owner || previous.run?.id !== id) return previous;
+      const next = {
+        ...previous.run,
+        industry: {
+          ...previous.run.industry,
+          ...(result.snapshot ? { [result.period]: result.snapshot } : {}),
+        },
+        industryHistoryErrors: { ...previous.run.industryHistoryErrors },
+      };
+      if (result.failure) next.industryHistoryErrors[result.period] = result.failure;
+      else delete next.industryHistoryErrors[result.period];
+      cacheCompanyRun(owner, next);
+      return { owner, run: next };
+    });
+  };
   const savedScope = useRef<string | null>(null);
   const manualScope = useRef<string | null>(null);
   const [failure, setFailure] = useState<{ kind: ResearchRequestKind; text: string } | null>(null);
@@ -742,6 +762,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                     run={run}
                     snapshot={snapshot}
                     basis={basis}
+                    onHistoryResult={rememberIndustryHistory}
                   />
                   <details id="company-financial-data" className="company-review-details">
                     <summary>

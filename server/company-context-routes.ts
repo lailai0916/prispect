@@ -9,6 +9,11 @@ import { ApiFault, modelEnabledSchema } from './validation.js';
 import { searchCompanies } from './company-sources.js';
 import { retrieveCompanyContext, verificationLinks } from './company-context-sources.js';
 import { retrieveIndustrySnapshot } from './company-industry.js';
+import { retrieveIndustryHistoryYear } from './company-industry-history.js';
+import {
+  industryHistoryPeriods,
+  savedIndustryHistoryResult,
+} from '../shared/company-industry-history.js';
 import { answerCompanyQuestion } from './company-questions.js';
 import { analyzeCompanyWithModel } from './company-assessment.js';
 import { runCompanyResearchAgent } from './company-research-agent.js';
@@ -775,6 +780,54 @@ export function installCompanyContextRoutes(
     })
   );
   app.post(
+    '/api/company-runs/:id/industry-history',
+    wrap(async (req, res) => {
+      const body = z
+        .object({
+          period: z.string().regex(/^20\d{2}-12-31$/),
+          refresh: z.boolean().default(false),
+        })
+        .strict()
+        .safeParse(req.body);
+      if (!body.success) throw new ApiFault(400, 'INDUSTRY_INPUT', '请选择完整年报报告期');
+      const { store, run } = byId(res, String(req.params.id));
+      const period = body.data.period;
+      if (!industryHistoryPeriods(run).includes(period))
+        throw new ApiFault(400, 'INDUSTRY_HISTORY_SCOPE', '请选择已取得财务资料的完整年度');
+      const saved = savedIndustryHistoryResult(run, period);
+      if (!body.data.refresh && saved) {
+        res.json(saved);
+        return;
+      }
+      const key = `${runKey(store, run)}:industry:${period}`;
+      if (assessmentJobs.has(runKey(store, run)))
+        throw new ApiFault(409, 'ASSESSMENT_BUSY', '公司研究正在执行，完成后可更新同行资料');
+      if (sourceJobs.has(key) || sourceJobs.size >= 3)
+        throw new ApiFault(429, 'CONTEXT_BUSY', '行业来源正在读取，请稍后重试');
+      limits(res, 'company-industry', 20);
+      const controller = new AbortController();
+      const cancel = () => {
+        if (!res.writableEnded) controller.abort();
+      };
+      res.on('close', cancel);
+      const context = run.context;
+      sourceJobs.add(key);
+      try {
+        const result = await retrieveIndustryHistoryYear(run, period, {
+          refresh: body.data.refresh,
+          retrieve: service.industry,
+          persist: () => store.persist(),
+          current: () => store.state.companyRuns?.includes(run) === true && run.context === context,
+          signal: controller.signal,
+        });
+        if (!controller.signal.aborted) res.json(result);
+      } finally {
+        sourceJobs.delete(key);
+        res.off('close', cancel);
+      }
+    })
+  );
+  app.post(
     '/api/company-runs/:id/industry',
     wrap(async (req, res) => {
       const body = z
@@ -811,6 +864,7 @@ export function installCompanyContextRoutes(
         if (!store.state.companyRuns?.includes(run))
           throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '企业记录已移除');
         (run.industry ||= {})[body.data.period] = snapshot;
+        if (run.industryHistoryErrors) delete run.industryHistoryErrors[body.data.period];
         await store.persist();
         res.json({ snapshot, stale: false, cached: false });
       } catch (error) {

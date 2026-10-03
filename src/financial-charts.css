@@ -244,6 +244,18 @@
 .financial-chart-history-heading .company-workspace-section-title {
   margin-bottom: 0;
 }
+.financial-chart-history-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.financial-chart-year-state {
+  display: block;
+  font-size: var(--text-meta);
+  font-weight: normal;
+  color: var(--muted);
+}
 .financial-chart-reference {
   margin: 12px 0;
   color: var(--muted);

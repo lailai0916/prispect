@@ -32,12 +32,14 @@ export function CompanyContextHistory({
   industries,
   selectedPeriod,
   onPeriodChange,
+  peerStatuses,
 }: {
   snapshot: CompanyContextSnapshot;
   basis: CompanyReadingBasis;
   industries?: Record<string, CompanyIndustrySnapshot>;
   selectedPeriod?: string;
   onPeriodChange?: (period: string) => void;
+  peerStatuses?: Record<string, string>;
 }) {
   const { t, locale } = useApp();
   const analysis = analyzeCompanyContext(snapshot, basis);
@@ -219,11 +221,14 @@ export function CompanyContextHistory({
               key={item}
               type="button"
               className="context-year-button"
-              aria-label={t(`查看 ${item.slice(0, 4)} 年`, `View ${item.slice(0, 4)}`)}
+              aria-label={`${t(`查看 ${item.slice(0, 4)} 年`, `View ${item.slice(0, 4)}`)}${peerStatuses?.[item] ? ` · ${peerStatuses[item]}` : ''}`}
               aria-pressed={period === item}
               onClick={() => changePeriod(item)}
             >
               {item.slice(0, 4)}
+              {peerStatuses?.[item] && (
+                <span className="financial-chart-year-state">{peerStatuses[item]}</span>
+              )}
             </button>
           ))}
         </div>
