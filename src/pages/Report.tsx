@@ -55,6 +55,7 @@ import '../company-review.css';
 import '../risk-perspective.css';
 import { RiskOverview } from '../RiskOverview';
 import { RiskDetail } from '../RiskDetail';
+import { useViewMode } from '../ViewModeContext';
 import { EvidenceLab } from '../EvidenceLab';
 import { buildReportEvidenceLab } from '../../shared/evidence-lab';
 
@@ -328,6 +329,7 @@ export function ReportView({
   onExport?: (format: ReviewExportFormat) => void;
 }) {
   const { t, locale, execute, showEvidence, navigate, busy } = useApp();
+  const { viewMode } = useViewMode();
   const purpose = task.purpose || 'external';
   const contextControl = useRef<ReviewContextHandle>(null);
   const [section, setSection] = useState<ReportSection>('evidence');
@@ -381,6 +383,12 @@ export function ReportView({
         : `For ${report.year}, consolidated net profit is CNY ${money(getMetric('netProfit')?.value ?? null, locale, false)} and operating cash flow is CNY ${money(getMetric('operatingCashFlow')?.value ?? null, locale, false)}. The cash conversion is ${metricValue(getMetric('cashConversion'), locale)}. This is a historical review clue, not a credit decision.`;
   return (
     <div className="report-content report-content-summary">
+      {viewMode === 'simple' && (
+        <section className="risk-perspective-hero" aria-label={t('四维风险总览', 'Risk overview')}>
+          <RiskOverview report={report} />
+          <RiskDetail report={report} />
+        </section>
+      )}
       <section className={`verdict-section verdict-${report.verdict}`}>
         <div className="verdict-topline">
           <VerdictTag verdict={report.verdict} />
@@ -664,11 +672,15 @@ export function ReportView({
           <span>{t('分析依据与核查记录', 'Analysis evidence and review records')}</span>
         </summary>
         <div className="report-analysis-content">
-          <RiskOverview
-            report={report}
-            onSelectDimension={(key) => revealAnalysis(section, `risk-detail-${key}`)}
-          />
-          <RiskDetail report={report} />
+          {viewMode === 'pro' && (
+            <>
+              <RiskOverview
+                report={report}
+                onSelectDimension={(key) => revealAnalysis(section, `risk-detail-${key}`)}
+              />
+              <RiskDetail report={report} />
+            </>
+          )}
           <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
             {(
               [

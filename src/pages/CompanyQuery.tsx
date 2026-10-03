@@ -6,6 +6,8 @@ import { companyPath } from '../../shared/company-workspace';
 import { StartInput } from '../StartInput';
 import { Dialog } from '../components';
 import { useApp } from '../context';
+import { HomeRiskCards } from '../HomeRiskCards';
+import { useViewMode } from '../ViewModeContext';
 import { CompanyResearchLauncher } from '../CompanyResearchLauncher';
 import { CompanyRecentResearch } from '../CompanyRecentResearch';
 import { PublicResearchExample } from '../PublicResearchExample';
@@ -15,7 +17,8 @@ import { clearComposerDraft } from '../start-draft';
 import '../home.css';
 
 export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
-  const { t, locale, navigate, user } = useApp();
+  const { t, locale, navigate, user, workspace } = useApp();
+  const { viewMode } = useViewMode();
   const latest = new Date().getFullYear() - 1;
   const requestedYear = Number(query?.get('year'));
   const [year, setYear] = useState(
@@ -127,6 +130,7 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
           onInformationGap={(name) => void begin(undefined, name)}
         />
       </CompanyResearchLauncher>
+      {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
       <CompanyRecentResearch />
       <details className="research-public-trial">
         <summary>{t('查看公开年报实例', 'Explore a public annual-report example')}</summary>

@@ -3,6 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { CompanyResearchLauncher } from '../CompanyResearchLauncher';
 import { PublicResearchExample } from '../PublicResearchExample';
 import { StartInput } from '../StartInput';
+import { HomeRiskCards } from '../HomeRiskCards';
+import { useViewMode } from '../ViewModeContext';
 import { lazyPage } from '../lazy-page';
 import { useApp } from '../context';
 import '../home.css';
@@ -13,7 +15,8 @@ const CashScenarioPreview = lazyPage(
 );
 
 export function Home() {
-  const { t, user } = useApp();
+  const { t, user, workspace } = useApp();
+  const { viewMode } = useViewMode();
   const [cashOpen, setCashOpen] = useState(false);
   return (
     <div className="home-landing research-entry-page">
@@ -22,6 +25,7 @@ export function Home() {
       >
         <StartInput key={user?.id || 'anonymous'} compact />
       </CompanyResearchLauncher>
+      {viewMode === 'simple' && workspace?.tasks && <HomeRiskCards tasks={workspace.tasks} />}
       <PublicResearchExample />
       <details
         className="research-cash-example"
