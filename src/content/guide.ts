@@ -220,8 +220,8 @@ export const guideDocument: ProductDocument = {
       title: ['阅读财报核查', 'Read a financial review'],
       paragraphs: [
         [
-          '报告先展示核查摘要、核心金额和下一步材料，不需要选择阅读模式。继续向下可展开各维度状况，以及原件、计算、解释、询证清单和范围记录；打开相关入口时会直接展开对应内容。核查比较先呈现各报告的风险状态矩阵，再展开两份核查的材料与计算差异。',
-          'Reports present the review summary, core amounts and next evidence first, without a reading-mode choice. Continue down the page to expand dimension details, originals, calculations, explanations, evidence requests and scope records; related links open the relevant content directly. Review comparison starts with the risk-state matrix, followed by an expandable comparison of the evidence and calculations in two reviews.',
+          '报告先展示核查摘要、核心金额和下一步材料，不需要选择阅读模式。继续向下可展开原件、计算、检查、解释、询证清单和范围记录；打开相关入口时会直接展开对应内容。核查比较可直接选择两份报告，查看材料、金额与计算差异。不同公司或不同年度的结果仅并列展示，不能把解释差异当成同一年度的证据撤回。',
+          'Reports present the review summary, core amounts and next evidence first, without a reading-mode choice. Continue down the page to expand originals, calculations, checks, explanations, evidence requests and scope records; related links open the relevant content directly. In review comparison, select two reports to inspect their evidence, amounts and calculations. Results from different companies or years are shown side by side; explanation differences are not evidence withdrawals within the same year.',
         ],
         [
           '报告采用同主体、完整年度、人民币与合并口径的数据。先看净利润、经营现金净额及现金利润比，再看有来源的现金桥与年度对比。现金利润比 = 经营现金净额 ÷ 合并净利润；比例来源应分别核对分子与分母。它不表示销售回款率、可用现金或本金安全。',

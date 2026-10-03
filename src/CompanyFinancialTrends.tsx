@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { ArrowUpRight, ChevronDown } from 'lucide-react';
-import type { CompanyResearchRun, Observation } from '../shared/contracts';
+import type { CompanyResearchRun } from '../shared/contracts';
 import {
   COMPANY_MARKET_WARNINGS,
   FINANCIAL_FIELD_SOURCES,
@@ -10,7 +10,8 @@ import {
 } from '../shared/company-market';
 import { Tag } from './components';
 import { useApp, type Translate } from './context';
-import { chartScale, money, yuan, type Locale } from './format';
+import { chartScale, money, type Locale } from './format';
+import { amountInFen, compareOriginal } from './company-original-comparison';
 import { translateRule } from './ruleTranslations';
 import './company-financial-trends.css';
 
@@ -43,14 +44,6 @@ function label(metric: PlotMetric, t: Translate): string {
     default:
       return metric;
   }
-}
-
-function amountInFen(value: string | null): bigint | null {
-  if (value === null || !/^-?\d+(?:\.\d+)?$/.test(value)) return null;
-  const [whole, fraction = ''] = value.replace(/^-/, '').split('.');
-  if (/[1-9]/.test(fraction.slice(2))) return null;
-  const fen = BigInt(whole!) * 100n + BigInt(fraction.slice(0, 2).padEnd(2, '0'));
-  return value.startsWith('-') ? -fen : fen;
 }
 
 function amount(row: CompanyFinancialYear, metric: PlotMetric): string | null {
@@ -96,52 +89,6 @@ function sourceNotice(warning: string, locale: Locale): string {
     ? Object.values(COMPANY_MARKET_WARNINGS).find((item) => item.zh === warning)?.en ||
         translateRule(warning)
     : warning;
-}
-
-function compareOriginal(
-  context: CompanyFinancialContext,
-  run: CompanyResearchRun,
-  row: CompanyFinancialYear,
-  metric: CompanyFinancialMetric
-): { status: 'same' | 'different' | 'unchecked'; observation?: Observation; value?: string } {
-  if (!['netProfit', 'operatingCashFlow'].includes(metric) || !run.preview || !run.identity)
-    return { status: 'unchecked' };
-  const normalize = (value: string) => value.normalize('NFKC').replace(/\s/g, '').toLowerCase();
-  const company = run.identity.companyName;
-  const material = run.preview.material;
-  const scopeCheck = run.preview.checks.find((check) => check.id === `${row.year}-${metric}`);
-  if (
-    context.identity.status !== 'matched' ||
-    context.securityCode !== run.identity.securityCode ||
-    context.exchange !== run.identity.exchange ||
-    !company ||
-    normalize(material.company) !== normalize(company) ||
-    scopeCheck?.status !== 'pass'
-  )
-    return { status: 'unchecked' };
-  const observations = material.observations.filter(
-    (item) =>
-      item.key === metric &&
-      item.year === row.year &&
-      item.period === 'annual' &&
-      item.scope === 'consolidated' &&
-      item.currency === 'CNY' &&
-      item.kind === 'reported'
-  );
-  const values = observations.map((item) => amountInFen(yuan(item.value, item.unit)));
-  const webValue = amountInFen(row.amounts[metric]);
-  if (
-    !observations.length ||
-    webValue === null ||
-    values.some((value) => value === null) ||
-    new Set(values.map(String)).size !== 1
-  )
-    return { status: 'unchecked' };
-  return {
-    status: webValue === values[0] ? 'same' : 'different',
-    observation: observations[0],
-    value: yuan(observations[0]!.value, observations[0]!.unit),
-  };
 }
 
 export function CompanyFinancialTrends({

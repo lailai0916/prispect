@@ -177,14 +177,15 @@ export function issuerCodeEvidence(
   pages: CompanyPdfPage[],
   exchange: CompanyIdentity['exchange']
 ): { code: string; page: number; quote: string }[] {
+  if (exchange === 'us') return [];
   const evidence: { code: string; page: number; quote: string }[] = [];
-  const exchangeLabel = {
-    sse: '上海证券交易所',
-    szse: '深圳证券交易所',
-    bse: '北京证券交易所',
-    us: '',
-    unknown: '',
-  }[exchange];
+  const exchangeNames: Partial<Record<CompanyIdentity['exchange'], readonly string[]>> = {
+    sse: ['上海证券交易所', '上交所'],
+    szse: ['深圳证券交易所', '深交所'],
+    bse: ['北京证券交易所', '北交所'],
+  };
+  const marketNames = exchangeNames[exchange] || [];
+  const exchangeLabel = marketNames[0] || '';
   const cells = (line: string) =>
     line.includes('\t')
       ? line.split(/\t+/).map(compact)
@@ -235,10 +236,6 @@ export function issuerCodeEvidence(
               row[0] === ['股票种类', '股票上市交易所', '股票简称', '股票代码'][offset]
           )
         ) {
-          const marketNames = [
-            exchangeLabel,
-            { sse: '上交所', szse: '深交所', bse: '北交所', us: '', unknown: '' }[exchange],
-          ];
           for (let column = 1; column < header.length; column++) {
             if (
               rows[0]![column] === 'A股' &&

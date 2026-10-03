@@ -52,9 +52,6 @@ import {
 import '../review-pages.css';
 import '../report-enhancements.css';
 import '../company-review.css';
-import '../risk-perspective.css';
-import { RiskOverview } from '../RiskOverview';
-import { RiskDetail } from '../RiskDetail';
 import { EvidenceLab } from '../EvidenceLab';
 import { buildReportEvidenceLab } from '../../shared/evidence-lab';
 import { reportCurrencyView } from '../../shared/report-currency-view';
@@ -557,6 +554,14 @@ export function ReportView({
       <div id="report-summary-findings" className="company-review">
         <section className="company-review-section">
           <h2>{t('核查事项', 'Review matters')}</h2>
+          {!report.findings.some((item) => item.basis !== 'management') && (
+            <p>
+              {t(
+                '目前没有可采用的解释，请先核对原件与检查结果。',
+                'No explanation is available for adoption yet. Review the original evidence and checks first.'
+              )}
+            </p>
+          )}
           <ol className="company-review-findings">
             {report.findings
               .filter((item) => item.basis !== 'management')
@@ -725,11 +730,6 @@ export function ReportView({
           <span>{t('分析依据与核查记录', 'Analysis evidence and review records')}</span>
         </summary>
         <div className="report-analysis-content">
-          <RiskOverview
-            report={report}
-            onSelectDimension={(key) => revealAnalysis(section, `risk-detail-${key}`)}
-          />
-          <RiskDetail report={report} />
           <nav className="report-local-nav" aria-label={t('报告内容', 'Report sections')}>
             {(
               [
