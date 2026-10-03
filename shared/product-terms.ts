@@ -7,7 +7,6 @@ export const productTagline = [
 export const productTerms = {
   newResearch: ['新建研究', 'New research'],
   companyResearch: ['公司研究', 'Company research'],
-  researchLibrary: ['研究库', 'Research library'],
   researchRecord: ['研究记录', 'Research record'],
   researchRecords: ['研究记录', 'Research records'],
   researchReport: ['研究报告', 'Research report'],

@@ -76,6 +76,10 @@ export function StartInput({
   }>({ query: '', candidates: [], phase: 'idle' });
   const [completionOpen, setCompletionOpen] = useState(false);
   const [activeCandidate, setActiveCandidate] = useState(-1);
+  const [isComposing, setIsComposing] = useState(false);
+  const composing = useRef(false);
+  const compositionEnter = useRef(false);
+  const compositionEndTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const composer = useRef<HTMLFormElement>(null);
   const selectionText = useRef('');
   const selectedCompany = useRef<CompanyIdentity | null>(null);
@@ -90,6 +94,7 @@ export function StartInput({
       safeQuery &&
       safeQuery.length >= (companyOnly ? 1 : 2) &&
       safeQuery.length <= 80 &&
+      !isComposing &&
       !disabled
   );
   const candidates = !canSearch
@@ -154,7 +159,7 @@ export function StartInput({
   const chooseCompany = useCallback(
     (identity: CompanyIdentity, submittedText = latest.current.text.trim()) => {
       const current = latest.current;
-      if (current.disabled || !current.canSearch) return;
+      if (composing.current || current.disabled || !current.canSearch) return;
       cancelSearch();
       selectionText.current = identity.shortName;
       selectedCompany.current = identity;
@@ -174,7 +179,7 @@ export function StartInput({
     (query: string, immediate = false, submitted: string | null = null, refresh = false) => {
       const key = normalizeCompanySearchQuery(query);
       const current = latest.current;
-      if (!current.canSearch || current.queryKey !== key) return;
+      if (composing.current || !current.canSearch || current.queryKey !== key) return;
       const existing = request.current;
       if (
         !refresh &&
@@ -203,6 +208,7 @@ export function StartInput({
       request.current = next;
       const isCurrent = () =>
         request.current === next &&
+        !composing.current &&
         !controller.signal.aborted &&
         latest.current.owner === next.owner &&
         latest.current.queryKey === key &&
@@ -270,6 +276,10 @@ export function StartInput({
   );
   useEffect(() => {
     if (textOwner === owner) return;
+    composing.current = false;
+    compositionEnter.current = false;
+    if (compositionEndTimer.current) clearTimeout(compositionEndTimer.current);
+    setIsComposing(false);
     cancelSearch();
     selectionText.current = '';
     selectedCompany.current = null;
@@ -298,6 +308,7 @@ export function StartInput({
       );
     return () => {
       cancelSearch();
+      if (compositionEndTimer.current) clearTimeout(compositionEndTimer.current);
       attachedClient.current = null;
       // Strict Mode immediately reconnects this instance; real detachments retire it.
       queueMicrotask(() => {
@@ -338,7 +349,7 @@ export function StartInput({
   const selected = choices.find((item) => item.id === mode)!;
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (disabled || textOwner !== owner) return;
+    if (composing.current || compositionEnter.current || disabled || textOwner !== owner) return;
     const value = text.trim();
     if (!value) return;
     const intent = interpretStart(value, mode);
@@ -405,6 +416,7 @@ export function StartInput({
               : t('付款事项', 'Payment matter')}
       </label>
       <textarea
+        key={owner || 'anonymous'}
         id={inputId}
         rows={compact ? 1 : 2}
         maxLength={companyOnly ? 80 : 1000}
@@ -438,16 +450,49 @@ export function StartInput({
           completionOpen && activeCandidate >= 0 ? `${listId}-${activeCandidate}` : undefined
         }
         onFocus={() => setCompletionOpen(true)}
+        onCompositionStart={() => {
+          // Fence pending responses immediately, before React renders the composition state.
+          composing.current = true;
+          compositionEnter.current = false;
+          if (compositionEndTimer.current) clearTimeout(compositionEndTimer.current);
+          cancelSearch();
+          selectionText.current = '';
+          selectedCompany.current = null;
+          setIsComposing(true);
+          setMatches({ query: '', candidates: [], phase: 'idle' });
+          setCompletionOpen(false);
+          setActiveCandidate(-1);
+          setError('');
+        }}
+        onCompositionEnd={(event) => {
+          composing.current = false;
+          // Safari can deliver the confirming Enter after compositionend.
+          compositionEnter.current = true;
+          if (compositionEndTimer.current) clearTimeout(compositionEndTimer.current);
+          compositionEndTimer.current = setTimeout(() => {
+            compositionEnter.current = false;
+            compositionEndTimer.current = null;
+          }, 0);
+          setIsComposing(false);
+          setText(event.currentTarget.value);
+          setCompletionOpen(true);
+        }}
         onChange={(event) => {
           selectionText.current = '';
           selectedCompany.current = null;
           setText(event.target.value);
           setError('');
           setActiveCandidate(-1);
-          setCompletionOpen(true);
+          setCompletionOpen(!composing.current);
         }}
         onKeyDown={(event) => {
-          if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+          if (
+            composing.current ||
+            event.nativeEvent.isComposing ||
+            event.keyCode === 229 ||
+            (event.key === 'Enter' && compositionEnter.current)
+          )
+            return;
           if (event.key === 'Escape') {
             setCompletionOpen(false);
             return;
@@ -480,6 +525,9 @@ export function StartInput({
             event.preventDefault();
             event.currentTarget.form?.requestSubmit();
           }
+        }}
+        onKeyUp={(event) => {
+          if (event.key === 'Enter') compositionEnter.current = false;
         }}
       />
       <div className="start-input-toolbar">
@@ -527,7 +575,7 @@ export function StartInput({
           type="submit"
           className="start-submit"
           aria-label={companyOnly ? t('开始研究', 'Start research') : t('继续', 'Continue')}
-          disabled={disabled || !text.trim()}
+          disabled={disabled || isComposing || !text.trim()}
         >
           <span>{companyOnly ? t('开始研究', 'Start research') : t('继续', 'Continue')}</span>
           <ArrowRight size={16} />

@@ -50,7 +50,6 @@ export const guideDocument: ProductDocument = {
       },
       links: [
         { label: productTerms.companyResearch, href: '/query' },
-        { label: productTerms.researchLibrary, href: '/research' },
         { label: productTerms.paymentsAndHandovers, href: '/decisions' },
         { label: productTerms.materials, href: '/materials' },
       ],
@@ -64,8 +63,8 @@ export const guideDocument: ProductDocument = {
           'Enter a company name or security code from Home or New research, confirm the disclosure entity and open Research report. The default retrieves annual amounts, operating cash and rule observations from public financial interfaces. Select Data and calculation to inspect fields, formulas and sources. Models and annual-report PDFs are used only when you explicitly request their corresponding analysis or review. The entry retains the current owner’s draft.',
         ],
         [
-          '登录后，“新建研究”下方直接显示研究报告、财务走势、行业对比、公告线索、扩展核查、数据覆盖、来源比对七项导航，不显示企业分组标题。析光助手仍在右下角。导航使用当前企业或本账号最后创建的查询，不按更新时间排序。没有记录时七项菜单禁用，可从“新建研究”建立记录。研究库从查询页“全部记录”或顶栏命令搜索打开，本地筛选不启动研究；旧原件和私人核查链接继续兼容。',
-          'Seven fixed signed-in entries appear directly below New research: Research report, Financial trends, Industry comparison, Disclosure leads, Extended checks, Data coverage and Source comparison. The menu has no company-group heading. The Prispect assistant remains in the lower-right corner. Navigation uses the current company or the account’s most recently created query, rather than its most recently updated record. With no record, all seven entries are disabled; start from New research. Open Research library from All records on the query page or header command search. Local filters do not start research; saved original-review and private-workflow links remain compatible.',
+          '登录后，“新建研究”下方直接显示研究报告、财务走势、行业对比、公告线索、扩展核查、数据覆盖、来源比对七项导航，不显示企业分组标题。析光助手仍在右下角。导航使用当前企业或本账号最后创建的查询，不按更新时间排序。没有记录时七项菜单禁用，可从“新建研究”建立记录。查询页显示最多三条最近研究，侧边栏“已载入企业”可打开本账号已有记录；打开记录不启动新的研究。旧原件和私人核查链接继续兼容。',
+          'Seven fixed signed-in entries appear directly below New research: Research report, Financial trends, Industry comparison, Disclosure leads, Extended checks, Data coverage and Source comparison. The menu has no company-group heading. The Prispect assistant remains in the lower-right corner. Navigation uses the current company or the account’s most recently created query, rather than its most recently updated record. With no record, all seven entries are disabled; start from New research. The query page shows up to three recent research records. Use Loaded companies in the sidebar to open the account’s saved records. Opening a record does not start new research. Saved original-review and private-workflow links remain compatible.',
         ],
         [
           '研究报告、财务走势、行业、公告、扩展核查、覆盖和来源各有独立页面，保留字段与来源入口。阅读默认归母利润，可切换合并利润；财务走势与行业对比共享选定年度，切换年份或展示方式仅使用已保存资料。图表页会有限补齐尚未取得且未失败的同行年度，保存后复用；行业均值剔除本企业，并要求同年度至少五家有效同行。原件现金桥仍使用同年度合并净利润。',
@@ -108,10 +107,7 @@ export const guideDocument: ProductDocument = {
           'An announcement title does not mean its full text was read. Notes and announcement coverage are stated. Incomplete evidence or a source-table total difference may leave candidates available, but dependent explanations stop and identify what needs checking.',
         ],
       ],
-      links: [
-        { label: productTerms.companyResearch, href: '/query' },
-        { label: productTerms.researchLibrary, href: '/research' },
-      ],
+      links: [{ label: productTerms.companyResearch, href: '/query' }],
     },
     {
       id: 'company-analysis',

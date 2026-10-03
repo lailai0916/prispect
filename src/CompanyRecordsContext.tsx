@@ -43,7 +43,7 @@ const emptyState: CompanyRecordsState = {
 };
 const CompanyRecordsContext = createContext<CompanyRecordsState>(emptyState);
 
-/** One account-scoped subscription for navigation, recent research and the library. */
+/** One account-scoped subscription for navigation, recent records, search and assistant. */
 export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
   const { user, locale } = useApp();
   const currentLocale = useRef(locale);

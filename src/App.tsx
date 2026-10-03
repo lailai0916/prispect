@@ -99,10 +99,6 @@ const CompanyQueryPage = lazyPage(
   () => import('./pages/CompanyQuery'),
   (module) => module.CompanyQueryPage
 );
-const ResearchLibraryPage = lazyPage(
-  () => import('./pages/ResearchLibrary'),
-  (module) => module.ResearchLibraryPage
-);
 const AuthPage = lazyPage(
   () => import('./pages/Auth'),
   (module) => module.AuthPage
@@ -152,8 +148,6 @@ function pageResource(path: string, signedIn: boolean) {
       return DocsHome;
     case '/query':
       return CompanyQueryPage;
-    case '/research':
-      return ResearchLibraryPage;
     case '/company':
       return CompanyWorkspacePage;
     case '/workspace':
@@ -515,7 +509,6 @@ export function App() {
       return;
     const titles: Record<string, string> = {
       '/query': t(...productTerms.newResearch),
-      '/research': t(...productTerms.researchLibrary),
       '/company': (() => {
         const section = resolveCompanySection(
           new URLSearchParams(route.split('?')[1]).get('section')
@@ -580,7 +573,6 @@ export function App() {
     historyNavigation: historyEntry?.route === route,
   };
   const navigation = [
-    ['/research', t(...productTerms.researchLibrary)],
     ['/workspace', t(...productTerms.financialReviews)],
     ['/materials', t(...productTerms.materials)],
     ['/decisions', t(...productTerms.paymentsAndHandovers)],
@@ -843,8 +835,6 @@ export function App() {
                     <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/query' ? (
                     <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
-                  ) : page === '/research' ? (
-                    <ResearchLibraryPage />
                   ) : page === '/company' ? (
                     <CompanyWorkspacePage
                       key={new URLSearchParams(route.split('?')[1]).get('run') || 'query'}

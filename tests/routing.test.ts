@@ -135,13 +135,13 @@ test('login return paths cannot redirect outside the app or into server endpoint
   }
   assert.equal(loginDestination('/decisions?new=handover', origin), '/decisions?new=handover');
   assert.equal(loginDestination('/tasks/report-id', origin), '/tasks/report-id');
-  assert.equal(loginDestination('/research', origin), '/research');
+  assert.equal(loginDestination('/research', origin), '/query');
 });
 
 test('SPA links leave originals, downloads, external sites and page anchors to the browser', () => {
   assert.equal(appLinkPath('/docs?section=privacy', origin), '/docs/guide?section=privacy');
   assert.equal(appLinkPath(origin + '/account', origin), '/account');
-  assert.equal(appLinkPath('/research', origin), '/research');
+  assert.equal(appLinkPath('/research', origin), '/query');
   for (const native of [
     '/api/materials/id/file',
     '/appearance-init.js',
@@ -164,6 +164,19 @@ test('trailing slashes normalize without losing queries or genuine fragments', (
   );
   assert.equal(appPath('/docs/', origin), '/docs');
   assert.equal(appPath('/', origin), '/');
+});
+
+test('retired research-library links return to query, including saved login and hash links', () => {
+  const query = '?search=saved%20company&status=ready';
+  for (const oldPath of ['/research', '/research/']) {
+    assert.equal(appPath(oldPath, origin), '/query');
+    assert.equal(appPath(oldPath + query + '#records', origin), '/query' + query + '#records');
+    assert.equal(legacyRoute('#' + oldPath + query, origin), '/query' + query);
+    assert.equal(appLinkPath(origin + oldPath + query, origin), '/query' + query);
+    assert.equal(loginDestination(oldPath + query, origin), '/query' + query);
+  }
+  assert.equal(appPath('/research/not-a-page', origin), null);
+  assert.equal(appLinkPath('https://other.example/research', origin), null);
 });
 
 test('documentation hub and article routes work for navigation and login returns', () => {

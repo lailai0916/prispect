@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronRight, RefreshCw } from 'lucide-react';
 import { companyPath, type CompanyRecordSummary } from '../shared/company-workspace';
 import { financialRecordState } from '../shared/company-record-status';
 import { useCompanyRecords } from './CompanyRecordsContext';
@@ -37,14 +37,18 @@ export function CompanyRecentResearch() {
     return t('未完成', 'Incomplete');
   };
   return (
-    <section className="research-recent" aria-labelledby="research-recent-title">
-      <header className="research-section-heading">
-        <h2 id="research-recent-title">{t('最近研究', 'Recent research')}</h2>
-        <a href="/research">
-          {t('全部记录', 'All records')}
-          <ArrowRight size={13} />
-        </a>
-      </header>
+    <section
+      className="research-recent"
+      aria-labelledby={!loading || records.length > 0 ? 'research-recent-title' : undefined}
+      aria-label={
+        loading && !records.length ? t('正在读取研究记录…', 'Loading research records…') : undefined
+      }
+    >
+      {(!loading || records.length > 0) && (
+        <header className="research-section-heading">
+          <h2 id="research-recent-title">{t('最近研究', 'Recent research')}</h2>
+        </header>
+      )}
       {error && (
         <div className="research-list-error">
           <p role="alert">{error}</p>

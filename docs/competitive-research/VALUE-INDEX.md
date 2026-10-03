@@ -128,7 +128,7 @@
 | HER-043 | 同步并发锁、复制反馈与两步删除           | source        | defer            | deferred    | 做全站clipboard拒绝和双Enter检查后统一feedback组件，沿用实际destructive确认规则。                                                                                                                                                                                                    |
 | HER-044 | 离线虚构案例作为明确演示降级             | fixture       | defer            | deferred    | 在真实失败入口保留error并单列演练，逐标题/原件reader/导出核对预置标签；不偷偷替換公司。                                                                                                                                                                                              |
 | HER-045 | 时窗锚定快照便于可重复验证               | source        | enhance-existing | verified    | 报告生成、来源取得与刊发日期保留分离；旧快照不伪装新报告。date-only来源日期不补时刻。                                                                                                                                                                                                |
-| HER-046 | 少量最近搜索可直接继续核验               | runtime       | enhance-existing | implemented | 保留账号研究库与明确状态；不新建匿名localStorage搜索存档，也不把task完成当研究完成。                                                                                                                                                                                                 |
+| HER-046 | 少量最近搜索可直接继续核验               | runtime       | enhance-existing | implemented | 保留最近三条研究、已载入企业和命令公司搜索的账号记录入口与明确状态；独立研究库及统计筛选已按用户要求退役，旧链接转查询页。不新建匿名搜索存档，不把task完成当研究完成。                                                                                                               |
 
 ## QKV／见微
 

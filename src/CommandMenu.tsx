@@ -57,14 +57,6 @@ export function CommandMenu({ onClose }: { onClose: () => void }) {
             keywords: '公司 company lookup 查询',
           },
           {
-            id: 'research',
-            label: t(...productTerms.researchLibrary),
-            path: '/research',
-            icon: Building2,
-            group: researchGroup,
-            keywords: '研究 公司 查询 history records research',
-          },
-          {
             id: 'workspace',
             label: t(...productTerms.financialReviews),
             path: '/workspace',

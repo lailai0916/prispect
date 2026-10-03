@@ -20,12 +20,12 @@ const pages = new Set([
   '/materials',
   '/company',
   '/query',
-  '/research',
   '/decisions',
   '/compare',
 ]);
 
-const legacyDocuments: Record<string, string> = {
+const legacyPages: Record<string, string> = {
+  '/research': '/query',
   '/about': '/docs/about',
   '/method': '/docs/methodology',
   '/privacy': '/docs/privacy',
@@ -41,7 +41,7 @@ export function appPath(value: string, origin: string): string | null {
     const url = new URL(value, origin);
     const originalPath = url.pathname.replace(/\/+$/, '') || '/';
     const pathname =
-      legacyDocuments[originalPath] ||
+      legacyPages[originalPath] ||
       (originalPath === '/docs' &&
       (url.searchParams.has('section') || url.hash.startsWith('#document-'))
         ? '/docs/guide'

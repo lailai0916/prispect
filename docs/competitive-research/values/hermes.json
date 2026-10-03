@@ -1221,18 +1221,28 @@
     "problem": "用户重复输入并容易选错上次主体",
     "value": "减少一个选择步骤并保身份代码",
     "conditions_cost": "匿名publichistory不适合private decisions；刷新不表示已save研究",
-    "prispect_application": "析光已有ownerrecordsubscription/recent3，可强化“继续记录/重新获取”区别",
+    "prispect_application": "复用账号研究记录订阅：查询页最多三条最近记录、侧栏已载入企业和命令菜单公司搜索可直接打开已有run；继续记录与手动刷新资料保持区别",
     "risks": "Hermeshistory只存选主体且扫码演出每次跑，无事实snapshot说明",
-    "transformation": "复用账号研究库，不保存未完成task为已研究；最近记录时间与状态明示",
+    "transformation": "保留按账号打开已有研究记录的机制，不新建匿名搜索存档，不把task完成当研究完成。独立研究库页面、统计、筛选及全部记录入口已于2026-10-03按用户要求删除；旧/research仅重定向/query，不再提供独立页面",
     "disposition": "enhance-existing",
     "implementation": "implemented",
-    "acceptance": "回访打开原run不自动获取；重新获取另有明确动作与version",
+    "acceptance": "最近记录保留公司名称、证券代码、年度和实际状态；侧栏与命令搜索链接使用账号已有run，不创建新研究。旧/research及其登录返回、hash链接均转/query；手动刷新仍是独立操作",
     "implementation_evidence": [
-      "src/CompanyRecordsContext.tsx; src/pages/ResearchLibrary.tsx; src/CommandMenu.tsx",
-      "tests/company-research-catalog.test.ts; evidence/prispect-before/narrow-dark-research-library.png"
+      "src/CompanyRecordsContext.tsx; src/CompanyRecentResearch.tsx; src/CompanySidebar.tsx; src/CommandMenu.tsx; src/routing.ts",
+      "tests/company-navigation.test.ts; tests/company-sidebar.test.ts; tests/routing.test.ts; tests/company-record-status.test.ts"
     ],
-    "outcome": "保留账号研究库与明确状态；不新建匿名localStorage搜索存档，也不把task完成当研究完成。",
-    "validation_boundary": "新来源view的13项测试、61项相关assessment/model/public-source测试和浏览器合成fixture已通过；其他底座/并行改动验收以项目总验收为准，未声称真实用户效果或全部实时上游通过。",
-    "next_step": "保持金融与权限边界，在总验收核对相同任务与实际入口；真人理解效果仍待受试任务验证。"
+    "outcome": "保留最近三条研究、已载入企业和命令公司搜索的账号记录入口与明确状态；独立研究库及统计筛选已按用户要求退役，旧链接转查询页。不新建匿名搜索存档，不把task完成当研究完成。",
+    "validation_boundary": "原来源view的13项测试、61项相关assessment/model/public-source测试和浏览器合成fixture属于历史验收。本轮路由、侧栏导航、文档知识与SPA定向35项测试通过，覆盖旧链接转查询页；当前源码说明最近三条和已有记录入口，未声称保留完整研究库功能、真实用户效果或全部实时上游通过。",
+    "next_step": "继续核对账号隔离、已有记录状态和实际入口；不计划恢复已按用户要求删除的研究库。真人理解效果仍待受试任务验证。",
+    "historical_implementation": {
+      "implementation_evidence": [
+        "src/CompanyRecordsContext.tsx; src/pages/ResearchLibrary.tsx; src/CommandMenu.tsx",
+        "tests/company-research-catalog.test.ts; evidence/prispect-before/narrow-dark-research-library.png"
+      ],
+      "transformation": "复用账号研究库，不保存未完成task为已研究；最近记录时间与状态明示",
+      "acceptance": "回访打开原run不自动获取；重新获取另有明确动作与version",
+      "outcome": "保留账号研究库与明确状态；不新建匿名localStorage搜索存档，也不把task完成当研究完成。",
+      "boundary": "以上为独立研究库退役前的实施说明与证据引用；原截图、源码研究及固定SHA保持原样，不作为当前独立页面仍存在的证明。"
+    }
   }
 ]

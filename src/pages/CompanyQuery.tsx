@@ -6,7 +6,7 @@ import type { CompanyIdentity, CompanyResearchRun, ReviewPurpose } from '../../s
 import { companyPath } from '../../shared/company-workspace';
 import { findReusableCompanyRun } from '../../shared/company-run-reuse';
 import { StartInput } from '../StartInput';
-import { Dialog } from '../components';
+import { Dialog, Logo } from '../components';
 import { useApp } from '../context';
 import { CompanyRecentResearch } from '../CompanyRecentResearch';
 import { api, requestErrorText } from '../api';
@@ -20,6 +20,7 @@ import '../query.css';
 export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
   const { t, locale, navigate, user } = useApp();
   const { records, loading: recordsLoading } = useCompanyRecords();
+  const hasRecords = records.length > 0;
   const latest = new Date().getFullYear() - 1;
   const requestedYear = Number(query?.get('year'));
   const [year, setYear] = useState(
@@ -107,10 +108,14 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
     }
   };
   return (
-    <div className="company-query-page query-create-page">
+    <div
+      className="company-query-page query-create-page"
+      data-query-state={hasRecords ? 'recent' : recordsLoading ? 'loading' : 'empty'}
+      aria-busy={recordsLoading || creating}
+    >
       <div className="query-create-content">
-        <header className="query-create-heading">
-          <h1>{t(...productTerms.newResearch)}</h1>
+        <header className={`query-create-heading${hasRecords ? '' : ' query-create-brand'}`}>
+          {hasRecords ? <h1>{t(...productTerms.newResearch)}</h1> : <Logo />}
         </header>
         <div className="query-create-search">
           <Search size={18} className="query-create-search-icon" aria-hidden="true" />
