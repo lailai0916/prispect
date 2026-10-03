@@ -574,10 +574,7 @@ export function StartInput({
           ))}
           {searched && !finding && !candidates.length && (
             <p className="company-completions-state">
-              {t(
-                '未匹配到支持的上市主体。检查名称或证券代码，也可以继续保存资料缺口。',
-                'No supported listed entity matched. Check the name or ticker, or continue to save an information gap.'
-              )}
+              {t('未匹配到支持的上市主体', 'No supported listed entity matched.')}
             </p>
           )}
         </div>

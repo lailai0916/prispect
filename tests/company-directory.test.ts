@@ -82,8 +82,18 @@ test('matching ranks exact names first and retains ambiguity within the twenty-c
   assert.equal(response.candidates[1]?.securityCode, '600000');
 });
 
-test('a catalog miss is not inferred from a shorter name or an unsupported market ticker', () => {
-  for (const query of ['浙江松原汽车安全系统股份有限公司', 'AAPL', 'BRK.B', '不存在的目录名称']) {
+test('Latin input matches supported names without market inference', () => {
+  const withLatinName: CompanyDirectory = {
+    ...directory,
+    entries: [...directory.entries, ['600000', 'fixture600000', 'ST测试']],
+  };
+  for (const query of ['ST', 'st', 'ＳＴ']) {
+    assert.equal(matchCompanyDirectory(withLatinName, query).candidates[0]?.securityCode, '600000');
+  }
+});
+
+test('unmatched names and codes return empty candidates regardless of input language', () => {
+  for (const query of ['浙江松原汽车安全系统股份有限公司', 'abc', '你好', 'AAPL', 'BRK.B']) {
     assert.deepEqual(matchCompanyDirectory(directory, query).candidates, []);
   }
 });

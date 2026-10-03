@@ -6,6 +6,7 @@ import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { createApp } from '../server/app.js';
 import { createCompanySearch } from '../server/company-search.js';
+import { searchCompanies } from '../server/company-sources.js';
 import type { CompanyService } from '../server/company-routes.js';
 import { WorkspaceStore } from '../server/store.js';
 import { ApiFault } from '../server/validation.js';
@@ -52,7 +53,15 @@ const deferred = <T>() => {
 test('public directory matches need no upstream; misses retain the bounded official fallback', async () => {
   const queries: string[] = [];
   const matcher = createCompanySearch({
-    directory,
+    directory: {
+      ...directory,
+      entries: [
+        ...directory.entries,
+        ['600001', 'ABCFixture', 'ABC科技'],
+        ['600002', 'STFixture', 'ST示例'],
+        ['002594', 'BYDFixture', 'BYD'],
+      ],
+    },
     refreshDirectory: false,
     search: async (query, dependencies) => {
       queries.push(query);
@@ -64,14 +73,39 @@ test('public directory matches need no upstream; misses retain the bounded offic
   for (const query of ['300893', '松原', ' 松原安全 ']) {
     assert.equal((await matcher.search(query)).candidates[0]?.securityCode, '300893');
   }
+  for (const [query, code] of [
+    ['abc', '600001'],
+    ['st', '600002'],
+    ['BYD', '002594'],
+  ]) {
+    assert.equal((await matcher.search(query!)).candidates[0]?.securityCode, code);
+  }
   assert.deepEqual(queries, []);
-  assert.deepEqual((await matcher.search('目录外企业')).candidates, []);
-  assert.deepEqual(queries, ['目录外企业']);
-  await assert.rejects(
-    matcher.search('AAPL'),
-    (error) => error instanceof ApiFault && error.code === 'COMPANY_MARKET_UNSUPPORTED'
+  for (const query of ['目录外企业', 'AAPL', '你好'])
+    assert.deepEqual((await matcher.search(query)).candidates, []);
+  assert.deepEqual(queries, ['目录外企业', 'AAPL', '你好']);
+});
+
+test('official search accepts English text and keeps only supported live A-share candidates', async () => {
+  const queries: string[] = [];
+  const rows = [
+    { code: '600001', orgId: 'ABCFixture', zwjc: 'ABC科技', category: 'A股', delisted: 'false' },
+    { code: 'AAPL', orgId: 'USFixture', zwjc: 'Apple', category: '美股', delisted: 'false' },
+    { code: '600002', orgId: 'OldFixture', zwjc: '退市示例', category: 'A股', delisted: 'true' },
+  ];
+  const sourceFetch: typeof fetch = async (_url, init) => {
+    const query = new URLSearchParams(String(init?.body)).get('keyWord')!;
+    queries.push(query);
+    return Response.json(query === 'abc' ? rows : []);
+  };
+  const found = await searchCompanies(' abc ', { fetch: sourceFetch });
+  assert.deepEqual(
+    found.candidates.map((item) => item.securityCode),
+    ['600001']
   );
-  assert.deepEqual(queries, ['目录外企业']);
+  for (const query of ['AAPL', '你好'])
+    assert.deepEqual((await searchCompanies(query, { fetch: sourceFetch })).candidates, []);
+  assert.deepEqual(queries, ['abc', 'AAPL', '你好']);
 });
 
 test('public candidate cache expires, is bounded, and never turns source failures into empty matches', async () => {
@@ -83,7 +117,7 @@ test('public candidate cache expires, is bounded, and never turns source failure
     refreshDirectory: false,
     search: async (query) => {
       calls.set(query, (calls.get(query) || 0) + 1);
-      if (query === '来源失败')
+      if (query === 'sourceError')
         throw new ApiFault(502, 'COMPANY_SOURCE_UNAVAILABLE', 'Fixture failure');
       return result(query, query === '真实空结果' ? [] : [identity]);
     },
@@ -101,9 +135,9 @@ test('public candidate cache expires, is bounded, and never turns source failure
   clock += 15_000;
   await matcher.search('真实空结果');
   assert.equal(calls.get('真实空结果'), 2);
-  await assert.rejects(matcher.search('来源失败'));
-  await assert.rejects(matcher.search('来源失败'));
-  assert.equal(calls.get('来源失败'), 2);
+  await assert.rejects(matcher.search('sourceError'));
+  await assert.rejects(matcher.search('sourceError'));
+  assert.equal(calls.get('sourceError'), 2);
   for (let index = 0; index < 201; index++) await matcher.search(`新候选${index}`);
   await matcher.search('新候选0');
   assert.equal(calls.get('新候选0'), 2, 'Least recently used candidates are evicted');
@@ -266,15 +300,17 @@ test('authenticated matching and directory requests never initialize or clean th
       ((await local.json()) as CompanySearchResponse).candidates[0]?.shortName,
       '松原安全'
     );
-    for (let index = 0; index < 2; index++) {
-      const fallback = await fetch(
-        base + '/api/companies/search?q=' + encodeURIComponent('目录外企业'),
-        { headers }
-      );
-      assert.equal(fallback.status, 200);
-      assert.deepEqual(((await fallback.json()) as CompanySearchResponse).candidates, []);
+    for (const query of ['目录外企业', 'AAPL', '你好']) {
+      for (let index = 0; index < 2; index++) {
+        const fallback = await fetch(
+          base + '/api/companies/search?q=' + encodeURIComponent(query),
+          { headers }
+        );
+        assert.equal(fallback.status, 200);
+        assert.deepEqual(((await fallback.json()) as CompanySearchResponse).candidates, []);
+      }
     }
-    assert.equal(upstreamCalls, 1);
+    assert.equal(upstreamCalls, 3);
     const controller = new AbortController();
     const disconnected = fetch(base + '/api/companies/search?q=' + encodeURIComponent('离开页面'), {
       headers,

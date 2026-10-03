@@ -31,11 +31,6 @@ export function assertCompanyResearchSupported(
     );
 }
 
-export function assertCompanySearchSupported(query: string): void {
-  if (/^[A-Za-z]{1,10}(?:[.-][A-Za-z]{1,3})?$/.test(query.trim()))
-    assertCompanyResearchSupported(query);
-}
-
 export const MAX_COMPANY_PDF_BYTES = pdfLimits.officialBytes;
 export const shanghaiDate = (value: Date | string) =>
   new Date(value).toLocaleDateString('en-CA', { timeZone: 'Asia/Shanghai' });
@@ -210,7 +205,6 @@ export async function searchCompanies(
   query = query.trim();
   if (!query || query.length > 80 || /[\x00-\x1f]/.test(query))
     throw new ApiFault(400, 'COMPANY_QUERY_INVALID', '请输入1至80字的公司名称或六位A股代码');
-  assertCompanySearchSupported(query);
   const raw = await formJson(SEARCH, { keyWord: query, maxNum: '20' }, dependencies);
   if (!Array.isArray(raw))
     throw new ApiFault(502, 'COMPANY_SOURCE_FORMAT', '官方主体检索响应格式改变');

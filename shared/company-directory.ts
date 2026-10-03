@@ -93,12 +93,7 @@ export function matchCompanyDirectory(
 ): CompanySearchResponse {
   const normalized = normalizeCompanyQuery(query);
   const matches: { rank: number; entry: CompanyDirectory['entries'][number] }[] = [];
-  if (
-    normalized &&
-    query.trim().length <= 80 &&
-    !/[\x00-\x1f]/.test(query) &&
-    !/^[a-z]+(?:[.-][a-z]+)?$/.test(normalized)
-  ) {
+  if (normalized && query.trim().length <= 80 && !/[\x00-\x1f]/.test(query)) {
     for (const entry of directory.entries) {
       const name = normalizeCompanyQuery(entry[2]);
       const rank =

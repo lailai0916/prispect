@@ -18,7 +18,7 @@ import { ApiFault } from '../server/validation.js';
 const unsupported = (error: unknown) =>
   error instanceof ApiFault && error.status === 400 && error.code === 'COMPANY_MARKET_UNSUPPORTED';
 
-test('US ticker searches and direct research stop before public sources, model or checkpoints', async (t) => {
+test('unsupported direct research stops before public sources, model or checkpoints', async (t) => {
   let requests = 0;
   const fetchMock: typeof fetch = async () => {
     requests++;
@@ -26,7 +26,6 @@ test('US ticker searches and direct research stop before public sources, model o
   };
   t.mock.method(globalThis, 'fetch', fetchMock);
   for (const securityCode of ['AAPL', 'tsla', 'MSFT', 'BRK.B']) {
-    await assert.rejects(() => searchCompanies(securityCode, { fetch: fetchMock }), unsupported);
     await assert.rejects(
       () =>
         runCompanyResearch(
@@ -45,7 +44,7 @@ test('US ticker searches and direct research stop before public sources, model o
   assert.equal(requests, 0);
 });
 
-test('unmatched Chinese aliases and full names retain A-share empty results without an SEC fallback', async (t) => {
+test('unmatched Chinese, English and ticker inputs retain supported search results without an SEC fallback', async (t) => {
   const requests: string[] = [];
   const fetchMock: typeof fetch = async (url) => {
     requests.push(String(url));
@@ -53,15 +52,26 @@ test('unmatched Chinese aliases and full names retain A-share empty results with
     return Response.json([]);
   };
   t.mock.method(globalThis, 'fetch', fetchMock);
-  for (const query of ['英伟达', '苹果', 'Apple Inc.', '未上市企业']) {
+  const queries = [
+    'abc',
+    '你好',
+    'AAPL',
+    'tsla',
+    'BRK.B',
+    '英伟达',
+    '苹果',
+    'Apple Inc.',
+    '未上市企业',
+  ];
+  for (const query of queries) {
     const result = await searchCompanies(query, { fetch: fetchMock });
     assert.equal(result.source, 'cninfo');
     assert.deepEqual(result.candidates, []);
   }
-  assert.equal(requests.length, 4);
+  assert.equal(requests.length, queries.length);
 });
 
-test('paused US routes reject search, create, retry and resume while preserving account-owned historical records', async () => {
+test('supported search accepts all terms while unsupported research routes preserve account-owned historical records', async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), 'prispect-us-paused-'));
   const identity: CompanyIdentity = {
     securityCode: '300893',
@@ -95,7 +105,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
       calls.searches++;
       return {
         query,
-        candidates: [identity],
+        candidates: query === identity.securityCode ? [identity] : [],
         limitedToListed: true,
         source: 'cninfo',
         truncated: false,
@@ -233,13 +243,20 @@ test('paused US routes reject search, create, retry and resume while preserving 
     await store.persist();
     const saved = structuredClone(legacy);
 
-    for (const query of ['AAPL', 'tsla', 'BRK.B']) {
+    const searchQueries = ['abc', '你好', 'AAPL', 'tsla', 'BRK.B'];
+    for (const query of searchQueries) {
       const response = await request(
         `/api/companies/search?q=${encodeURIComponent(query)}`,
         alice.headers
       );
-      assert.equal(response.status, 400);
-      assert.equal((await response.json()).code, 'COMPANY_MARKET_UNSUPPORTED');
+      assert.equal(response.status, 200);
+      assert.deepEqual(await response.json(), {
+        query,
+        candidates: [],
+        limitedToListed: true,
+        source: 'cninfo',
+        truncated: false,
+      });
     }
     for (const securityCode of ['AAPL', 'TSLA', 'BRK.B']) {
       const response = await request('/api/company-runs', alice.headers, {
@@ -280,7 +297,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
       assert.equal((await response.json()).code, 'COMPANY_MARKET_UNSUPPORTED');
     }
     assert.deepEqual(supplementaryCalls, []);
-    assert.deepEqual(calls, { searches: 0, research: 0 });
+    assert.deepEqual(calls, { searches: searchQueries.length, research: 0 });
     assert.deepEqual(store.state.companyRuns, [saved]);
 
     const numericUs = {
@@ -323,7 +340,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
       assert.equal(detail.status, 200);
       assert.deepEqual(await detail.json(), before);
       assert.deepEqual(supplementaryCalls, []);
-      assert.deepEqual(calls, { searches: 0, research: 0 });
+      assert.deepEqual(calls, { searches: searchQueries.length, research: 0 });
       store.state.companyRuns.pop();
     }
     assert.deepEqual(store.state.companyRuns, [saved]);
@@ -385,6 +402,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
 
     const aShare = await request('/api/companies/search?q=300893', alice.headers);
     assert.equal(aShare.status, 200);
+    assert.deepEqual((await aShare.json()).candidates, [identity]);
     const created = await request('/api/company-runs', alice.headers, {
       securityCode: identity.securityCode,
       orgId: identity.orgId,
@@ -392,7 +410,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
     });
     assert.equal(created.status, 202);
     await application.waitForIdle();
-    assert.deepEqual(calls, { searches: 1, research: 1 });
+    assert.deepEqual(calls, { searches: searchQueries.length + 1, research: 1 });
 
     await new Promise<void>((resolve) => server.close(() => resolve()));
     application.auth.close();
@@ -413,7 +431,7 @@ test('paused US routes reject search, create, retry and resume while preserving 
     const list = await request('/api/company-runs', alice.headers);
     assert.equal(list.status, 200);
     assert.ok(((await list.json()) as CompanyResearchRun[]).some((run) => run.id === legacy.id));
-    assert.deepEqual(calls, { searches: 1, research: 1 });
+    assert.deepEqual(calls, { searches: searchQueries.length + 1, research: 1 });
     assert.deepEqual(supplementaryCalls, []);
   } finally {
     await application.waitForIdle();

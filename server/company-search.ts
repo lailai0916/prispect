@@ -13,7 +13,7 @@ import {
   type CompanyDirectory,
 } from '../shared/company-directory.js';
 import type { AuthContext, AuthStore } from './auth.js';
-import { assertCompanySearchSupported, boundedBody, searchCompanies } from './company-sources.js';
+import { boundedBody, searchCompanies } from './company-sources.js';
 import { ApiFault } from './validation.js';
 
 const DIRECTORY_MAX_BYTES = 2_000_000;
@@ -140,7 +140,6 @@ export function createCompanySearch(options: {
       query = query.trim();
       if (!query || query.length > 80 || /[\x00-\x1f]/.test(query))
         throw new ApiFault(400, 'INVALID_COMPANY_QUERY', '请输入公司简称或六位证券代码');
-      assertCompanySearchSupported(query);
       if (signal?.aborted) throw cancellation();
       refresh();
       if (directory) {
@@ -228,7 +227,6 @@ export async function installCompanySearchRoutes(
       const query = z.string().trim().min(1).max(80).safeParse(req.query.q);
       if (!query.success)
         throw new ApiFault(400, 'INVALID_COMPANY_QUERY', '请输入公司简称或六位证券代码');
-      assertCompanySearchSupported(query.data);
       options.auth.rateLimit(
         `company-search:${(res.locals.auth as AuthContext).user.id}`,
         30,

@@ -20,6 +20,7 @@ const directory: CompanyDirectory = {
   entries: [
     ['600926', 'gsh6000926', '杭州银行'],
     ['000001', 'gssz0000001', '平安银行'],
+    ['600000', 'fixture600000', 'ST测试'],
   ],
 };
 
@@ -55,6 +56,11 @@ test('preloaded official directory resolves names and complete codes without a r
   await client.preload();
   assert.equal(client.peek('杭州 银行')?.candidates[0]?.securityCode, '600926');
   assert.equal(client.peek('６００９２６')?.candidates[0]?.shortName, '杭州银行');
+  assert.equal(client.peek('st')?.candidates[0]?.shortName, 'ST测试');
+  assert.equal(
+    (await client.search('ST', new AbortController().signal)).candidates[0]?.securityCode,
+    '600000'
+  );
   const answer = await client.search('平安银行', new AbortController().signal);
   assert.equal(answer.candidates[0]?.securityCode, '000001');
   assert.equal(calls, 0);
