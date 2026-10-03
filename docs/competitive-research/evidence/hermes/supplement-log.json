@@ -1,0 +1,34 @@
+[
+  {
+    "label": "16-home-chat-unconfigured",
+    "url": "http://127.0.0.1:4402/",
+    "kind": "runtime",
+    "atUTC": "2026-10-03T05:43:18Z"
+  },
+  {
+    "label": "17-compare-real-failure",
+    "url": "http://127.0.0.1:4402/compare?a=600519&b=600000",
+    "kind": "live-query",
+    "atUTC": "2026-10-03T05:43:34Z"
+  },
+  {
+    "drawerEscapeCloses": false,
+    "focusTag": "BUTTON"
+  },
+  {
+    "downloadName": "hermes-xray-mock-danger.png",
+    "kind": "fixture"
+  },
+  {
+    "label": "19-compare-lite-fixture-render",
+    "url": "http://127.0.0.1:4402/compare?a=600519&b=600000",
+    "kind": "fixture-injection",
+    "atUTC": "2026-10-03T05:43:41Z"
+  },
+  {
+    "label": "20-compare-pro-table-fixture-render",
+    "url": "http://127.0.0.1:4402/compare?a=600519&b=600000",
+    "kind": "fixture-injection",
+    "atUTC": "2026-10-03T05:43:43Z"
+  }
+]

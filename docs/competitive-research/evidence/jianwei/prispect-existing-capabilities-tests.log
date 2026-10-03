@@ -1,0 +1,41 @@
+✔ only explicit public-source questions trigger research; financial questions and supplied URLs do not (4.072684ms)
+✔ latest company news uses four real fixed-source calls, actual body citations and an immutable public clone (43.840712ms)
+✔ generic source searches keep code/org-filtered announcements and public discussion opinions within four calls (7.202649ms)
+✔ public discussion reads accept only issuer-specific acquired IDs and preserve personal-opinion scope (2.811164ms)
+✔ failed, oversized and empty sources return unavailable with a warning, while body failures preserve partial evidence (6.454432ms)
+✔ mismatched issuer, organization, year and unsupported exchanges stop before fetching (2.222958ms)
+✔ cancellation returns promptly even when an injected public transport ignores its abort signal (0.965594ms)
+✔ anonymous privacy, operator and responsibility questions use real documentation without a model or workspace (124.187687ms)
+✔ signed-in documentation validates CSRF without initializing a private workspace (131.976938ms)
+✔ saved company questions automatically resolve names, annual scope and conversational context (196.17405ms)
+✔ multiple named companies and unavailable years request clarification while anonymous questions stay in documentation (120.874456ms)
+✔ company requests enforce CSRF and reject foreign record references without leaking their data (211.938008ms)
+✔ actual company model requests use only public evidence and never transmit saved account fields (123.519685ms)
+✔ temporary public follow-up informs the answer without changing saved financials or the grade (118.147809ms)
+✔ public follow-up and model failures preserve sourced rule answers without exposing provider errors (110.550374ms)
+✔ deleted or changed public snapshots cannot receive an in-flight assistant answer (336.545301ms)
+✔ disconnect during answer generation reaches the company service and saves no unfinished answer (121.768363ms)
+✔ signed-in policy models receive real knowledge records and invalid citations retain published statements (125.563568ms)
+✔ product operator and legal responsibility questions override a selected company for signed-in owners (108.67379ms)
+✔ official identity search filters unsupported markets, preserves distinct A-share candidates and normal empty results (21.93014ms)
+✔ annual announcements require the selected org, specified year and Chinese full report, with Shanghai date boundaries (14.877287ms)
+✔ source restrictions stop immediately, transient failures retry once, and source URLs cannot become arbitrary fetches (3.642786ms)
+✔ streamed body size is bounded even without Content-Length (0.86276ms)
+✔ the source deadline covers a stalled body after headers and waiting response headers; recent reads do not retry (39.87554ms)
+✔ official originals have a finite larger budget and caller cancellation never reserves a second attempt (1.091594ms)
+✔ month-end balances hide an earlier shortfall; moving only the proposed date changes the path (12.88712ms)
+✔ missing balances, amounts and dates remain unknown instead of becoming zero or month-end assumptions (7.361392ms)
+✔ same-day receipts cannot certify payment ordering, while end-of-day arithmetic remains available (1.305727ms)
+✔ reverse payment thresholds use future cash rather than capping every decision at the original balance (1.122381ms)
+✔ date and source amounts are bounded, and duplicate event IDs cannot double-count silently (0.680685ms)
+✔ a user cash floor is distinct from insolvency, and changing future receipts cannot cure an earlier shortfall (8.629628ms)
+✔ a conditional date alternative fails when its assumed receipt timing changes (1.874143ms)
+✔ adding an omitted obligation invalidates a positive path without changing the existing receipts (3.700624ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3432.910599

@@ -945,6 +945,16 @@ test('missing self-set exposure limit directs to user input and never re-request
   assert.equal(action.title, '填写用户自设暴露上限');
   assert.match(action.requestedEvidence, /自行设定.*不推荐上限.*不自动补零/);
   assert.ok(!action.requestedEvidence.includes('凭据'));
+  const limited = structuredClone(input);
+  limited.external!.exposureLimit = '50000';
+  const unmet = evaluateDecision(version(limited, records), {
+    tasks: [],
+    materials: [material(records)],
+  });
+  assert.equal(gate(unmet, 'exposure-condition').status, 'condition-unmet');
+  const conditionAction = unmet.nextActions.find((row) => row.id === 'request-exposure-condition')!;
+  assert.equal(conditionAction.title, '核对拟付款与自设暴露条件');
+  assert.match(conditionAction.requestedEvidence, /核对已有发生记录.*算术条件不代表付款批准/);
   const withdrawn = evaluateDecision(
     version(
       input,

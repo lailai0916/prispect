@@ -21,6 +21,7 @@ const messages: Record<string, string> = {
   '同一财务信号仅促使核查，不裁定经营原因。':
     'The financial signal motivates review; it does not establish the operating cause.',
   填写用户自设暴露上限: 'Set your undelivered-exposure limit',
+  核对拟付款与自设暴露条件: 'Review proposed payment and your exposure conditions',
   核对已有延期条款及影响: 'Review the provided delay terms and their effects',
   '已有延期条款字段在同主体、同日期的保存文本中定位，仍需核对延期同意及交付、回款影响；不认证同意或履行。':
     'Delay-term fields have been located in saved text for the same entity and date. Consent and effects on delivery and collections still need review; consent and performance are not authenticated.',

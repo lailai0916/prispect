@@ -232,6 +232,7 @@ test('reposts keep distinct citations and titles while repeated text is not inde
   run.context!.news = [news(1), news(2), news(3)];
   run.context!.news[0]!.clusterId = 'one-repost';
   run.context!.news[1]!.clusterId = 'one-repost';
+  run.context!.news[1]!.digest = run.context!.news[0]!.digest;
   const payload = packed(run);
   assert.equal(payload.news.length, 3);
   assert.equal(payload.publicInformationCoverage.duplicatedTextRecords, 1);

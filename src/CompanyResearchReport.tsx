@@ -1,5 +1,5 @@
 import { productTerms } from '../shared/product-terms';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useId, useState, type ReactNode } from 'react';
 import {
   ArrowRight,
   Check,
@@ -30,6 +30,9 @@ import { CompanyContextEvidence } from './CompanyContextViews';
 import { CompanyReview } from './CompanyReview';
 import { useApp } from './context';
 import { date, money } from './format';
+import { ResearchPlan } from './ResearchPlan';
+import { SourceTrust } from './SourceTrust';
+import { ReportEvidenceControls } from './ReportEvidenceControls';
 import './research-report.css';
 
 const stateLabels: Record<CompanyResearchViewState, AssessmentText> = {
@@ -221,6 +224,7 @@ export function CompanyResearchReport({
   refreshing: boolean;
 }) {
   const { t, locale } = useApp();
+  const reportId = useId();
   const brief = deriveCompanyResearchBrief(run);
   const progress = deriveCompanyResearchProgress(run);
   const amounts = companyReviewSummary(run);
@@ -256,7 +260,12 @@ export function CompanyResearchReport({
   const ratio = amounts.ratio === null ? '—' : `${(amounts.ratio * 100).toFixed(2)}%`;
   const coverage = brief.coverage;
   return (
-    <article className="company-research-report" data-testid="company-research-report">
+    <article
+      id={reportId}
+      className="company-research-report"
+      data-testid="company-research-report"
+      data-report-evidence-scope
+    >
       <section className="research-summary" aria-labelledby="research-summary-heading">
         <div className="research-summary-card">
           <div className={'research-summary-lead' + (assessment ? ' research-summary-rated' : '')}>
@@ -574,6 +583,20 @@ export function CompanyResearchReport({
         )}
         <CompanyReview run={run} />
       </section>
+      <ReportEvidenceControls
+        scopeId={reportId}
+        scopeKey={JSON.stringify([
+          run.id,
+          run.input.securityCode,
+          run.input.orgId,
+          run.input.year,
+          run.context?.fetchedAt,
+          run.assessment?.generatedAt,
+          progress.snapshot,
+        ])}
+      />
+      <ResearchPlan run={run} />
+      <SourceTrust run={run} />
       {!run.context?.publicSignals && !run.informationGap && (
         <p className="research-public-followup">
           {t(

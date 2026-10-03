@@ -12,6 +12,7 @@ import {
 } from '../shared/company-assessment.js';
 import { contextAmountFields, industryMetricKeys } from '../shared/company-workspace.js';
 import { contextFen } from '../shared/company-analysis.js';
+import { sourceTrustPublicPayload } from '../shared/source-trust.js';
 import { boundedBody } from './company-sources.js';
 import {
   DEFAULT_MODEL,
@@ -129,6 +130,7 @@ function packedPublicInformation(run: CompanyResearchRun, seed: CompanyAssessmen
         includedCharacters: 0,
         ...(row.clusterId ? { clusterId: publicPlainText(row.clusterId, 120) } : {}),
         originalText,
+        deduplicationText: availableText,
       },
     ];
   });
@@ -162,6 +164,7 @@ function packedPublicInformation(run: CompanyResearchRun, seed: CompanyAssessmen
         availableCharacters: availableText.length,
         includedCharacters: 0,
         originalText,
+        deduplicationText: availableText,
       },
     ];
   });
@@ -174,19 +177,16 @@ function packedPublicInformation(run: CompanyResearchRun, seed: CompanyAssessmen
           (b.textScope === 'media-excerpt' || b.textScope === 'post-excerpt' ? -1 : 0) ||
         a.date.localeCompare(b.date)
     );
-  const clusters = new Map<string, string>();
+  const repeatedTexts = new Map<string, string>();
   for (const [index, row] of textRows.entries()) {
-    const cluster =
-      'clusterId' in row && row.clusterId
-        ? 'cluster-' + row.clusterId
-        : row.originalText.length >= 80
-          ? 'text-' + row.originalText
-          : '';
-    if (cluster && clusters.has(cluster)) {
-      Object.assign(row, { duplicateTextOf: clusters.get(cluster) });
+    // A cluster may contain a correction or opposing account. Only actually equal available text is repeated.
+    // Compare before the per-record packing limit, so a shared prefix cannot hide a different ending.
+    const repeated = row.deduplicationText.length >= 80 ? row.deduplicationText : '';
+    if (repeated && repeatedTexts.has(repeated)) {
+      Object.assign(row, { duplicateTextOf: repeatedTexts.get(repeated) });
       continue;
     }
-    if (cluster) clusters.set(cluster, row.sourceId);
+    if (repeated) repeatedTexts.set(repeated, row.sourceId);
     const fairShare = Math.max(
       1,
       Math.floor((PUBLIC_TEXT_CHAR_LIMIT - characters) / (textRows.length - index))
@@ -208,8 +208,14 @@ function packedPublicInformation(run: CompanyResearchRun, seed: CompanyAssessmen
     row.includedCharacters = row.text.length;
     row.textTruncated = row.text.length < row.availableCharacters;
   }
-  const stripOriginal = <T extends { originalText: string }>(row: T): Omit<T, 'originalText'> => {
-    const { originalText: _notForwarded, ...safe } = row;
+  const stripOriginal = <T extends { originalText: string; deduplicationText: string }>(
+    row: T
+  ): Omit<T, 'originalText' | 'deduplicationText'> => {
+    const {
+      originalText: _notForwarded,
+      deduplicationText: _notForwardedForDeduplication,
+      ...safe
+    } = row;
     return safe;
   };
   return {
@@ -397,6 +403,7 @@ function publicAnalysisInput(run: CompanyResearchRun, seed: CompanyAssessment) {
         .map((key) => [key, snapshot.profile[key]])
     ),
     ...packedPublicInformation(run, seed),
+    sourceFamilies: sourceTrustPublicPayload(run),
     announcements,
     industry: completeIndustry
       ? {

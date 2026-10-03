@@ -1,0 +1,200 @@
+[
+  {
+    "path": "/",
+    "status": 200
+  },
+  {
+    "label": "01-home",
+    "url": "http://127.0.0.1:4402/",
+    "kind": "runtime",
+    "atUTC": "2026-10-03T05:41:51Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "label": "02-filter-empty",
+    "url": "http://127.0.0.1:4402/",
+    "kind": "runtime",
+    "atUTC": "2026-10-03T05:41:52Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "path": "/report/mock-healthy",
+    "status": 200
+  },
+  {
+    "label": "03-healthy-lite",
+    "url": "http://127.0.0.1:4402/report/mock-healthy",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:41:54Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "path": "/report/mock-danger",
+    "status": 200
+  },
+  {
+    "label": "04-danger-lite",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:41:56Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "label": "05-danger-evidence-drawer",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:41:58Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "label": "06-danger-pro-top",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:42:00Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "label": "07-danger-pro-financial",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:42:02Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 3241
+  },
+  {
+    "label": "08-danger-pro-network",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:42:03Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 6128
+  },
+  {
+    "label": "09-danger-pro-evidence",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:42:04Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 6905
+  },
+  {
+    "label": "10-danger-lite-mobile",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:42:06Z",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "scrollY": 0
+  },
+  {
+    "label": "11-danger-pro-mobile-financial",
+    "url": "http://127.0.0.1:4402/report/mock-danger",
+    "kind": "fixture",
+    "atUTC": "2026-10-03T05:42:08Z",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "scrollY": 5439
+  },
+  {
+    "path": "/compare",
+    "status": 200
+  },
+  {
+    "label": "12-compare-empty",
+    "url": "http://127.0.0.1:4402/compare",
+    "kind": "runtime",
+    "atUTC": "2026-10-03T05:42:10Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "path": "/chat",
+    "status": 200
+  },
+  {
+    "label": "13-chat-unconfigured",
+    "url": "http://127.0.0.1:4402/chat",
+    "kind": "runtime",
+    "atUTC": "2026-10-03T05:42:11Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "path": "/",
+    "status": 200
+  },
+  {
+    "label": "14-search-real-or-unavailable",
+    "url": "http://127.0.0.1:4402/",
+    "kind": "live-query",
+    "atUTC": "2026-10-03T05:42:27Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "path": "/report/600519",
+    "status": 200
+  },
+  {
+    "label": "15-listed-real-or-error",
+    "url": "http://127.0.0.1:4402/report/600519",
+    "kind": "live-query",
+    "atUTC": "2026-10-03T05:42:31Z",
+    "viewport": {
+      "width": 1440,
+      "height": 1000
+    },
+    "scrollY": 0
+  },
+  {
+    "pageErrors": [
+      "An error occurred in the Server Components render. The specific message is omitted in production builds to avoid leaking sensitive details. A digest property is included on this error instance which may provide additional details about the nature of the error."
+    ]
+  }
+]

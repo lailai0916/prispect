@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-03T06:18:24.625344+00:00",
+  "stopped": [
+    {
+      "pid": 28478,
+      "port": 4320,
+      "signal": "SIGTERM"
+    }
+  ],
+  "sameStateDirectory": "/workspace/research-envs/prispect-after-state",
+  "stdout": "/workspace/research-envs/prispect-after-final-server.log",
+  "limitsNotModified": true
+}

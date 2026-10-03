@@ -37,6 +37,7 @@ import { CompanyFinancialFindings } from '../CompanyRunOverview';
 import { CompanyFinancialTrends } from '../CompanyFinancialTrends';
 import { CompanyQueryPage } from './CompanyQuery';
 import { CompanyAssessment } from '../CompanyAssessment';
+import { SourceTrust } from '../SourceTrust';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
@@ -184,6 +185,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             'company-research-goal',
             'company-evidence-lab',
             'company-review-requests',
+            'company-research-framework',
+            'company-source-trust',
           ]
         : section === 'financial'
           ? [
@@ -199,6 +202,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                 'company-disclosures',
                 'company-profile',
                 'company-data-coverage',
+                'company-source-trust',
                 'company-source-comparison',
               ]
             : [];
@@ -655,6 +659,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                       <ChevronDown size={14} />
                       {t('数据覆盖', 'Data coverage')}
                     </summary>
+                    <SourceTrust run={run} />
                     <CompanyCoverageView snapshot={snapshot} run={run} />
                   </details>
                   <details id="company-source-comparison" className="company-review-details">

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><meta
+    name="viewport"
+    content="width=device-width,initial-scale=1"
+  /><title>析光机制方案任务原型</title
+  ><style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui;
+      background: #f7f8fa;
+      color: #242933;
+    }
+    body {
+      max-width: 960px;
+      margin: 32px auto;
+      padding: 0 20px;
+    }
+    button,
+    input,
+    select {
+      font: inherit;
+    }
+    button {
+      padding: 8px 12px;
+      background: transparent;
+      color: inherit;
+      border: 1px solid #a5aab4;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:focus-visible {
+      outline: 3px solid #537ace;
+    }
+    section {
+      margin: 24px 0;
+      padding: 20px;
+      background: white;
+      border: 1px solid #d8dce3;
+      border-radius: 8px;
+    }
+    p {
+      line-height: 1.7;
+    }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .note {
+      font-size: 13px;
+      color: #5d6573;
+    }
+    .result {
+      padding: 14px;
+      border-left: 3px solid #4874bc;
+      margin-top: 15px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    td,
+    th {
+      text-align: left;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    span {
+      display: block;
+    }
+    .hidden {
+      display: none;
+    }
+    h2 {
+      font-size: 19px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        background: #171b23;
+        color: #e4e7ed;
+      }
+      section {
+        background: #222833;
+        border-color: #414958;
+      }
+      .note {
+        color: #b3bbc7;
+      }
+    }
+    @media (max-width: 500px) {
+      body {
+        margin: 12px auto;
+        padding: 0 12px;
+      }
+      section {
+        padding: 12px;
+      }
+      table {
+        font-size: 13px;
+      }
+    }
+  </style>
+  <h1>从说法到可核对依据</h1>
+  <p class="note">设计任务原型 · 全部金额为合成条件，未查询真实公司；本页不创建或修改析光记录。</p>
+  <section>
+    <h2>1. 承诺核验：入口选择</h2>
+    <div class="row">
+      <button data-view="separate">A：独立案卷</button
+      ><button data-view="integrated">B：同一核查事项</button>
+    </div>
+    <div id="separate" class="variant hidden">
+      <p>离开付款事项 → 创建承诺案卷 → 再关联付款事项 → 核验。</p>
+      <button data-result="离开原事项后需要重新确认主体、证据版本及权限，两个版本系统可能分歧。">
+        打开独立案卷任务
+      </button>
+    </div>
+    <div id="integrated" class="variant">
+      <p>原话：对方说随时可以退款。核验目标：退款条款与责任主体。</p>
+      <table>
+        <tr>
+          <th>说法</th>
+          <th>依据状态</th>
+          <th>下一步</th>
+        </tr>
+        <tr>
+          <td>随时退款</td>
+          <td>条款未取得</td>
+          <td>
+            <button
+              data-result="索取签约方、退款责任方、触发条件、期限及原件。尚未到账的退款不抵减敞口。"
+            >
+              生成具体询问
+            </button>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div class="result feedback" role="status">选择核验动作。</div>
+  </section>
+  <section>
+    <h2>2. 材料变化：比较选择</h2>
+    <div class="row">
+      <button data-result="A：分别打开V1和V2，记住退款字段、材料、门槛和两方案敞口后手工对比。">
+        A：逐版回放</button
+      ><button
+        data-result="B：V1→V2 · 实际退款10,000→未知；退款依据active→withdrawn；有记录敞口30,000→未知。独立假设分支保持原条件。"
+      >
+        B：就地显示差异
+      </button>
+    </div>
+    <div class="result feedback" id="result" role="status">点击一个任务动作查看反馈。</div>
+  </section>
+  <section>
+    <h2>3. 来源：数量与证据链</h2>
+    <div class="row">
+      <button data-result="A：三个平台三条报道。这不足以说明三个独立来源，无法支持90%确信度。">
+        A：按平台计数</button
+      ><button
+        data-result="B：三条报道为同一个已知转载族；其中一条有正文节选。其他来源的独立性未知。打开原文核对，条数不改变评级。"
+      >
+        B：已知转载族＋正文范围
+      </button>
+    </div>
+    <div class="result feedback" role="status">查看来源表达。</div>
+  </section>
+  <section>
+    <h2>4. 证据实验：先预测，再验证</h2>
+    <p>
+      合成图：利润100,000元、经营现金60,000元 → 现金利润比60%与差额40,000元。经营原因保持待检验。
+    </p>
+    <label><input type="checkbox" id="prediction" />我预测撤回利润会暂停现金利润比与差额</label>
+    <p><button id="withdraw">临时撤回利润并验证</button> <button id="restore">恢复</button></p>
+    <p id="trial" role="status">尚未试验。教学检查依赖关系，不评价公司的安全性。</p>
+  </section>
+  <script>
+    document.querySelectorAll('[data-view]').forEach(
+      (b) =>
+        (b.onclick = () => {
+          document
+            .querySelectorAll('.variant')
+            .forEach((x) => x.classList.toggle('hidden', x.id !== b.dataset.view));
+        })
+    );
+    document
+      .querySelectorAll('[data-result]')
+      .forEach(
+        (b) =>
+          (b.onclick = () =>
+            (b.closest('section').querySelector('.feedback').textContent = b.dataset.result))
+      );
+    document.getElementById('withdraw').onclick = () => {
+      document.getElementById('trial').textContent =
+        (document.getElementById('prediction').checked ? '预测吻合。' : '先看实际依赖。') +
+        '利润已临时撤回，现金利润比和差额暂停；经营现金仍可查。没有因此证明或排除造假。';
+    };
+    document.getElementById('restore').onclick = () => {
+      document.getElementById('trial').textContent =
+        '恢复原图；现金利润比60%，差额40,000元。未改变保存记录。';
+    };
+  </script>
+</html>

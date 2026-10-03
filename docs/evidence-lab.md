@@ -21,6 +21,12 @@ Only facts can be withdrawn. The trial clones the baseline graph, clears the wit
 
 This trial runs locally. It makes no model request, changes no saved report, grade or adopted evidence, and sends no withdrawal state to the challenge API. Requested materials remain readable when a hypothesis pauses. Their graph status is `materialStatus: "needed"`; this means a request exists, not that a document has been acquired.
 
+## Optional dependency practice
+
+Expand the optional practice in the lab, choose an available source fact and predict which nodes will pause. The same pure evaluator withdraws that fact in a separate exercise graph, then compares the selected nodes with the actual affected paths, missed paths and unaffected paths. Restore the exercise to inspect the original dependencies and retain a session-local review of the choice. The main lab's withdrawal selection, saved evidence, reports and grades are unchanged. Missing/conflicting facts cannot become usable by practising; material requests are not scored as acquired facts, and an inapplicable explanation is distinct from a dependency paused by withdrawal.
+
+The practice is optional, requires no model request and clears its local state when the owner or graph/source/scope fingerprint changes. It assesses dependency predictions, not financial knowledge in general or a company's safety. User understanding and learning effects still require observed user tasks; unit and browser checks establish engineering behavior only. Implementation: `shared/evidence-learning.ts` and `src/EvidenceLearning.tsx`.
+
 ## Fixed explanation challenges
 
 Authenticated company workspaces can ask the server to challenge one of three defined hypotheses:

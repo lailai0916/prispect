@@ -1,0 +1,26 @@
+{
+  "executionTime": "2026-10-03T05:57:00.144Z",
+  "initialClosed": true,
+  "copyFailure": {
+    "textAvailable": true,
+    "focused": true,
+    "notice": "未能自动复制，可选取下方文本复制。"
+  },
+  "mobile375": {
+    "viewport": 375,
+    "documentWidth": 375,
+    "tableScroll": 560,
+    "tableViewport": 317
+  },
+  "mobile320": {
+    "viewport": 320,
+    "documentWidth": 320
+  },
+  "printClosedFramework": {
+    "display": "block",
+    "height": 3366.234375,
+    "contentVisibility": "visible"
+  },
+  "errors": [],
+  "apiRequests": []
+}

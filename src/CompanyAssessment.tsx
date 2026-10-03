@@ -12,6 +12,7 @@ import { useApp } from './context';
 import { date, money } from './format';
 import { deriveCompanyResearchProgress } from '../shared/company-research-view';
 import './company-assessment.css';
+import { ResearchGoalTemplates } from './ResearchPlan';
 
 const statusLabels: Record<AssessmentStatus, AssessmentText> = {
   strong: ['较强', 'Strong'],
@@ -66,6 +67,7 @@ function AssessmentResearch({
           }}
         >
           <label htmlFor={'assessment-focus-' + run.id}>{t('研究目标', 'Research goal')}</label>
+          <ResearchGoalTemplates onSelect={setFocus} disabled={unavailable} />
           <textarea
             id={'assessment-focus-' + run.id}
             value={focus}

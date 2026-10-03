@@ -1,0 +1,147 @@
+{
+  "recorded_at": "2026-10-03T06:04:16.492Z",
+  "run_mode": "normal authenticated application route; owned uploaded synthetic JSON financial facts; no fake public URL; no production data mutation",
+  "task_id": "5b239ef6-d66e-4ecf-b0c5-e46b9731128f",
+  "checks": [
+    {
+      "name": "normal owned report opens actual learning component",
+      "passed": true
+    },
+    {
+      "name": "normal report optional practice starts collapsed",
+      "passed": true
+    },
+    {
+      "name": "saved upload original is linked in actual evidence inspector",
+      "passed": true
+    },
+    {
+      "name": "JSON original links to private owner endpoint without invented public URL or PDF fragment",
+      "passed": true
+    },
+    {
+      "name": "owning account can read retained original",
+      "passed": true
+    },
+    {
+      "name": "retained original byte digest matches saved report source",
+      "passed": true
+    },
+    {
+      "name": "anonymous context cannot read owning-account retained original",
+      "passed": true
+    },
+    {
+      "name": "normal path keyboard reaches source fact selector",
+      "passed": true
+    },
+    {
+      "name": "native keyboard chooses saved signed inventory adjustment",
+      "passed": true
+    },
+    {
+      "name": "keyboard reaches prediction validation",
+      "passed": true
+    },
+    {
+      "name": "normal path predicts exact signed inventory dependencies",
+      "passed": true
+    },
+    {
+      "name": "inventory withdrawal pauses own adjustment, bridge and two explanations",
+      "passed": true
+    },
+    {
+      "name": "independent cash-profit ratio is retained at exact 60.00 percent",
+      "passed": true
+    },
+    {
+      "name": "normal path feedback receives keyboard focus",
+      "passed": true
+    },
+    {
+      "name": "normal path next keyboard action restores practice",
+      "passed": true
+    },
+    {
+      "name": "normal path restore returns keyboard focus to source selector",
+      "passed": true
+    },
+    {
+      "name": "normal path restore clears trial result",
+      "passed": true
+    },
+    {
+      "name": "390px dark actual report has no page horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390px dark actual learning fits its container",
+      "passed": true
+    },
+    {
+      "name": "390px dark actual prediction is one readable column",
+      "passed": true
+    },
+    {
+      "name": "390px light actual report has no page horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390px light actual learning fits its container",
+      "passed": true
+    },
+    {
+      "name": "390px light actual prediction is one readable column",
+      "passed": true
+    },
+    {
+      "name": "320px dark actual report has no page horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320px dark actual learning fits its container",
+      "passed": true
+    },
+    {
+      "name": "320px dark actual prediction is one readable column",
+      "passed": true
+    },
+    {
+      "name": "320px light actual report has no page horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320px light actual learning fits its container",
+      "passed": true
+    },
+    {
+      "name": "320px light actual prediction is one readable column",
+      "passed": true
+    },
+    {
+      "name": "actual memory recap records only two submitted trials",
+      "passed": true
+    },
+    {
+      "name": "normal path source choice, prediction, restoration and themes call no API/model",
+      "passed": true
+    },
+    {
+      "name": "complete saved report and grade unchanged after practice",
+      "passed": true
+    },
+    {
+      "name": "refresh clears normal path learning memory",
+      "passed": true
+    },
+    {
+      "name": "normal path no browser page errors",
+      "passed": true
+    }
+  ],
+  "api_requests_during_practice": [],
+  "errors": [],
+  "original_digest_matches": true,
+  "dist_html_sha256": "3a36d75cceeeb6d07a90908581d1fa9b4cfb2cecfc2b4e4c96800caa3c5240d4"
+}

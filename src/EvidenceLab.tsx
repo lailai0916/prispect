@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import {
+  evidenceLabSourceHref,
   evaluateEvidenceLab,
   highlightEvidenceLab,
   type EvidenceLabGraph,
@@ -29,6 +30,7 @@ import {
 import { Dialog } from './components';
 import { useApp } from './context';
 import { money } from './format';
+import { EvidenceLearning } from './EvidenceLearning';
 import './evidence-lab.css';
 
 export type EvidenceLabProps = {
@@ -49,17 +51,7 @@ const stages = [
   { kind: 'material', label: ['所需材料', 'Required materials'] },
 ] as const;
 
-function sourceHref(source: LabSource): string | undefined {
-  try {
-    const url = new URL(source.url);
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) return;
-    if (source.page && Number.isSafeInteger(source.page) && source.page > 0)
-      url.hash = `page=${source.page}`;
-    return url.href;
-  } catch {
-    return;
-  }
-}
+const sourceHref = evidenceLabSourceHref;
 
 /** Sources are gathered from actual upstream dependencies, never from sibling explanations. */
 function dependencySources(graph: EvidenceLabGraph, selected: LabNode | undefined): LabSource[] {
@@ -84,7 +76,7 @@ export function EvidenceLab({
   challengeDisabled = false,
   onStartResearch,
 }: EvidenceLabProps) {
-  const { t, locale } = useApp();
+  const { t, locale, user } = useApp();
   const [withdrawn, setWithdrawn] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState(graph.defaultSelectionId);
   const [inspectedClue, setInspectedClue] = useState<ChallengeClue | null>(null);
@@ -481,9 +473,11 @@ export function EvidenceLab({
             )}
             {sourceHref(selectedSource) && (
               <a href={sourceHref(selectedSource)} target="_blank" rel="noreferrer">
-                {selectedSource.sourceQuality === 'web'
-                  ? t('打开网页来源', 'Open the web source')
-                  : t('打开原文', 'Open the original')}
+                {'retainedOriginal' in selectedSource && selectedSource.retainedOriginal
+                  ? t('打开保存原件', 'Open retained original')
+                  : selectedSource.sourceQuality === 'web'
+                    ? t('打开网页来源', 'Open the web source')
+                    : t('打开原文', 'Open the original')}
                 <ArrowUpRight size={13} />
               </a>
             )}
@@ -601,6 +595,7 @@ export function EvidenceLab({
           </button>
         )}
       </div>
+      <EvidenceLearning graph={graph} scopeKey={user?.id || 'anonymous'} />
       <div className="lab-workspace">
         <div className="lab-canvas" ref={canvas}>
           <svg className="lab-connections" aria-hidden="true">

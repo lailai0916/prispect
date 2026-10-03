@@ -1,0 +1,29 @@
+{
+  "recorded_at": "2026-10-03T06:09:43.492286+00:00",
+  "source_files": {
+    "shared/evidence-lab.ts": "2b18ae21169c70e1d67975f69686716be09a0cea95d6ac8df1bad37f84f0d5b4",
+    "shared/evidence-learning.ts": "923003758b26fc15003ef0cf4b55644692ee3e3b8a41a2b82f6beb515c55a635",
+    "src/EvidenceLab.tsx": "ea4e09e7138db728b9cb703ba920930bde2d4e9e14c9ada95b2ff432003ee0a1",
+    "src/EvidenceLearning.tsx": "96faf400c514a9e08512a32d1a45cc47d8f67d86afc5a5ce1e9073e63a77e5e5",
+    "src/evidence-learning.css": "98d5d58d1b449cf9a83b4625b3d57535358826c7287c35308cb22b293eb8203b",
+    "tests/evidence-lab.test.ts": "4981f3986377877b5e65461a197501cc58db9eda9f0e124793234e36bd4de7a5",
+    "tests/evidence-learning.test.ts": "5bf163968ffdf95441903228a0f61f7fe0541cdcf71769ceba18fd38b5879f5f"
+  },
+  "dist_html_sha256": "00396610ed56f3dc6808445b8849c306afb25fedd06ab1bafed9043e5bc12a1e",
+  "unit_tests": 32,
+  "component_fixture_checks": 50,
+  "normal_authenticated_product_checks_prior_build": 34,
+  "final_build_normal_path_recheck": "PASS via latest baseline normal authenticated uploaded JSON path; learning feedback + restore, no API, saved report/grade unchanged. Own repeated final login blocked by persisted rate limit; no bypass or state edits.",
+  "final_actual_path_evidence": {
+    "receipt": "docs/competitive-research/evidence/prispect-after/browser-results.json",
+    "build_manifest": "docs/competitive-research/evidence/prispect-after/final-version.json",
+    "screenshots": [
+      "docs/competitive-research/evidence/prispect-after/04a-desktop-light-prediction-feedback.png",
+      "docs/competitive-research/evidence/prispect-after/04b-desktop-light-prediction-restored.png"
+    ],
+    "source_fingerprint": "2b7ad26a05bfcda66779e9a2bfc392dbc33f1cb1d81e6ba50692c3c9a6cf0652",
+    "browser_started_at": "2026-10-03T06:08:34.322Z",
+    "browser_finished_at": "2026-10-03T06:09:01.110Z",
+    "sort_and_notice": "source and screenshot verified"
+  }
+}

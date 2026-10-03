@@ -1,0 +1,1974 @@
+{
+  "id": "280f96a2-0c00-43ee-af1c-be401bb00d90",
+  "input": {
+    "securityCode": "601234",
+    "orgId": "syntheticuiorg",
+    "year": 2025,
+    "purpose": "external",
+    "useModel": true
+  },
+  "status": "ready",
+  "createdAt": "2026-10-03T06:19:44.193Z",
+  "updatedAt": "2026-10-03T06:19:44.201Z",
+  "trace": [],
+  "announcements": [],
+  "agent": {
+    "version": "langgraph-v1",
+    "revision": 1,
+    "branches": [
+      {
+        "id": "identity",
+        "status": "pending"
+      },
+      {
+        "id": "finance",
+        "status": "pending"
+      },
+      {
+        "id": "market-data",
+        "status": "pending"
+      },
+      {
+        "id": "notes",
+        "status": "pending"
+      },
+      {
+        "id": "announcements",
+        "status": "pending"
+      },
+      {
+        "id": "reconcile",
+        "status": "pending"
+      }
+    ],
+    "recoverable": false,
+    "cancelRequested": false,
+    "evidence": [],
+    "auditOpinion": {
+      "status": "pending",
+      "requestedYear": null,
+      "scope": {
+        "issuer": "unconfirmed",
+        "reportYear": "unconfirmed",
+        "auditPeriod": "unconfirmed"
+      },
+      "evidence": [],
+      "warnings": []
+    },
+    "competingExplanations": [],
+    "coverage": {
+      "annualReports": 0,
+      "recentTitles": 0,
+      "recentFullTexts": 0,
+      "recentTruncated": false,
+      "warnings": []
+    },
+    "budget": {
+      "sourceRequests": 0,
+      "modelRequests": 0,
+      "maxSourceRequests": 32,
+      "maxModelRequests": 12
+    }
+  },
+  "model": {
+    "requested": true,
+    "status": "not-configured"
+  },
+  "identity": {
+    "securityCode": "601234",
+    "orgId": "syntheticuiorg",
+    "shortName": "合成研究样本（非真实企业）",
+    "companyName": "合成研究样本（非真实企业）",
+    "exchange": "sse",
+    "sourceUrl": "https://www.cninfo.com.cn/"
+  },
+  "stoppedReason": "合成工程fixture：未实际读取任何公开原件",
+  "contextStatus": "ready",
+  "contextRevision": 1,
+  "context": {
+    "version": 1,
+    "securityCode": "601234",
+    "orgId": "syntheticuiorg",
+    "companyName": "合成研究样本（非真实企业）",
+    "fetchedAt": "2026-10-03T06:19:34.453Z",
+    "status": "partial",
+    "financials": [
+      {
+        "period": "2024-12-31",
+        "annual": true,
+        "noticeDate": "2026-03-01",
+        "amounts": {
+          "revenue": "800000",
+          "netProfit": "80000",
+          "parentProfit": null,
+          "deductedProfit": null,
+          "operatingProfit": null,
+          "totalProfit": null,
+          "financeExpense": null,
+          "ocf": "70000",
+          "investingCash": null,
+          "financingCash": null,
+          "salesCash": null,
+          "cash": "50000",
+          "shortLoan": "30000",
+          "currentPortionDebt": "10000",
+          "receivables": "100000",
+          "notesReceivable": null,
+          "inventory": "80000",
+          "totalAssets": "500000",
+          "totalLiabilities": "200000",
+          "currentAssets": null,
+          "currentLiabilities": null,
+          "equity": null
+        },
+        "ratios": {
+          "grossMargin": null,
+          "roe": null,
+          "revenueGrowth": null
+        },
+        "auditOpinion": null,
+        "fieldSources": {
+          "revenue": "fixture-financial-2024",
+          "netProfit": "fixture-financial-2024",
+          "ocf": "fixture-financial-2024",
+          "cash": "fixture-financial-2024",
+          "shortLoan": "fixture-financial-2024",
+          "currentPortionDebt": "fixture-financial-2024",
+          "receivables": "fixture-financial-2024",
+          "inventory": "fixture-financial-2024",
+          "totalAssets": "fixture-financial-2024",
+          "totalLiabilities": "fixture-financial-2024"
+        },
+        "sourceUrls": [
+          "https://datacenter.eastmoney.com/"
+        ],
+        "originalUrl": null
+      },
+      {
+        "period": "2025-12-31",
+        "annual": true,
+        "noticeDate": "2026-03-01",
+        "amounts": {
+          "revenue": "1000000",
+          "netProfit": "100000",
+          "parentProfit": null,
+          "deductedProfit": null,
+          "operatingProfit": null,
+          "totalProfit": null,
+          "financeExpense": null,
+          "ocf": "60000",
+          "investingCash": null,
+          "financingCash": null,
+          "salesCash": null,
+          "cash": "70000",
+          "shortLoan": "30000",
+          "currentPortionDebt": "10000",
+          "receivables": "180000",
+          "notesReceivable": null,
+          "inventory": "120000",
+          "totalAssets": "600000",
+          "totalLiabilities": "230000",
+          "currentAssets": null,
+          "currentLiabilities": null,
+          "equity": null
+        },
+        "ratios": {
+          "grossMargin": null,
+          "roe": null,
+          "revenueGrowth": null
+        },
+        "auditOpinion": null,
+        "fieldSources": {
+          "revenue": "fixture-financial-2025",
+          "netProfit": "fixture-financial-2025",
+          "ocf": "fixture-financial-2025",
+          "cash": "fixture-financial-2025",
+          "shortLoan": "fixture-financial-2025",
+          "currentPortionDebt": "fixture-financial-2025",
+          "receivables": "fixture-financial-2025",
+          "inventory": "fixture-financial-2025",
+          "totalAssets": "fixture-financial-2025",
+          "totalLiabilities": "fixture-financial-2025"
+        },
+        "sourceUrls": [
+          "https://datacenter.eastmoney.com/"
+        ],
+        "originalUrl": null
+      }
+    ],
+    "sources": [
+      {
+        "id": "fixture-financial-2024",
+        "provider": "合成第三方字段（工程fixture）",
+        "dimension": "financial",
+        "url": "https://datacenter.eastmoney.com/",
+        "status": "available",
+        "fetchedAt": "2026-10-03T06:19:34.453Z",
+        "latestDate": "2024-12-31",
+        "count": 1,
+        "note": "合成测试来源，没有实际下载公开响应。",
+        "responseHashes": [
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        ]
+      },
+      {
+        "id": "fixture-financial-2025",
+        "provider": "合成第三方字段（工程fixture）",
+        "dimension": "financial",
+        "url": "https://datacenter.eastmoney.com/",
+        "status": "available",
+        "fetchedAt": "2026-10-03T06:19:34.453Z",
+        "latestDate": "2025-12-31",
+        "count": 1,
+        "note": "合成测试来源，没有实际下载公开响应。",
+        "responseHashes": [
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        ]
+      },
+      {
+        "id": "fixture-disclosure",
+        "provider": "合成官方来源位置（工程fixture）",
+        "dimension": "disclosures",
+        "url": "https://www.cninfo.com.cn/",
+        "status": "partial",
+        "fetchedAt": "2026-10-03T06:19:34.453Z",
+        "latestDate": "2026-03-01",
+        "count": 1,
+        "note": "合成节选，非真实披露。",
+        "responseHashes": [
+          "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        ]
+      }
+    ],
+    "comparisons": [],
+    "profile": {
+      "公司介绍": "合成工程样本，所有金额和内容均非真实发行人数据。"
+    },
+    "shareholders": [],
+    "announcements": [
+      {
+        "id": "fixture-announcement",
+        "title": "合成公告：扩张备货说明（工程样本）",
+        "date": "2026-03-01",
+        "url": "https://static.cninfo.com.cn/finalpage/2026-03-01/fixture.pdf",
+        "sources": [
+          {
+            "provider": "合成",
+            "url": "https://www.cninfo.com.cn/"
+          }
+        ],
+        "category": "合成公告",
+        "attention": "high",
+        "matched": "合成",
+        "meaning": "只有工程样本，不是真实事件",
+        "nextQuestion": "核对真实原件及业务材料",
+        "excerpt": {
+          "page": 1,
+          "quote": "合成节选：计划增加备货；这是测试文本，不代表企业披露或经营原因。",
+          "url": "https://static.cninfo.com.cn/finalpage/2026-03-01/fixture.pdf",
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "pagesRead": 1
+        }
+      }
+    ],
+    "news": [
+      {
+        "id": "fixture-news-a",
+        "title": "合成报道：回款与备货变化需要核对",
+        "date": "2026-03-02",
+        "media": "合成媒体甲",
+        "url": "https://finance.eastmoney.com/a/202610033001234567.html",
+        "provider": "eastmoney",
+        "digest": "合成摘要；不证明实际事件。",
+        "contentScope": "media-excerpt",
+        "clusterId": "fixture-repost-family",
+        "excerpt": {
+          "text": "合成媒体文本：收入增长与应收余额增加，需要核对期后回款；没有认定坏账。",
+          "url": "https://finance.eastmoney.com/a/202610033001234567.html",
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "readAt": "2026-10-03T06:19:34.453Z"
+        }
+      },
+      {
+        "id": "fixture-news-b",
+        "title": "合成报道：回款与备货变化需要核对",
+        "date": "2026-03-03",
+        "media": "合成转载乙",
+        "url": "https://finance.sina.com.cn/stock/s/2026-03-03/doc-fixture.shtml",
+        "provider": "sina",
+        "digest": "同一合成报道转载，不是另一条独立证据。",
+        "contentScope": "digest",
+        "clusterId": "fixture-repost-family"
+      },
+      {
+        "id": "fixture-news-c",
+        "title": "合成另一条线索：订单计划不等于已交付",
+        "date": "2026-03-04",
+        "media": "合成媒体丙",
+        "url": "https://finance.eastmoney.com/a/202603043001234568.html",
+        "provider": "eastmoney",
+        "digest": "合成标题线索；原文未读。",
+        "contentScope": "headline"
+      }
+    ],
+    "discussions": [
+      {
+        "id": "guba-12345",
+        "securityCode": "601234",
+        "title": "合成公众观点：交付多久？（非真实帖子）",
+        "date": "2026-03-05",
+        "url": "https://guba.eastmoney.com/news,601234,12345.html",
+        "provider": "eastmoney-guba",
+        "textScope": "title"
+      }
+    ],
+    "verificationLinks": [],
+    "warnings": [
+      "当前全部公开数据和来源均为合成工程fixture，不是实时查询或真实企业事实。"
+    ]
+  },
+  "assessmentStatus": "ready",
+  "assessmentRevision": 1,
+  "assessmentTrace": [
+    {
+      "id": "assessment-synthesis-1",
+      "tool": "synthesize",
+      "label": "综合判断与报告",
+      "status": "completed",
+      "startedAt": "2026-10-03T06:19:44.221Z",
+      "summary": "AI 分析未完成或未通过来源检查；已保留规则结果，没有发布新的 AI 判断。",
+      "finishedAt": "2026-10-03T06:19:44.235Z"
+    }
+  ],
+  "assessment": {
+    "version": 1,
+    "year": 2025,
+    "basis": "consolidated",
+    "snapshotFetchedAt": "2026-10-03T06:19:34.453Z",
+    "generatedAt": "2026-10-03T06:19:44.235Z",
+    "grade": "C",
+    "ratingConstraints": [
+      [
+        "经营现金质量低于核心维度筛选阈值，最终等级最高为 C；均分不因此改写。",
+        "Operating cash quality is below the core-dimension screening threshold, capping the final grade at C; the arithmetic score is unchanged."
+      ]
+    ],
+    "score": 71.25,
+    "methodologyVersion": "financial-screen-v1",
+    "dimensions": [
+      {
+        "id": "profitability",
+        "label": [
+          "盈利成长",
+          "Profitability and growth"
+        ],
+        "score": 100,
+        "status": "strong",
+        "metricIds": [
+          "2025-netProfit",
+          "revenue-growth"
+        ],
+        "ruleSummary": [
+          "本期盈利且营收未下降，盈利成长筛选较强。",
+          "Positive profit with nondeclining revenue gives a strong profitability screen."
+        ]
+      },
+      {
+        "id": "cash",
+        "label": [
+          "经营现金质量",
+          "Operating cash quality"
+        ],
+        "score": 25,
+        "status": "high-pressure",
+        "metricIds": [
+          "2025-netProfit",
+          "2025-ocf",
+          "cash-profit"
+        ],
+        "ruleSummary": [
+          "经营现金低于合并利润，现金实现程度偏弱，不能仅凭比例认定成因。",
+          "Operating cash trails consolidated profit, indicating weaker cash realization; the ratio alone does not establish a cause."
+        ]
+      },
+      {
+        "id": "solvency",
+        "label": [
+          "偿付杠杆",
+          "Solvency and leverage"
+        ],
+        "score": 100,
+        "status": "strong",
+        "metricIds": [
+          "cash-short-debt",
+          "liabilities-assets"
+        ],
+        "ruleSummary": [
+          "历史现金覆盖与杠杆筛选较强；受限资金及后续到期责任未纳入。",
+          "Historical cash coverage and leverage screen strongly; restricted funds and subsequent obligations are not included."
+        ]
+      },
+      {
+        "id": "workingCapital",
+        "label": [
+          "营运占用",
+          "Working-capital pressure"
+        ],
+        "score": 60,
+        "status": "balanced",
+        "metricIds": [
+          "working-capital-revenue",
+          "working-capital-change"
+        ],
+        "ruleSummary": [
+          "应收与存货相对营收的占用上升；尚不能据此认定坏账或滞销。",
+          "Receivables and inventory have increased relative to revenue; this alone establishes neither bad debt nor obsolescence."
+        ]
+      },
+      {
+        "id": "industry",
+        "label": [
+          "同行位置",
+          "Industry position"
+        ],
+        "score": null,
+        "status": "unknown",
+        "metricIds": [],
+        "ruleSummary": [
+          "同年度有效同行样本不足，同行位置暂不判断。",
+          "Insufficient valid same-year peers prevent an industry-position judgment."
+        ]
+      },
+      {
+        "id": "events",
+        "label": [
+          "事件与治理",
+          "Events and governance"
+        ],
+        "score": null,
+        "status": "unknown",
+        "metricIds": [],
+        "ruleSummary": [
+          "已读公告片段可用于判断具体事项，新闻仅提供核查线索，公开讨论始终是未经核实的观点；不按条数或舆论扣分。",
+          "Read disclosure excerpts support assessment of specific events. News provides leads, and public discussions remain unverified opinions; counts and sentiment do not reduce scores."
+        ]
+      }
+    ],
+    "metrics": [
+      {
+        "id": "2024-revenue",
+        "label": [
+          "2024 营业总收入",
+          "2024 Revenue"
+        ],
+        "value": "800000.00",
+        "display": [
+          "800000.00 元",
+          "CNY 800000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-revenue"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-netProfit",
+        "label": [
+          "2024 合并净利润",
+          "2024 Consolidated net profit"
+        ],
+        "value": "80000.00",
+        "display": [
+          "80000.00 元",
+          "CNY 80000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-netProfit"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-parentProfit",
+        "label": [
+          "2024 归母净利润",
+          "2024 Profit attributable to owners"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-deductedProfit",
+        "label": [
+          "2024 扣非归母净利润",
+          "2024 Attributable profit excluding nonrecurring items"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-operatingProfit",
+        "label": [
+          "2024 营业利润",
+          "2024 Operating profit"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-totalProfit",
+        "label": [
+          "2024 利润总额",
+          "2024 Profit before tax"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-financeExpense",
+        "label": [
+          "2024 财务费用",
+          "2024 Finance expense"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-ocf",
+        "label": [
+          "2024 经营现金净额",
+          "2024 Operating cash flow"
+        ],
+        "value": "70000.00",
+        "display": [
+          "70000.00 元",
+          "CNY 70000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-ocf"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-investingCash",
+        "label": [
+          "2024 投资现金净额",
+          "2024 Investing cash flow"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-financingCash",
+        "label": [
+          "2024 筹资现金净额",
+          "2024 Financing cash flow"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-salesCash",
+        "label": [
+          "2024 销售商品及服务收到的现金",
+          "2024 Cash received from sales"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-cash",
+        "label": [
+          "2024 货币资金",
+          "2024 Monetary funds"
+        ],
+        "value": "50000.00",
+        "display": [
+          "50000.00 元",
+          "CNY 50000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-cash"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-shortLoan",
+        "label": [
+          "2024 短期借款",
+          "2024 Short-term borrowing"
+        ],
+        "value": "30000.00",
+        "display": [
+          "30000.00 元",
+          "CNY 30000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-shortLoan"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-currentPortionDebt",
+        "label": [
+          "2024 一年内到期非流动负债",
+          "2024 Current portion of noncurrent liabilities"
+        ],
+        "value": "10000.00",
+        "display": [
+          "10000.00 元",
+          "CNY 10000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-currentPortionDebt"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-receivables",
+        "label": [
+          "2024 应收账款",
+          "2024 Accounts receivable"
+        ],
+        "value": "100000.00",
+        "display": [
+          "100000.00 元",
+          "CNY 100000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-receivables"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-notesReceivable",
+        "label": [
+          "2024 应收票据",
+          "2024 Notes receivable"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-inventory",
+        "label": [
+          "2024 存货",
+          "2024 Inventory"
+        ],
+        "value": "80000.00",
+        "display": [
+          "80000.00 元",
+          "CNY 80000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-inventory"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-totalAssets",
+        "label": [
+          "2024 总资产",
+          "2024 Total assets"
+        ],
+        "value": "500000.00",
+        "display": [
+          "500000.00 元",
+          "CNY 500000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-totalAssets"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-totalLiabilities",
+        "label": [
+          "2024 总负债",
+          "2024 Total liabilities"
+        ],
+        "value": "200000.00",
+        "display": [
+          "200000.00 元",
+          "CNY 200000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-totalLiabilities"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-currentAssets",
+        "label": [
+          "2024 流动资产",
+          "2024 Current assets"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-currentLiabilities",
+        "label": [
+          "2024 流动负债",
+          "2024 Current liabilities"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2024-equity",
+        "label": [
+          "2024 归母净资产",
+          "2024 Equity attributable to owners"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-revenue",
+        "label": [
+          "2025 营业总收入",
+          "2025 Revenue"
+        ],
+        "value": "1000000.00",
+        "display": [
+          "1000000.00 元",
+          "CNY 1000000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-revenue"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-netProfit",
+        "label": [
+          "2025 合并净利润",
+          "2025 Consolidated net profit"
+        ],
+        "value": "100000.00",
+        "display": [
+          "100000.00 元",
+          "CNY 100000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-netProfit"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-parentProfit",
+        "label": [
+          "2025 归母净利润",
+          "2025 Profit attributable to owners"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-deductedProfit",
+        "label": [
+          "2025 扣非归母净利润",
+          "2025 Attributable profit excluding nonrecurring items"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-operatingProfit",
+        "label": [
+          "2025 营业利润",
+          "2025 Operating profit"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-totalProfit",
+        "label": [
+          "2025 利润总额",
+          "2025 Profit before tax"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-financeExpense",
+        "label": [
+          "2025 财务费用",
+          "2025 Finance expense"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-ocf",
+        "label": [
+          "2025 经营现金净额",
+          "2025 Operating cash flow"
+        ],
+        "value": "60000.00",
+        "display": [
+          "60000.00 元",
+          "CNY 60000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-ocf"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-investingCash",
+        "label": [
+          "2025 投资现金净额",
+          "2025 Investing cash flow"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-financingCash",
+        "label": [
+          "2025 筹资现金净额",
+          "2025 Financing cash flow"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-salesCash",
+        "label": [
+          "2025 销售商品及服务收到的现金",
+          "2025 Cash received from sales"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-cash",
+        "label": [
+          "2025 货币资金",
+          "2025 Monetary funds"
+        ],
+        "value": "70000.00",
+        "display": [
+          "70000.00 元",
+          "CNY 70000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-cash"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-shortLoan",
+        "label": [
+          "2025 短期借款",
+          "2025 Short-term borrowing"
+        ],
+        "value": "30000.00",
+        "display": [
+          "30000.00 元",
+          "CNY 30000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-shortLoan"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-currentPortionDebt",
+        "label": [
+          "2025 一年内到期非流动负债",
+          "2025 Current portion of noncurrent liabilities"
+        ],
+        "value": "10000.00",
+        "display": [
+          "10000.00 元",
+          "CNY 10000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-currentPortionDebt"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-receivables",
+        "label": [
+          "2025 应收账款",
+          "2025 Accounts receivable"
+        ],
+        "value": "180000.00",
+        "display": [
+          "180000.00 元",
+          "CNY 180000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-receivables"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-notesReceivable",
+        "label": [
+          "2025 应收票据",
+          "2025 Notes receivable"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-inventory",
+        "label": [
+          "2025 存货",
+          "2025 Inventory"
+        ],
+        "value": "120000.00",
+        "display": [
+          "120000.00 元",
+          "CNY 120000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-inventory"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-totalAssets",
+        "label": [
+          "2025 总资产",
+          "2025 Total assets"
+        ],
+        "value": "600000.00",
+        "display": [
+          "600000.00 元",
+          "CNY 600000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-totalAssets"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-totalLiabilities",
+        "label": [
+          "2025 总负债",
+          "2025 Total liabilities"
+        ],
+        "value": "230000.00",
+        "display": [
+          "230000.00 元",
+          "CNY 230000.00"
+        ],
+        "unit": "CNY",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-totalLiabilities"
+        ],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-currentAssets",
+        "label": [
+          "2025 流动资产",
+          "2025 Current assets"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-currentLiabilities",
+        "label": [
+          "2025 流动负债",
+          "2025 Current liabilities"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2025-equity",
+        "label": [
+          "2025 归母净资产",
+          "2025 Equity attributable to owners"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "revenue-growth",
+        "label": [
+          "营收同比变化",
+          "Revenue growth"
+        ],
+        "value": "25.00",
+        "display": [
+          "25.00%",
+          "25.00%"
+        ],
+        "unit": "percent",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-revenue",
+          "financial-2024-revenue"
+        ],
+        "formula": [
+          "（本年营收 − 上年营收）÷ 上年营收；上年营收必须为正",
+          "(Current revenue − prior revenue) / positive prior revenue"
+        ]
+      },
+      {
+        "id": "cash-profit",
+        "label": [
+          "现金利润比",
+          "Cash-to-profit ratio"
+        ],
+        "value": "60.00",
+        "display": [
+          "60.00%",
+          "60.00%"
+        ],
+        "unit": "percent",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-ocf",
+          "financial-2025-netProfit"
+        ],
+        "formula": [
+          "年度合并经营现金净额 ÷ 正的合并净利润",
+          "Annual consolidated operating cash / positive consolidated net profit"
+        ]
+      },
+      {
+        "id": "cash-short-debt",
+        "label": [
+          "现金覆盖两项短债",
+          "Cash / two short-debt fields"
+        ],
+        "value": "1.75",
+        "display": [
+          "1.75 倍",
+          "1.75x"
+        ],
+        "unit": "times",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-cash",
+          "financial-2025-shortLoan",
+          "financial-2025-currentPortionDebt"
+        ],
+        "formula": [
+          "货币资金 ÷（短期借款 + 一年内到期非流动负债）；历史余额，未扣受限资金",
+          "Monetary funds / (short-term borrowing + current portion of noncurrent liabilities); historical balances without restricted-fund adjustment"
+        ]
+      },
+      {
+        "id": "liabilities-assets",
+        "label": [
+          "资产负债率",
+          "Liabilities / assets"
+        ],
+        "value": "38.33",
+        "display": [
+          "38.33%",
+          "38.33%"
+        ],
+        "unit": "percent",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-totalLiabilities",
+          "financial-2025-totalAssets"
+        ],
+        "formula": [
+          "总负债 ÷ 正的总资产",
+          "Total liabilities / positive total assets"
+        ]
+      },
+      {
+        "id": "working-capital-revenue",
+        "label": [
+          "应收与存货占营收",
+          "Receivables and inventory / revenue"
+        ],
+        "value": "30.00",
+        "display": [
+          "30.00%",
+          "30.00%"
+        ],
+        "unit": "percent",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-receivables",
+          "financial-2025-inventory",
+          "financial-2025-revenue"
+        ],
+        "formula": [
+          "（应收账款 + 存货）÷ 正的年度营收",
+          "(Accounts receivable + inventory) / positive annual revenue"
+        ]
+      },
+      {
+        "id": "working-capital-change",
+        "label": [
+          "营运占用变化",
+          "Change in working-capital occupation"
+        ],
+        "value": "7.50",
+        "display": [
+          "7.50 个百分点",
+          "7.50 pp"
+        ],
+        "unit": "percentage-points",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-receivables",
+          "financial-2025-inventory",
+          "financial-2025-revenue",
+          "financial-2024-revenue",
+          "financial-2024-receivables",
+          "financial-2024-inventory"
+        ],
+        "formula": [
+          "本年（应收 + 存货）/营收 − 上年同口径比率；单位为百分点",
+          "Current (receivables + inventory) / revenue minus prior-year ratio; percentage points"
+        ]
+      },
+      {
+        "id": "current-ratio",
+        "label": [
+          "流动比率",
+          "Current ratio"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "times",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "流动资产 ÷ 正的流动负债；余额不等于可立即变现的资金",
+          "Current assets / positive current liabilities; balances are not immediately available funds"
+        ]
+      },
+      {
+        "id": "quick-ratio",
+        "label": [
+          "速动比率参考值",
+          "Quick-ratio proxy"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "times",
+        "status": "missing",
+        "evidenceIds": [
+          "financial-2025-inventory"
+        ],
+        "formula": [
+          "（流动资产 − 存货）÷ 正的流动负债；未进一步扣除预付等项目",
+          "(Current assets − inventory) / positive current liabilities; prepayments and other items are not further deducted"
+        ]
+      },
+      {
+        "id": "sales-cash-revenue",
+        "label": [
+          "销售现金 / 营收参考值",
+          "Sales cash / revenue reference"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "percent",
+        "status": "missing",
+        "evidenceIds": [
+          "financial-2025-revenue"
+        ],
+        "formula": [
+          "销售商品及服务收到的现金 ÷ 年度营收；含税与时点不同，不是销售收款率",
+          "Cash received from sales / annual revenue; tax and timing differ, so this is not a collection rate"
+        ]
+      },
+      {
+        "id": "net-profit-margin",
+        "label": [
+          "合并净利率",
+          "Consolidated net margin"
+        ],
+        "value": "10.00",
+        "display": [
+          "10.00%",
+          "10.00%"
+        ],
+        "unit": "percent",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2025-netProfit",
+          "financial-2025-revenue"
+        ],
+        "formula": [
+          "合并净利润 ÷ 正的年度营收",
+          "Consolidated net profit / positive annual revenue"
+        ]
+      },
+      {
+        "id": "2023-netProfit",
+        "label": [
+          "2023 合并净利润",
+          "2023 Consolidated net profit"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "2023-ocf",
+        "label": [
+          "2023 经营现金净额",
+          "2023 Operating cash flow"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "CNY",
+        "status": "missing",
+        "evidenceIds": [],
+        "formula": [
+          "该年度人民币合并报表网页字段",
+          "Annual CNY consolidated web-report field"
+        ]
+      },
+      {
+        "id": "three-year-cash-profit",
+        "label": [
+          "连续三年现金利润比",
+          "Three consecutive years cash / profit"
+        ],
+        "value": null,
+        "display": [
+          "未取得",
+          "Unavailable"
+        ],
+        "unit": "percent",
+        "status": "missing",
+        "evidenceIds": [
+          "financial-2024-netProfit",
+          "financial-2024-ocf",
+          "financial-2025-netProfit",
+          "financial-2025-ocf"
+        ],
+        "formula": [
+          "所选年度及前两年经营现金合计 ÷ 正的合并净利润合计；三个年度必须连续齐全",
+          "Operating cash for the selected and prior two consecutive years / positive aggregate consolidated net profit; all three years required"
+        ]
+      },
+      {
+        "id": "scope-year",
+        "label": [
+          "分析年度",
+          "Analysis year"
+        ],
+        "value": "2025",
+        "display": [
+          "2025 年",
+          "2025"
+        ],
+        "unit": "count",
+        "status": "available",
+        "evidenceIds": [],
+        "formula": [
+          "查询所选完整年度",
+          "Selected full annual period"
+        ]
+      },
+      {
+        "id": "available-field-count",
+        "label": [
+          "已取得核心字段",
+          "Available core fields"
+        ],
+        "value": "13",
+        "display": [
+          "13/13 项",
+          "13/13 fields"
+        ],
+        "unit": "count",
+        "status": "available",
+        "evidenceIds": [
+          "financial-2024-revenue",
+          "financial-2024-netProfit",
+          "financial-2024-ocf",
+          "financial-2024-cash",
+          "financial-2024-shortLoan",
+          "financial-2024-currentPortionDebt",
+          "financial-2024-receivables",
+          "financial-2024-inventory",
+          "financial-2024-totalAssets",
+          "financial-2024-totalLiabilities",
+          "financial-2025-revenue",
+          "financial-2025-netProfit",
+          "financial-2025-ocf",
+          "financial-2025-cash",
+          "financial-2025-shortLoan",
+          "financial-2025-currentPortionDebt",
+          "financial-2025-receivables",
+          "financial-2025-inventory",
+          "financial-2025-totalAssets",
+          "financial-2025-totalLiabilities"
+        ],
+        "formula": [
+          "所选年度十项字段，加上一年营收、应收与存货三项",
+          "Ten selected-year fields plus prior-year revenue, receivables and inventory"
+        ]
+      }
+    ],
+    "evidence": [
+      {
+        "id": "source-fixture-financial-2024",
+        "kind": "profile",
+        "label": "合成第三方字段（工程fixture） · financial · available",
+        "url": "https://datacenter.eastmoney.com/",
+        "quote": "合成测试来源，没有实际下载公开响应。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "source-fixture-financial-2025",
+        "kind": "profile",
+        "label": "合成第三方字段（工程fixture） · financial · available",
+        "url": "https://datacenter.eastmoney.com/",
+        "quote": "合成测试来源，没有实际下载公开响应。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "source-fixture-disclosure",
+        "kind": "profile",
+        "label": "合成官方来源位置（工程fixture） · disclosures · partial",
+        "url": "https://www.cninfo.com.cn/",
+        "quote": "合成节选，非真实披露。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-revenue",
+        "kind": "financial",
+        "label": "2024-12-31 · 营业总收入 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "营业总收入：800000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-netProfit",
+        "kind": "financial",
+        "label": "2024-12-31 · 合并净利润 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "合并净利润：80000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-ocf",
+        "kind": "financial",
+        "label": "2024-12-31 · 经营现金净额 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "经营现金净额：70000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-cash",
+        "kind": "financial",
+        "label": "2024-12-31 · 货币资金 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "货币资金：50000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-shortLoan",
+        "kind": "financial",
+        "label": "2024-12-31 · 短期借款 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "短期借款：30000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-currentPortionDebt",
+        "kind": "financial",
+        "label": "2024-12-31 · 一年内到期非流动负债 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "一年内到期非流动负债：10000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-receivables",
+        "kind": "financial",
+        "label": "2024-12-31 · 应收账款 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "应收账款：100000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-inventory",
+        "kind": "financial",
+        "label": "2024-12-31 · 存货 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "存货：80000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-totalAssets",
+        "kind": "financial",
+        "label": "2024-12-31 · 总资产 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "总资产：500000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2024-totalLiabilities",
+        "kind": "financial",
+        "label": "2024-12-31 · 总负债 · fixture-financial-2024",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2024-12-31",
+        "quote": "总负债：200000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-revenue",
+        "kind": "financial",
+        "label": "2025-12-31 · 营业总收入 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "营业总收入：1000000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-netProfit",
+        "kind": "financial",
+        "label": "2025-12-31 · 合并净利润 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "合并净利润：100000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-ocf",
+        "kind": "financial",
+        "label": "2025-12-31 · 经营现金净额 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "经营现金净额：60000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-cash",
+        "kind": "financial",
+        "label": "2025-12-31 · 货币资金 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "货币资金：70000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-shortLoan",
+        "kind": "financial",
+        "label": "2025-12-31 · 短期借款 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "短期借款：30000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-currentPortionDebt",
+        "kind": "financial",
+        "label": "2025-12-31 · 一年内到期非流动负债 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "一年内到期非流动负债：10000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-receivables",
+        "kind": "financial",
+        "label": "2025-12-31 · 应收账款 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "应收账款：180000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-inventory",
+        "kind": "financial",
+        "label": "2025-12-31 · 存货 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "存货：120000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-totalAssets",
+        "kind": "financial",
+        "label": "2025-12-31 · 总资产 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "总资产：600000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "financial-2025-totalLiabilities",
+        "kind": "financial",
+        "label": "2025-12-31 · 总负债 · fixture-financial-2025",
+        "url": "https://datacenter.eastmoney.com/",
+        "period": "2025-12-31",
+        "quote": "总负债：230000.00 元；第三方网页字段，尚未逐项核对官方原件。",
+        "sourceQuality": "web"
+      },
+      {
+        "id": "disclosure-fixture-announcement",
+        "kind": "disclosure",
+        "label": "2026-03-01 · 合成公告：扩张备货说明（工程样本）",
+        "url": "https://static.cninfo.com.cn/finalpage/2026-03-01/fixture.pdf",
+        "period": "2026-03-01",
+        "quote": "合成节选：计划增加备货；这是测试文本，不代表企业披露或经营原因。",
+        "page": 1,
+        "sourceQuality": "excerpt"
+      },
+      {
+        "id": "news-fixture-news-a",
+        "kind": "news",
+        "label": "2026-03-02 · 合成报道：回款与备货变化需要核对 · 合成媒体甲",
+        "url": "https://finance.eastmoney.com/a/202610033001234567.html",
+        "period": "2026-03-02",
+        "quote": "合成媒体文本：收入增长与应收余额增加，需要核对期后回款；没有认定坏账。",
+        "sourceQuality": "headline"
+      },
+      {
+        "id": "news-fixture-news-b",
+        "kind": "news",
+        "label": "2026-03-03 · 合成报道：回款与备货变化需要核对 · 合成转载乙",
+        "url": "https://finance.sina.com.cn/stock/s/2026-03-03/doc-fixture.shtml",
+        "period": "2026-03-03",
+        "quote": "同一合成报道转载，不是另一条独立证据。",
+        "sourceQuality": "headline"
+      },
+      {
+        "id": "news-fixture-news-c",
+        "kind": "news",
+        "label": "2026-03-04 · 合成另一条线索：订单计划不等于已交付 · 合成媒体丙",
+        "url": "https://finance.eastmoney.com/a/202603043001234568.html",
+        "period": "2026-03-04",
+        "quote": "合成标题线索；原文未读。",
+        "sourceQuality": "headline"
+      },
+      {
+        "id": "guba-12345",
+        "kind": "discussion",
+        "label": "2026-03-05 · 合成公众观点：交付多久？（非真实帖子） · 股吧公开观点",
+        "url": "https://guba.eastmoney.com/news,601234,12345.html",
+        "period": "2026-03-05",
+        "quote": "仅公开讨论标题，观点尚未核实：合成公众观点：交付多久？（非真实帖子）",
+        "sourceQuality": "opinion"
+      }
+    ],
+    "coverage": {
+      "fields": 13,
+      "requiredFields": 13,
+      "years": 2,
+      "sources": 3,
+      "news": 3,
+      "discussions": 1,
+      "mediaBodies": 1,
+      "discussionBodies": 0,
+      "disclosures": 1,
+      "excerpts": 1,
+      "peers": 0
+    },
+    "gaps": [
+      [
+        "同行比较缺少所选年度、同细分行业的有效样本。",
+        "Same-year valid peers in the same industry are unavailable."
+      ],
+      [
+        "历史资金余额未扣除受限资金；新闻与已读片段不构成完整司法、监管或审计核查，公开讨论是未经核实的观点。",
+        "Historical funds are not adjusted for restrictions; news and read excerpts are not comprehensive legal, regulatory or audit checks, and public discussions are unverified opinions."
+      ]
+    ],
+    "model": {
+      "status": "not-called",
+      "calls": 0
+    },
+    "research": {
+      "goal": "综合分析经营、现金、偿付与公开重大事项",
+      "steps": [
+        {
+          "id": "assessment-synthesis-1",
+          "tool": "synthesize",
+          "label": "综合判断与报告",
+          "status": "completed",
+          "startedAt": "2026-10-03T06:19:44.221Z",
+          "summary": "AI 分析未完成或未通过来源检查；已保留规则结果，没有发布新的 AI 判断。",
+          "finishedAt": "2026-10-03T06:19:44.235Z"
+        }
+      ],
+      "modelCalls": 0,
+      "toolCalls": 0
+    }
+  },
+  "assessmentInputHash": "2f378edb7adeb7f53f847939545c16c6aac3f3decf251bd5dd33634f3290f3c6"
+}

@@ -1,0 +1,18 @@
+✔ known location, cluster and body relationships retain different meanings (2.789107ms)
+✔ platform names, titles and response hashes do not certify common content or independence (0.31873ms)
+✔ same recorded hash with different retrieved excerpts is not labelled identical content (0.311429ms)
+✔ scope labels use accepted readers and distinguish titles, digests and public opinions (0.56478ms)
+✔ a PDF response hash is not mistaken for equality of different quoted passages (1.707009ms)
+✔ issuer, identity, annual scope and unresolved entity gaps withhold source summaries (0.307393ms)
+✔ source updates remain separate from a saved assessment snapshot (0.211548ms)
+✔ large snapshots have bounded rows, relationships and strings with explicit omissions (3.487109ms)
+✔ read model and public model payload retain only public allowlisted metadata without mutating the run (10.413382ms)
+✔ unsafe or credential-bearing URLs are withheld and exact revision URLs remain separate (0.336557ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.791016

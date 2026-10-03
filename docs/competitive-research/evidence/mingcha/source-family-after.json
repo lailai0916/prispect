@@ -1,0 +1,35 @@
+{
+  "capturedAt": "2026-10-03T06:06:44.169Z",
+  "mode": "Synthetic read-only public model payload review; no real company query",
+  "news": [
+    {
+      "id": "news-111111111111111111111111",
+      "chars": 180
+    },
+    {
+      "id": "news-222222222222222222222222",
+      "chars": 180
+    }
+  ],
+  "relations": [
+    {
+      "id": "family-1",
+      "memberIds": [
+        "news-1",
+        "news-2"
+      ],
+      "relations": [
+        {
+          "kind": "same-cluster",
+          "memberIds": [
+            "news-1",
+            "news-2"
+          ]
+        }
+      ],
+      "differingContent": true
+    }
+  ],
+  "independence": "unknown",
+  "privateTextLeaked": false
+}

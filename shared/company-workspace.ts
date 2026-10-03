@@ -36,6 +36,8 @@ const companyFocusTargets: Record<CompanySection, Record<string, string>> = {
     goal: 'company-research-goal',
     lab: 'company-evidence-lab',
     checklist: 'company-review-requests',
+    plan: 'company-research-framework',
+    trust: 'company-source-trust',
   },
   financial: {
     history: 'company-financial-history',
@@ -48,6 +50,7 @@ const companyFocusTargets: Record<CompanySection, Record<string, string>> = {
     announcements: 'company-disclosures',
     profile: 'company-profile',
     coverage: 'company-data-coverage',
+    trust: 'company-source-trust',
     'source-comparison': 'company-source-comparison',
   },
   evidence: {},

@@ -1,0 +1,3617 @@
+{
+  "before": {
+    "decision": {
+      "id": "c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "title": "合成付款核验 · 承诺与实际退款",
+      "purpose": "external",
+      "transactionEntity": "合成演练供应商（非真实企业）",
+      "currentRevision": 8,
+      "createdAt": "2026-10-03T06:17:16.873Z",
+      "updatedAt": "2026-10-03T06:17:18.277Z"
+    },
+    "version": {
+      "revision": 8,
+      "createdAt": "2026-10-03T06:17:18.277Z",
+      "reason": "evidence-added",
+      "input": {
+        "title": "合成付款核验 · 承诺与实际退款",
+        "purpose": "external",
+        "transactionEntity": "合成演练供应商（非真实企业）",
+        "reportTaskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+        "promise": "对方原话（合成）：集团上市，付款可退，先支付20000元即可锁定交付。",
+        "tradingName": "合成门店品牌（非企业名称）",
+        "claims": [
+          {
+            "id": "claim-refund",
+            "text": "付款可退",
+            "target": "refunded"
+          },
+          {
+            "id": "claim-identity",
+            "text": "集团上市",
+            "target": "contract-entity"
+          },
+          {
+            "id": "claim-delivery",
+            "text": "先支付20000元即可锁定交付",
+            "target": "terms"
+          }
+        ],
+        "external": {
+          "asOf": "2026-10-03",
+          "totalAmount": "100000",
+          "payeeEntity": "合成演练供应商（非真实企业）",
+          "refundEntity": "合成演练供应商（非真实企业）",
+          "alreadyPaid": "10000",
+          "deliveredAmount": "0",
+          "actualRefund": "0",
+          "proposedAmount": "20000",
+          "alternativeAmount": "5000",
+          "exposureLimit": "20000"
+        },
+        "datedCash": null
+      },
+      "evidence": [
+        {
+          "slot": "paid",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "10000"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款10000元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.886Z"
+        },
+        {
+          "slot": "delivered",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "0"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，已交付对应金额0元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.898Z"
+        },
+        {
+          "slot": "refunded",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "0"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已收到退款0元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.907Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "contract"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "a8034d27-e573-4fff-b893-756d8ca9e7eb",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.244Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "payee"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次实际收款主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "7a73d9e9-ad97-42f5-abd6-39d0d546c3ae",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.257Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "refund"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次退款责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "4d6d092f-1a67-40c5-8c3b-d25dd74652e2",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.267Z"
+        },
+        {
+          "slot": "terms",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "terms": "付款后按合同交付，退款责任需书面核对"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次书面条款为付款后按合同交付，退款责任需书面核对。",
+          "sourceLabel": "合成条款原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "7cb99f1e-8adb-4d72-a929-e2803368ce40",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.277Z"
+        }
+      ]
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:17:18.282Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "identity-contract",
+          "label": "签约主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "a8034d27-e573-4fff-b893-756d8ca9e7eb",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-payee",
+          "label": "收款主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "7a73d9e9-ad97-42f5-abd6-39d0d546c3ae",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-refund",
+          "label": "退款责任主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "4d6d092f-1a67-40c5-8c3b-d25dd74652e2",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "terms",
+          "label": "付款、交付与退款条款",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "7cb99f1e-8adb-4d72-a929-e2803368ce40",
+              "label": "合成条款原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "paid",
+          "label": "已付记录",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "paid"
+          ]
+        },
+        {
+          "id": "delivered",
+          "label": "实际交付对应金额",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "delivered"
+          ]
+        },
+        {
+          "id": "refunded",
+          "label": "实际退款记录",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "refunded"
+          ]
+        },
+        {
+          "id": "exposure-condition",
+          "label": "自设未交付暴露上限",
+          "status": "condition-unmet",
+          "summary": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": []
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "matched",
+          "summary": "仅连接该主体的历史年度事实，不证明当前可用余额、个人交款安全或履约。",
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-netProfit",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-netProfit",
+              "page": 1,
+              "metric": "netProfit",
+              "label": "2025 netProfit",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-operatingCashFlow",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-operatingCashFlow",
+              "page": 1,
+              "metric": "operatingCashFlow",
+              "label": "2025 operatingCashFlow",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-payablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-payablesAdjustment",
+              "page": 1,
+              "metric": "payablesAdjustment",
+              "label": "2025 payablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-otherAdjustments",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-otherAdjustments",
+              "page": 1,
+              "metric": "otherAdjustments",
+              "label": "2025 otherAdjustments",
+              "state": "matched",
+              "relation": "motivates"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-exposure-condition",
+          "title": "核对拟付款与自设暴露条件",
+          "reason": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "requestedEvidence": "核对已有发生记录、本次拟付金额与用户自设上限；算术条件不代表付款批准。",
+          "gateIds": [
+            "exposure-condition"
+          ],
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-collections",
+          "title": "补充材料区分应收的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-inventory",
+          "title": "补充材料区分存货的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        }
+      ],
+      "external": {
+        "assumptionScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ],
+        "recordScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ]
+      },
+      "cash": null,
+      "recordedCash": null,
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "open",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "open",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 7,
+      "toRevision": 8,
+      "changes": [
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:state",
+          "label": [
+            "材料采用状态 · 合成条款原文字段",
+            "Evidence adoption state · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "active",
+          "unit": "state"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:slot",
+          "label": [
+            "材料核验目标 · 合成条款原文字段",
+            "Evidence target · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "terms",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:kind",
+          "label": [
+            "材料性质 · 合成条款原文字段",
+            "Evidence kind · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "source-record",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:entity",
+          "label": [
+            "材料适用主体 · 合成条款原文字段",
+            "Evidence entity · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "合成演练供应商（非真实企业）",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:asOf",
+          "label": [
+            "材料适用日 · 合成条款原文字段",
+            "Evidence date · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "2026-10-03",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:sourceLabel",
+          "label": [
+            "材料来源名称 · 合成条款原文字段",
+            "Evidence source label · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "合成条款原文字段",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:quote",
+          "label": [
+            "保存摘录 · 合成条款原文字段",
+            "Saved quote · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "合成演练供应商（非真实企业）截至2026-10-03，本次书面条款为付款后按合同交付，退款责任需书面核对。",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:materialId",
+          "label": [
+            "绑定材料 · 合成条款原文字段",
+            "Linked material · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:page",
+          "label": [
+            "原件页码 · 合成条款原文字段",
+            "Original page · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "1",
+          "unit": "text"
+        },
+        {
+          "kind": "evidence",
+          "key": "evidence:7cb99f1e-8adb-4d72-a929-e2803368ce40:terms",
+          "label": [
+            "记录条款 · 合成条款原文字段",
+            "Recorded terms · 合成条款原文字段"
+          ],
+          "before": null,
+          "after": "付款后按合同交付，退款责任需书面核对",
+          "unit": "text"
+        },
+        {
+          "kind": "gate",
+          "key": "terms",
+          "label": [
+            "付款、交付与退款条款",
+            "付款、交付与退款条款"
+          ],
+          "before": "unknown",
+          "after": "matched",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:maximum",
+          "label": [
+            "定位记录与输入本次拟付数学上限",
+            "Located records and inputs mathematical ceiling"
+          ],
+          "before": null,
+          "after": "10000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:status",
+          "label": [
+            "定位记录与输入反求条件状态",
+            "Located records and inputs constraint state"
+          ],
+          "before": "unknown",
+          "after": "known",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:currentExposure",
+          "label": [
+            "定位记录与输入新增付款前暴露",
+            "Located records and inputs exposure before another payment"
+          ],
+          "before": null,
+          "after": "10000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:currentExcess",
+          "label": [
+            "定位记录与输入超出自设上限金额",
+            "Located records and inputs excess above your limit"
+          ],
+          "before": null,
+          "after": "0.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:headroom",
+          "label": [
+            "定位记录与输入自设暴露空间",
+            "Located records and inputs exposure headroom"
+          ],
+          "before": null,
+          "after": "10000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:remaining",
+          "label": [
+            "定位记录与输入交易剩余额",
+            "Located records and inputs remaining transaction amount"
+          ],
+          "before": null,
+          "after": "90000.00",
+          "unit": "CNY"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:17:16.873Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:17:16.886Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 3,
+        "createdAt": "2026-10-03T06:17:16.898Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 4,
+        "createdAt": "2026-10-03T06:17:16.907Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 5,
+        "createdAt": "2026-10-03T06:17:18.244Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 6,
+        "createdAt": "2026-10-03T06:17:18.257Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 7,
+        "createdAt": "2026-10-03T06:17:18.267Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 8,
+        "createdAt": "2026-10-03T06:17:18.277Z",
+        "reason": "evidence-added"
+      }
+    ]
+  },
+  "withdrawn": {
+    "decision": {
+      "id": "c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "title": "合成付款核验 · 承诺与实际退款",
+      "purpose": "external",
+      "transactionEntity": "合成演练供应商（非真实企业）",
+      "currentRevision": 9,
+      "createdAt": "2026-10-03T06:17:16.873Z",
+      "updatedAt": "2026-10-03T06:17:19.195Z"
+    },
+    "version": {
+      "revision": 9,
+      "createdAt": "2026-10-03T06:17:19.195Z",
+      "reason": "evidence-withdrawn",
+      "input": {
+        "title": "合成付款核验 · 承诺与实际退款",
+        "purpose": "external",
+        "transactionEntity": "合成演练供应商（非真实企业）",
+        "reportTaskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+        "promise": "对方原话（合成）：集团上市，付款可退，先支付20000元即可锁定交付。",
+        "tradingName": "合成门店品牌（非企业名称）",
+        "claims": [
+          {
+            "id": "claim-refund",
+            "text": "付款可退",
+            "target": "refunded"
+          },
+          {
+            "id": "claim-identity",
+            "text": "集团上市",
+            "target": "contract-entity"
+          },
+          {
+            "id": "claim-delivery",
+            "text": "先支付20000元即可锁定交付",
+            "target": "terms"
+          }
+        ],
+        "external": {
+          "asOf": "2026-10-03",
+          "totalAmount": "100000",
+          "payeeEntity": "合成演练供应商（非真实企业）",
+          "refundEntity": "合成演练供应商（非真实企业）",
+          "alreadyPaid": "10000",
+          "deliveredAmount": "0",
+          "actualRefund": "0",
+          "proposedAmount": "20000",
+          "alternativeAmount": "5000",
+          "exposureLimit": "20000"
+        },
+        "datedCash": null
+      },
+      "evidence": [
+        {
+          "slot": "paid",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "10000"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款10000元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+          "state": "withdrawn",
+          "createdAt": "2026-10-03T06:17:16.886Z"
+        },
+        {
+          "slot": "delivered",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "0"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，已交付对应金额0元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.898Z"
+        },
+        {
+          "slot": "refunded",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "0"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已收到退款0元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.907Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "contract"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "a8034d27-e573-4fff-b893-756d8ca9e7eb",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.244Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "payee"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次实际收款主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "7a73d9e9-ad97-42f5-abd6-39d0d546c3ae",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.257Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "refund"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次退款责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "4d6d092f-1a67-40c5-8c3b-d25dd74652e2",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.267Z"
+        },
+        {
+          "slot": "terms",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "terms": "付款后按合同交付，退款责任需书面核对"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次书面条款为付款后按合同交付，退款责任需书面核对。",
+          "sourceLabel": "合成条款原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "7cb99f1e-8adb-4d72-a929-e2803368ce40",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.277Z"
+        }
+      ]
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:17:19.200Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "identity-contract",
+          "label": "签约主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "a8034d27-e573-4fff-b893-756d8ca9e7eb",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-payee",
+          "label": "收款主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "7a73d9e9-ad97-42f5-abd6-39d0d546c3ae",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-refund",
+          "label": "退款责任主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "4d6d092f-1a67-40c5-8c3b-d25dd74652e2",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "terms",
+          "label": "付款、交付与退款条款",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "7cb99f1e-8adb-4d72-a929-e2803368ce40",
+              "label": "合成条款原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "paid",
+          "label": "已付记录",
+          "status": "withdrawn",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "paid"
+          ]
+        },
+        {
+          "id": "delivered",
+          "label": "实际交付对应金额",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "delivered"
+          ]
+        },
+        {
+          "id": "refunded",
+          "label": "实际退款记录",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "refunded"
+          ]
+        },
+        {
+          "id": "exposure-condition",
+          "label": "自设未交付暴露上限",
+          "status": "unknown",
+          "summary": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "paid"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "matched",
+          "summary": "仅连接该主体的历史年度事实，不证明当前可用余额、个人交款安全或履约。",
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-netProfit",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-netProfit",
+              "page": 1,
+              "metric": "netProfit",
+              "label": "2025 netProfit",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-operatingCashFlow",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-operatingCashFlow",
+              "page": 1,
+              "metric": "operatingCashFlow",
+              "label": "2025 operatingCashFlow",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-payablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-payablesAdjustment",
+              "page": 1,
+              "metric": "payablesAdjustment",
+              "label": "2025 payablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-otherAdjustments",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-otherAdjustments",
+              "page": 1,
+              "metric": "otherAdjustments",
+              "label": "2025 otherAdjustments",
+              "state": "matched",
+              "relation": "motivates"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-paid",
+          "title": "补充已付记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "截至所选日期的实际付款、交付对应金额和实际退款凭据；承诺退款不替代发生记录。",
+          "gateIds": [
+            "paid"
+          ],
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ]
+        },
+        {
+          "id": "request-exposure-condition",
+          "title": "补充自设未交付暴露上限",
+          "reason": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "requestedEvidence": "提供截至所选日期的实际付款凭据；承诺不替代发生记录。",
+          "gateIds": [
+            "exposure-condition"
+          ],
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-collections",
+          "title": "补充材料区分应收的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-inventory",
+          "title": "补充材料区分存货的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        }
+      ],
+      "external": {
+        "assumptionScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ],
+        "recordScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": [
+              "alreadyPaid"
+            ]
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": [
+              "alreadyPaid"
+            ]
+          }
+        ]
+      },
+      "cash": null,
+      "recordedCash": null,
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "open",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "open",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 8,
+      "toRevision": 9,
+      "changes": [
+        {
+          "kind": "evidence",
+          "key": "evidence:320e28fd-6140-4967-ba7b-ac6e3f61cfd3:state",
+          "label": [
+            "材料采用状态 · 三行明确范围的合成字段",
+            "Evidence adoption state · 三行明确范围的合成字段"
+          ],
+          "before": "active",
+          "after": "withdrawn",
+          "unit": "state"
+        },
+        {
+          "kind": "gate",
+          "key": "paid",
+          "label": [
+            "已付记录",
+            "已付记录"
+          ],
+          "before": "matched",
+          "after": "withdrawn",
+          "unit": "state"
+        },
+        {
+          "kind": "gate",
+          "key": "exposure-condition",
+          "label": [
+            "自设未交付暴露上限",
+            "自设未交付暴露上限"
+          ],
+          "before": "condition-unmet",
+          "after": "unknown",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:A:exposure",
+          "label": [
+            "有记录字段方案A敞口",
+            "Record-field option A exposure"
+          ],
+          "before": "30000.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:A:limit",
+          "label": [
+            "有记录字段方案A上限条件",
+            "Record-field option A limit condition"
+          ],
+          "before": "false",
+          "after": null,
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:B:exposure",
+          "label": [
+            "有记录字段方案B敞口",
+            "Record-field option B exposure"
+          ],
+          "before": "15000.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:B:limit",
+          "label": [
+            "有记录字段方案B上限条件",
+            "Record-field option B limit condition"
+          ],
+          "before": "true",
+          "after": null,
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:maximum",
+          "label": [
+            "定位记录与输入本次拟付数学上限",
+            "Located records and inputs mathematical ceiling"
+          ],
+          "before": "10000.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:status",
+          "label": [
+            "定位记录与输入反求条件状态",
+            "Located records and inputs constraint state"
+          ],
+          "before": "known",
+          "after": "unknown",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:currentExposure",
+          "label": [
+            "定位记录与输入新增付款前暴露",
+            "Located records and inputs exposure before another payment"
+          ],
+          "before": "10000.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:currentExcess",
+          "label": [
+            "定位记录与输入超出自设上限金额",
+            "Located records and inputs excess above your limit"
+          ],
+          "before": "0.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:headroom",
+          "label": [
+            "定位记录与输入自设暴露空间",
+            "Located records and inputs exposure headroom"
+          ],
+          "before": "10000.00",
+          "after": null,
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:remaining",
+          "label": [
+            "定位记录与输入交易剩余额",
+            "Located records and inputs remaining transaction amount"
+          ],
+          "before": "90000.00",
+          "after": null,
+          "unit": "CNY"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:17:16.873Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:17:16.886Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 3,
+        "createdAt": "2026-10-03T06:17:16.898Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 4,
+        "createdAt": "2026-10-03T06:17:16.907Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 5,
+        "createdAt": "2026-10-03T06:17:18.244Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 6,
+        "createdAt": "2026-10-03T06:17:18.257Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 7,
+        "createdAt": "2026-10-03T06:17:18.267Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 8,
+        "createdAt": "2026-10-03T06:17:18.277Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 9,
+        "createdAt": "2026-10-03T06:17:19.195Z",
+        "reason": "evidence-withdrawn"
+      }
+    ]
+  },
+  "restored": {
+    "decision": {
+      "id": "c60032e6-810b-4eb8-bfdc-bcefca6b046a",
+      "title": "合成付款核验 · 承诺与实际退款",
+      "purpose": "external",
+      "transactionEntity": "合成演练供应商（非真实企业）",
+      "currentRevision": 10,
+      "createdAt": "2026-10-03T06:17:16.873Z",
+      "updatedAt": "2026-10-03T06:17:19.957Z"
+    },
+    "version": {
+      "revision": 10,
+      "createdAt": "2026-10-03T06:17:19.957Z",
+      "reason": "evidence-restored",
+      "input": {
+        "title": "合成付款核验 · 承诺与实际退款",
+        "purpose": "external",
+        "transactionEntity": "合成演练供应商（非真实企业）",
+        "reportTaskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+        "promise": "对方原话（合成）：集团上市，付款可退，先支付20000元即可锁定交付。",
+        "tradingName": "合成门店品牌（非企业名称）",
+        "claims": [
+          {
+            "id": "claim-refund",
+            "text": "付款可退",
+            "target": "refunded"
+          },
+          {
+            "id": "claim-identity",
+            "text": "集团上市",
+            "target": "contract-entity"
+          },
+          {
+            "id": "claim-delivery",
+            "text": "先支付20000元即可锁定交付",
+            "target": "terms"
+          }
+        ],
+        "external": {
+          "asOf": "2026-10-03",
+          "totalAmount": "100000",
+          "payeeEntity": "合成演练供应商（非真实企业）",
+          "refundEntity": "合成演练供应商（非真实企业）",
+          "alreadyPaid": "10000",
+          "deliveredAmount": "0",
+          "actualRefund": "0",
+          "proposedAmount": "20000",
+          "alternativeAmount": "5000",
+          "exposureLimit": "20000"
+        },
+        "datedCash": null
+      },
+      "evidence": [
+        {
+          "slot": "paid",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "10000"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款10000元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.886Z"
+        },
+        {
+          "slot": "delivered",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "0"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，已交付对应金额0元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.898Z"
+        },
+        {
+          "slot": "refunded",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "0"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已收到退款0元。",
+          "sourceLabel": "三行明确范围的合成字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:16.907Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "contract"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "a8034d27-e573-4fff-b893-756d8ca9e7eb",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.244Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "payee"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次实际收款主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "7a73d9e9-ad97-42f5-abd6-39d0d546c3ae",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.257Z"
+        },
+        {
+          "slot": "identity",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "entity": "合成演练供应商（非真实企业）",
+            "role": "refund"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次退款责任主体为合成演练供应商（非真实企业）。",
+          "sourceLabel": "合成责任角色原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "4d6d092f-1a67-40c5-8c3b-d25dd74652e2",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.267Z"
+        },
+        {
+          "slot": "terms",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "terms": "付款后按合同交付，退款责任需书面核对"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，本次书面条款为付款后按合同交付，退款责任需书面核对。",
+          "sourceLabel": "合成条款原文字段",
+          "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+          "page": 1,
+          "id": "7cb99f1e-8adb-4d72-a929-e2803368ce40",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:18.277Z"
+        }
+      ]
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:17:19.961Z",
+      "knownConflicts": [],
+      "gates": [
+        {
+          "id": "identity-contract",
+          "label": "签约主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "a8034d27-e573-4fff-b893-756d8ca9e7eb",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-payee",
+          "label": "收款主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "7a73d9e9-ad97-42f5-abd6-39d0d546c3ae",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-refund",
+          "label": "退款责任主体",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "4d6d092f-1a67-40c5-8c3b-d25dd74652e2",
+              "label": "合成责任角色原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "terms",
+          "label": "付款、交付与退款条款",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "7cb99f1e-8adb-4d72-a929-e2803368ce40",
+              "label": "合成条款原文字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "31d8b751-949f-45aa-9403-8b303dcd9538",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "paid",
+          "label": "已付记录",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "paid"
+          ]
+        },
+        {
+          "id": "delivered",
+          "label": "实际交付对应金额",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "delivered"
+          ]
+        },
+        {
+          "id": "refunded",
+          "label": "实际退款记录",
+          "status": "matched",
+          "summary": "字段已在所绑定的保存文本中定位；仅说明记录匹配，未鉴真或认证履行。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "refunded"
+          ]
+        },
+        {
+          "id": "exposure-condition",
+          "label": "自设未交付暴露上限",
+          "status": "condition-unmet",
+          "summary": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": []
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "matched",
+          "summary": "仅连接该主体的历史年度事实，不证明当前可用余额、个人交款安全或履约。",
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-netProfit",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-netProfit",
+              "page": 1,
+              "metric": "netProfit",
+              "label": "2025 netProfit",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-operatingCashFlow",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-operatingCashFlow",
+              "page": 1,
+              "metric": "operatingCashFlow",
+              "label": "2025 operatingCashFlow",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-payablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-payablesAdjustment",
+              "page": 1,
+              "metric": "payablesAdjustment",
+              "label": "2025 payablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-otherAdjustments",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-otherAdjustments",
+              "page": 1,
+              "metric": "otherAdjustments",
+              "label": "2025 otherAdjustments",
+              "state": "matched",
+              "relation": "motivates"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-exposure-condition",
+          "title": "核对拟付款与自设暴露条件",
+          "reason": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "requestedEvidence": "核对已有发生记录、本次拟付金额与用户自设上限；算术条件不代表付款批准。",
+          "gateIds": [
+            "exposure-condition"
+          ],
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "320e28fd-6140-4967-ba7b-ac6e3f61cfd3",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "647f72e4-872f-4043-86c9-6c14e4972215",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "cd3f458b-ce7d-41b0-ba4b-27f0f69e739a",
+              "label": "三行明确范围的合成字段",
+              "state": "matched",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-collections",
+          "title": "补充材料区分应收的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-inventory",
+          "title": "补充材料区分存货的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        }
+      ],
+      "external": {
+        "assumptionScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ],
+        "recordScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ]
+      },
+      "cash": null,
+      "recordedCash": null,
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "open",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "open",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 9,
+      "toRevision": 10,
+      "changes": [
+        {
+          "kind": "evidence",
+          "key": "evidence:320e28fd-6140-4967-ba7b-ac6e3f61cfd3:state",
+          "label": [
+            "材料采用状态 · 三行明确范围的合成字段",
+            "Evidence adoption state · 三行明确范围的合成字段"
+          ],
+          "before": "withdrawn",
+          "after": "active",
+          "unit": "state"
+        },
+        {
+          "kind": "gate",
+          "key": "paid",
+          "label": [
+            "已付记录",
+            "已付记录"
+          ],
+          "before": "withdrawn",
+          "after": "matched",
+          "unit": "state"
+        },
+        {
+          "kind": "gate",
+          "key": "exposure-condition",
+          "label": [
+            "自设未交付暴露上限",
+            "自设未交付暴露上限"
+          ],
+          "before": "unknown",
+          "after": "condition-unmet",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:A:exposure",
+          "label": [
+            "有记录字段方案A敞口",
+            "Record-field option A exposure"
+          ],
+          "before": null,
+          "after": "30000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:A:limit",
+          "label": [
+            "有记录字段方案A上限条件",
+            "Record-field option A limit condition"
+          ],
+          "before": null,
+          "after": "false",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:B:exposure",
+          "label": [
+            "有记录字段方案B敞口",
+            "Record-field option B exposure"
+          ],
+          "before": null,
+          "after": "15000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "recordScenarios:B:limit",
+          "label": [
+            "有记录字段方案B上限条件",
+            "Record-field option B limit condition"
+          ],
+          "before": null,
+          "after": "true",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:maximum",
+          "label": [
+            "定位记录与输入本次拟付数学上限",
+            "Located records and inputs mathematical ceiling"
+          ],
+          "before": null,
+          "after": "10000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:status",
+          "label": [
+            "定位记录与输入反求条件状态",
+            "Located records and inputs constraint state"
+          ],
+          "before": "unknown",
+          "after": "known",
+          "unit": "state"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:currentExposure",
+          "label": [
+            "定位记录与输入新增付款前暴露",
+            "Located records and inputs exposure before another payment"
+          ],
+          "before": null,
+          "after": "10000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:currentExcess",
+          "label": [
+            "定位记录与输入超出自设上限金额",
+            "Located records and inputs excess above your limit"
+          ],
+          "before": null,
+          "after": "0.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:headroom",
+          "label": [
+            "定位记录与输入自设暴露空间",
+            "Located records and inputs exposure headroom"
+          ],
+          "before": null,
+          "after": "10000.00",
+          "unit": "CNY"
+        },
+        {
+          "kind": "calculation",
+          "key": "paymentBoundary:records:remaining",
+          "label": [
+            "定位记录与输入交易剩余额",
+            "Located records and inputs remaining transaction amount"
+          ],
+          "before": null,
+          "after": "90000.00",
+          "unit": "CNY"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:17:16.873Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:17:16.886Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 3,
+        "createdAt": "2026-10-03T06:17:16.898Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 4,
+        "createdAt": "2026-10-03T06:17:16.907Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 5,
+        "createdAt": "2026-10-03T06:17:18.244Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 6,
+        "createdAt": "2026-10-03T06:17:18.257Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 7,
+        "createdAt": "2026-10-03T06:17:18.267Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 8,
+        "createdAt": "2026-10-03T06:17:18.277Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 9,
+        "createdAt": "2026-10-03T06:17:19.195Z",
+        "reason": "evidence-withdrawn"
+      },
+      {
+        "revision": 10,
+        "createdAt": "2026-10-03T06:17:19.957Z",
+        "reason": "evidence-restored"
+      }
+    ]
+  },
+  "conflict": {
+    "decision": {
+      "id": "c4d9870f-74bf-4371-9303-80515e3e8be0",
+      "title": "合成冲突事项 · 不撤掉反证洗白",
+      "purpose": "external",
+      "transactionEntity": "合成演练供应商（非真实企业）",
+      "currentRevision": 4,
+      "createdAt": "2026-10-03T06:17:23.334Z",
+      "updatedAt": "2026-10-03T06:17:23.361Z"
+    },
+    "version": {
+      "revision": 4,
+      "createdAt": "2026-10-03T06:17:23.361Z",
+      "reason": "evidence-withdrawn",
+      "input": {
+        "title": "合成冲突事项 · 不撤掉反证洗白",
+        "purpose": "external",
+        "transactionEntity": "合成演练供应商（非真实企业）",
+        "reportTaskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+        "promise": "对方原话（合成）：集团上市，付款可退，先支付20000元即可锁定交付。",
+        "tradingName": "合成门店品牌（非企业名称）",
+        "claims": [
+          {
+            "id": "claim-refund",
+            "text": "付款可退",
+            "target": "refunded"
+          },
+          {
+            "id": "claim-identity",
+            "text": "集团上市",
+            "target": "contract-entity"
+          },
+          {
+            "id": "claim-delivery",
+            "text": "先支付20000元即可锁定交付",
+            "target": "terms"
+          }
+        ],
+        "external": {
+          "asOf": "2026-10-03",
+          "totalAmount": "100000",
+          "payeeEntity": "合成演练供应商（非真实企业）",
+          "refundEntity": "合成演练供应商（非真实企业）",
+          "alreadyPaid": "10000",
+          "deliveredAmount": "0",
+          "actualRefund": "0",
+          "proposedAmount": "20000",
+          "alternativeAmount": "5000",
+          "exposureLimit": "20000"
+        },
+        "datedCash": null
+      },
+      "evidence": [
+        {
+          "slot": "paid",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "10000"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款10000元。",
+          "sourceLabel": "同范围合成付款字段",
+          "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+          "page": 1,
+          "id": "34c953df-adbc-434c-be61-9d92c6e921f1",
+          "state": "active",
+          "createdAt": "2026-10-03T06:17:23.345Z"
+        },
+        {
+          "slot": "paid",
+          "kind": "source-record",
+          "entity": "合成演练供应商（非真实企业）",
+          "asOf": "2026-10-03",
+          "values": {
+            "amount": "15000"
+          },
+          "quote": "合成演练供应商（非真实企业）截至2026-10-03，实际已付款15000元。",
+          "sourceLabel": "同范围合成付款字段",
+          "materialId": "de952621-c68b-4bfb-8c5e-175817f1305c",
+          "page": 1,
+          "id": "f77ca237-f18b-4521-bf5b-1258df2de964",
+          "state": "withdrawn",
+          "createdAt": "2026-10-03T06:17:23.352Z"
+        }
+      ]
+    },
+    "evaluation": {
+      "evaluatedAt": "2026-10-03T06:17:23.364Z",
+      "knownConflicts": [
+        {
+          "id": "paid|合成演练供应商(非真实企业)|||2026-10-03",
+          "slot": "paid",
+          "entity": "合成演练供应商（非真实企业）",
+          "evidenceIds": [
+            "34c953df-adbc-434c-be61-9d92c6e921f1",
+            "f77ca237-f18b-4521-bf5b-1258df2de964"
+          ],
+          "message": "同一对象的提供字段或原文记录不一致，需补充纠正及对账依据；撤回记录不消除已知冲突。",
+          "introducedRevision": 3,
+          "asOf": "2026-10-03"
+        }
+      ],
+      "gates": [
+        {
+          "id": "identity-contract",
+          "label": "签约主体",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "identity:contract",
+              "path": "identity",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-payee",
+          "label": "收款主体",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "identity:payee",
+              "path": "identity",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "identity-refund",
+          "label": "退款责任主体",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "identity:refund",
+              "path": "identity",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "identity"
+          ]
+        },
+        {
+          "id": "terms",
+          "label": "付款、交付与退款条款",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "terms"
+          ]
+        },
+        {
+          "id": "paid",
+          "label": "已付记录",
+          "status": "conflict",
+          "summary": "存在未解释的记录冲突；撤回或恢复旧版本不能视为已解决。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "34c953df-adbc-434c-be61-9d92c6e921f1",
+              "label": "同范围合成付款字段",
+              "state": "conflict",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "f77ca237-f18b-4521-bf5b-1258df2de964",
+              "label": "同范围合成付款字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "de952621-c68b-4bfb-8c5e-175817f1305c",
+              "page": 1
+            }
+          ],
+          "neededSlots": [
+            "paid"
+          ]
+        },
+        {
+          "id": "delivered",
+          "label": "实际交付对应金额",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "delivered:",
+              "path": "delivered",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "delivered"
+          ]
+        },
+        {
+          "id": "refunded",
+          "label": "实际退款记录",
+          "status": "unknown",
+          "summary": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "refunded:",
+              "path": "refunded",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "neededSlots": [
+            "refunded"
+          ]
+        },
+        {
+          "id": "exposure-condition",
+          "label": "自设未交付暴露上限",
+          "status": "unknown",
+          "summary": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "34c953df-adbc-434c-be61-9d92c6e921f1",
+              "label": "同范围合成付款字段",
+              "state": "conflict",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "f77ca237-f18b-4521-bf5b-1258df2de964",
+              "label": "同范围合成付款字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "de952621-c68b-4bfb-8c5e-175817f1305c",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "delivered:",
+              "path": "delivered",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "refunded:",
+              "path": "refunded",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ],
+          "neededSlots": [
+            "paid",
+            "delivered",
+            "refunded"
+          ]
+        },
+        {
+          "id": "historical-scope",
+          "label": "历史财报主体与适用范围",
+          "status": "matched",
+          "summary": "仅连接该主体的历史年度事实，不证明当前可用余额、个人交款安全或履约。",
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-netProfit",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-netProfit",
+              "page": 1,
+              "metric": "netProfit",
+              "label": "2025 netProfit",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-operatingCashFlow",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-operatingCashFlow",
+              "page": 1,
+              "metric": "operatingCashFlow",
+              "label": "2025 operatingCashFlow",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-payablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-payablesAdjustment",
+              "page": 1,
+              "metric": "payablesAdjustment",
+              "label": "2025 payablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-otherAdjustments",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-otherAdjustments",
+              "page": 1,
+              "metric": "otherAdjustments",
+              "label": "2025 otherAdjustments",
+              "state": "matched",
+              "relation": "motivates"
+            }
+          ],
+          "neededSlots": []
+        }
+      ],
+      "nextActions": [
+        {
+          "id": "request-identity-contract",
+          "title": "补充签约主体",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "签约、收款和退款责任主体的原件；如主体不同，提供授权书、合同付款指引及责任说明。",
+          "gateIds": [
+            "identity-contract"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "identity:contract",
+              "path": "identity",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-identity-payee",
+          "title": "补充收款主体",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "签约、收款和退款责任主体的原件；如主体不同，提供授权书、合同付款指引及责任说明。",
+          "gateIds": [
+            "identity-payee"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "identity:payee",
+              "path": "identity",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-identity-refund",
+          "title": "补充退款责任主体",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "签约、收款和退款责任主体的原件；如主体不同，提供授权书、合同付款指引及责任说明。",
+          "gateIds": [
+            "identity-refund"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "identity:refund",
+              "path": "identity",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-terms",
+          "title": "补充付款、交付与退款条款",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "明确付款、交付、退款责任及延期同意的书面条款，核对延期对交付和回款的影响。",
+          "gateIds": [
+            "terms"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "terms:",
+              "path": "terms",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-paid",
+          "title": "核对已付记录的冲突",
+          "reason": "存在未解释的记录冲突；撤回或恢复旧版本不能视为已解决。",
+          "requestedEvidence": "截至所选日期的实际付款、交付对应金额和实际退款凭据；承诺退款不替代发生记录。",
+          "gateIds": [
+            "paid"
+          ],
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "34c953df-adbc-434c-be61-9d92c6e921f1",
+              "label": "同范围合成付款字段",
+              "state": "conflict",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "f77ca237-f18b-4521-bf5b-1258df2de964",
+              "label": "同范围合成付款字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "de952621-c68b-4bfb-8c5e-175817f1305c",
+              "page": 1
+            }
+          ]
+        },
+        {
+          "id": "request-delivered",
+          "title": "补充实际交付对应金额",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "截至所选日期的实际付款、交付对应金额和实际退款凭据；承诺退款不替代发生记录。",
+          "gateIds": [
+            "delivered"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "delivered:",
+              "path": "delivered",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-refunded",
+          "title": "补充实际退款记录",
+          "reason": "未形成同主体、适用日期及匹配原文的记录依据；用户转录、对方陈述和假设不当作已核验原件。",
+          "requestedEvidence": "截至所选日期的实际付款、交付对应金额和实际退款凭据；承诺退款不替代发生记录。",
+          "gateIds": [
+            "refunded"
+          ],
+          "dependencies": [
+            {
+              "kind": "input",
+              "id": "refunded:",
+              "path": "refunded",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-exposure-condition",
+          "title": "补充自设未交付暴露上限",
+          "reason": "只核对人工记录和自设上限；拟付方案满足算术条件也不是支付批准。承诺退款不抵减实际暴露。",
+          "requestedEvidence": "提供截至所选日期的实际付款、交付对应金额、实际退款凭据；承诺不替代发生记录。",
+          "gateIds": [
+            "exposure-condition"
+          ],
+          "dependencies": [
+            {
+              "kind": "evidence",
+              "id": "34c953df-adbc-434c-be61-9d92c6e921f1",
+              "label": "同范围合成付款字段",
+              "state": "conflict",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "56abe65c-04c3-4faf-b518-6fbd8589c02d",
+              "page": 1
+            },
+            {
+              "kind": "evidence",
+              "id": "f77ca237-f18b-4521-bf5b-1258df2de964",
+              "label": "同范围合成付款字段",
+              "state": "withdrawn",
+              "relation": "supports",
+              "binding": "source-located",
+              "materialId": "de952621-c68b-4bfb-8c5e-175817f1305c",
+              "page": 1
+            },
+            {
+              "kind": "input",
+              "id": "delivered:",
+              "path": "delivered",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "refunded:",
+              "path": "refunded",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            },
+            {
+              "kind": "input",
+              "id": "external.exposureLimit",
+              "path": "external.exposureLimit",
+              "label": "用户自设暴露上限",
+              "state": "assumption"
+            },
+            {
+              "kind": "input",
+              "id": "external.proposedAmount",
+              "path": "external.proposedAmount",
+              "label": "本次拟付金额",
+              "state": "assumption"
+            }
+          ]
+        },
+        {
+          "id": "request-collections",
+          "title": "补充材料区分应收的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        },
+        {
+          "id": "request-inventory",
+          "title": "补充材料区分存货的两种解释",
+          "reason": "尚无同主体、同适用日期的区分材料依据。同一财务信号仅促使核查，不裁定经营原因。",
+          "requestedEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "gateIds": [],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ]
+        }
+      ],
+      "external": {
+        "assumptionScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": "30000.00",
+            "withinLimit": false,
+            "status": "known",
+            "missingFields": []
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": "15000.00",
+            "withinLimit": true,
+            "status": "known",
+            "missingFields": []
+          }
+        ],
+        "recordScenarios": [
+          {
+            "id": "A",
+            "proposedAmount": "20000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": [
+              "alreadyPaid",
+              "deliveredAmount",
+              "actualRefund"
+            ]
+          },
+          {
+            "id": "B",
+            "proposedAmount": "5000",
+            "exposure": null,
+            "withinLimit": null,
+            "status": "unknown",
+            "missingFields": [
+              "alreadyPaid",
+              "deliveredAmount",
+              "actualRefund"
+            ]
+          }
+        ]
+      },
+      "cash": null,
+      "recordedCash": null,
+      "explanations": [
+        {
+          "id": "collections",
+          "state": "open",
+          "alternatives": [
+            "业务扩张或结算结构变化",
+            "回款困难或收款延期"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-receivablesAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-receivablesAdjustment",
+              "page": 1,
+              "metric": "receivablesAdjustment",
+              "label": "2025 receivablesAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "collections:",
+              "path": "collections",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的账龄、票据结算和期后回款记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "collections:",
+                "path": "collections",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        },
+        {
+          "id": "inventory",
+          "state": "open",
+          "alternatives": [
+            "扩张备货与订单增长",
+            "去化困难或库存积压"
+          ],
+          "dependencies": [
+            {
+              "kind": "financial",
+              "id": "079bcbc1-a832-4d5f-8160-7d933deb3618:synthetic-2025-inventoryAdjustment",
+              "taskId": "f2fe5ebe-f82b-49d6-a300-cada12809269",
+              "materialId": "079bcbc1-a832-4d5f-8160-7d933deb3618",
+              "observationId": "synthetic-2025-inventoryAdjustment",
+              "page": 1,
+              "metric": "inventoryAdjustment",
+              "label": "2025 inventoryAdjustment",
+              "state": "matched",
+              "relation": "motivates"
+            },
+            {
+              "kind": "input",
+              "id": "inventory:",
+              "path": "inventory",
+              "label": "尚未提供对应记录",
+              "state": "missing"
+            }
+          ],
+          "nextEvidence": "提供合成演练供应商（非真实企业）截至2026-10-03的订单覆盖、库龄和期后出库记录及对应原文；用于区分两种可能解释。",
+          "evidenceReview": {
+            "status": "missing",
+            "asOf": "2026-10-03",
+            "summary": "尚无同主体、同适用日期的区分材料依据。",
+            "dependencies": [
+              {
+                "kind": "input",
+                "id": "inventory:",
+                "path": "inventory",
+                "label": "尚未提供对应记录",
+                "state": "missing"
+              }
+            ]
+          }
+        }
+      ],
+      "limitations": [
+        "决定、证据转录与现金计划仅保存在当前账号，不发送外部模型。",
+        "来源定位及字段匹配不是资料鉴真，也不认证经济真实性或未来履行。",
+        "没有绑定保存文本的用户转录仅支持独立假设分支，不进入有记录字段分支。",
+        "历史年度财报不证明今日现金、交款安全、公司评级或支付批准。",
+        "旧输入版本按当前规则重算；恢复创建新版本并保留当前已知未解释冲突。"
+      ]
+    },
+    "changes": {
+      "fromRevision": 3,
+      "toRevision": 4,
+      "changes": [
+        {
+          "kind": "evidence",
+          "key": "evidence:f77ca237-f18b-4521-bf5b-1258df2de964:state",
+          "label": [
+            "材料采用状态 · 同范围合成付款字段",
+            "Evidence adoption state · 同范围合成付款字段"
+          ],
+          "before": "active",
+          "after": "withdrawn",
+          "unit": "state"
+        }
+      ],
+      "basis": "saved-inputs-current-rules"
+    },
+    "revisions": [
+      {
+        "revision": 1,
+        "createdAt": "2026-10-03T06:17:23.334Z",
+        "reason": "created"
+      },
+      {
+        "revision": 2,
+        "createdAt": "2026-10-03T06:17:23.345Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 3,
+        "createdAt": "2026-10-03T06:17:23.352Z",
+        "reason": "evidence-added"
+      },
+      {
+        "revision": 4,
+        "createdAt": "2026-10-03T06:17:23.361Z",
+        "reason": "evidence-withdrawn"
+      }
+    ]
+  }
+}

@@ -10,6 +10,7 @@ import type {
 import type { AuthContext, AuthStore } from './auth.js';
 import type { WorkspaceStore } from './store.js';
 import { ApiFault } from './validation.js';
+import { deriveDecisionChanges } from '../shared/decision-change.js';
 import {
   evaluateDecision,
   validateDecisionInput,
@@ -49,16 +50,30 @@ export function installDecisionRoutes(app: express.Express, options: { auth: Aut
   ): DecisionDetail => {
     const version = record.versions.find((item) => item.revision === revision);
     if (!version) throw new ApiFault(404, 'DECISION_VERSION_NOT_FOUND', '未找到所选输入版本');
+    const evaluation = evaluateDecision(version, {
+      tasks: store.state.tasks,
+      materials: store.state.materials,
+      knownConflicts: record.knownConflicts,
+    });
+    const previous = record.versions.find((item) => item.revision === version.revision - 1);
     return {
       decision: summary(record),
       version: structuredClone(version),
-      evaluation: evaluateDecision(version, {
-        tasks: store.state.tasks,
-        materials: store.state.materials,
-        knownConflicts: record.knownConflicts.filter(
-          (issue) => revision === record.currentRevision || issue.introducedRevision <= revision
-        ),
-      }),
+      evaluation,
+      ...(previous
+        ? {
+            changes: deriveDecisionChanges(
+              previous,
+              version,
+              evaluateDecision(previous, {
+                tasks: store.state.tasks,
+                materials: store.state.materials,
+                knownConflicts: record.knownConflicts,
+              }),
+              evaluation
+            ),
+          }
+        : {}),
       revisions: record.versions.map(({ revision, createdAt, reason, restoredFrom }) => ({
         revision,
         createdAt,

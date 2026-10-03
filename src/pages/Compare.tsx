@@ -503,7 +503,7 @@ export function ComparePage({ query }: { query: URLSearchParams }) {
                                 ...new Set(
                                   finding.sourceRefs.map(
                                     (ref) =>
-                                      `${leftReport.snapshot.find((material) => material.id === ref.materialId)?.title || t('未匹配材料', 'Unmatched material')} · ${t('PDF 页', 'PDF p.')} ${ref.page ?? '—'}`
+                                      `${leftReport.snapshot.find((material) => material.id === ref.materialId)?.title || t('未匹配材料', 'Unmatched material')} · ${t('来源页', 'Source p.')} ${ref.page ?? '—'}`
                                   )
                                 ),
                               ].join(' / ')}

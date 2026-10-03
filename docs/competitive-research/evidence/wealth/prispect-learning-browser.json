@@ -1,0 +1,209 @@
+{
+  "recorded_at": "2026-10-03T06:07:43.321Z",
+  "run_mode": "synthetic component fixture; actual production component; not authenticated production path",
+  "url": "http://127.0.0.1:4322/docs/competitive-research/evidence/wealth/learning-harness.html",
+  "checks": [
+    {
+      "name": "fixture mounts actual production EvidenceLearning",
+      "passed": true
+    },
+    {
+      "name": "optional disclosure starts closed",
+      "passed": true
+    },
+    {
+      "name": "zero trials have no recap or ability rating",
+      "passed": true
+    },
+    {
+      "name": "keyboard reaches fact select",
+      "passed": true
+    },
+    {
+      "name": "keyboard prediction matches actual dependency graph",
+      "passed": true
+    },
+    {
+      "name": "profit trial pauses transitive gap and hypothesis only",
+      "passed": true
+    },
+    {
+      "name": "independent calculation retained",
+      "passed": true
+    },
+    {
+      "name": "feedback receives keyboard focus",
+      "passed": true
+    },
+    {
+      "name": "unaffected exact cash remains inspectable",
+      "passed": true
+    },
+    {
+      "name": "next keyboard action restores practice",
+      "passed": true
+    },
+    {
+      "name": "restore clears only local practice result",
+      "passed": true
+    },
+    {
+      "name": "restore returns focus to fact selection",
+      "passed": true
+    },
+    {
+      "name": "restored practice retains one actual memory attempt",
+      "passed": true
+    },
+    {
+      "name": "换账号范围 clears prior result",
+      "passed": true
+    },
+    {
+      "name": "换账号范围 clears prior session recap",
+      "passed": true
+    },
+    {
+      "name": "换账号范围 closes old disclosure by remount",
+      "passed": true
+    },
+    {
+      "name": "换期间 clears prior result",
+      "passed": true
+    },
+    {
+      "name": "换期间 clears prior session recap",
+      "passed": true
+    },
+    {
+      "name": "换期间 closes old disclosure by remount",
+      "passed": true
+    },
+    {
+      "name": "换来源 clears prior result",
+      "passed": true
+    },
+    {
+      "name": "换来源 clears prior session recap",
+      "passed": true
+    },
+    {
+      "name": "换来源 closes old disclosure by remount",
+      "passed": true
+    },
+    {
+      "name": "换金额 clears prior result",
+      "passed": true
+    },
+    {
+      "name": "换金额 clears prior session recap",
+      "passed": true
+    },
+    {
+      "name": "换金额 closes old disclosure by remount",
+      "passed": true
+    },
+    {
+      "name": "换依赖 clears prior result",
+      "passed": true
+    },
+    {
+      "name": "换依赖 clears prior session recap",
+      "passed": true
+    },
+    {
+      "name": "换依赖 closes old disclosure by remount",
+      "passed": true
+    },
+    {
+      "name": "missing and conflict facts cannot be selected",
+      "passed": true
+    },
+    {
+      "name": "missing and conflict graphs do not fabricate withdrawal challenge",
+      "passed": true
+    },
+    {
+      "name": "missing and conflict boundary has actionable reason",
+      "passed": true
+    },
+    {
+      "name": "duplicate submission records exactly one actual attempt",
+      "passed": true
+    },
+    {
+      "name": "empty prediction receives concrete missed-dependency feedback",
+      "passed": true
+    },
+    {
+      "name": "320px dark has no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "name": "320px dark learning has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320px dark comparison uses one readable column",
+      "passed": true
+    },
+    {
+      "name": "320px light has no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "name": "320px light learning has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "320px light comparison uses one readable column",
+      "passed": true
+    },
+    {
+      "name": "390px dark has no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "name": "390px dark learning has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390px dark comparison uses one readable column",
+      "passed": true
+    },
+    {
+      "name": "390px light has no horizontal page overflow",
+      "passed": true
+    },
+    {
+      "name": "390px light learning has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "390px light comparison uses one readable column",
+      "passed": true
+    },
+    {
+      "name": "English caveat preserves financial meaning",
+      "passed": true
+    },
+    {
+      "name": "320px English has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "refresh clears local learning memory",
+      "passed": true
+    },
+    {
+      "name": "no API/model/retrieval requests from learning trial",
+      "passed": true
+    },
+    {
+      "name": "no browser page errors",
+      "passed": true
+    }
+  ],
+  "requests": [],
+  "errors": []
+}

@@ -1,0 +1,68 @@
+{
+  "startedAt": "2026-10-03T05:58:58.147Z",
+  "base": "http://127.0.0.1:4320",
+  "browser": "154.0.8037.0",
+  "baselineSha": "d748d1ac5c1a9c6fe702301c819980e1cce87312",
+  "head": "d748d1ac5c1a9c6fe702301c819980e1cce87312",
+  "checks": [
+    {
+      "name": "no-external-model-configured",
+      "pass": true
+    },
+    {
+      "name": "01-desktop-light-query",
+      "url": "http://127.0.0.1:4320/query",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "same-financial-input-rules-completed",
+      "pass": true,
+      "taskId": "b48b2f73-7d4b-47f7-9d15-da8371e21e89"
+    },
+    {
+      "name": "02-desktop-light-report",
+      "url": "http://127.0.0.1:4320/tasks/b48b2f73-7d4b-47f7-9d15-da8371e21e89",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "03-desktop-light-original-drawer",
+      "url": "http://127.0.0.1:4320/tasks/b48b2f73-7d4b-47f7-9d15-da8371e21e89",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    },
+    {
+      "name": "04-desktop-light-learning-lab",
+      "url": "http://127.0.0.1:4320/tasks/b48b2f73-7d4b-47f7-9d15-da8371e21e89",
+      "dimensions": {
+        "viewport": 1440,
+        "document": 1440,
+        "body": 1440
+      }
+    }
+  ],
+  "images": [
+    "01-desktop-light-query",
+    "02-desktop-light-report",
+    "03-desktop-light-original-drawer",
+    "04-desktop-light-learning-lab"
+  ],
+  "pageErrors": [],
+  "consoleErrors": [],
+  "limitations": [],
+  "sourceFingerprint": "c1de7b66828c28ec3ee1bf0b1f46588f8c7fed62ca8952d572e57c8c93f3a082",
+  "error": "TimeoutError: locator.selectOption: Timeout 12000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('details.evidence-learning').locator('select')\u001b[22m\n",
+  "finishedAt": "2026-10-03T05:59:13.509Z",
+  "expectedNetworkErrors": [],
+  "unexpectedConsoleErrors": []
+}

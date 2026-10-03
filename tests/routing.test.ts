@@ -93,6 +93,14 @@ test('source and financial links retain exact focus without permitting arbitrary
   assert.equal(resolveCompanyFocus('sources', 'coverage'), 'company-data-coverage');
   assert.equal(resolveCompanyFocus('financial', 'industry'), 'company-industry');
   assert.equal(resolveCompanyFocus('overview', 'lab'), 'company-evidence-lab');
+  assert.equal(companyPath('record', 'overview', 'plan'), '/company?run=record&focus=plan');
+  assert.equal(resolveCompanyFocus('overview', 'plan'), 'company-research-framework');
+  assert.equal(resolveCompanyFocus('overview', 'trust'), 'company-source-trust');
+  assert.equal(
+    companyPath('record', 'sources', 'trust'),
+    '/company?run=record&section=sources&focus=trust'
+  );
+  assert.equal(resolveCompanyFocus('sources', 'trust'), 'company-source-trust');
   assert.equal(resolveCompanyFocus('financial', 'coverage'), null);
   assert.equal(resolveCompanyFocus('sources', '__proto__'), null);
   assert.deepEqual(resolveCompanyLocation('trends', 'goal'), {

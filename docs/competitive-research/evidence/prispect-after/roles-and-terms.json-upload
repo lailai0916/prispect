@@ -1,0 +1,19 @@
+{
+  "company": "合成演练供应商（非真实企业）",
+  "shortName": "合成演练供应商",
+  "title": "三种责任角色与书面条款（合成原文）",
+  "filename": "roles-and-terms.json",
+  "origin": "user-upload",
+  "documentDate": "2026-10-03",
+  "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "observations": [],
+  "excerpts": [
+    {
+      "page": 1,
+      "text": "合成演练供应商（非真实企业）截至2026-10-03，本次合同签约责任主体为合成演练供应商（非真实企业）。\n合成演练供应商（非真实企业）截至2026-10-03，本次实际收款主体为合成演练供应商（非真实企业）。\n合成演练供应商（非真实企业）截至2026-10-03，本次退款责任主体为合成演练供应商（非真实企业）。\n合成演练供应商（非真实企业）截至2026-10-03，本次书面条款为付款后按合同交付，退款责任需书面核对。"
+    }
+  ],
+  "notes": [
+    "合成工程样本；只定位角色字段与条款文字，不证明授权、上市、可退或合法有效。"
+  ]
+}

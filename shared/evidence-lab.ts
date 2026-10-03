@@ -1,5 +1,11 @@
 /** A local evidence trial. It never adopts sources or rewrites the saved analysis. */
-import type { CompanyResearchRun, ComputedMetric, EvidenceRef, Report } from './contracts.js';
+import type {
+  CompanyResearchRun,
+  ComputedMetric,
+  EvidenceRef,
+  Material,
+  Report,
+} from './contracts.js';
 import {
   deriveCompanyAssessment,
   type AssessmentEvidence,
@@ -19,6 +25,8 @@ export interface LabSource {
   page?: number;
   quote?: string;
   sourceQuality: AssessmentEvidence['sourceQuality'];
+  /** An owning-account retained upload, never a public-source URL or model input. */
+  retainedOriginal?: { kind: 'upload'; isPdf: boolean };
 }
 export interface LabNode {
   id: string;
@@ -108,6 +116,26 @@ const safeUrl = (value: string | undefined): string | null => {
     return null;
   }
 };
+/** Private original links are restricted to the existing owning-account file endpoint. */
+export function evidenceLabSourceHref(source: LabSource): string | undefined {
+  if (source.retainedOriginal) {
+    if (!/^\/api\/materials\/[a-zA-Z0-9_-]{1,200}\/file$/.test(source.url)) return;
+    const page =
+      source.retainedOriginal.isPdf &&
+      source.page &&
+      Number.isSafeInteger(source.page) &&
+      source.page > 0
+        ? `#page=${source.page}`
+        : '';
+    return `${source.url}${page}`;
+  }
+  const safe = safeUrl(source.url);
+  if (!safe) return;
+  const url = new URL(safe);
+  if (source.page && Number.isSafeInteger(source.page) && source.page > 0)
+    url.hash = `page=${source.page}`;
+  return url.href;
+}
 const percentage = (numerator: bigint, denominator: bigint): string | null => {
   if (denominator <= 0n) return null;
   const scaled = numerator * 10_000n;
@@ -424,10 +452,23 @@ const originalRefs = (
   year: number,
   fallback?: EvidenceLabExample['source'],
   annualChecked = false,
-  metricKey = 'amount'
+  metricKey = 'amount',
+  retainedMaterials: readonly Material[] = [],
+  company?: string
 ): LabSource[] =>
   refs.flatMap((ref, index) => {
-    const url = safeUrl(ref.sourceUrl || fallback?.url);
+    // Locate only the source already referenced by saved checks; never re-adopt snapshot observations.
+    const retained = retainedMaterials.find(
+      (material) =>
+        material.id === ref.materialId &&
+        material.company === company &&
+        /^[a-zA-Z0-9_-]{1,200}$/.test(material.id) &&
+        /^[a-zA-Z0-9_-]{1,200}$/.test(material.uploadId || '') &&
+        /^[a-f\d]{64}$/i.test(material.sha256)
+    );
+    const url = retained
+      ? `/api/materials/${retained.id}/file`
+      : safeUrl(ref.sourceUrl || fallback?.url);
     if (
       !url ||
       !ref.quote.trim() ||
@@ -437,11 +478,19 @@ const originalRefs = (
     return [
       {
         id: `original-${ref.materialId}-${year}-${metricKey}-${ref.page ?? 'unknown'}-${index}`,
-        label: fallback?.title || '原表摘录 · Original-report excerpt',
+        label: retained?.title || fallback?.title || '原表摘录 · Original-report excerpt',
         url,
         ...(ref.page !== null ? { page: ref.page } : {}),
         quote: ref.quote,
         sourceQuality: 'excerpt' as const,
+        ...(retained
+          ? {
+              retainedOriginal: {
+                kind: 'upload' as const,
+                isPdf: retained.filename.toLowerCase().endsWith('.pdf'),
+              },
+            }
+          : {}),
       },
     ];
   });
@@ -453,6 +502,7 @@ function originalGraph(input: {
   checks?: Report['checks'];
   bridge?: Report['bridge'];
   source?: EvidenceLabExample['source'];
+  retainedMaterials?: readonly Material[];
 }): EvidenceLabGraph {
   const { year } = input;
   const nodes: LabNode[] = [];
@@ -485,7 +535,15 @@ function originalGraph(input: {
     const value =
       metric?.unit === 'CNY' ? (periodYear === year ? metric.value : metric.previousValue) : null;
     const refs = check?.sourceRefs || metric?.sourceRefs || [];
-    const sources = originalRefs(refs, periodYear, input.source, check?.status === 'pass', key);
+    const sources = originalRefs(
+      refs,
+      periodYear,
+      input.source,
+      check?.status === 'pass',
+      key,
+      input.retainedMaterials,
+      input.company
+    );
     const conflict = subjectConflict || check?.status === 'fail' || grouped?.status === 'fail';
     const baseState: LabBaseState = conflict
       ? 'conflict'
@@ -625,7 +683,7 @@ function originalGraph(input: {
 }
 /** The saved engine checks remain authoritative. No raw observation is re-adopted while rendering. */
 export function buildReportEvidenceLab(report: Report): EvidenceLabGraph {
-  return originalGraph(report);
+  return originalGraph({ ...report, retainedMaterials: report.snapshot });
 }
 /** Public API examples contain exact report metrics, never a fabricated web snapshot. */
 export function buildExampleEvidenceLab(example: EvidenceLabExample): EvidenceLabGraph {

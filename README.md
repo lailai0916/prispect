@@ -24,6 +24,8 @@ The [documentation hub](https://prispect.com/docs) links to six articles: [About
 
 Validation uses the full local check and browser interaction replays; provider checks and production release verification are tracked separately. See [the reconstruction plan and acceptance tasks](docs/rebuild-plan.md) and [production capacity record](docs/production-capacity-2026-10-03.md) for scope, evidence and release readiness.
 
+The [version-pinned competitive engineering record](docs/competitive-research/README.md) contains five repository studies, the complete value inventory, design alternatives, implementation mapping and before/after acceptance. Its evidence distinguishes live requests, cached results, synthetic fixtures and unavailable providers. Improvements include explicit statement-to-evidence review, separate trading and responsible entities, adjacent decision-version changes, inverse payment constraints, known source relationships, a source-bound research framework, optional evidence-dependency practice and static offline decision exports. These mechanisms do not authenticate documents, approve payment or turn source counts into confidence.
+
 ## Website Features
 
 🔐 **Personal Accounts** — Better Auth registration, avatar and profile settings, password-strength checks, TOTP, one-use recovery codes, passkeys and session management. Materials, reviews and exports are scoped to their owner. Mail verification and recovery require SMTP; absent providers return unavailable.

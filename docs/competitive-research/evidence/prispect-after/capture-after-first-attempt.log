@@ -1,0 +1,16 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+locator.selectOption: Timeout 12000ms exceeded.
+Call log:
+[2m  - waiting for locator('details.evidence-learning').locator('select')[22m
+
+    at <anonymous> (/workspace/prispect-improve/docs/competitive-research/evidence/prispect-after/capture-after.mjs:170:36) {
+  log: [
+    "  - waiting for locator('details.evidence-learning').locator('select')"
+  ],
+  name: 'TimeoutError'
+}
+
+Node.js v24.19.0

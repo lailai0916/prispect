@@ -176,7 +176,7 @@ function references(refs: EvidenceRef[], report: Report, locale: Locale): string
         ...(material
           ? [`${t('材料标题', 'Document title')}: ${escapeMarkdown(material.title)}`]
           : []),
-        `${t('PDF 页码', 'PDF page')}: ${ref.page === null ? t('未提供', 'not supplied') : ref.page}`,
+        `${t('来源页码', 'Source page')}: ${ref.page === null ? t('未提供', 'not supplied') : ref.page}`,
         `${t('来源 URL', 'Source URL')}:`,
         sourceUrl ? literal(sourceUrl) : t('未提供', 'not supplied'),
         ...(material?.sha256 ? [`SHA-256: ${escapeMarkdown(material.sha256)}`] : []),
