@@ -4,7 +4,7 @@
 
 The anonymous homepage follows one fixed historical finding through its original
 pages, signed cash reconciliation and unresolved explanations. The composition
-changes with the material: a central inspection object, a full-page original,
+changes with the material: a central inspection object, a full-frame original crop,
 a wide cash bridge, two inquiry branches, then the existing research entry.
 
 The opening keeps the canonical product headline and direct entry action.

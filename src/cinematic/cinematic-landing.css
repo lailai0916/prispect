@@ -796,7 +796,7 @@
     padding: 10px 18px;
   }
   .initial-amounts {
-    top: 72%;
+    top: 63%;
     left: 24px;
     right: 24px;
   }
@@ -1078,6 +1078,12 @@
 }
 
 @media (min-width: 481px) and (max-width: 760px) {
+  .discovery-question {
+    top: 37%;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1000px) and (min-height: 741px) {
   .discovery-question {
     top: 37%;
   }
