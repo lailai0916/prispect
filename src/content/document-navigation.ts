@@ -28,7 +28,7 @@ export const documentMetadata = {
       '公司研究、材料管理与核查记录。',
       'Company research, materials and review records.',
     ],
-    version: '1.4',
+    version: '1.5',
     updatedAt: '2026-10-03',
   },
   '/docs/methodology': {
@@ -43,7 +43,7 @@ export const documentMetadata = {
   '/docs/privacy': {
     title: documentTitles['/docs/privacy'],
     description: ['数据处理、AI 使用与保存规则。', 'Data processing, AI use and retention.'],
-    version: '1.1',
+    version: '1.2',
     updatedAt: '2026-10-03',
   },
   '/docs/terms': {

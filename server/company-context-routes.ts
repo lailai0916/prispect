@@ -359,6 +359,7 @@ export function installCompanyContextRoutes(
             securityCode: run.input.securityCode,
             orgId: run.input.orgId,
             year: run.input.year,
+            purpose: run.input.purpose || 'external',
           },
           name:
             run.informationGap?.name ||

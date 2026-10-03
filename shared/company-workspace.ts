@@ -344,7 +344,12 @@ export interface CompanyWorkspaceExtension {
 
 export interface CompanyRecordSummary {
   id: string;
-  input: { securityCode: string; orgId: string; year: number };
+  input: {
+    securityCode: string;
+    orgId: string;
+    year: number;
+    purpose?: 'external' | 'handover';
+  };
   name: string;
   status: string;
   createdAt: string;
