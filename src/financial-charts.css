@@ -298,11 +298,6 @@
 .financial-chart-distribution {
   margin-top: var(--card-gap);
 }
-.financial-chart-years {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-}
 .financial-chart-history-heading {
   display: flex;
   align-items: center;
@@ -319,12 +314,6 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-}
-.financial-chart-year-state {
-  display: block;
-  font-size: var(--text-meta);
-  font-weight: normal;
-  color: var(--muted);
 }
 .financial-chart-reference {
   margin: 12px 0;

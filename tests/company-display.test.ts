@@ -227,12 +227,10 @@ test('financial charts begin at the research year and explain a fallback to an a
         )
       );
       const selectedYear = year === 2024 ? '2024' : '2025';
-      const selectedButton = $('.context-history [aria-pressed="true"]').first();
-      assert.equal(selectedButton.clone().children().remove().end().text(), selectedYear);
-      assert.equal(
-        selectedButton.find('.financial-chart-year-state').text(),
-        locale === 'en' ? 'Pending' : '待获取'
-      );
+      const selectedButton = $(
+        '.context-history svg g[role="button"][aria-pressed="true"]'
+      ).first();
+      assert.match(selectedButton.attr('aria-label') || '', new RegExp(selectedYear));
       assert.match($('.financial-chart-meta').first().text(), new RegExp(selectedYear));
       if (year === 2023)
         assert.match(
@@ -494,15 +492,11 @@ test('standalone history and industry views preserve the query annual year witho
   );
   assert.equal(history('#company-financial-history').length, 1);
   assert.equal(history('#company-industry').length, 0);
-  assert.equal(
-    history('.context-history [aria-pressed="true"]')
+  assert.match(
+    history('.context-history svg g[role="button"][aria-pressed="true"]')
       .first()
-      .clone()
-      .children()
-      .remove()
-      .end()
-      .text(),
-    '2024'
+      .attr('aria-label') || '',
+    /^2024 ·/
   );
 
   const industry = load(

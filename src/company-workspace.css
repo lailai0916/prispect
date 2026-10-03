@@ -865,20 +865,6 @@
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
-.context-year-button {
-  padding: 5px 8px;
-  margin-left: 2px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--muted);
-  font-size: var(--text-ui);
-}
-.context-year-button[aria-pressed='true'] {
-  color: var(--ink);
-  border-color: var(--line);
-  background: var(--selected);
-}
 .context-industry-heading {
   display: flex;
   justify-content: space-between;

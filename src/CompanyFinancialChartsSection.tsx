@@ -13,7 +13,6 @@ import { CompanyIndustryView } from './CompanyIndustryView';
 import { requestErrorText } from './api';
 import {
   industryHistoryPeriods,
-  savedIndustryHistoryResult,
   type IndustryHistoryResult,
 } from '../shared/company-industry-history';
 import { loadIndustryHistory } from './company-industry-history';
@@ -80,19 +79,6 @@ export function CompanyFinancialChartsSection({
   }
   const currentRun = { ...run, industry: industries, industryHistoryErrors: failures };
   const historyPeriods = industryHistoryPeriods(currentRun);
-  const peerStatuses = Object.fromEntries(
-    historyPeriods.flatMap((year) => {
-      const result = savedIndustryHistoryResult(currentRun, year);
-      const status = result?.failure
-        ? t('读取失败', 'Failed')
-        : !result
-          ? t('待获取', 'Pending')
-          : result.snapshot?.status === 'partial'
-            ? t('部分缺值', 'Partial')
-            : '';
-      return status ? [[year, status]] : [];
-    })
-  );
   const busy =
     !compatibleSnapshot || run.contextStatus === 'loading' || run.assessmentStatus === 'loading';
   const latest = useRef({ run: currentRun, onHistoryResult, t, locale, owner, selectionScope });
@@ -275,7 +261,6 @@ export function CompanyFinancialChartsSection({
             industries={industries}
             selectedPeriod={period}
             onPeriodChange={setPeriod}
-            peerStatuses={peerStatuses}
           />
         </section>
       )}
