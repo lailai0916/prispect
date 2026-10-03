@@ -422,25 +422,33 @@ test('earlier English uncertainty cannot excuse a separate unsupported adverse a
   assert.doesNotMatch(reviewed.narrative!.summary.text.en, /defaulted/);
 });
 
-test('a response body remains bounded by each actual request deadline', async () => {
-  const run = company();
-  const result = await analyzeCompanyWithModel(run, {
-    apiKey: 'test-key',
-    timeoutMs: 15,
-    fetch: async () => {
-      return new Response(
-        new ReadableStream({
-          start(controller) {
-            controller.enqueue(new TextEncoder().encode('{'));
-          },
-        })
-      );
-    },
-  });
-  assert.equal(result.model.status, 'failed');
-  assert.equal(result.model.calls, 1);
-  assert.equal(result.narrative, undefined);
-});
+test(
+  'a response body remains bounded by each actual request deadline',
+  { timeout: 1000 },
+  async (t) => {
+    // A real transport retains a live handle; this stalled in-memory stream does not.
+    // Keep it alive until the request deadline or the independent test timeout.
+    const transport = setInterval(() => {}, 1000);
+    t.after(() => clearInterval(transport));
+    const run = company();
+    const result = await analyzeCompanyWithModel(run, {
+      apiKey: 'test-key',
+      timeoutMs: 15,
+      fetch: async () => {
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(new TextEncoder().encode('{'));
+            },
+          })
+        );
+      },
+    });
+    assert.equal(result.model.status, 'failed');
+    assert.equal(result.model.calls, 1);
+    assert.equal(result.narrative, undefined);
+  }
+);
 
 test('challenge review failure preserves attributable draft clues and honest progress', async () => {
   const run = company();
