@@ -199,10 +199,12 @@ export function TaskPage({ id }: { id: string }) {
         <ReportView task={task} report={report} onExport={setExportFormat} />
       ) : (
         <div className="inline-error">
-          {t(
-            '财报核查已处理完成，但核查报告缺失，请重试处理。',
-            'The financial review finished processing, but no review report is available. Please retry.'
-          )}
+          <span>
+            {t(
+              '财报核查已处理完成，但核查报告缺失，请重试处理。',
+              'The financial review finished processing, but no review report is available. Please retry.'
+            )}
+          </span>
           <button className="button button-secondary" disabled={busy} onClick={retry}>
             {t('重试', 'Retry')}
           </button>

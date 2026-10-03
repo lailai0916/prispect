@@ -993,11 +993,15 @@
   gap: 24px;
   margin-bottom: var(--workspace-section-gap);
 }
+.context-page-heading > div:first-child {
+  min-width: 0;
+}
 .context-page-heading h1 {
   font-size: var(--workspace-heading-size);
   font-weight: var(--workspace-heading-weight);
   letter-spacing: var(--workspace-heading-letter-spacing);
   margin: 5px 0 8px;
+  overflow-wrap: anywhere;
 }
 .company-workspace-report .context-page-heading h1 {
   margin-top: 0;
@@ -1006,6 +1010,7 @@
   color: var(--muted);
   font-size: var(--text-meta);
   margin: 0;
+  overflow-wrap: anywhere;
 }
 .context-page-actions {
   display: flex;

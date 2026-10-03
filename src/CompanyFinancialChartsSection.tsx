@@ -133,7 +133,7 @@ export function CompanyFinancialChartsSection({
         </div>
         {error && (
           <p role="alert" className="inline-error">
-            {error}{' '}
+            <span>{error}</span>
             <button
               className="text-link"
               type="button"

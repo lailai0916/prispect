@@ -124,7 +124,9 @@ export function ToastNotice({
       }}
     >
       {notice.error ? <CircleAlert size={18} /> : <CheckCircle2 size={18} />}
-      <span>{notice.text}</span>
+      <span className="toast-message" tabIndex={0}>
+        {notice.text}
+      </span>
       <button
         className="icon-button"
         onClick={onDismiss}

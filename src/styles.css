@@ -870,16 +870,21 @@ pre {
   justify-content: space-between;
   margin-bottom: var(--workspace-section-gap);
 }
+.page-heading > div:first-child {
+  min-width: 0;
+}
 .page-heading h1 {
   font-size: var(--workspace-heading-size);
   font-weight: var(--workspace-heading-weight);
   letter-spacing: var(--workspace-heading-letter-spacing);
+  overflow-wrap: anywhere;
 }
 .page-heading p {
   color: var(--muted);
   max-width: 700px;
   margin-top: 7px;
   font-size: var(--text-secondary);
+  overflow-wrap: anywhere;
 }
 .heading-action {
   flex-shrink: 0;
@@ -941,10 +946,20 @@ pre {
 }
 .toast .icon-button {
   margin-left: 8px;
+  flex-shrink: 0;
+}
+.toast-message {
+  flex: 1;
+  min-width: 0;
+  max-height: min(240px, calc(100dvh - 96px - env(safe-area-inset-bottom, 0px)));
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+  overscroll-behavior: contain;
 }
 .inline-error,
 .warning-box,
 .info-strip {
+  min-width: 0;
   display: flex;
   align-items: flex-start;
   gap: 9px;
@@ -952,10 +967,23 @@ pre {
   border-radius: var(--radius);
   font-size: var(--text-secondary);
   line-height: 1.7;
+  overflow-wrap: anywhere;
 }
 .inline-error {
   color: var(--red);
   background: var(--danger-surface);
+}
+.inline-error:has(> button, > a) {
+  flex-wrap: wrap;
+}
+.inline-error > span {
+  min-width: 0;
+  flex: 1 1 180px;
+}
+.inline-error > :is(button, a) {
+  flex-shrink: 0;
+  max-width: 100%;
+  margin-inline-start: auto;
 }
 .field-error {
   margin: 12px 0;
@@ -963,6 +991,9 @@ pre {
   font-size: var(--text-secondary);
   line-height: 1.7;
   overflow-wrap: anywhere;
+}
+.field-error > .text-link {
+  margin-inline-start: 8px;
 }
 .info-strip,
 .warning-box {
@@ -1196,8 +1227,10 @@ thead th {
 }
 .dialog-header h2,
 .drawer-header h2 {
+  min-width: 0;
   font-size: 15px;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 .dialog-body {
   padding: var(--dialog-body-padding);

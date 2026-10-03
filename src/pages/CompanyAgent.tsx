@@ -755,7 +755,7 @@ export function CompanyAgentPage({
           {pollError && (
             <div className="inline-error">
               <CircleAlert size={16} />
-              {pollError}
+              <span>{pollError}</span>
               <button
                 type="button"
                 className="text-link"
