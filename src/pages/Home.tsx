@@ -1,7 +1,6 @@
 import { Suspense, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { CompanyResearchLauncher } from '../CompanyResearchLauncher';
-import { PublicResearchExample } from '../PublicResearchExample';
 import { StartInput } from '../StartInput';
 import { lazyPage } from '../lazy-page';
 import { useApp } from '../context';
@@ -12,15 +11,9 @@ const CashScenarioPreview = lazyPage(
   (module) => module.CashScenarioPreview
 );
 
-export function Home({ exampleOnly = false }: { exampleOnly?: boolean }) {
+export function Home() {
   const { t, user } = useApp();
   const [cashOpen, setCashOpen] = useState(false);
-  if (exampleOnly)
-    return (
-      <div className="home-landing research-entry-page">
-        <PublicResearchExample />
-      </div>
-    );
   return (
     <div className="home-landing research-entry-page">
       <CompanyResearchLauncher
@@ -28,7 +21,6 @@ export function Home({ exampleOnly = false }: { exampleOnly?: boolean }) {
       >
         <StartInput key={user?.id || 'anonymous'} compact />
       </CompanyResearchLauncher>
-      <PublicResearchExample />
       <details
         className="research-cash-example"
         onToggle={(event) => setCashOpen(event.currentTarget.open)}

@@ -8,7 +8,6 @@ import path from 'node:path';
 import { access, readFile, statfs } from 'node:fs/promises';
 import type { AnalysisTask, CreateTaskInput, Material, Stage } from '../shared/contracts.js';
 import { analyze } from './engine.js';
-import { buildReportEvidenceLab } from '../shared/evidence-lab.js';
 import { reportHtml } from './export.js';
 import { previewUpload } from './import.js';
 import { DEFAULT_MODEL, explainWithModel, modelConfigFromEnv, type ModelConfig } from './model.js';
@@ -273,42 +272,6 @@ export async function createApp(options: AppOptions = {}) {
   });
   app.get('/api/cases', (_req, res) => {
     res.json(initial.cases);
-  });
-  app.get('/api/public/examples', (_req, res) => {
-    res.json(
-      initial.cases.slice(0, 2).map((item, index) => {
-        const material = initial.materials[index]!;
-        const report = analyze(
-          {
-            title: item.title,
-            company: item.company,
-            year: item.year,
-            materialIds: item.materialIds,
-          },
-          [material]
-        );
-        return {
-          ...item,
-          lab: buildReportEvidenceLab(report),
-          metrics: report.metrics.filter((metric) =>
-            [
-              'netProfit',
-              'operatingCashFlow',
-              'cashConversion',
-              'profitGrowth',
-              'cashGrowth',
-            ].includes(metric.key)
-          ),
-          source: {
-            url: material.sourceUrl,
-            title: material.title,
-            documentDate: material.documentDate,
-            sha256: material.sha256,
-          },
-          disclaimer: '历史年度合并财务事实，不是实时状态、企业评级或投资建议。',
-        };
-      })
-    );
   });
   app.get('/api/public/input-template', (req, res, next) => {
     try {

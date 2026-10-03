@@ -72,8 +72,8 @@ export const guideDocument: ProductDocument = {
           'Expand Test an explanation, Dimensions and calculation evidence, News and public discussions, or Financial data and review checklist; originals remain in Originals and review process. No reading-mode choice is needed. Financial topics retain attributable and consolidated profit controls; external payment and internal handover remain separate review purposes. The original cash bridge uses same-year consolidated profit. Industry averages exclude the target and require at least five valid same-year peers.',
         ],
         [
-          '侧边栏“已载入企业”记录右侧的 × 可删除本次研究记录和问答，已采用材料保留；研究、分析或解释补查进行中暂不可删除。匿名首页的公开年报实例可直接查看事实出处并做本地撤证，无需登录或调用模型；新建公司研究与保存需要账号。',
-          'The × beside a loaded-company record deletes that research record and its answers while keeping adopted materials. Active research, analysis or explanation research must finish first. Anonymous homepage examples let you inspect original-report facts and try local withdrawal without signing in or calling a model. New company research and saved work require an account.',
+          '侧边栏“已载入企业”记录右侧的 × 可删除本次研究记录和问答，已采用材料保留；研究、分析或解释补查进行中暂不可删除。新建公司研究与保存需要账号。',
+          'The × beside a loaded-company record deletes that research record and its answers while keeping adopted materials. Active research, analysis or explanation research must finish first. New company research and saved work require an account.',
         ],
         [
           '右下角助手在公司页面沿用当前企业和利润口径；在其他页面，可以选择账号内已保存的企业。企业问答使用 AI 结合当前公开快照回答，回答与来源随企业记录保存；模型失败时保留规则底稿并显示实际状态。未登录或尚未载入企业时，助手提供本地产品帮助，以及文档、登录或新建研究入口。未取得字段不补零，信息缺口页不推断“没有风险”。更新失败保留旧快照的获取时间，不把旧数据标为刚更新。',
@@ -171,8 +171,8 @@ export const guideDocument: ProductDocument = {
           'Select a fact to inspect its source, page or web field, then follow its calculation and explanation links. Withdraw in trial pauses only dependent paths. Restore in trial reevaluates them without changing saved reports or financial grades or sending a model request.',
         ],
         [
-          '研究报告先呈现摘要、关键数值、重点发现和下一步；需要检验判断时再展开“检验解释”，查看实验室和挑战操作。已保存的核查报告也先给摘要与下一步，继续展开可看实验室、原件、计算和解释。首页公开年报实例只做历史资料的本地试验；研究并打开公司后，才能执行该公司的解释补查。',
-          'The research report first presents its summary, key values, findings and next checks. Expand Test an explanation to open the lab and challenge actions. Saved review reports also start with the summary and next checks, with the lab, originals, calculations and explanations further down. Homepage examples are local historical trials; research and open a company to run its explanation research.',
+          '研究报告先呈现摘要、关键数值、重点发现和下一步；需要检验判断时再展开“检验解释”，查看实验室和挑战操作。已保存的核查报告也先给摘要与下一步，继续展开可看实验室、原件、计算和解释。研究并打开公司后，才能执行该公司的解释补查。',
+          'The research report first presents its summary, key values, findings and next checks. Expand Test an explanation to open the lab and challenge actions. Saved review reports also start with the summary and next checks, with the lab, originals, calculations and explanations further down. Research and open a company to run its explanation research.',
         ],
         [
           '恢复已撤回事实后，选择扩张备货、存货去化压力或回款压力，再点击“挑战这个解释”，补查公开新闻、公告及有限原文，分别查看支持、反向线索与资料缺口。模型未配置或失败时保留实际补查和规则线索；“所需材料”仍表示尚未取得，不代表已经拿到订单、库龄或期后流水。',

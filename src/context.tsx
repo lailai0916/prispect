@@ -7,20 +7,12 @@ import type {
   Report,
   Workspace,
   AccountUser,
-  ComputedMetric,
 } from '../shared/contracts';
 
 import { type Locale } from './format';
-import type { EvidenceLabGraph } from '../shared/evidence-lab';
 
 export type Translate = (zh: string, en: string) => string;
 export type ConfirmRequest = { title: string; text: string; action: () => Promise<void> };
-export type PublicExample = DemoCase & {
-  metrics: ComputedMetric[];
-  source: { url: string; title: string; documentDate: string; sha256: string };
-  disclaimer: string;
-  lab?: EvidenceLabGraph;
-};
 export type AppContextValue = {
   locale: Locale;
   t: Translate;
@@ -28,7 +20,6 @@ export type AppContextValue = {
   cases: DemoCase[];
   user: AccountUser | null;
   registrationEnabled: boolean;
-  examples: PublicExample[];
   refresh: () => Promise<void>;
   navigate: (path: string, options?: { replace?: boolean }) => void;
   execute: <T>(action: () => Promise<T>, success?: string) => Promise<T | undefined>;

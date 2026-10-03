@@ -53,13 +53,7 @@ const CompanyAssistant = lazyPage(
   (module) => module.CompanyAssistant
 );
 
-import {
-  AppContext,
-  type AppContextValue,
-  type Translate,
-  type ConfirmRequest,
-  type PublicExample,
-} from './context';
+import { AppContext, type AppContextValue, type Translate, type ConfirmRequest } from './context';
 import {
   Logo,
   EmptyState,
@@ -135,7 +129,6 @@ export function App() {
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
-  const [examples, setExamples] = useState<PublicExample[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [cases, setCases] = useState<DemoCase[]>([]);
   const [loadError, setLoadError] = useState('');
@@ -168,10 +161,9 @@ export function App() {
     const controller = new AbortController();
     refreshController.current = controller;
     try {
-      const [session, nextCases, nextExamples] = await Promise.all([
+      const [session, nextCases] = await Promise.all([
         api<AuthSession>('/auth/session', { signal: controller.signal }),
         api<DemoCase[]>('/cases', { signal: controller.signal }),
-        api<PublicExample[]>('/public/examples', { signal: controller.signal }),
       ]);
       const nextWorkspace = session.user
         ? await api<Workspace>('/workspace', { signal: controller.signal })
@@ -194,7 +186,6 @@ export function App() {
       setRegistrationEnabled(session.registrationEnabled === true);
       setWorkspace(nextWorkspace);
       setCases(nextCases);
-      setExamples(nextExamples);
       setLoadError('');
       setLoaded(true);
     } catch (error) {
@@ -375,7 +366,6 @@ export function App() {
     cases,
     user,
     registrationEnabled,
-    examples,
     refresh,
     navigate,
     execute,
@@ -677,14 +667,10 @@ export function App() {
                   ) : !loaded ? (
                     <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
                   ) : page === '/' ? (
-                    user && new URLSearchParams(route.split('?')[1]).get('example') !== '1' ? (
+                    user ? (
                       <CompanyQueryPage />
                     ) : (
-                      <Home
-                        exampleOnly={
-                          new URLSearchParams(route.split('?')[1]).get('example') === '1'
-                        }
-                      />
+                      <Home />
                     )
                   ) : page === '/login' || page === '/register' || !user || !workspace ? (
                     <AuthPage

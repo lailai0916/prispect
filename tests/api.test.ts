@@ -107,14 +107,10 @@ test('authenticated API cases → task → questions → exports → persistence
     });
     const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
     assert.equal(cases.length, 4);
-    const publicExamples = (await (await service.request('/api/public/examples')).json()) as {
-      metrics: { key: string; value: string }[];
-    }[];
-    assert.equal(
-      publicExamples[0]?.metrics.find((item) => item.key === 'cashConversion')?.value,
-      '7.15'
-    );
     const alice = await register(service, 'Alice@Example.com');
+    const removedExample = await service.request('/api/public/examples', options(alice));
+    assert.equal(removedExample.status, 404);
+    assert.equal(((await removedExample.json()) as { code: string }).code, 'ENDPOINT_NOT_FOUND');
     const bob = await register(service, 'bob@example.com');
     assert.equal(alice.user.email, 'alice@example.com');
     const task = await createTask(service, alice, cases[0]!);

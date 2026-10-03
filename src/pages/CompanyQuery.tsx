@@ -120,7 +120,6 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
               ? t('外部付款', 'External payment')
               : t('内部交接', 'Internal handover')}
           </button>
-          <a href="/?example=1">{t('查看公开实例', 'View an example')}</a>
         </div>
         {creating && (
           <p className="query-create-feedback" role="status">
