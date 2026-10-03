@@ -5,6 +5,30 @@
   right: 24px;
   bottom: max(24px, env(safe-area-inset-bottom));
   z-index: 61;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 1px solid var(--action);
+  border-radius: 50%;
+  background: var(--action);
+  color: var(--on-action);
+  box-shadow: 0 3px 12px var(--shadow-button);
+  cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease;
+}
+.company-assistant-trigger:hover {
+  background: var(--action-hover);
+  border-color: var(--action-hover);
+  transform: translateY(-2px);
+}
+.company-assistant-trigger:active {
+  transform: scale(0.96);
+}
+.company-assistant-trigger[data-experience='lite'] {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -17,14 +41,7 @@
   border-radius: 16px;
   background: transparent;
   color: var(--ink);
-  cursor: pointer;
-  transition: transform 140ms ease;
-}
-.company-assistant-trigger:hover {
-  transform: translateY(-2px);
-}
-.company-assistant-trigger:active {
-  transform: scale(0.96);
+  box-shadow: none;
 }
 .assistant-character {
   position: relative;
@@ -171,14 +188,18 @@
   outline-offset: 4px;
 }
 .company-assistant-panel {
+  --assistant-panel-gap: 64px;
+  --assistant-panel-offset: 120px;
+  --assistant-panel-side-right: 88px;
+  --assistant-panel-side-gap: 104px;
   position: fixed;
   right: 24px;
-  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 112px);
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + var(--assistant-panel-gap));
   z-index: 60;
   display: flex;
   flex-direction: column;
   width: min(390px, calc(100% - 32px));
-  height: min(600px, calc(100dvh - 168px));
+  height: min(600px, calc(100dvh - var(--assistant-panel-offset)));
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -189,12 +210,18 @@
     var(--shadow-card),
     0 16px 48px var(--shadow-drawer);
 }
+.company-assistant-panel[data-experience='lite'] {
+  --assistant-panel-gap: 112px;
+  --assistant-panel-offset: 168px;
+  --assistant-panel-side-right: 116px;
+  --assistant-panel-side-gap: 132px;
+}
 .company-assistant-panel[hidden] {
   display: none;
 }
 .company-assistant-panel:has(.company-assistant-empty) {
   height: auto;
-  max-height: min(600px, calc(100dvh - 168px));
+  max-height: min(600px, calc(100dvh - var(--assistant-panel-offset)));
 }
 .company-assistant-header {
   display: flex;
@@ -216,9 +243,11 @@
   flex: 0 0 auto;
   gap: 4px;
 }
-.company-assistant-header .assistant-character {
-  width: 32px;
-  height: 32px;
+.company-assistant-header > div > svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--muted);
 }
 .company-assistant-header h2 {
   margin: 0;
@@ -245,15 +274,6 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-.company-assistant-welcome {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.company-assistant-welcome .assistant-character {
-  width: 60px;
-  height: 60px;
 }
 .company-assistant-welcome p {
   margin: 0;
@@ -471,6 +491,10 @@
   .company-assistant-trigger {
     right: 16px;
     bottom: max(16px, env(safe-area-inset-bottom));
+    width: 48px;
+    height: 48px;
+  }
+  .company-assistant-trigger[data-experience='lite'] {
     width: 72px;
     height: 92px;
   }
@@ -479,14 +503,16 @@
     height: 64px;
   }
   .company-assistant-panel {
+    --assistant-panel-gap: 60px;
+    --assistant-panel-offset: 96px;
     right: 16px;
-    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 104px);
-    height: min(600px, calc(100dvh - 140px));
-    max-height: calc(100dvh - 140px);
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--assistant-panel-gap));
+    max-height: calc(100dvh - var(--assistant-panel-offset));
     border-radius: var(--card-radius);
   }
-  .company-assistant-panel:has(.company-assistant-empty) {
-    max-height: min(600px, calc(100dvh - 140px));
+  .company-assistant-panel[data-experience='lite'] {
+    --assistant-panel-gap: 104px;
+    --assistant-panel-offset: 140px;
   }
   .company-assistant-header .icon-button {
     min-width: 36px;
@@ -503,9 +529,9 @@
 @media (max-height: 500px) {
   .company-assistant-panel,
   .company-assistant-panel:has(.company-assistant-empty) {
-    right: 116px;
+    right: var(--assistant-panel-side-right);
     bottom: max(16px, env(safe-area-inset-bottom));
-    width: min(390px, calc(100% - 132px));
+    width: min(390px, calc(100% - var(--assistant-panel-side-gap)));
     height: calc(100dvh - 32px);
     max-height: calc(100dvh - 32px);
   }

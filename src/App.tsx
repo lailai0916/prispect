@@ -968,7 +968,11 @@ export function App() {
                 onRetry={resetFailedLazyPages}
               >
                 <Suspense fallback={null}>
-                  <CompanyAssistant key={user?.id || 'anonymous'} route={route} />
+                  <CompanyAssistant
+                    key={user?.id || 'anonymous'}
+                    route={route}
+                    experience={liteExperience ? 'lite' : 'pro'}
+                  />
                 </Suspense>
               </AssistantErrorBoundary>
             )}
