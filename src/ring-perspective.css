@@ -269,8 +269,10 @@
   gap: 12px;
   animation: ringp-corein 0.45s cubic-bezier(0.34, 1.4, 0.5, 1) both;
   padding: 0 8px;
-  max-width: 100%;
-  /* 结构性防重叠：任何单块内容都不超过环内可用高度的一半 */
+  /* 关键：中心内容宽度不超过环内径，长文案折行也不压到环弧上
+     （340px 环内径 128×2，72% ≈ 245px 留余量；移动端 296px 环约 213px） */
+  max-width: min(72%, 236px);
+  /* 结构性防重叠：任何单块内容都不超过环内可用高度 */
   max-height: 76%;
   overflow: hidden;
 }
