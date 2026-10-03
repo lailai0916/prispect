@@ -202,10 +202,7 @@ export function CompanySidebar({ route, onClose }: { route: string; onClose: () 
           )}
           {!loading && !error && !companies.length && (
             <p className="sidebar-history-state">
-              {t(
-                '新建研究后，企业会保存在这里。',
-                'Companies appear here after starting research.'
-              )}
+              {t('研究的企业会保存在这里', 'Researched companies appear here')}
             </p>
           )}
           {companies.map((run) => {

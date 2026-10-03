@@ -109,6 +109,19 @@
 .sidebar-company-delete:disabled {
   cursor: default;
 }
+@media (hover: hover) and (pointer: fine) {
+  .sidebar-company-delete.icon-button {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+  .sidebar-company-row:hover .sidebar-company-delete.icon-button,
+  .sidebar-company-row:focus-within .sidebar-company-delete.icon-button,
+  .sidebar-company-row[aria-busy='true'] .sidebar-company-delete.icon-button {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
 @media (pointer: coarse) {
   .sidebar-company {
     padding-right: 50px;
