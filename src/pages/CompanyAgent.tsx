@@ -41,6 +41,7 @@ import type { CompanyPublicEvidence } from '../../shared/company-contracts';
 import { api, post, requestErrorText } from '../api';
 import { useApp } from '../context';
 import { Dialog, PageHeading, Tag } from '../components';
+import { OriginalReviewLoading } from '../Experience';
 import { date, metricName } from '../format';
 import { purposeName } from '../ReviewContext';
 import { translateRule } from '../ruleTranslations';
@@ -58,9 +59,11 @@ const activeRun = (run: CompanyResearchRun | null) =>
 export function CompanyAgentPage({
   query,
   embedded = false,
+  initialRun,
 }: {
   query: URLSearchParams;
   embedded?: boolean;
+  initialRun?: CompanyResearchRun;
 }) {
   const { t, locale, workspace, navigate, execute, busy, confirm } = useApp();
   const initialQuery = query.get('query') || '';
@@ -73,6 +76,9 @@ export function CompanyAgentPage({
       requestedYear > new Date().getFullYear() - 1);
   const [yearNeedsCorrection, setYearNeedsCorrection] = useState(invalidYearQuery);
   const runId = query.get('run');
+  // The workspace has already checked ownership and loaded this selected record.
+  // Capture it once: later parent refreshes must not overwrite edited candidate fields.
+  const initialRecord = useRef(initialRun?.id === runId ? initialRun : null);
   const [search, setSearch] = useState(initialQuery);
   const [results, setResults] = useState<CompanySearchResponse | null>(null);
   const [selected, setSelected] = useState<CompanyIdentity | null>(null);
@@ -98,18 +104,29 @@ export function CompanyAgentPage({
   });
   const autoStarted = useRef(new Set<string>());
   const runKeys = useRef(new Map<string, string>());
-  const [run, setRun] = useState<CompanyResearchRun | null>(null);
+  const [run, setRun] = useState<CompanyResearchRun | null>(initialRecord.current);
+  const publishedRun = useRef(initialRecord.current);
   useEffect(() => {
-    if (run)
-      window.dispatchEvent(new CustomEvent('prispect:company-run-updated', { detail: run.id }));
+    if (
+      !run ||
+      (run.id === publishedRun.current?.id &&
+        run.updatedAt === publishedRun.current.updatedAt &&
+        run.status === publishedRun.current.status)
+    )
+      return;
+    publishedRun.current = run;
+    window.dispatchEvent(new CustomEvent('prispect:company-run-updated', { detail: run.id }));
   }, [run?.id, run?.updatedAt, run?.status]);
   const [history, setHistory] = useState<CompanyResearchRun[]>([]);
   const [historyError, setHistoryError] = useState('');
-  const [historyLoading, setHistoryLoading] = useState(true);
-  const [loadingRun, setLoadingRun] = useState(Boolean(runId));
+  const [historyLoading, setHistoryLoading] = useState(!embedded);
+  const [loadingRun, setLoadingRun] = useState(Boolean(runId && !initialRecord.current));
+  const [loadVersion, setLoadVersion] = useState(0);
   const [pollError, setPollError] = useState('');
   const [pollVersion, setPollVersion] = useState(0);
-  const [candidate, setCandidate] = useState<CandidateMaterial | null>(null);
+  const [candidate, setCandidate] = useState<CandidateMaterial | null>(
+    initialRecord.current?.preview?.material || null
+  );
   const [confirmed, setConfirmed] = useState(false);
   const [source, setSource] = useState<{
     title: string;
@@ -124,6 +141,7 @@ export function CompanyAgentPage({
   const previewVersion = run?.preview?.material.sha256;
 
   const loadHistory = async () => {
+    if (embedded) return;
     setHistoryLoading(true);
     try {
       setHistory(await api<CompanyResearchRun[]>('/company-runs'));
@@ -187,19 +205,26 @@ export function CompanyAgentPage({
   };
   useEffect(() => {
     const controller = new AbortController();
-    setHistoryLoading(true);
-    void api<CompanyResearchRun[]>('/company-runs', { signal: controller.signal })
-      .then(setHistory)
-      .catch((cause) => {
-        if (!controller.signal.aborted) setHistoryError(requestErrorText(cause, locale));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setHistoryLoading(false);
-      });
-    if (runId) {
-      setLoadingRun(true);
-      void api<CompanyResearchRun>(`/company-runs/${runId}`, { signal: controller.signal })
+    if (!embedded) {
+      setHistoryLoading(true);
+      void api<CompanyResearchRun[]>('/company-runs', { signal: controller.signal })
         .then((next) => {
+          if (!controller.signal.aborted) setHistory(next);
+        })
+        .catch((cause) => {
+          if (!controller.signal.aborted) setHistoryError(requestErrorText(cause, locale));
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setHistoryLoading(false);
+        });
+    }
+    if (runId && !(initialRecord.current?.id === runId && loadVersion === 0)) {
+      setLoadingRun(true);
+      void api<CompanyResearchRun>(`/company-runs/${encodeURIComponent(runId)}`, {
+        signal: controller.signal,
+      })
+        .then((next) => {
+          if (controller.signal.aborted) return;
           setRun(next);
           setError('');
         })
@@ -209,9 +234,10 @@ export function CompanyAgentPage({
         .finally(() => {
           if (!controller.signal.aborted) setLoadingRun(false);
         });
-    } else if (initialQuery) void findCompanies(initialQuery, controller.signal);
+    } else if (!runId && !embedded && initialQuery)
+      void findCompanies(initialQuery, controller.signal);
     return () => controller.abort();
-  }, [runId, initialQuery]);
+  }, [runId, initialQuery, embedded, loadVersion]);
   useEffect(() => {
     if (!run || !activeRun(run)) return;
     const controller = new AbortController();
@@ -440,6 +466,7 @@ export function CompanyAgentPage({
             failed: t('检索停止', 'Retrieval stopped'),
             adopted: t('原件已采用', 'Original adopted'),
           }[item.status];
+  const showSearch = !run && !runId && !embedded;
 
   return (
     <div className="company-agent">
@@ -459,7 +486,7 @@ export function CompanyAgentPage({
           )}
         />
       )}
-      {!run && (
+      {showSearch && (
         <form className="company-search-form" onSubmit={submitSearch}>
           <label className="form-field">
             <span>{t('公司名称或证券代码', 'Company name or security code')}</span>
@@ -478,12 +505,12 @@ export function CompanyAgentPage({
           </button>
         </form>
       )}
-      {!run && (
+      {showSearch && (
         <p className="company-coverage-note">
           {t('来源：巨潮资讯 A 股披露。', 'Source: CNINFO A-share disclosures.')}
         </p>
       )}
-      {!run && !creating && (
+      {showSearch && !creating && (
         <>
           <details className="company-options">
             <summary>
@@ -533,22 +560,20 @@ export function CompanyAgentPage({
         </>
       )}
       {error && (
-        <div className="inline-error">
+        <div className="inline-error" role="alert">
           <CircleAlert size={16} />
           <span>{error}</span>
           <button
             type="button"
             className="text-link"
-            onClick={() =>
-              runId
-                ? api<CompanyResearchRun>(`/company-runs/${runId}`)
-                    .then((next) => {
-                      setRun(next);
-                      setError('');
-                    })
-                    .catch((cause) => setError(requestErrorText(cause, locale)))
-                : findCompanies(search)
-            }
+            disabled={loadingRun || searching}
+            onClick={() => {
+              if (runId) {
+                setLoadingRun(true);
+                setError('');
+                setLoadVersion((previous) => previous + 1);
+              } else void findCompanies(search);
+            }}
           >
             {t('重试', 'Retry')}
           </button>
@@ -670,11 +695,10 @@ export function CompanyAgentPage({
           {t('正在建立核查任务…', 'Creating the review task…')}
         </div>
       )}
-      {loadingRun && (
-        <div className="company-run-loading">
-          <LoaderCircle className="spinner" size={18} />
-          {t('正在读取研究记录…', 'Loading research records…')}
-        </div>
+      {loadingRun && !run && !error && (
+        <OriginalReviewLoading
+          label={t('正在打开原件核查…', 'Opening original-document review…')}
+        />
       )}
       {run && (
         <>
@@ -1302,7 +1326,7 @@ export function CompanyAgentPage({
           </div>
         </>
       )}
-      {!run && !results && !selected && !searching && !loadingRun && !historyLoading && (
+      {showSearch && !results && !selected && !searching && !historyLoading && (
         <p className="company-import-link">
           {t('没有公开资料？', 'No public disclosure?')}{' '}
           <button className="text-link" onClick={importOwn}>
@@ -1311,12 +1335,12 @@ export function CompanyAgentPage({
           </button>
         </p>
       )}
-      {historyLoading && !history.length && (
+      {!embedded && !loadingRun && historyLoading && !history.length && (
         <p className="company-import-link" role="status">
           {t('正在读取研究记录…', 'Loading research records…')}
         </p>
       )}
-      {(history.length > 0 || historyError) && (
+      {!embedded && !loadingRun && (history.length > 0 || historyError) && (
         <details className="company-history company-record-details">
           <summary>{t(...productTerms.researchRecords)}</summary>
           <div className="report-section-title">

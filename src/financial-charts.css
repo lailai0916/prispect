@@ -283,6 +283,7 @@
   }
   .financial-chart-scroll svg {
     min-width: 0 !important;
+    height: auto;
   }
   .financial-chart-card {
     break-inside: avoid;

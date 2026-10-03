@@ -26,6 +26,7 @@ export type AppContextValue = {
   confirm: (request: ConfirmRequest) => void;
   showEvidence: (refs: EvidenceRef[], report?: Report) => void;
   busy: boolean;
+  historyNavigation?: boolean;
 };
 export const AppContext = createContext<AppContextValue>(null!);
 export const useApp = () => useContext(AppContext);

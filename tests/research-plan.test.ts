@@ -191,16 +191,13 @@ test('mismatched entities or assessment years never leak old names, counts or co
   }
 });
 
-test('unsupported markets, information gaps and financial-institution scope pause financial judgments', () => {
+test('unsupported markets and information gaps pause financial judgments', () => {
   for (const mutation of [
     (run: CompanyResearchRun) => {
       run.identity!.exchange = 'us';
     },
     (run: CompanyResearchRun) => {
       run.informationGap = { name: '不支持主体', reason: '资料不足' };
-    },
-    (run: CompanyResearchRun) => {
-      run.context!.profile.industry = '银行';
     },
   ]) {
     const run = withCondition(fixture());
@@ -210,6 +207,15 @@ test('unsupported markets, information gaps and financial-institution scope paus
     assert.equal(view.sourceAttempts, null);
     assert.equal(view.changeConditions.length, 0);
   }
+});
+
+test('financial institutions keep their research questions, source catalog and evidence-bound conditions', () => {
+  const run = withCondition(fixture());
+  run.context!.profile.industry = '银行';
+  const view = deriveResearchPlan(run);
+  assert.ok(view.questions.some((question) => question.state !== 'blocked'));
+  assert.ok(view.sources.some((source) => source.catalog !== null));
+  assert.equal(view.changeConditions.length, 1);
 });
 
 test('updated sources and old report conditions retain distinct snapshot dates', () => {

@@ -1,5 +1,6 @@
 import { resolveCompanyLocation, type CompanySection } from '../shared/company-workspace';
 import { documentPaths } from './content/document-navigation';
+import { newPageEntryState, rememberPageScroll } from './page-scroll';
 
 export const ROUTE_CHANGE_EVENT = 'prispect:routechange';
 
@@ -91,8 +92,10 @@ export function writeBrowserRoute(value: string, replace = false): boolean {
   if (!path) return false;
   const current = location.pathname + location.search + location.hash;
   if (current !== path) {
-    if (replace) history.replaceState(history.state, '', path);
-    else history.pushState(history.state, '', path);
+    rememberPageScroll();
+    const state = newPageEntryState(history.state);
+    if (replace) history.replaceState(state, '', path);
+    else history.pushState(state, '', path);
   }
   window.dispatchEvent(new Event(ROUTE_CHANGE_EVENT));
   return true;

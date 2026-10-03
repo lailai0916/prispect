@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowRight,
   ArrowUpRight,
@@ -250,7 +250,7 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
                   : 'headline';
             return {
               ...row,
-              id: `news-${row.id || row.url || index}-${index}`,
+              id: `news-${row.url || row.id || index}`,
               scope,
               excerpt: scope === 'media-excerpt' ? excerpt : undefined,
               digest: scope === 'headline' ? '' : row.digest,
@@ -264,12 +264,12 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
       sameCompany
         ? (snapshot.discussions || [])
             .filter((row) => row.securityCode === run.input.securityCode)
-            .map((row, index) => {
+            .map((row) => {
               const excerpt =
                 row.textScope === 'post-excerpt' ? readableExcerpt(row.excerpt) : undefined;
               return {
                 ...row,
-                id: `discussion-${row.id}-${index}`,
+                id: `discussion-${row.id}`,
                 media: row.provider,
                 scope: excerpt ? 'post-excerpt' : 'post-title',
                 digest: '',
@@ -306,7 +306,11 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
       return sort === 'oldest' ? aDate.localeCompare(bDate) : bDate.localeCompare(aDate);
     });
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, pageCount);
+  const selectedPosition = filtered.findIndex((row) => row.id === selectedId);
+  const currentPage =
+    expanded && selectedPosition >= 0
+      ? Math.floor(selectedPosition / PAGE_SIZE) + 1
+      : Math.min(page, pageCount);
   const offset = expanded ? (currentPage - 1) * PAGE_SIZE : 0;
   const visible = filtered.slice(offset, offset + (expanded ? PAGE_SIZE : PREVIEW_SIZE));
   const selected =
@@ -325,19 +329,34 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
     ? snapshot.publicSignals?.fetchedAt || snapshot.fetchedAt
     : undefined;
   const hasFilters = !!query.trim() || media !== 'all' || readScope !== 'all';
+  const openSource =
+    drawerEntry && [...news, ...discussions].find((row) => row.id === drawerEntry.id);
+  useEffect(() => {
+    if (selectedId && selectedPosition < 0) setSelectedId(null);
+    if (drawerEntry && !openSource) {
+      setDrawerEntry(null);
+      list.current?.focus({ preventScroll: true });
+    }
+  }, [selectedId, selectedPosition, drawerEntry, openSource]);
+  useLayoutEffect(() => {
+    // Explicit browsing changes start at the first result. A new snapshot alone
+    // preserves the current list position and the keyed source-reader body.
+    if (list.current) list.current.scrollTop = 0;
+  }, [expanded, query, media, readScope, sort, tab, currentPage]);
   const clusterCounts = new Map<string, number>();
   for (const row of entries) {
     if (row.clusterId)
       clusterCounts.set(row.clusterId, (clusterCounts.get(row.clusterId) || 0) + 1);
   }
   const changeTab = (next: PublicTab, focus = false) => {
+    if (focus) document.getElementById(`${id}-${next}-tab`)?.focus({ preventScroll: true });
+    if (next === tab) return;
     setTab(next);
     setMedia('all');
     setReadScope('all');
     setPage(1);
     setSelectedId(null);
     setDrawerEntry(null);
-    if (focus) document.getElementById(`${id}-${next}-tab`)?.focus();
   };
   const resetFilters = () => {
     setQuery('');
@@ -460,7 +479,7 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
             <dd>{oldest && latest ? `${oldest} — ${latest}` : oldest || latest || '—'}</dd>
           </div>
         </dl>
-        {expanded && entries.length > 0 && (
+        {expanded && (entries.length > 0 || hasFilters) && (
           <div className="public-info-toolbar">
             <SearchField
               value={query}
@@ -497,6 +516,11 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
                     {name}
                   </option>
                 ))}
+                {media !== 'all' && !mediaOptions.includes(media) && (
+                  <option value={media}>
+                    {media} · {t('本轮无条目', 'No items in this snapshot')}
+                  </option>
+                )}
               </Select>
               <Select
                 value={readScope}
@@ -529,7 +553,7 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
             </div>
           </div>
         )}
-        {expanded && entries.length > 0 && (
+        {expanded && (entries.length > 0 || hasFilters) && (
           <div className="public-info-results-meta">
             <span role="status" aria-live="polite">
               {t(
@@ -628,7 +652,7 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
                           'No displayable content was retrieved in this run.'
                         )}
                 </p>
-                {entries.length > 0 && (
+                {hasFilters && (
                   <button type="button" className="button button-secondary" onClick={resetFilters}>
                     {t('清除筛选', 'Clear filters')}
                   </button>
@@ -795,14 +819,14 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
           </details>
         )}
       </div>
-      {drawerEntry && (
+      {openSource && (
         <Dialog
-          title={drawerEntry.title}
+          title={openSource.title}
           onClose={() => setDrawerEntry(null)}
           variant="drawer"
           className="public-info-drawer"
         >
-          <PublicEntryContent entry={drawerEntry} />
+          <PublicEntryContent entry={openSource} />
         </Dialog>
       )}
     </section>
@@ -812,7 +836,6 @@ function PublicInformationView({ run }: { run: CompanyResearchRun }) {
 /** Read-only snapshot browsing. Filters, sorting and reading never call sources or the model. */
 export function CompanyPublicInformation({ run }: { run: CompanyResearchRun }) {
   const { user } = useApp();
-  const revision = useRef(0);
   const scope = JSON.stringify({
     owner: user?.id || null,
     run: run.id,
@@ -820,13 +843,8 @@ export function CompanyPublicInformation({ run }: { run: CompanyResearchRun }) {
     orgId: run.input.orgId,
     contextSecurityCode: run.context?.securityCode,
     contextOrgId: run.context?.orgId,
-    fetchedAt: run.context?.fetchedAt,
-    coverage: run.context?.publicSignals,
-    news: run.context?.news,
-    discussions: run.context?.discussions,
   });
-  const currentRevision = useMemo(() => ++revision.current, [scope]);
-  return (
-    <PublicInformationView key={`${user?.id || 'public'}:${run.id}:${currentRevision}`} run={run} />
-  );
+  // Account and entity changes reset the reader. Updating this same research's
+  // public snapshot should not close a drawer or discard the user's filters.
+  return <PublicInformationView key={scope} run={run} />;
 }

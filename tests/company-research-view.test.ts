@@ -254,6 +254,53 @@ test('annual losses, negative operating cash, occupation and debt coverage have 
   }
 });
 
+test('financial institutions share rule headlines, follow-up and missing/conflict behavior with all issuers', () => {
+  const scenarios: Partial<CompanyContextPeriod['amounts']>[] = [
+    {},
+    { totalLiabilities: '950.00', ocf: '180.00' },
+    { ocf: '15.00' },
+    { ocf: '0.00' },
+    { ocf: '-10.00' },
+    { ocf: null },
+    { netProfit: '-5.00' },
+    { inventory: null },
+  ];
+  for (const amounts of scenarios) {
+    for (const conflict of [false, true]) {
+      const baseline = financialFixture(amounts);
+      if (conflict) {
+        baseline.context!.comparisons = [
+          {
+            period: '2025-12-31',
+            field: 'revenue',
+            primary: '1200.00',
+            secondary: '1100.00',
+            difference: '100.00',
+            matches: false,
+          },
+        ];
+        baseline.assessment = deriveCompanyAssessment(baseline);
+        assert.equal(
+          baseline.assessment.metrics.find((metric) => metric.id === '2025-revenue')!.status,
+          'conflict'
+        );
+      }
+      const expected = deriveCompanyResearchBrief(baseline);
+      for (const industry of ['银行', '保险', '证券']) {
+        const run = structuredClone(baseline);
+        run.context!.organizationType = industry;
+        run.context!.profile.industry = industry;
+        run.assessment = deriveCompanyAssessment(run);
+        assert.deepEqual(
+          deriveCompanyResearchBrief(run),
+          expected,
+          `${industry}: ${JSON.stringify(amounts)}, conflict=${conflict}`
+        );
+      }
+    }
+  }
+});
+
 test('a favorable lead requires complete comparable data and positive prior profit before claiming profit growth', () => {
   const complete = deriveCompanyResearchBrief(financialFixture());
   assert.equal(complete.headline.text.zh, '合并利润增长，经营现金覆盖利润');

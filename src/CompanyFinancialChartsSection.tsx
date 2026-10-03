@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LoaderCircle } from 'lucide-react';
+import { ChevronDown, LoaderCircle, Plus, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type { CompanyContextSnapshot, CompanyIndustrySnapshot } from '../shared/company-workspace';
 import type { CompanyReadingBasis } from '../shared/company-analysis';
@@ -20,6 +20,8 @@ export function CompanyFinancialChartsSection({
   basis: CompanyReadingBasis;
 }) {
   const { t, locale } = useApp();
+  const presentation = useRef({ t, locale });
+  presentation.current = { t, locale };
   const periods = [
     ...new Set(snapshot.financials.filter((row) => row.annual).map((row) => row.period)),
   ].sort();
@@ -52,7 +54,7 @@ export function CompanyFinancialChartsSection({
       generation.current++;
       request.current?.abort();
     };
-  }, [period, locale]);
+  }, [period, run.id, run.input.securityCode]);
   const remember = (next: CompanyIndustrySnapshot) => {
     if (
       next.version === 1 &&
@@ -86,13 +88,16 @@ export function CompanyFinancialChartsSection({
         response.snapshot.period !== period
       )
         throw new Error(
-          t('同行资料与当前企业或年度不匹配。', 'Peer data does not match this company or year.')
+          presentation.current.t(
+            '同行资料与当前企业或年度不匹配。',
+            'Peer data does not match this company or year.'
+          )
         );
       remember(response.snapshot);
       setWarning({ period, text: response.warning || '' });
     } catch (cause) {
       if (!controller.signal.aborted && token === generation.current)
-        setError(requestErrorText(cause, locale));
+        setError(requestErrorText(cause, presentation.current.locale));
     } finally {
       if (!controller.signal.aborted && token === generation.current) {
         setLoading(false);
@@ -125,14 +130,22 @@ export function CompanyFinancialChartsSection({
                 className="context-evidence-button"
                 type="button"
                 disabled={loading}
+                aria-busy={loading}
+                aria-label={
+                  loading ? t('正在获取同行参照', 'Retrieving peer references') : undefined
+                }
                 onClick={() => void loadPeers()}
               >
-                {loading && <LoaderCircle size={14} className="spinner" />}
-                {loading
-                  ? t('正在获取同行参照…', 'Retrieving peer references…')
-                  : industry
-                    ? t('更新同行参照', 'Update peer references')
-                    : t('加入同行参照', 'Add peer references')}
+                {loading ? (
+                  <LoaderCircle size={14} className="spinner" />
+                ) : industry ? (
+                  <RefreshCw size={14} />
+                ) : (
+                  <Plus size={14} />
+                )}
+                {industry
+                  ? t('更新同行参照', 'Update peer references')
+                  : t('加入同行参照', 'Add peer references')}
               </button>
             ))}
         </div>

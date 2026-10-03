@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { CompanyIndustrySnapshot, IndustryMetricKey } from '../shared/company-workspace';
 import type { FinancialChartPoint } from '../shared/company-financial-charts';
 import { chartRange, consecutivePeriods, distributionBins } from '../shared/company-chart-geometry';
@@ -62,9 +62,13 @@ function usePlotWidth(minimum: number) {
   const [element, setElement] = useState<HTMLDivElement | null>(null);
   const ref = useCallback((node: HTMLDivElement | null) => setElement(node), []);
   const [width, setWidth] = useState(minimum);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!element) return;
-    const resize = () => setWidth(Math.floor(element.clientWidth));
+    const resize = () => {
+      const next = Math.floor(element.clientWidth);
+      // Hidden tabs have no width; keep their last measured plot until they are visible.
+      if (next > 0) setWidth(next);
+    };
     resize();
     const observer = new ResizeObserver(resize);
     observer.observe(element);
@@ -253,6 +257,7 @@ export function HistoryMetricChart({
       >
         <svg
           viewBox={`0 0 ${width} ${height}`}
+          height={height}
           style={{ minWidth: width }}
           role="group"
           aria-label={`${label} · ${axis.label}`}
@@ -427,6 +432,7 @@ export function IndustryPairChart({
     <div ref={ref} className="financial-chart-scroll" tabIndex={0} aria-label={label}>
       <svg
         viewBox={`0 0 ${width} ${height}`}
+        height={height}
         style={{ minWidth: width }}
         role="img"
         aria-label={`${label} · ${t('企业', 'Company')} ${formatted(company, 'percent', locale)} · ${t('同行均值', 'Peer mean')} ${formatted(peer, 'percent', locale)}`}
@@ -526,6 +532,7 @@ export function IndustryDistributionChart({
     >
       <svg
         viewBox={`0 0 ${width} ${height}`}
+        height={height}
         style={{ minWidth: width }}
         role="img"
         aria-label={t(

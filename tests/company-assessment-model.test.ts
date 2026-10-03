@@ -255,6 +255,37 @@ test('Grok analyzes rich public context with real metric substitution while grad
   assert.deepEqual(run, beforeWithPrivateExtras);
 });
 
+test('financial institutions reach the same model synthesis with their disclosed amounts', async () => {
+  const run = company();
+  run.context!.organizationType = '银行';
+  run.context!.profile.industry = '银行';
+  const seed = deriveCompanyAssessment(run);
+  let calls = 0;
+  const result = await analyzeCompanyWithModel(
+    run,
+    config(async (_url, init) => {
+      calls++;
+      const body = JSON.parse(String(init?.body));
+      const input = JSON.parse(body.messages.at(-1).content);
+      assert.equal(input.organizationType, '银行');
+      assert.equal('methodNote' in input.screen, false);
+      assert.equal(
+        input.screen.metrics.find((metric: { id: string }) => metric.id === '2025-netProfit').value,
+        '100.00'
+      );
+      assert.equal(
+        input.screen.metrics.find((metric: { id: string }) => metric.id === '2025-ocf').value,
+        '7.15'
+      );
+      return response(narrative(seed));
+    })
+  );
+  assert.equal(calls, 1);
+  assert.equal(result.model.status, 'completed');
+  assert.equal(result.grade, seed.grade);
+  assert.deepEqual(financialResult(result), financialResult(seed));
+});
+
 test('one bounded schema/citation repair can adopt a valid response, but repeated fabricated references fall back', async () => {
   const run = company(),
     seed = deriveCompanyAssessment(run);

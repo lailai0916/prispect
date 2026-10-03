@@ -1,6 +1,6 @@
 import { Select } from './Select';
 import { useEffect, useId, useRef, useState } from 'react';
-import { ArrowUpRight, FileSearch, LoaderCircle, RefreshCw } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, FileSearch, LoaderCircle, RefreshCw } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import {
   industryChartMetricKeys,
@@ -82,6 +82,8 @@ export function CompanyIndustryView({
   const requested = selectedPeriod ?? requestedPeriod;
   const period = years.length && !years.includes(requested) ? years[0]! : requested;
   const scope = `${user?.id || ''}:${run.id}:${run.input.securityCode}:${period}`;
+  const presentation = useRef({ t, locale });
+  presentation.current = { t, locale };
   const [result, setResult] = useState<{
       scope: string;
       snapshot: CompanyIndustrySnapshot | null;
@@ -94,6 +96,7 @@ export function CompanyIndustryView({
   const generation = useRef(0),
     request = useRef<AbortController | null>(null);
   const distributionId = useId();
+  const comparisonId = useId();
   const distributionRef = useRef<HTMLElement>(null);
   const openDistribution = (key: IndustryMetricKey) => {
     setDistributionMetric(key);
@@ -155,7 +158,7 @@ export function CompanyIndustryView({
       request.current?.abort();
       request.current = null;
     };
-  }, [scope, locale]);
+  }, [scope]);
   function loadIndustry(refresh = false) {
     request.current?.abort();
     const controller = new AbortController(),
@@ -178,7 +181,7 @@ export function CompanyIndustryView({
               scope,
               snapshot,
               stale,
-              error: t(
+              error: presentation.current.t(
                 '行业数据与当前企业或年度不匹配，请重试。',
                 'The industry data does not match this company or year. Please retry.'
               ),
@@ -196,7 +199,12 @@ export function CompanyIndustryView({
       })
       .catch((cause) => {
         if (!controller.signal.aborted && current === generation.current)
-          setResult({ scope, snapshot, stale, error: requestErrorText(cause, locale) });
+          setResult({
+            scope,
+            snapshot,
+            stale,
+            error: requestErrorText(cause, presentation.current.locale),
+          });
       })
       .finally(() => {
         if (!controller.signal.aborted && current === generation.current) {
@@ -396,8 +404,16 @@ export function CompanyIndustryView({
             </p>
           </section>
           <details className="context-disclosure">
-            <summary>{t('完整对比数据', 'Full comparison data')}</summary>
-            <div className="table-scroll">
+            <summary id={`${comparisonId}-full`}>
+              <ChevronDown size={14} aria-hidden="true" />
+              <span>{t('完整对比数据', 'Full comparison data')}</span>
+            </summary>
+            <div
+              className="table-scroll"
+              role="region"
+              aria-labelledby={`${comparisonId}-full`}
+              tabIndex={0}
+            >
               <table className="context-industry-table">
                 <thead>
                   <tr>
@@ -462,8 +478,16 @@ export function CompanyIndustryView({
           </details>
           {snapshot.chartMetrics && (
             <details className="context-disclosure">
-              <summary>{t('金额与净利率参照', 'Amount and net-margin references')}</summary>
-              <div className="table-scroll">
+              <summary id={`${comparisonId}-amounts`}>
+                <ChevronDown size={14} aria-hidden="true" />
+                <span>{t('金额与净利率参照', 'Amount and net-margin references')}</span>
+              </summary>
+              <div
+                className="table-scroll"
+                role="region"
+                aria-labelledby={`${comparisonId}-amounts`}
+                tabIndex={0}
+              >
                 <table className="context-industry-table">
                   <thead>
                     <tr>
@@ -522,14 +546,14 @@ export function CompanyIndustryView({
               </div>
             </details>
           )}
-          {snapshot.warnings.map((warning, index) => (
-            <p className="muted" key={index}>
-              {warning}
+          <div className="context-data-note">
+            {snapshot.warnings.map((warning, index) => (
+              <p key={index}>{warning}</p>
+            ))}
+            <p>
+              {t('获取时间', 'Retrieved at')} {date(snapshot.fetchedAt, locale)}
             </p>
-          ))}
-          <p className="muted">
-            {t('获取时间', 'Retrieved at')} {date(snapshot.fetchedAt, locale)}
-          </p>
+          </div>
           {evidence && (
             <Dialog
               title={t(...(isChartMetric(evidence) ? chartLabels[evidence] : labels[evidence]))}

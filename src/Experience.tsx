@@ -109,6 +109,36 @@ export function RecordListLoading({
   );
 }
 
+export function OriginalReviewLoading({ label }: { label: string }) {
+  return (
+    <div className="original-review-loading" role="status" aria-busy="true">
+      <div aria-hidden="true">
+        <div className="original-loading-heading">
+          <div>
+            <span className="skeleton skeleton-heading" />
+            <span className="skeleton skeleton-subheading" />
+          </div>
+          <span className="skeleton original-loading-state" />
+        </div>
+        <div className="original-loading-evidence">
+          <span className="skeleton skeleton-heading" />
+          <span className="skeleton skeleton-subheading" />
+          {[0, 1, 2].map((key) => (
+            <div className="skeleton-row" key={key}>
+              <span className="skeleton" />
+              <span className="skeleton" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <span className="page-loading-label">
+        <LoaderCircle size={14} className="spinner" aria-hidden="true" />
+        {label}
+      </span>
+    </div>
+  );
+}
+
 export function ToastNotice({
   notice,
   onDismiss,

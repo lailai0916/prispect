@@ -145,11 +145,7 @@ export function deriveResearchPlan(run: CompanyResearchRun): ResearchPlanView {
     !!run.informationGap ||
     (!!run.identity && !['sse', 'szse'].includes(run.identity.exchange)) ||
     !/^\d{6}$/.test(run.input.securityCode) ||
-    run.agent?.financialContext?.status === 'unsupported' ||
-    /银行|证券|保险|多元金融/.test(run.context?.profile?.industry || '') ||
-    !!run.context?.warnings.some((warning) =>
-      warning.includes('金融机构或来源主体未通过通用行业口径检查')
-    );
+    !!run.context?.warnings.some((warning) => warning.includes('来源主体或机构类型存在冲突'));
   const context = blocked ? undefined : run.context;
   const assessment = blocked ? undefined : run.assessment;
   const review = context ? companyReviewSummary(run) : { relation: 'missing' as const };

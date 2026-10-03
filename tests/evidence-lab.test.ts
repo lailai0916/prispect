@@ -270,7 +270,7 @@ test('one-cent differences above floating-point safe precision remain exact', ()
   assert.equal(node(buildCompanyEvidenceLab(run), 'calc-inventory-balance-change').value, '0.01');
 });
 
-test('foreign issuer, unsupported financial institutions and invalid sources cannot supply adopted facts', () => {
+test('foreign issuers and invalid sources stay withheld while financial-institution facts remain inspectable', () => {
   const wrong = company();
   wrong.context!.securityCode = '600000';
   wrong.context!.companyName = '另一家公司的名字';
@@ -282,7 +282,10 @@ test('foreign issuer, unsupported financial institutions and invalid sources can
   assert.equal(node(graph, 'fact-2025-netProfit').state, 'conflict');
   const bank = company();
   bank.context!.profile.industry = '银行';
-  assert.equal(node(buildCompanyEvidenceLab(bank), 'fact-2025-netProfit').value, null);
+  assert.equal(
+    node(buildCompanyEvidenceLab(bank), 'fact-2025-netProfit').value,
+    node(buildCompanyEvidenceLab(company()), 'fact-2025-netProfit').value
+  );
   const invalid = company();
   invalid.context!.financials.forEach(
     (period) => (period.sourceUrls = ['javascript:alert(1)', 'https://user:password@example.com/'])

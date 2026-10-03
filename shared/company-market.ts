@@ -2,6 +2,22 @@ import type { CompanyIdentity } from './contracts.js';
 
 export type CompanyFinancialSourceId = 'income' | 'cashflow' | 'balance';
 
+/** The income catalog covers all issuer types; balance/cash tables have industry schemas. */
+export function financialStatementTables(organizationType = '') {
+  const prefix = /银行/.test(organizationType)
+    ? 'B'
+    : /保险/.test(organizationType)
+      ? 'I'
+      : /证券/.test(organizationType)
+        ? 'S'
+        : 'G';
+  return {
+    income: 'RPT_F10_FINANCE_GINCOME',
+    cashflow: `RPT_F10_FINANCE_${prefix}CASHFLOW`,
+    balance: `RPT_F10_FINANCE_${prefix}BALANCE`,
+  };
+}
+
 /** Third-party web fields in CNY yuan; null is unavailable, never an assumed zero. */
 export const FINANCIAL_FIELD_SOURCES = {
   revenue: { sourceId: 'income', field: 'TOTAL_OPERATE_INCOME' },
@@ -58,8 +74,8 @@ export const COMPANY_MARKET_WARNINGS = {
     en: 'Entity or organization codes conflict between web tables. No amounts are combined.',
   },
   industry: {
-    zh: '当前通用行业网页字段不支持金融机构或未确认行业，不混用银行、证券或保险报表。',
-    en: 'These general-industry web fields do not support financial institutions or unconfirmed industries. Banking, securities and insurance tables are not mixed in.',
+    zh: '当前网页财务取数仅覆盖沪深 A 股，其他市场保留原始记录。',
+    en: 'Public financial retrieval currently covers Shanghai/Shenzhen A shares. Records from other markets remain preserved.',
   },
   duplicate: {
     zh: '同一年度的网页记录存在重复金额冲突，该表该年度字段未采用。',

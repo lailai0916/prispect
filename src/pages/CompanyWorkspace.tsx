@@ -51,7 +51,8 @@ import { CompanyPageIndex } from '../CompanyPageIndex';
 import { CompanyReadingSession } from '../CompanyReadingSession';
 import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
 import { CompanyPublicInformation } from '../CompanyPublicInformation';
-import { PageLoading } from '../Experience';
+import { OriginalReviewLoading, PageLoading } from '../Experience';
+import { readPageScroll } from '../page-scroll';
 import { lazyPage } from '../lazy-page';
 const OriginalReview = lazyPage(
   () => import('./CompanyAgent'),
@@ -63,7 +64,7 @@ const researchSupported = (run: CompanyResearchRun) =>
 type ResearchRequestKind = 'status' | 'sources' | 'analysis' | 'cancel';
 
 export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
-  const { t, locale, navigate, confirm, user } = useApp();
+  const { t, locale, navigate, confirm, user, historyNavigation } = useApp();
   const { removeLocal, isCurrentOwner } = useCompanyRecords();
   const { publish } = useContext(CompanyAssistantContext);
   const id = query.get('run');
@@ -260,7 +261,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                 'company-source-comparison',
               ]
             : [];
-    const reveal = (explicit = false) => {
+    const reveal = (explicit = false, historyReturn = false) => {
       const hashId = location.hash.slice(1);
       const target =
         resolveCompanyFocus(section, reportFocus) || (targets.includes(hashId) ? hashId : '');
@@ -273,13 +274,15 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       if (!explicit && revealedLocation.current === key) return;
       if (!document.getElementById(target)) return;
       revealedLocation.current = key;
-      openCompanyReportSection(target, target === 'company-research-goal');
+      openCompanyReportSection(target, target === 'company-research-goal', undefined, {
+        scroll: !historyReturn && (explicit || !historyNavigation),
+      });
     };
     reveal();
-    const revealHash = () => reveal(true);
+    const revealHash = () => reveal(true, Boolean(readPageScroll(history.state)));
     window.addEventListener('hashchange', revealHash);
     return () => window.removeEventListener('hashchange', revealHash);
-  }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus]);
+  }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus, historyNavigation]);
   const refresh = async () => {
     if (!run || !researchSupported(run) || updating) return;
     if (user) manualScope.current = `${user.id}:${run.id}`;
@@ -604,8 +607,19 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         </div>
       )}
       {section === 'evidence' ? (
-        <Suspense fallback={<LoaderCircle className="spinner" />}>
-          <OriginalReview key={run.id} query={new URLSearchParams({ run: run.id })} embedded />
+        <Suspense
+          fallback={
+            <OriginalReviewLoading
+              label={t('正在打开原件核查…', 'Opening original-document review…')}
+            />
+          }
+        >
+          <OriginalReview
+            key={run.id}
+            query={new URLSearchParams({ run: run.id })}
+            initialRun={run}
+            embedded
+          />
         </Suspense>
       ) : pausedMarket ? (
         <section className="company-review-section">

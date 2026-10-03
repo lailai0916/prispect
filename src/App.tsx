@@ -42,6 +42,14 @@ import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { AssistantErrorBoundary } from './AssistantErrorBoundary';
 import { lazyPage, resetFailedLazyPages } from './lazy-page';
 import { ThemeControl } from './ThemeControl';
+import {
+  commitPageEntry,
+  ensurePageEntry,
+  pageEntryId,
+  readPageScroll,
+  restorePageScroll,
+  trackPageScroll,
+} from './page-scroll';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
 import {
   appLinkPath,
@@ -177,6 +185,15 @@ export function App() {
   const localeRef = useRef(locale);
   localeRef.current = locale;
   const [route, setRoute] = useState(readBrowserRoute);
+  const [entryId, setEntryId] = useState(ensurePageEntry);
+  const [historyEntry, setHistoryEntry] = useState(() => {
+    const point = readPageScroll(history.state);
+    return point ? { route: readBrowserRoute(), point } : null;
+  });
+  const committedRoute = useRef(route);
+  const committedEntry = useRef(entryId);
+  const restoringPage = useRef(false);
+  const restoreCleanup = useRef<(() => void) | null>(null);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
   useLayoutEffect(() => companyReadingMemory.changeOwner(user?.id || null), [user?.id]);
@@ -220,11 +237,34 @@ export function App() {
     setMenuOpen(false);
   }, []);
   useLayoutEffect(() => {
+    committedRoute.current = route;
+    committedEntry.current = entryId;
+    commitPageEntry(entryId);
     // Scroll only once the destination has committed, never the outgoing page.
     if (navigationTarget.current !== route) return;
     navigationTarget.current = null;
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [route]);
+  }, [route, entryId]);
+  useLayoutEffect(() => {
+    if (historyEntry?.route !== route) return;
+    restoringPage.current = true;
+    const stop = restorePageScroll(historyEntry.point, () => {
+      restoringPage.current = false;
+      restoreCleanup.current = null;
+    });
+    restoreCleanup.current = stop;
+    return stop;
+  }, [historyEntry, route]);
+  useEffect(
+    () =>
+      trackPageScroll(
+        () =>
+          !restoringPage.current &&
+          committedEntry.current === pageEntryId(history.state) &&
+          committedRoute.current === location.pathname + location.search
+      ),
+    []
+  );
   const refresh = useCallback(async () => {
     const generation = ++refreshGeneration.current;
     refreshController.current?.abort();
@@ -351,9 +391,20 @@ export function App() {
     void refresh().catch(() => {});
   }, [refresh]);
   useEffect(() => {
-    const sync = () => {
+    const sync = (event: Event) => {
       resetFailedLazyPages();
-      startPageTransition(() => setRoute(readBrowserRoute()));
+      const next = readBrowserRoute();
+      const entry = ensurePageEntry();
+      // A history traversal can also emit hashchange after its restored route commits.
+      if (event.type !== 'hashchange' || entry !== committedEntry.current)
+        restoreCleanup.current?.();
+      const point = event.type === 'popstate' ? readPageScroll(history.state) : null;
+      if (event.type === 'popstate') navigationTarget.current = null;
+      startPageTransition(() => {
+        setRoute(next);
+        setEntryId(entry);
+        if (event.type !== 'hashchange') setHistoryEntry(point ? { route: next, point } : null);
+      });
       setMenuOpen(false);
     };
     const preloadLink = (event: Event) => {
@@ -524,6 +575,7 @@ export function App() {
     confirm: setConfirmRequest,
     showEvidence: (refs, report) => setEvidence({ refs, report }),
     busy: pending > 0,
+    historyNavigation: historyEntry?.route === route,
   };
   const primaryNavigation = [['/research', t(...productTerms.researchLibrary), Building2]] as const;
   const secondaryNavigation = [
