@@ -1,5 +1,5 @@
 import { productTerms } from '../shared/product-terms';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   ArrowRight,
   Check,
@@ -82,7 +82,13 @@ export function openCompanyReportSection(id: string, focusInput = false, focusSe
   });
 }
 
-function CompanyResearchProgress({ run }: { run: CompanyResearchRun }) {
+function CompanyResearchProgress({
+  run,
+  children,
+}: {
+  run: CompanyResearchRun;
+  children?: ReactNode;
+}) {
   const { t, locale } = useApp();
   const progress = deriveCompanyResearchProgress(run);
   const steps =
@@ -136,6 +142,7 @@ function CompanyResearchProgress({ run }: { run: CompanyResearchRun }) {
         </summary>
         <div className="research-progress-body">
           <p className="research-progress-goal">{t(...progress.goal)}</p>
+          {children}
           <ol className="research-progress-stages">
             {progress.stages.map((stage) => (
               <li key={stage.id} className={'research-stage research-stage-' + stage.status}>
@@ -254,25 +261,28 @@ export function CompanyResearchReport({
         <div className="research-summary-card">
           <div className={'research-summary-lead' + (assessment ? ' research-summary-rated' : '')}>
             <div className="research-summary-copy">
-              <p className="research-summary-label">
-                <NotebookText size={17} aria-hidden="true" />
-                {t('分析摘要', 'Analysis summary')}
-              </p>
+              <div className="research-summary-meta">
+                <p className="research-summary-label">
+                  <NotebookText size={17} aria-hidden="true" />
+                  {t('分析摘要', 'Analysis summary')}
+                </p>
+                <div className="research-summary-scope">
+                  <span>{t(...brief.scope)}</span>
+                  <span>
+                    {brief.mode === 'model'
+                      ? t('资料分析', 'Source analysis')
+                      : brief.mode === 'rules'
+                        ? t('规则分析', 'Rule-based analysis')
+                        : t('判断待形成', 'Analysis pending')}
+                  </span>
+                  {basis(t('分析摘要', 'Analysis summary'), brief.summary)}
+                </div>
+              </div>
               <h2 id="research-summary-heading" className="research-summary-headline">
                 {judgmentText(brief.headline)}
               </h2>
               <p className="research-summary-judgment">{judgmentText(brief.summary)}</p>
-              <div className="research-summary-scope">
-                <span>{t(...brief.scope)}</span>
-                <span>
-                  {brief.mode === 'model'
-                    ? t('资料分析', 'Source analysis')
-                    : brief.mode === 'rules'
-                      ? t('规则分析', 'Rule-based analysis')
-                      : t('判断待形成', 'Analysis pending')}
-                </span>
-                {basis(t('分析摘要', 'Analysis summary'), brief.summary)}
-              </div>
+
               <div className="research-summary-actions">
                 <button
                   type="button"
@@ -305,6 +315,17 @@ export function CompanyResearchReport({
                   brief.headline,
                   t('结论依据', 'Conclusion evidence')
                 )}
+                {assessment?.ratingConstraints && assessment.ratingConstraints.length > 0 && (
+                  <details className="research-grade-limits">
+                    <summary>
+                      {t('评级受核心弱项限制', 'Grade capped by a weak core dimension')}
+                      <ChevronDown size={12} />
+                    </summary>
+                    <p className="research-grade-constraint">
+                      {assessment.ratingConstraints.map((item) => t(...item)).join(' ')}
+                    </p>
+                  </details>
+                )}
               </div>
               {brief.warnings.length > 0 && (
                 <div className="research-warnings" role={loading ? 'status' : undefined}>
@@ -312,17 +333,6 @@ export function CompanyResearchReport({
                     <p key={index}>{t(...warning)}</p>
                   ))}
                 </div>
-              )}
-              {assessment?.ratingConstraints && assessment.ratingConstraints.length > 0 && (
-                <details className="research-grade-limits">
-                  <summary>
-                    {t('评级受核心弱项限制', 'Grade capped by a weak core dimension')}
-                    <ChevronDown size={12} />
-                  </summary>
-                  <p className="research-grade-constraint">
-                    {assessment.ratingConstraints.map((item) => t(...item)).join(' ')}
-                  </p>
-                </details>
               )}
             </div>
             {assessment && (
@@ -367,138 +377,139 @@ export function CompanyResearchReport({
               </button>
             )}
           </div>
-        </div>
-        <dl
-          className="research-key-amounts"
-          aria-label={t('所选年度合并金额', 'Selected-year consolidated amounts')}
-        >
-          <div>
-            <dt>
-              <span className="research-metric-icon">
-                <Coins size={19} aria-hidden="true" />
-              </span>
-              {t('合并净利润', 'Consolidated net profit')}
-            </dt>
-            <dd>
-              {money(amounts.profit, locale)}
-              {amounts.profit !== null && <small>{t('元', 'CNY')}</small>}
-            </dd>
-            {amounts.row && (
-              <CompanyContextEvidence row={amounts.row} fields={['netProfit']}>
-                {t('查看来源', 'View sources')}
-              </CompanyContextEvidence>
-            )}
-          </div>
-          <div>
-            <dt>
-              <span className="research-metric-icon">
-                <Wallet size={19} aria-hidden="true" />
-              </span>
-              {t('经营现金净额', 'Operating cash flow')}
-            </dt>
-            <dd>
-              {money(amounts.cash, locale)}
-              {amounts.cash !== null && <small>{t('元', 'CNY')}</small>}
-            </dd>
-            {amounts.row && (
-              <CompanyContextEvidence row={amounts.row} fields={['ocf']}>
-                {t('查看来源', 'View sources')}
-              </CompanyContextEvidence>
-            )}
-          </div>
-          <div>
-            <dt>
-              <span className="research-metric-icon">
-                <Percent size={19} aria-hidden="true" />
-              </span>
-              {t('现金利润比', 'Cash-to-profit ratio')}
-            </dt>
-            <dd>{ratio}</dd>
-            {amounts.row && (
-              <CompanyContextEvidence
-                row={amounts.row}
-                fields={['netProfit', 'ocf']}
-                formula={t(
-                  '同年度经营现金净额 ÷ 合并净利润；利润非正或来源冲突时不作常规解读。',
-                  'Same-year operating cash ÷ consolidated net profit; not conventionally interpreted for nonpositive profit or source conflicts.'
-                )}
-              >
-                {t('公式与来源', 'Formula and sources')}
-              </CompanyContextEvidence>
-            )}
-          </div>
-        </dl>
-        {(amounts.relation === 'conflict' ||
-          amounts.relation === 'nonpositive' ||
-          progress.snapshot === 'previous') && (
-          <p className="research-amount-note">
-            {amounts.relation === 'conflict' && (
-              <span>
-                {' '}
-                {t(
-                  '来源存在冲突，相关金额与比例暂停展示。',
-                  'Conflicting amounts and ratios are withheld.'
-                )}
-              </span>
-            )}
-            {amounts.relation === 'nonpositive' && (
-              <span>
-                {' '}
-                {t(
-                  '利润非正，比例不作常规解读。',
-                  'The ratio is not conventionally interpreted with nonpositive profit.'
-                )}
-              </span>
-            )}
-            {progress.snapshot === 'previous' && (
-              <span>
-                {' '}
-                {t(
-                  '以上金额来自当前资料快照，与上一份分析分别呈现。',
-                  'These amounts use the current snapshot, separately from the previous analysis.'
-                )}
-              </span>
-            )}
-          </p>
-        )}
-        <div className="research-process-card">
-          {coverage.origin !== 'unavailable' && (
-            <div className="research-report-coverage">
-              <span>{t('本份分析覆盖', 'Scope of this analysis')}</span>
-              <span>
-                {coverage.years} {t('个财务年度', 'financial years')}
-              </span>
-              {coverage.fields !== null && coverage.requiredFields !== null && (
-                <span>
-                  {coverage.fields}/{coverage.requiredFields} {t('个关键字段', 'key fields')}
+          <dl
+            className="research-key-amounts"
+            aria-label={t('所选年度合并金额', 'Selected-year consolidated amounts')}
+          >
+            <div>
+              <dt>
+                <span className="research-metric-icon">
+                  <Coins size={19} aria-hidden="true" />
                 </span>
+                {t('合并净利润', 'Consolidated net profit')}
+              </dt>
+              <dd>
+                {money(amounts.profit, locale)}
+                {amounts.profit !== null && <small>{t('元', 'CNY')}</small>}
+              </dd>
+              {amounts.row && (
+                <CompanyContextEvidence row={amounts.row} fields={['netProfit']}>
+                  {t('查看来源', 'View sources')}
+                </CompanyContextEvidence>
               )}
-              {coverage.news > 0 && (
-                <span>
-                  {t(
-                    `新闻 ${coverage.news} · 正文节选 ${coverage.mediaBodies ?? '—'}`,
-                    `News ${coverage.news} · body excerpts ${coverage.mediaBodies ?? '—'}`
-                  )}
-                </span>
-              )}
-              {coverage.discussions !== null && coverage.discussions > 0 && (
-                <span>
-                  {t(
-                    `讨论 ${coverage.discussions} · 摘录 ${coverage.discussionBodies ?? '—'}`,
-                    `Discussions ${coverage.discussions} · excerpts ${coverage.discussionBodies ?? '—'}`
-                  )}
-                </span>
-              )}
-              {coverage.peers > 0 && (
-                <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
-              )}
-              <a className="text-link" href={companyPath(run.id, 'sources', 'coverage')}>
-                {t('数据覆盖', 'Data coverage')}
-                <ArrowRight size={12} />
-              </a>
             </div>
+            <div>
+              <dt>
+                <span className="research-metric-icon">
+                  <Wallet size={19} aria-hidden="true" />
+                </span>
+                {t('经营现金净额', 'Operating cash flow')}
+              </dt>
+              <dd>
+                {money(amounts.cash, locale)}
+                {amounts.cash !== null && <small>{t('元', 'CNY')}</small>}
+              </dd>
+              {amounts.row && (
+                <CompanyContextEvidence row={amounts.row} fields={['ocf']}>
+                  {t('查看来源', 'View sources')}
+                </CompanyContextEvidence>
+              )}
+            </div>
+            <div>
+              <dt>
+                <span className="research-metric-icon">
+                  <Percent size={19} aria-hidden="true" />
+                </span>
+                {t('现金利润比', 'Cash-to-profit ratio')}
+              </dt>
+              <dd>{ratio}</dd>
+              {amounts.row && (
+                <CompanyContextEvidence
+                  row={amounts.row}
+                  fields={['netProfit', 'ocf']}
+                  formula={t(
+                    '同年度经营现金净额 ÷ 合并净利润；利润非正或来源冲突时不作常规解读。',
+                    'Same-year operating cash ÷ consolidated net profit; not conventionally interpreted for nonpositive profit or source conflicts.'
+                  )}
+                >
+                  {t('公式与来源', 'Formula and sources')}
+                </CompanyContextEvidence>
+              )}
+            </div>
+          </dl>
+          {(amounts.relation === 'conflict' ||
+            amounts.relation === 'nonpositive' ||
+            progress.snapshot === 'previous') && (
+            <p className="research-amount-note">
+              {amounts.relation === 'conflict' && (
+                <span>
+                  {' '}
+                  {t(
+                    '来源存在冲突，相关金额与比例暂停展示。',
+                    'Conflicting amounts and ratios are withheld.'
+                  )}
+                </span>
+              )}
+              {amounts.relation === 'nonpositive' && (
+                <span>
+                  {' '}
+                  {t(
+                    '利润非正，比例不作常规解读。',
+                    'The ratio is not conventionally interpreted with nonpositive profit.'
+                  )}
+                </span>
+              )}
+              {progress.snapshot === 'previous' && (
+                <span>
+                  {' '}
+                  {t(
+                    '以上金额来自当前资料快照，与上一份分析分别呈现。',
+                    'These amounts use the current snapshot, separately from the previous analysis.'
+                  )}
+                </span>
+              )}
+            </p>
           )}
-          <CompanyResearchProgress run={run} />
+          <div className="research-process-strip">
+            <CompanyResearchProgress run={run}>
+              {coverage.origin !== 'unavailable' && (
+                <div className="research-report-coverage">
+                  <span>{t('本份分析覆盖', 'Scope of this analysis')}</span>
+                  <span>
+                    {coverage.years} {t('个财务年度', 'financial years')}
+                  </span>
+                  {coverage.fields !== null && coverage.requiredFields !== null && (
+                    <span>
+                      {coverage.fields}/{coverage.requiredFields} {t('个关键字段', 'key fields')}
+                    </span>
+                  )}
+                  {coverage.news > 0 && (
+                    <span>
+                      {t(
+                        `新闻 ${coverage.news} · 正文节选 ${coverage.mediaBodies ?? '—'}`,
+                        `News ${coverage.news} · body excerpts ${coverage.mediaBodies ?? '—'}`
+                      )}
+                    </span>
+                  )}
+                  {coverage.discussions !== null && coverage.discussions > 0 && (
+                    <span>
+                      {t(
+                        `讨论 ${coverage.discussions} · 摘录 ${coverage.discussionBodies ?? '—'}`,
+                        `Discussions ${coverage.discussions} · excerpts ${coverage.discussionBodies ?? '—'}`
+                      )}
+                    </span>
+                  )}
+                  {coverage.peers > 0 && (
+                    <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
+                  )}
+                  <a className="text-link" href={companyPath(run.id, 'sources', 'coverage')}>
+                    {t('数据覆盖', 'Data coverage')}
+                    <ArrowRight size={12} />
+                  </a>
+                </div>
+              )}
+            </CompanyResearchProgress>
+          </div>
         </div>
       </section>
       {brief.priorities.length > 0 && (

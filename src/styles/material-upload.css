@@ -196,45 +196,39 @@
 }
 
 .materials-overview {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--card-gap);
-  margin-bottom: var(--card-gap);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 28px;
+  margin-bottom: 24px;
 }
 .materials-stat {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
   min-width: 0;
-  padding: var(--card-padding);
-  border: 1px solid var(--line);
-  border-radius: var(--card-radius);
-  background: var(--paper);
-  box-shadow: var(--shadow-card);
 }
 .materials-stat-icon {
-  display: grid;
-  place-items: center;
+  display: flex;
   flex: none;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--surface);
   color: var(--muted);
 }
+.materials-stat-icon svg {
+  width: 16px;
+  height: 16px;
+}
 .materials-stat > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   min-width: 0;
 }
 .materials-stat > div > span {
-  display: block;
   color: var(--muted);
   font-size: var(--text-secondary);
   line-height: 1.5;
-  overflow-wrap: anywhere;
 }
 .materials-stat strong {
-  display: block;
-  margin-top: 5px;
   font-size: 28px;
   line-height: 1.2;
   font-weight: 600;
@@ -243,11 +237,11 @@
 }
 .material-drop-page .materials-toolbar {
   gap: 12px;
-  margin-bottom: var(--card-gap);
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: var(--card-radius);
-  background: var(--paper);
+  margin-bottom: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 .material-drop-page .materials-toolbar .segmented-control {
   flex-wrap: wrap;
@@ -259,43 +253,45 @@
   flex: 1 1 220px;
 }
 .material-drop-page .materials-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--card-gap);
-  border-top: 0;
-}
-.app-shell .material-drop-page .material-row {
-  display: grid;
-  grid-template-columns: 44px minmax(0, 1fr);
-  grid-template-rows: 1fr auto;
-  align-items: start;
-  gap: 18px 14px;
-  min-width: 0;
-  padding: var(--card-padding);
+  display: block;
+  overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--card-radius);
   background: var(--paper);
-  box-shadow: var(--shadow-card);
+}
+.app-shell .material-drop-page .material-row {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px;
+  border: 0;
+  border-bottom: 1px solid var(--line-soft);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.app-shell .material-drop-page .material-row:last-child {
+  border-bottom: 0;
 }
 .app-shell .material-drop-page .material-row:hover,
 .app-shell .material-drop-page .material-row:focus-within {
-  border-color: var(--accent-border);
-  background: var(--paper);
+  background: var(--surface-subtle);
 }
 .app-shell .material-drop-page .material-row.material-located {
-  border-color: var(--muted);
-  background: var(--paper);
-  box-shadow: 0 0 0 2px var(--focus-ring);
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 var(--accent);
 }
 .app-shell .material-drop-page .material-row-icon {
   display: flex;
-  width: 44px;
-  min-width: 44px;
-  height: 56px;
+  width: 36px;
+  min-width: 36px;
+  height: 44px;
   padding: 0;
   border: 0;
-  border-radius: 12px;
-  background: var(--surface);
+  border-radius: 0;
+  background: transparent;
   color: var(--muted);
 }
 .material-drop-page .material-row-content {
@@ -306,10 +302,11 @@
 }
 .material-drop-page .material-row-title h2 {
   margin: 0;
+  font-weight: 600;
   overflow-wrap: anywhere;
 }
 .material-drop-page .material-row-content > p {
-  margin: 8px 0 0;
+  margin: 6px 0 0;
   color: var(--muted);
   font-size: var(--text-secondary);
   line-height: 1.7;
@@ -317,7 +314,7 @@
 }
 .material-drop-page .material-facts {
   gap: 6px 14px;
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   font-size: var(--text-meta);
   line-height: 1.7;
   overflow-wrap: anywhere;
@@ -326,56 +323,41 @@
   font-size: inherit;
 }
 .material-drop-page .material-row-actions {
-  grid-column: 1 / -1;
-  grid-row: 2;
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 6px;
   min-width: 0;
-  width: 100%;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-soft);
-}
-.material-drop-page .material-row-actions > .button {
-  margin-right: auto;
+  padding: 0;
+  border: 0;
 }
 .material-drop-page .empty-state {
-  padding: 60px var(--card-padding);
+  padding: 48px var(--card-padding);
   border: 1px solid var(--line);
   border-radius: var(--card-radius);
   background: var(--paper);
 }
-@media (max-width: 1040px) {
-  .material-drop-page .materials-list {
-    grid-template-columns: minmax(0, 1fr);
+@media (max-width: 960px) {
+  .app-shell .material-drop-page .material-row {
+    grid-template-columns: 36px minmax(0, 1fr);
   }
-  .materials-stat {
-    gap: 10px;
-  }
-  .materials-stat-icon {
-    width: 36px;
-    height: 36px;
+  .material-drop-page .material-row-actions {
+    grid-column: 2;
+    justify-content: flex-start;
   }
 }
 @media (max-width: 640px) {
   .materials-overview {
-    gap: 10px;
-  }
-  .materials-stat {
-    padding: 14px;
+    gap: 10px 20px;
+    margin-bottom: 20px;
   }
   .materials-stat-icon {
     display: none;
   }
-  .materials-stat > div > span {
-    min-height: 42px;
-  }
-  .materials-stat strong {
-    font-size: 25px;
+  .materials-stat > div {
+    gap: 8px;
   }
   .material-drop-page .materials-toolbar {
     gap: 10px;
-    padding: 12px;
   }
   .material-drop-page .materials-toolbar .segmented-control {
     width: 100%;
@@ -385,6 +367,15 @@
     flex-basis: 100%;
   }
   .app-shell .material-drop-page .material-row {
-    gap: 16px 12px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    gap: 12px;
+    padding: 18px;
+  }
+  .app-shell .material-drop-page .material-row-icon {
+    width: 28px;
+    min-width: 28px;
+  }
+  .material-drop-page .material-row-actions > .button {
+    margin-right: 0;
   }
 }

@@ -370,14 +370,14 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     >
       <header className="context-page-heading">
         <div>
-          <p className="context-eyebrow">
-            {section === 'overview' && !pausedMarket
-              ? t(...productTerms.researchReport)
-              : run.informationGap?.name ||
+          {section !== 'overview' && (
+            <p className="context-eyebrow">
+              {run.informationGap?.name ||
                 run.identity?.companyName ||
                 snapshot?.companyName ||
                 run.input.securityCode}
-          </p>
+            </p>
+          )}
           <h1>
             {section === 'overview'
               ? run.informationGap?.name ||
@@ -387,7 +387,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               : title}
           </h1>
           <p className="context-data-note">
-            {section !== 'overview' && (
+            {(section !== 'overview' || run.input.securityCode) && (
               <>{run.input.securityCode || t('主体待确认', 'Entity needs confirmation')} · </>
             )}
             {run.input.year}{' '}

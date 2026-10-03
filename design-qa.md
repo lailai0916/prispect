@@ -12,7 +12,9 @@ application, not a reproduction of the reference's billing dashboard. Preserve
 Prispect's geometric logo, financial content and existing controls. The user's
 subsequent direction takes precedence over the reference's extensive color:
 restore a primarily white and neutral-gray Linear-style interface with only
-small, subdued theme accents.
+small, subdued theme accents. The latest refinement targets information density:
+keep content substantial and readable while removing large repeated wrappers,
+icon backgrounds and unused space.
 
 Source browser chrome and outer black framing are excluded from the comparison.
 Rendered evidence uses 1440 × 960 desktop, 390 × 960 mobile and 320px English
@@ -51,8 +53,12 @@ These checks do not use production records or a live model.
   15px controls, 14px explanations, 13px sources and 12px compact chart labels.
   Titles, amounts and grades retain stronger hierarchy. Native mobile inputs
   remain 16px. Source titles wrap and full originals remain accessible.
-- Layout: one workspace width, equal metric tracks, 14px card radii, shared
-  24px/18px padding and 20px/16px gaps. Narrow layouts stack cards; tables and
+- Layout: one workspace width, equal metric tracks, 12px card radii, shared
+  20px/18px padding and 16px gaps. Related summary, grade, amounts and actual
+  stages share one report section; detailed execution and coverage expand in
+  place. Findings follow immediately. Research library and materials share
+  compact statistics, directly accessible controls and aligned divided rows.
+  Document cards size to their content. Narrow layouts stack content; tables and
   large charts retain local scrolling. Header heights remain 52px/56px.
 - Colors: pure white light-theme canvas, neutral paper cards, gray/black
   navigation, actions, icons and grade panels. Subdued purple appears only in
@@ -80,7 +86,7 @@ These checks do not use production records or a live model.
    retain both tabs and their keyboard selection. Revised 320px/390px English
    and 390px Chinese captures and mouse/keyboard checks show no page overflow.
 
-## Validation and limits
+## Earlier validation and limits
 
 The subsequent palette refinement was checked at 1440px on the report,
 research library and document home, and at 390px on the dark assistant.
@@ -106,4 +112,43 @@ Production deployment, live research execution, other browser engines and every
 hidden legacy modal are outside this visual verification. The local preview
 and screenshots remain available for review.
 
-final result: passed
+## Current density refinement
+
+Local before evidence is in `output/playwright/density-flow/`, including
+`before-report-1440.png`, `before-library-1440.png`,
+`before-materials-1440.png`, `before-docs-1440.png` and `baseline.json`.
+The structural baseline already includes the reduced shared card tokens; it
+still has the previous standalone metrics and large process card. On that
+baseline, key findings start at y1052 and next steps at y1275. The research
+library list starts at y406; materials at y375. Six document cards are each
+170px high. Compare the rendered final layout with these same fixture records
+and viewport sizes, without introducing extra data or shrinking text.
+
+Final density evidence uses `after-report-1440.png`,
+`after-library-1440.png`, `after-materials-1440.png`,
+`after-docs-1440.png`, three `after-*-320-en-dark.png` captures,
+`after-assistant-empty-390-dark.png`, `after-assistant-filled-390-dark.png`
+and `after-account-390-dark.png`. `results.json` records 12 successful
+layout/interaction groups using the same local fixtures.
+
+The findings heading now starts at y834, 218px earlier; the first finding text
+is visible in the 960px desktop viewport. Library rows start at y316, 90px
+earlier; material rows at y287, 88px earlier. Document cards are approximately
+106px high with the original descriptions, replacing the fixed 170px height.
+The report retains four recorded stages and expands full process/coverage
+details through its existing navigation. Sources, grade details, saved-record
+navigation and the material original drawer remain usable.
+
+An initial 320px English report check exposed a nonwrapping page-action group.
+Its failure and element probe remain in `initial-results-320-overflow.json`
+and `report-320-probe.json`. Allow the actions to wrap; the final report,
+library and materials checks show no horizontal page overflow at 320px.
+Assistant empty and filled layouts both keep the composer inside the panel;
+account fields remain at least 16px on mobile. No browser errors, external
+requests, unexpected writes or missing mock endpoints were observed.
+The assistant answer uses one explicit intercepted request.
+
+Type checking, production build, changed-file formatting and diff checks passed.
+Production deployment and CI completion were not awaited.
+
+Current density browser acceptance: passed.

@@ -120,8 +120,8 @@
 }
 .query-create-page .research-recent {
   width: 100%;
-  margin: 44px 0 0;
-  padding: var(--card-padding);
+  margin: 32px 0 0;
+  padding: 20px 0 0;
 }
 .query-create-page .research-section-heading {
   margin-bottom: 8px;

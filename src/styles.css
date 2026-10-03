@@ -16,9 +16,9 @@
   --text-meta: 13px;
   --text-caption: 12px;
   --canvas: #ffffff;
-  --card-radius: 14px;
-  --card-padding: 24px;
-  --card-gap: 20px;
+  --card-radius: 12px;
+  --card-padding: 20px;
+  --card-gap: 16px;
   --shadow-card: none;
   --paper: #ffffff;
   --site-header-height: 52px;
@@ -27,7 +27,7 @@
   --workspace-padding-inline: 40px;
   --workspace-padding-top: 32px;
   --workspace-padding-bottom: 56px;
-  --workspace-section-gap: 24px;
+  --workspace-section-gap: 20px;
   --workspace-heading-size: 27px;
   --workspace-heading-weight: 600;
   --workspace-heading-letter-spacing: -0.025em;

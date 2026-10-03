@@ -377,11 +377,8 @@ button.start-mode:hover {
 .research-recent {
   width: min(100%, 900px);
   margin: 0 auto 30px;
-  padding: var(--card-padding);
-  border: 1px solid var(--line);
-  border-radius: var(--card-radius);
-  background: var(--paper);
-  box-shadow: var(--shadow-card);
+  padding: 20px 0 0;
+  border-top: 1px solid var(--line);
 }
 .research-record-row {
   display: flex;
@@ -402,10 +399,7 @@ button.start-mode:hover {
   flex-shrink: 0;
   width: 34px;
   height: 34px;
-  border: 1px solid var(--line);
-  border-radius: 9px;
   color: var(--muted);
-  background: var(--surface);
 }
 .research-record-name {
   flex: 1;
@@ -492,10 +486,7 @@ button.start-mode:hover {
 .research-cash-example {
   width: min(100%, 900px);
   margin: 0 auto;
-  border: 1px solid var(--line);
-  border-radius: var(--card-radius);
-  background: var(--paper);
-  box-shadow: var(--shadow-card);
+  border-top: 1px solid var(--line);
 }
 .research-cash-example {
   width: min(100%, 1280px);
@@ -506,7 +497,7 @@ button.start-mode:hover {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: var(--card-padding);
+  padding: 18px 0;
   list-style: none;
   cursor: pointer;
 }
@@ -542,9 +533,7 @@ button.start-mode:hover {
   transform-origin: center;
 }
 .research-cash-example > .product-window {
-  margin: 0 var(--card-padding) var(--card-padding);
-  border-radius: 10px;
-  box-shadow: none;
+  margin: 0;
 }
 .product-window-chrome {
   display: flex;
@@ -611,13 +600,10 @@ button.start-mode:hover {
   margin-bottom: 24px;
 }
 .preview-icon {
-  border: 1px solid var(--home-line);
   display: grid;
   place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--home-soft);
+  width: 24px;
+  height: 24px;
   color: var(--muted);
 }
 .preview-title h3 {

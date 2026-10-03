@@ -51,6 +51,10 @@
 .company-assistant-panel[hidden] {
   display: none;
 }
+.company-assistant-panel:has(.company-assistant-empty) {
+  height: auto;
+  max-height: min(600px, calc(100dvh - 120px));
+}
 .company-assistant-header {
   display: flex;
   align-items: center;
@@ -69,12 +73,9 @@
 }
 .company-assistant-header > div > svg {
   flex: none;
-  width: 32px;
-  height: 32px;
-  padding: 7px;
-  border-radius: 9px;
+  width: 18px;
+  height: 18px;
   color: var(--muted);
-  background: var(--surface);
 }
 .company-assistant-header h2 {
   margin: 0;
@@ -123,13 +124,12 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-top: 8px;
 }
 .company-assistant-suggestions {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 8px;
 }
 .company-assistant-suggestions button {
   display: flex;

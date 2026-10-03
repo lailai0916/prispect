@@ -1,8 +1,8 @@
 .avatar-upload {
-  padding: 18px;
-  border: 1px dashed var(--control-border);
-  border-radius: 12px;
-  background: var(--surface);
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
   transition:
     border-color 140ms ease,
     background-color 140ms ease;
@@ -48,7 +48,7 @@
 @media (max-width: 480px) {
   .avatar-upload {
     align-items: flex-start;
-    padding: 14px;
+    padding: 0;
     gap: 12px;
   }
 

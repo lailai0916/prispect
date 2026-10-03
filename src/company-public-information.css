@@ -72,14 +72,13 @@
   margin: 20px 0;
 }
 .public-info-facts > div {
-  padding: 16px 18px;
+  padding: 8px 16px;
   min-width: 0;
-  border: 1px solid var(--line-soft);
-  border-radius: 10px;
-  background: var(--canvas);
+  border-left: 1px solid var(--line-soft);
 }
 .public-info-facts > div:first-child {
-  padding-left: 18px;
+  padding-left: 0;
+  border-left: 0;
 }
 .public-info-facts dt {
   font-size: var(--text-meta);
@@ -155,15 +154,13 @@
   line-height: 1.8;
 }
 .public-info-workspace {
-  border: 1px solid var(--line-soft);
-  border-radius: 12px;
+  border-block: 1px solid var(--line-soft);
   overflow: hidden;
 }
 .public-info-workspace.is-expanded:has(.public-info-reader) {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
-  border: 1px solid var(--line-soft);
-  border-radius: 12px;
+  border-block: 1px solid var(--line-soft);
   overflow: hidden;
 }
 .public-info-list-pane,
@@ -195,12 +192,12 @@
   background: transparent;
   border: 0;
   border-radius: 0;
-  padding: 17px 18px;
+  padding: 14px 0;
   cursor: pointer;
   transition: background 140ms ease;
 }
 .is-expanded .public-info-row {
-  padding: 15px 16px;
+  padding: 14px 16px;
 }
 .public-info-row:hover {
   background: var(--surface-subtle);
@@ -350,7 +347,7 @@
   gap: 8px;
 }
 .public-info-reader-body {
-  padding: 23px 24px;
+  padding: 18px 20px;
   max-height: 620px;
   overflow: auto;
   overscroll-behavior: contain;
@@ -394,7 +391,7 @@
 .public-info-reader-content blockquote {
   color: var(--ink);
   font-size: var(--text-body);
-  line-height: 2;
+  line-height: 1.75;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -507,11 +504,13 @@
     gap: 10px;
   }
   .public-info-facts > div {
-    padding: 14px 12px;
+    padding: 8px 10px;
   }
   .public-info-facts > div:last-child {
     grid-column: 1 / -1;
-    padding: 14px 12px;
+    padding: 12px 0 0;
+    border-top: 1px solid var(--line-soft);
+    border-left: 0;
   }
   .public-info-facts dd {
     font-size: 21px;
@@ -532,7 +531,7 @@
   }
   .public-info-row,
   .is-expanded .public-info-row {
-    padding: 15px 14px;
+    padding: 14px 0;
     gap: 10px;
   }
   .public-info-row-icon {
@@ -583,10 +582,8 @@
   color: var(--ink);
 }
 .public-info-coverage {
-  padding: 16px 18px;
-  border: 1px solid var(--line-soft);
-  border-radius: 12px;
-  background: var(--canvas);
+  padding: 16px 0 0;
+  border-top: 1px solid var(--line-soft);
 }
 @media print {
   .public-info-workspace,

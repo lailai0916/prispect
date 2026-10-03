@@ -230,18 +230,14 @@
 }
 .company-review-details {
   margin-top: var(--card-gap);
-  padding: 0 var(--card-padding);
-  border: 1px solid var(--line);
-  border-radius: var(--card-radius);
-  background: var(--paper);
-  box-shadow: var(--shadow-card);
+  border-top: 1px solid var(--line);
 }
 .company-review-details > summary {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 64px;
-  padding: 18px 0;
+  min-height: 52px;
+  padding: 14px 0;
   cursor: pointer;
   list-style: none;
   font-size: var(--text-ui);
@@ -512,10 +508,10 @@
 }
 
 .company-review-details[open] {
-  padding-bottom: var(--card-padding);
+  padding-bottom: 8px;
 }
 .company-review-details[open] > summary {
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   border-bottom: 1px solid var(--line-soft);
 }
 .company-review-details > summary > svg,
