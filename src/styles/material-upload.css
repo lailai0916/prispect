@@ -1,5 +1,8 @@
 .material-drop-page {
   position: relative;
+  width: 100%;
+  max-width: var(--workspace-content-width);
+  margin-inline: auto;
   min-width: 0;
   min-height: 260px;
 }
@@ -14,7 +17,7 @@
   gap: 12px;
   padding: 24px;
   border: 2px dashed var(--accent);
-  border-radius: 12px;
+  border-radius: var(--card-radius);
   background: var(--paper);
   color: var(--ink);
   pointer-events: none;
@@ -26,7 +29,7 @@
 
 .material-page-drop-feedback span {
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-secondary);
 }
 
 .material-import-dialog[data-closed],
@@ -47,9 +50,9 @@
   width: 100%;
   min-height: 184px;
   margin: 16px 0;
-  padding: 24px;
-  border: 1px dashed var(--control-border);
-  border-radius: 8px;
+  padding: var(--card-padding);
+  border: 1px dashed var(--accent-border);
+  border-radius: var(--card-radius);
   background: var(--surface-subtle);
   color: var(--ink);
   transition:
@@ -68,13 +71,13 @@
 }
 
 .material-importer .upload-zone strong {
-  font-size: 15px;
+  font-size: var(--text-body);
   font-weight: 550;
 }
 
 .material-importer .upload-zone span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   text-align: center;
 }
 
@@ -110,7 +113,7 @@
   flex-wrap: wrap;
   padding: 10px 0 16px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 
 .material-upload-progress > span,
@@ -189,5 +192,199 @@
 @media (prefers-reduced-motion: reduce) {
   .material-importer .upload-zone {
     transition: none;
+  }
+}
+
+.materials-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--card-gap);
+  margin-bottom: var(--card-gap);
+}
+.materials-stat {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  padding: var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+}
+.materials-stat-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.materials-stat > div {
+  min-width: 0;
+}
+.materials-stat > div > span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-secondary);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.materials-stat strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 28px;
+  line-height: 1.2;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.material-drop-page .materials-toolbar {
+  gap: 12px;
+  margin-bottom: var(--card-gap);
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+}
+.material-drop-page .materials-toolbar .segmented-control {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.material-drop-page .materials-toolbar .search-field {
+  max-width: 420px;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+.material-drop-page .materials-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--card-gap);
+  border-top: 0;
+}
+.app-shell .material-drop-page .material-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  grid-template-rows: 1fr auto;
+  align-items: start;
+  gap: 18px 14px;
+  min-width: 0;
+  padding: var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+}
+.app-shell .material-drop-page .material-row:hover,
+.app-shell .material-drop-page .material-row:focus-within {
+  border-color: var(--accent-border);
+  background: var(--paper);
+}
+.app-shell .material-drop-page .material-row.material-located {
+  border-color: var(--accent);
+  background: var(--paper);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+.app-shell .material-drop-page .material-row-icon {
+  display: flex;
+  width: 44px;
+  min-width: 44px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.material-drop-page .material-row-content {
+  min-width: 0;
+}
+.material-drop-page .material-row-title {
+  gap: 8px;
+}
+.material-drop-page .material-row-title h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.material-drop-page .material-row-content > p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: var(--text-secondary);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.material-drop-page .material-facts {
+  gap: 6px 14px;
+  margin: 12px 0 0;
+  font-size: var(--text-meta);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.material-drop-page .material-facts code {
+  font-size: inherit;
+}
+.material-drop-page .material-row-actions {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+  width: 100%;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.material-drop-page .material-row-actions > .button {
+  margin-right: auto;
+}
+.material-drop-page .empty-state {
+  padding: 60px var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+}
+@media (max-width: 1040px) {
+  .material-drop-page .materials-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .materials-stat {
+    gap: 10px;
+  }
+  .materials-stat-icon {
+    width: 36px;
+    height: 36px;
+  }
+}
+@media (max-width: 640px) {
+  .materials-overview {
+    gap: 10px;
+  }
+  .materials-stat {
+    padding: 14px;
+  }
+  .materials-stat-icon {
+    display: none;
+  }
+  .materials-stat > div > span {
+    min-height: 42px;
+  }
+  .materials-stat strong {
+    font-size: 25px;
+  }
+  .material-drop-page .materials-toolbar {
+    gap: 10px;
+    padding: 12px;
+  }
+  .material-drop-page .materials-toolbar .segmented-control {
+    width: 100%;
+  }
+  .material-drop-page .materials-toolbar .search-field {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .app-shell .material-drop-page .material-row {
+    gap: 16px 12px;
   }
 }

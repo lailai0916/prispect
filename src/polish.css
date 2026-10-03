@@ -3,14 +3,6 @@
   --motion-fast: 140ms;
   --motion-medium: 220ms;
   --motion-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --action: #6355cf;
-  --action-hover: #5547bd;
-  --action-pressed: #493bab;
-}
-:root[data-theme='dark'] {
-  --action: #beb8f5;
-  --action-hover: #d2cdfc;
-  --action-pressed: #aaa2e9;
 }
 .app-shell :is(.button, .icon-button, .account-action, .select-trigger) {
   transition:
@@ -43,7 +35,7 @@ input[type='radio'] {
     background var(--motion-fast) ease;
 }
 .app-shell .sidebar-navigation a.active {
-  box-shadow: inset 2px 0 0 var(--action);
+  box-shadow: none;
 }
 :is(.dialog, .select-popup, .action-menu, .tooltip-popup) {
   transition-timing-function: var(--motion-ease);
@@ -71,7 +63,7 @@ input[type='radio'] {
   display: inline-flex;
   gap: 5px;
   align-items: center;
-  font-size: 10px;
+  font-size: var(--text-meta);
   color: var(--subtle);
 }
 .app-shell .start-key-hint + .start-submit {
@@ -94,7 +86,7 @@ kbd {
   color: var(--subtle);
   font-family: inherit;
   line-height: 1.5;
-  font-size: 10px;
+  font-size: var(--text-caption);
   font-weight: 450;
   white-space: nowrap;
 }
@@ -165,7 +157,7 @@ kbd {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   margin-bottom: 28px;
 }
 .skeleton {
@@ -289,13 +281,13 @@ kbd {
 }
 .list-toolbar-controls .select-trigger {
   width: 125px;
-  --select-min-height: 34px;
+  --select-min-height: var(--control-height);
 }
 .filter-count {
   display: inline-block;
   margin-left: 7px;
   color: var(--subtle);
-  font-size: 11px;
+  font-size: var(--text-meta);
   font-variant-numeric: tabular-nums;
   font-weight: 400;
 }
@@ -350,25 +342,25 @@ kbd {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--paper);
-  color: var(--muted);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 .app-shell .material-row-icon > span {
-  font-size: 8px;
+  font-size: var(--text-caption);
   letter-spacing: 0.08em;
   font-weight: 600;
 }
 .app-shell .material-row-title h2 {
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 550;
   line-height: 1.65;
 }
 .app-shell .company-review-state {
   padding: 3px 8px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--radius-small);
   background: var(--surface-subtle);
 }
 .app-shell .company-review-metrics dd,
@@ -408,7 +400,7 @@ kbd {
 }
 .caps-lock-note {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   font-weight: 400;
 }
 .account-password-meter i {
@@ -482,7 +474,7 @@ kbd {
   border-bottom: 0;
 }
 .command-dialog .dialog-header h2 {
-  font-size: 11px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   font-weight: 450;
 }
@@ -512,7 +504,7 @@ kbd {
   input:not([type='checkbox']):not([type='radio']):not([type='file']) {
   flex: 1;
   min-width: 0;
-  font-size: 15px;
+  font-size: var(--text-body);
   padding: 0;
   border: 0;
   background: transparent;
@@ -532,7 +524,7 @@ kbd {
 .command-group {
   padding: 13px 10px 7px;
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-weight: 500;
 }
 .command-option {
@@ -564,7 +556,7 @@ kbd {
   gap: 3px;
 }
 .command-option-text > strong {
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 450;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -572,7 +564,7 @@ kbd {
 }
 .command-option-text > small {
   color: var(--subtle);
-  font-size: 11px;
+  font-size: var(--text-meta);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -591,11 +583,11 @@ kbd {
 }
 .command-empty p {
   margin: 12px 0 5px;
-  font-size: 13px;
+  font-size: var(--text-body);
   color: var(--ink);
 }
 .command-empty span {
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .command-footer {
   display: flex;
@@ -606,7 +598,7 @@ kbd {
   border-top: 1px solid var(--line);
   color: var(--subtle);
   background: var(--surface-subtle);
-  font-size: 10px;
+  font-size: var(--text-meta);
 }
 .command-footer > span {
   display: flex;
@@ -617,7 +609,7 @@ kbd {
   margin: 0;
   padding: 8px 16px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
 }
 @media (max-width: 760px) {
   .start-key-hint {

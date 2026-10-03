@@ -1,5 +1,12 @@
 import { useEffect, useId, useState } from 'react';
-import { ArrowUpRight, ChevronDown } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ChartColumn,
+  ChartNoAxesCombined,
+  ChevronDown,
+  Coins,
+  Landmark,
+} from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import {
   COMPANY_MARKET_WARNINGS,
@@ -152,7 +159,10 @@ export function CompanyFinancialTrends({
     <section className="company-financial-history" aria-labelledby="company-history-heading">
       <div className="company-history-heading">
         <div>
-          <h2 id="company-history-heading">{t('历史财务走势', 'Financial history')}</h2>
+          <h2 id="company-history-heading">
+            <ChartNoAxesCombined size={20} aria-hidden="true" />
+            {t('历史财务走势', 'Financial history')}
+          </h2>
           <p>
             {t(
               '东方财富公开网页字段 · 与原件分开核对',
@@ -191,11 +201,11 @@ export function CompanyFinancialTrends({
           >
             {(
               [
-                ['cash', t('利润与经营现金', 'Profit & operating cash')],
-                ['income', t('收入与利润', 'Revenue & profit')],
-                ['debt', t('货币资金与负债', 'Funds & liabilities')],
+                ['cash', t('利润与经营现金', 'Profit & operating cash'), Coins],
+                ['income', t('收入与利润', 'Revenue & profit'), ChartColumn],
+                ['debt', t('货币资金与负债', 'Funds & liabilities'), Landmark],
               ] as const
-            ).map(([value, title], index, entries) => (
+            ).map(([value, title, Icon], index, entries) => (
               <button
                 key={value}
                 type="button"
@@ -223,6 +233,7 @@ export function CompanyFinancialTrends({
                   )?.focus();
                 }}
               >
+                <Icon size={16} aria-hidden="true" />
                 {title}
               </button>
             ))}

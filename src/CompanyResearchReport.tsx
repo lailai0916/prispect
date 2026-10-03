@@ -3,12 +3,18 @@ import { useEffect, useState } from 'react';
 import {
   ArrowRight,
   Check,
+  ChartNoAxesCombined,
   ChevronDown,
+  Coins,
   FileSearch,
   FlaskConical,
+  ListChecks,
   LoaderCircle,
   Minus,
+  NotebookText,
+  Percent,
   ScanLine,
+  Wallet,
 } from 'lucide-react';
 import type { CompanyResearchRun } from '../shared/contracts';
 import type { AssessmentJudgment, AssessmentText } from '../shared/company-assessment';
@@ -92,11 +98,11 @@ function CompanyResearchProgress({ run }: { run: CompanyResearchRun }) {
           <li key={stage.id} className={'research-process-stage research-stage-' + stage.status}>
             <span className="research-stage-mark" aria-hidden="true">
               {stage.status === 'running' ? (
-                <LoaderCircle size={12} className="spinner" />
+                <LoaderCircle size={16} className="spinner" />
               ) : stage.status === 'completed' ? (
-                <Check size={12} />
+                <Check size={16} />
               ) : (
-                <Minus size={12} />
+                <Minus size={16} />
               )}
             </span>
             <span>
@@ -136,11 +142,11 @@ function CompanyResearchProgress({ run }: { run: CompanyResearchRun }) {
                 <div>
                   <span className="research-stage-mark" aria-hidden="true">
                     {stage.status === 'running' ? (
-                      <LoaderCircle size={12} className="spinner" />
+                      <LoaderCircle size={16} className="spinner" />
                     ) : stage.status === 'completed' ? (
-                      <Check size={12} />
+                      <Check size={16} />
                     ) : (
-                      <Minus size={12} />
+                      <Minus size={16} />
                     )}
                   </span>
                   <strong>{t(...stage.label)}</strong>
@@ -245,119 +251,134 @@ export function CompanyResearchReport({
   return (
     <article className="company-research-report" data-testid="company-research-report">
       <section className="research-summary" aria-labelledby="research-summary-heading">
-        <div className={'research-summary-lead' + (assessment ? ' research-summary-rated' : '')}>
-          <div className="research-summary-copy">
-            <p className="research-summary-label">{t('分析摘要', 'Analysis summary')}</p>
-            <h2 id="research-summary-heading" className="research-summary-headline">
-              {judgmentText(brief.headline)}
-            </h2>
-            <p className="research-summary-judgment">{judgmentText(brief.summary)}</p>
-          </div>
-          {assessment && (
-            <button
-              type="button"
-              className={'research-grade research-grade-' + reportGrade.toLowerCase()}
-              title={gradeTitle}
-              aria-label={
-                provisionalRating
-                  ? t('查看暂定评级依据', 'View provisional grade evidence')
-                  : t('查看财务评级依据', 'View financial grade evidence')
-              }
-              onClick={() => openCompanyReportSection('company-full-report')}
-            >
-              <span>
-                {provisionalRating
-                  ? t('暂定评级', 'Provisional grade')
-                  : t(...productTerms.financialGrade)}
-              </span>
-              <strong>{reportGrade === 'NR' ? t('暂不评级', 'Not rated') : reportGrade}</strong>
-              {reportGrade !== 'NR' && (
-                <span className="research-grade-rating">{t(...gradeLabels[reportGrade])}</span>
-              )}
-              {provisionalRating && (
-                <span className="research-grade-coverage">
-                  {t(
-                    `已覆盖 ${provisionalRating.coveredDimensions}/${provisionalRating.totalDimensions} 维度`,
-                    `${provisionalRating.coveredDimensions}/${provisionalRating.totalDimensions} dimensions covered`
-                  )}
+        <div className="research-summary-card">
+          <div className={'research-summary-lead' + (assessment ? ' research-summary-rated' : '')}>
+            <div className="research-summary-copy">
+              <p className="research-summary-label">
+                <NotebookText size={17} aria-hidden="true" />
+                {t('分析摘要', 'Analysis summary')}
+              </p>
+              <h2 id="research-summary-heading" className="research-summary-headline">
+                {judgmentText(brief.headline)}
+              </h2>
+              <p className="research-summary-judgment">{judgmentText(brief.summary)}</p>
+              <div className="research-summary-scope">
+                <span>{t(...brief.scope)}</span>
+                <span>
+                  {brief.mode === 'model'
+                    ? t('资料分析', 'Source analysis')
+                    : brief.mode === 'rules'
+                      ? t('规则分析', 'Rule-based analysis')
+                      : t('判断待形成', 'Analysis pending')}
                 </span>
+                {basis(t('分析摘要', 'Analysis summary'), brief.summary)}
+              </div>
+              <div className="research-summary-actions">
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => openCompanyReportSection('company-full-report')}
+                >
+                  <FileSearch size={14} aria-hidden="true" />
+                  {t('依据与计算', 'Evidence and calculations')}
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() => openCompanyReportSection('company-evidence-lab')}
+                >
+                  <FlaskConical size={14} aria-hidden="true" />
+                  {t('检验解释', 'Test an explanation')}
+                </button>
+                <button
+                  type="button"
+                  className="button button-secondary"
+                  onClick={() =>
+                    openCompanyReportSection('company-evidence-lab', false, '.lab-node-hypothesis')
+                  }
+                >
+                  <ScanLine size={14} aria-hidden="true" />
+                  {t('挑战解释', 'Challenge an explanation')}
+                </button>
+                {basis(
+                  t('结论', 'Conclusion'),
+                  brief.headline,
+                  t('结论依据', 'Conclusion evidence')
+                )}
+              </div>
+              {brief.warnings.length > 0 && (
+                <div className="research-warnings" role={loading ? 'status' : undefined}>
+                  {brief.warnings.map((warning, index) => (
+                    <p key={index}>{t(...warning)}</p>
+                  ))}
+                </div>
               )}
-              {!provisionalRating && assessment.score !== null && (
-                <span className="research-grade-score">
-                  {assessment.score.toFixed(2)} <small>/ 100</small>
+              {assessment?.ratingConstraints && assessment.ratingConstraints.length > 0 && (
+                <details className="research-grade-limits">
+                  <summary>
+                    {t('评级受核心弱项限制', 'Grade capped by a weak core dimension')}
+                    <ChevronDown size={12} />
+                  </summary>
+                  <p className="research-grade-constraint">
+                    {assessment.ratingConstraints.map((item) => t(...item)).join(' ')}
+                  </p>
+                </details>
+              )}
+            </div>
+            {assessment && (
+              <button
+                type="button"
+                className={'research-grade research-grade-' + reportGrade.toLowerCase()}
+                title={gradeTitle}
+                aria-label={
+                  provisionalRating
+                    ? t('查看暂定评级依据', 'View provisional grade evidence')
+                    : t('查看财务评级依据', 'View financial grade evidence')
+                }
+                onClick={() => openCompanyReportSection('company-full-report')}
+              >
+                <span>
+                  <ChartNoAxesCombined size={17} aria-hidden="true" />
+                  {provisionalRating
+                    ? t('暂定评级', 'Provisional grade')
+                    : t(...productTerms.financialGrade)}
                 </span>
-              )}
-              <span className="research-grade-link">
-                {t('评级依据', 'Grade evidence')}
-                <ArrowRight size={12} aria-hidden="true" />
-              </span>
-            </button>
-          )}
-        </div>
-        <div className="research-summary-scope">
-          <span>{t(...brief.scope)}</span>
-          <span>
-            {brief.mode === 'model'
-              ? t('资料分析', 'Source analysis')
-              : brief.mode === 'rules'
-                ? t('规则分析', 'Rule-based analysis')
-                : t('判断待形成', 'Analysis pending')}
-          </span>
-          {basis(t('分析摘要', 'Analysis summary'), brief.summary)}
-        </div>
-        <div className="research-summary-actions">
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => openCompanyReportSection('company-full-report')}
-          >
-            <FileSearch size={14} aria-hidden="true" />
-            {t('依据与计算', 'Evidence and calculations')}
-          </button>
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() => openCompanyReportSection('company-evidence-lab')}
-          >
-            <FlaskConical size={14} aria-hidden="true" />
-            {t('检验解释', 'Test an explanation')}
-          </button>
-          <button
-            type="button"
-            className="button button-secondary"
-            onClick={() =>
-              openCompanyReportSection('company-evidence-lab', false, '.lab-node-hypothesis')
-            }
-          >
-            <ScanLine size={14} aria-hidden="true" />
-            {t('挑战解释', 'Challenge an explanation')}
-          </button>
-          {basis(t('结论', 'Conclusion'), brief.headline, t('结论依据', 'Conclusion evidence'))}
-        </div>
-        {brief.warnings.length > 0 && (
-          <div className="research-warnings" role={loading ? 'status' : undefined}>
-            {brief.warnings.map((warning, index) => (
-              <p key={index}>{t(...warning)}</p>
-            ))}
+                <strong>{reportGrade === 'NR' ? t('暂不评级', 'Not rated') : reportGrade}</strong>
+                {reportGrade !== 'NR' && (
+                  <span className="research-grade-rating">{t(...gradeLabels[reportGrade])}</span>
+                )}
+                {provisionalRating && (
+                  <span className="research-grade-coverage">
+                    {t(
+                      `已覆盖 ${provisionalRating.coveredDimensions}/${provisionalRating.totalDimensions} 维度`,
+                      `${provisionalRating.coveredDimensions}/${provisionalRating.totalDimensions} dimensions covered`
+                    )}
+                  </span>
+                )}
+                {!provisionalRating && assessment.score !== null && (
+                  <span className="research-grade-score">
+                    {assessment.score.toFixed(2)} <small>/ 100</small>
+                  </span>
+                )}
+                <span className="research-grade-link">
+                  {t('评级依据', 'Grade evidence')}
+                  <ArrowRight size={12} aria-hidden="true" />
+                </span>
+              </button>
+            )}
           </div>
-        )}
-        {assessment?.ratingConstraints && assessment.ratingConstraints.length > 0 && (
-          <details className="research-grade-limits">
-            <summary>
-              {t('评级受核心弱项限制', 'Grade capped by a weak core dimension')}
-              <ChevronDown size={12} />
-            </summary>
-            <p className="research-grade-constraint">
-              {assessment.ratingConstraints.map((item) => t(...item)).join(' ')}
-            </p>
-          </details>
-        )}
+        </div>
         <dl
           className="research-key-amounts"
           aria-label={t('所选年度合并金额', 'Selected-year consolidated amounts')}
         >
           <div>
-            <dt>{t('合并净利润', 'Consolidated net profit')}</dt>
+            <dt>
+              <span className="research-metric-icon">
+                <Coins size={19} aria-hidden="true" />
+              </span>
+              {t('合并净利润', 'Consolidated net profit')}
+            </dt>
             <dd>
               {money(amounts.profit, locale)}
               {amounts.profit !== null && <small>{t('元', 'CNY')}</small>}
@@ -369,7 +390,12 @@ export function CompanyResearchReport({
             )}
           </div>
           <div>
-            <dt>{t('经营现金净额', 'Operating cash flow')}</dt>
+            <dt>
+              <span className="research-metric-icon">
+                <Wallet size={19} aria-hidden="true" />
+              </span>
+              {t('经营现金净额', 'Operating cash flow')}
+            </dt>
             <dd>
               {money(amounts.cash, locale)}
               {amounts.cash !== null && <small>{t('元', 'CNY')}</small>}
@@ -381,7 +407,12 @@ export function CompanyResearchReport({
             )}
           </div>
           <div>
-            <dt>{t('现金利润比', 'Cash-to-profit ratio')}</dt>
+            <dt>
+              <span className="research-metric-icon">
+                <Percent size={19} aria-hidden="true" />
+              </span>
+              {t('现金利润比', 'Cash-to-profit ratio')}
+            </dt>
             <dd>{ratio}</dd>
             {amounts.row && (
               <CompanyContextEvidence
@@ -430,48 +461,53 @@ export function CompanyResearchReport({
             )}
           </p>
         )}
-        {coverage.origin !== 'unavailable' && (
-          <div className="research-report-coverage">
-            <span>{t('本份分析覆盖', 'Scope of this analysis')}</span>
-            <span>
-              {coverage.years} {t('个财务年度', 'financial years')}
-            </span>
-            {coverage.fields !== null && coverage.requiredFields !== null && (
+        <div className="research-process-card">
+          {coverage.origin !== 'unavailable' && (
+            <div className="research-report-coverage">
+              <span>{t('本份分析覆盖', 'Scope of this analysis')}</span>
               <span>
-                {coverage.fields}/{coverage.requiredFields} {t('个关键字段', 'key fields')}
+                {coverage.years} {t('个财务年度', 'financial years')}
               </span>
-            )}
-            {coverage.news > 0 && (
-              <span>
-                {t(
-                  `新闻 ${coverage.news} · 正文节选 ${coverage.mediaBodies ?? '—'}`,
-                  `News ${coverage.news} · body excerpts ${coverage.mediaBodies ?? '—'}`
-                )}
-              </span>
-            )}
-            {coverage.discussions !== null && coverage.discussions > 0 && (
-              <span>
-                {t(
-                  `讨论 ${coverage.discussions} · 摘录 ${coverage.discussionBodies ?? '—'}`,
-                  `Discussions ${coverage.discussions} · excerpts ${coverage.discussionBodies ?? '—'}`
-                )}
-              </span>
-            )}
-            {coverage.peers > 0 && (
-              <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
-            )}
-            <a className="text-link" href={companyPath(run.id, 'sources', 'coverage')}>
-              {t('数据覆盖', 'Data coverage')}
-              <ArrowRight size={12} />
-            </a>
-          </div>
-        )}
-        <CompanyResearchProgress run={run} />
+              {coverage.fields !== null && coverage.requiredFields !== null && (
+                <span>
+                  {coverage.fields}/{coverage.requiredFields} {t('个关键字段', 'key fields')}
+                </span>
+              )}
+              {coverage.news > 0 && (
+                <span>
+                  {t(
+                    `新闻 ${coverage.news} · 正文节选 ${coverage.mediaBodies ?? '—'}`,
+                    `News ${coverage.news} · body excerpts ${coverage.mediaBodies ?? '—'}`
+                  )}
+                </span>
+              )}
+              {coverage.discussions !== null && coverage.discussions > 0 && (
+                <span>
+                  {t(
+                    `讨论 ${coverage.discussions} · 摘录 ${coverage.discussionBodies ?? '—'}`,
+                    `Discussions ${coverage.discussions} · excerpts ${coverage.discussionBodies ?? '—'}`
+                  )}
+                </span>
+              )}
+              {coverage.peers > 0 && (
+                <span>{t(`有效同行 ${coverage.peers}`, `Valid peers ${coverage.peers}`)}</span>
+              )}
+              <a className="text-link" href={companyPath(run.id, 'sources', 'coverage')}>
+                {t('数据覆盖', 'Data coverage')}
+                <ArrowRight size={12} />
+              </a>
+            </div>
+          )}
+          <CompanyResearchProgress run={run} />
+        </div>
       </section>
       {brief.priorities.length > 0 && (
         <section className="research-report-section" aria-labelledby="research-findings-heading">
           <div className="research-section-heading">
-            <h2 id="research-findings-heading">{t('重点发现', 'Key findings')}</h2>
+            <h2 id="research-findings-heading">
+              <FileSearch size={20} aria-hidden="true" />
+              {t('重点发现', 'Key findings')}
+            </h2>
             <button
               type="button"
               className="text-link"
@@ -496,7 +532,10 @@ export function CompanyResearchReport({
       )}
       <section className="research-report-section" aria-labelledby="research-next-heading">
         <div className="research-section-heading">
-          <h2 id="research-next-heading">{t('下一步核查', 'Next checks')}</h2>
+          <h2 id="research-next-heading">
+            <ListChecks size={20} aria-hidden="true" />
+            {t('下一步核查', 'Next checks')}
+          </h2>
           <button
             type="button"
             className="text-link"

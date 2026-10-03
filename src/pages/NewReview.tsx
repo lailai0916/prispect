@@ -13,6 +13,7 @@ import {
   FileText,
   LoaderCircle,
   Plus,
+  Rows3,
   ShieldCheck,
   Trash2,
   Upload,
@@ -479,7 +480,46 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
           </button>
         }
       />
-      <div className="list-toolbar">
+      <div className="materials-overview" aria-label={t('材料概览', 'Material overview')}>
+        <div className="materials-stat">
+          <span className="materials-stat-icon" aria-hidden="true">
+            <FileText size={19} />
+          </span>
+          <div>
+            <span>{t('材料', 'Materials')}</span>
+            <strong>{workspace!.materials.length}</strong>
+          </div>
+        </div>
+        <div className="materials-stat">
+          <span className="materials-stat-icon" aria-hidden="true">
+            <ShieldCheck size={19} />
+          </span>
+          <div>
+            <span>{t('公开年报', 'Public reports')}</span>
+            <strong>
+              {
+                workspace!.materials.filter((material) => material.origin === 'public-report')
+                  .length
+              }
+            </strong>
+          </div>
+        </div>
+        <div className="materials-stat">
+          <span className="materials-stat-icon" aria-hidden="true">
+            <Rows3 size={19} />
+          </span>
+          <div>
+            <span>{t('观测指标', 'Observations')}</span>
+            <strong>
+              {workspace!.materials.reduce(
+                (total, material) => total + material.observations.length,
+                0
+              )}
+            </strong>
+          </div>
+        </div>
+      </div>
+      <div className="list-toolbar materials-toolbar">
         <div
           className="segmented-control"
           role="group"

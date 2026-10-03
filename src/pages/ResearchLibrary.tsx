@@ -1,6 +1,6 @@
 import { productTerms } from '../../shared/product-terms';
 import { useMemo, useState } from 'react';
-import { ArrowRight, Building2, Plus, RefreshCw } from 'lucide-react';
+import { ArrowRight, Building2, FileText, LoaderCircle, Plus, RefreshCw } from 'lucide-react';
 import type { CompanyRecordSummary } from '../../shared/company-workspace';
 import { companyPath } from '../../shared/company-workspace';
 import { PageHeading, Tag } from '../components';
@@ -32,6 +32,8 @@ export function ResearchLibraryPage() {
   const { records, loading, refreshing, error, reload } = useCompanyRecords();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState('all');
+  const savedCount = records.filter((record) => Boolean(record.result)).length;
+  const activeCount = records.filter((record) => record.deletionBlocked).length;
   const visible = useMemo(() => {
     const text = query.trim().toLocaleLowerCase();
     return [...records]
@@ -65,6 +67,37 @@ export function ResearchLibraryPage() {
           </button>
         }
       />
+      {!loading && !error && (
+        <div className="research-library-overview" aria-label={t('研究概览', 'Research overview')}>
+          <div className="research-library-stat">
+            <span className="research-library-stat-icon" aria-hidden="true">
+              <Building2 size={19} />
+            </span>
+            <div>
+              <span>{t('研究记录', 'Research records')}</span>
+              <strong>{records.length}</strong>
+            </div>
+          </div>
+          <div className="research-library-stat">
+            <span className="research-library-stat-icon" aria-hidden="true">
+              <FileText size={19} />
+            </span>
+            <div>
+              <span>{t('已保存分析', 'Saved analyses')}</span>
+              <strong>{savedCount}</strong>
+            </div>
+          </div>
+          <div className="research-library-stat">
+            <span className="research-library-stat-icon" aria-hidden="true">
+              <LoaderCircle size={19} />
+            </span>
+            <div>
+              <span>{t('处理中', 'Processing')}</span>
+              <strong>{activeCount}</strong>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="research-library-toolbar">
         <SearchField
           label={t('搜索研究记录', 'Search research records')}

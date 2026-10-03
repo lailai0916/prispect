@@ -15,9 +15,10 @@
 .decision-list {
   margin-top: 28px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--card-radius);
   overflow: hidden;
   background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .decision-list-row {
   border-bottom: 1px solid var(--line-soft);
@@ -41,12 +42,12 @@
   overflow-wrap: anywhere;
 }
 .decision-list-row strong {
-  font-size: 15px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .decision-list-row span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   margin-top: 8px;
 }
 .decision-list > .section-intro {
@@ -56,10 +57,11 @@
 .decision-input-form {
   max-width: 760px;
   margin-inline: auto;
-  padding: 28px;
+  padding: var(--card-padding);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--card-radius);
   background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .decision-input-form > .decision-save-fields > .form-field {
   margin: 22px 0;
@@ -89,7 +91,7 @@
 }
 .decision-input-form > .decision-save-fields > .field-note {
   margin: 18px 0 0;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
 }
 .decision-form-grid {
@@ -107,7 +109,7 @@
 .decision-explanations h3,
 .decision-evidence h3,
 .decision-known-conflicts h3 {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
 }
 .decision-input-section > .field-note {
@@ -117,7 +119,7 @@
   margin-top: 24px;
 }
 .decision-input-section h4 {
-  font-size: 13px;
+  font-size: 18px;
   font-weight: 550;
 }
 .decision-flow-list {
@@ -152,7 +154,7 @@
 .decision-linked-tools > summary,
 .decision-boundaries > summary {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
   padding: 6px 0;
 }
 .decision-financial-binding > .form-field,
@@ -182,7 +184,7 @@
 .decision-detail-heading p {
   margin-top: 10px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .decision-local-nav {
   display: flex;
@@ -201,7 +203,7 @@
   border-bottom: 2px solid transparent;
   background: none;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-ui);
   white-space: nowrap;
   min-height: 44px;
 }
@@ -216,7 +218,7 @@
 }
 .decision-local-nav > button > span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .decision-history-notice,
 .decision-restored-note {
@@ -229,7 +231,7 @@
   background: var(--surface);
   border-radius: 8px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
 }
 .decision-version-bar {
@@ -238,7 +240,7 @@
   flex-wrap: wrap;
   gap: 14px;
   margin-bottom: 22px;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .decision-version-bar label {
@@ -249,7 +251,7 @@
 }
 .decision-version-bar .select-trigger {
   max-width: 440px;
-  font-size: var(--select-font-size, 12px);
+  font-size: var(--text-ui);
 }
 .decision-revision-list {
   border: 1px solid var(--line);
@@ -267,7 +269,7 @@
   text-align: left;
   border: 0;
   border-bottom: 1px solid var(--line-soft);
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 .decision-revision-list > button:last-child {
   border-bottom: 0;
@@ -279,7 +281,7 @@
 .decision-revision-list time,
 .decision-revision-list svg {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .decision-next {
   display: grid;
@@ -304,8 +306,8 @@
   margin: 12px 0;
 }
 .decision-next p {
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: var(--text-body);
+  line-height: 1.7;
   color: var(--muted);
   overflow-wrap: anywhere;
 }
@@ -336,14 +338,14 @@
 }
 .decision-options > div > span {
   display: block;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .decision-options dl {
   margin-top: 18px;
 }
 .decision-options dt {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   margin: 16px 0 8px;
 }
@@ -356,18 +358,18 @@
   overflow-wrap: anywhere;
 }
 .decision-options small {
-  font-size: 10px;
+  font-size: var(--text-meta);
   letter-spacing: 0;
   color: var(--muted);
 }
 .decision-options .decision-amount-unknown {
-  font-size: 16px;
+  font-size: var(--text-body);
   letter-spacing: 0;
   color: var(--muted);
 }
 .decision-options p {
   margin-top: 16px;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
   color: var(--muted);
 }
@@ -379,7 +381,7 @@
 .decision-record-calculation > summary,
 .decision-event-table > summary {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
   padding: 12px 0;
 }
 .decision-option-select {
@@ -388,7 +390,7 @@
   background: var(--paper);
   color: var(--muted);
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--text-ui);
   min-height: 36px;
 }
 .decision-option-select[aria-pressed='true'] {
@@ -405,12 +407,12 @@
   border-top: 1px solid var(--line-soft);
 }
 .decision-period-ends span {
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
 }
 .decision-period-ends strong {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-body);
   font-variant-numeric: tabular-nums;
   font-weight: 500;
   margin-top: 6px;
@@ -429,12 +431,12 @@
 .decision-cash-plot {
   display: block;
   width: 100%;
-  min-width: 580px;
+  min-width: 720px;
   max-height: 300px;
 }
 .decision-cash-plot text {
   fill: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-caption);
   font-family: inherit;
 }
 .decision-cash-plot .cash-zero-line {
@@ -481,7 +483,7 @@
 }
 .decision-cash-threshold p,
 .decision-order-warning p {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   line-height: 1.8;
   overflow-wrap: anywhere;
@@ -491,14 +493,14 @@
 }
 .decision-order-warning strong {
   display: block;
-  font-size: 13px;
+  font-size: var(--text-ui);
   margin-bottom: 8px;
   font-weight: 550;
 }
 .decision-event-table table {
   width: 100%;
-  min-width: 650px;
-  font-size: 12px;
+  min-width: 740px;
+  font-size: var(--text-body);
 }
 .decision-gate {
   border-bottom: 1px solid var(--line);
@@ -515,7 +517,7 @@
 }
 .decision-gate > summary > strong {
   flex: 1;
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .decision-gate > summary > svg {
@@ -527,8 +529,8 @@
 }
 .decision-gate > p {
   margin-bottom: 16px;
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: var(--text-body);
+  line-height: 1.7;
   color: var(--muted);
 }
 .decision-gate > .text-link {
@@ -545,7 +547,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 0;
-  font-size: 12px;
+  font-size: var(--text-body);
   color: var(--muted);
 }
 .decision-dependencies li > span:first-child {
@@ -568,7 +570,7 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 12px;
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .decision-explanation-status > span:first-child {
   color: var(--muted);
@@ -580,20 +582,20 @@
 }
 .decision-explanation-evidence > p,
 .decision-explanation-next {
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: var(--text-body);
+  line-height: 1.7;
   overflow-wrap: anywhere;
   margin: 12px 0;
 }
 .decision-explanation-evidence > .field-note {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .decision-explanation-next {
   color: var(--muted);
 }
 .decision-explanations h4 {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 550;
 }
 .decision-explanations ol {
@@ -607,8 +609,8 @@
 .decision-explanations li {
   padding-left: 4px;
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.8;
+  font-size: var(--text-body);
+  line-height: 1.7;
 }
 .decision-evidence > .field-note {
   margin: 12px 0 22px;
@@ -640,7 +642,7 @@
 }
 .decision-evidence-card strong {
   flex: 1;
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .decision-evidence-card svg {
@@ -650,7 +652,7 @@
 .decision-evidence-card > span {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
   margin-top: 12px;
 }
 .decision-evidence-card > p {
@@ -659,7 +661,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.75;
   margin: 14px 0 18px;
 }
@@ -677,13 +679,13 @@
 }
 .decision-empty-evidence h4 {
   color: var(--ink);
-  font-size: 15px;
+  font-size: 18px;
   margin: 16px 0 8px;
 }
 .decision-empty-evidence p {
   max-width: 480px;
   margin-inline: auto;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.8;
 }
 .decision-evidence-record {
@@ -698,13 +700,13 @@
 }
 .decision-evidence-record > p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.8;
   margin-top: 14px;
 }
 .decision-evidence-record blockquote {
-  font-size: 14px;
-  line-height: 1.9;
+  font-size: var(--text-body);
+  line-height: 1.7;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   margin: 24px 0;
@@ -715,7 +717,7 @@
   color: var(--muted);
 }
 .decision-evidence-values {
-  font-size: 12px;
+  font-size: var(--text-body);
   color: var(--muted);
   gap: 14px;
   padding-bottom: 20px;
@@ -739,7 +741,7 @@
 .decision-boundaries p,
 .decision-scope-history p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.8;
   margin-top: 10px;
 }
@@ -752,7 +754,7 @@
 }
 .decision-evidence-binding summary {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .decision-evidence-binding > label {
   margin-top: 16px;
@@ -779,29 +781,29 @@
   margin-top: 16px;
 }
 .decision-known-conflicts strong {
-  font-size: 12px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .decision-known-conflicts span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
   margin-left: 12px;
 }
 .decision-known-conflicts p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.8;
   margin-top: 10px;
 }
 .decision-scope-history {
   padding-top: 24px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .decision-specific-requests {
   margin: 18px 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-body);
 }
 .decision-specific-requests > div {
   margin-top: 12px;
@@ -816,7 +818,7 @@
 .decision-chart-hint {
   display: none;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 @media (max-width: 980px) {
   .decision-detail-heading {
@@ -893,7 +895,7 @@
   .decision-evidence-form input,
   .decision-evidence-form .select-trigger,
   .decision-evidence-form textarea {
-    font-size: 16px;
+    font-size: var(--text-body);
     min-height: 44px;
   }
   .decision-input-form .purpose-option input {
@@ -929,7 +931,7 @@
 .decision-description {
   margin-bottom: 20px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-body);
 }
 .decision-description > summary {
   padding: 8px 0;

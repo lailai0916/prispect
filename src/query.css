@@ -28,7 +28,7 @@
   top: 21px;
   left: 17px;
   z-index: 1;
-  color: var(--muted);
+  color: var(--accent);
   pointer-events: none;
 }
 .query-create-page .start-input {
@@ -37,13 +37,13 @@
   align-items: center;
   gap: 0 8px;
   padding: 8px;
-  border-radius: 8px;
+  border-radius: var(--card-radius);
 }
 .query-create-page .start-input textarea {
   height: 42px;
   min-height: 42px;
   padding: 10px 8px 10px 35px;
-  font-size: 15px;
+  font-size: var(--text-body);
   line-height: 22px;
   white-space: pre;
   overflow: auto;
@@ -66,8 +66,8 @@
   height: auto;
   margin: 0;
   padding: 9px 12px;
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius);
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 .query-create-page .start-input-error {
@@ -81,7 +81,7 @@
   gap: 8px 16px;
   margin-top: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .query-create-options {
   display: inline-flex;
@@ -115,25 +115,25 @@
   align-items: center;
   gap: 7px;
   margin: 12px 0 0;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
 }
 .query-create-page .research-recent {
   width: 100%;
   margin: 44px 0 0;
-  padding-top: 22px;
+  padding: var(--card-padding);
 }
 .query-create-page .research-section-heading {
   margin-bottom: 8px;
 }
 .query-create-page .research-section-heading h2 {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 .query-create-page .research-record-row {
   min-height: 58px;
-  padding: 10px 0;
+  padding: 12px 0;
   gap: 12px;
 }
 .query-create-page .research-record-row:last-child {
@@ -156,7 +156,7 @@
     font-size: 24px;
   }
   .query-create-page .start-input textarea {
-    font-size: 16px;
+    font-size: var(--text-body);
   }
   .query-create-page .start-submit {
     min-height: 44px;

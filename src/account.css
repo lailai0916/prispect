@@ -2,7 +2,7 @@
 .account-page,
 .account-modal,
 .account-modal-backdrop {
-  --account-bg: var(--surface, #fff);
+  --account-bg: var(--paper, #fff);
   --account-muted: var(--muted, #68717d);
   --account-ink: var(--ink, #161a20);
   --account-line: var(--line, #e5e8ed);
@@ -16,14 +16,19 @@
 }
 .account-auth-card {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
+  padding: var(--card-padding);
+  border: 1px solid var(--account-line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .account-back-link {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   color: var(--account-muted);
-  font-size: 13px;
+  font-size: var(--text-ui);
   margin-bottom: 32px;
   text-decoration: none;
 }
@@ -31,7 +36,7 @@
   width: 48px;
   height: 48px;
   border: 1px solid var(--account-line);
-  background: var(--surface-subtle, #f5f7fa);
+  background: var(--accent-soft);
   border-radius: 14px;
   display: grid;
   place-items: center;
@@ -47,7 +52,7 @@
 }
 .account-muted {
   color: var(--account-muted);
-  font-size: 14px;
+  font-size: var(--text-body);
   line-height: 1.65;
   margin: 0 0 22px;
 }
@@ -59,7 +64,7 @@
 .account-field {
   display: grid;
   gap: 8px;
-  font-size: 13px;
+  font-size: var(--text-ui);
   font-weight: 550;
   min-width: 0;
 }
@@ -68,7 +73,7 @@
 .account-form .select-trigger,
 .account-field input {
   font: inherit;
-  font-size: var(--select-font-size, 14px);
+  font-size: max(var(--text-body), var(--select-font-size, var(--text-ui)));
   min-height: 44px;
   width: 100%;
   padding: 11px 12px;
@@ -108,7 +113,8 @@
 .account-password-input button {
   position: absolute;
   right: 3px;
-  top: 3px;
+  top: 50%;
+  transform: translateY(-50%);
   border: 0;
   background: transparent;
   color: var(--account-muted);
@@ -130,7 +136,7 @@
   border-radius: var(--radius, 6px);
   padding: 10px 17px;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 550;
   cursor: pointer;
   text-decoration: none;
@@ -170,7 +176,7 @@
 }
 .account-link-button {
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-ui);
   border: 0;
   background: none;
   min-height: 38px;
@@ -182,7 +188,7 @@
   text-align: center;
   margin: 24px 0 18px;
   color: var(--account-muted);
-  font-size: 12px;
+  font-size: var(--text-meta);
 }
 .account-divider:before {
   content: '';
@@ -200,7 +206,7 @@
 }
 .account-auth-switch {
   text-align: center;
-  font-size: 14px;
+  font-size: var(--text-ui);
   color: var(--account-muted);
   margin: 24px 0;
 }
@@ -210,7 +216,7 @@
   text-decoration: none;
 }
 .account-auth-fineprint {
-  font-size: 12px;
+  font-size: var(--text-meta);
   color: var(--account-muted);
   line-height: 1.7;
   text-align: center;
@@ -218,7 +224,7 @@
 .account-password-meter {
   font-weight: 400;
   color: var(--account-muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
   display: grid;
   gap: 7px;
 }
@@ -244,7 +250,7 @@
 }
 .account-error {
   color: var(--red, #b94445);
-  font-size: 13px;
+  font-size: var(--text-secondary);
   line-height: 1.5;
 }
 .account-notice {
@@ -256,7 +262,7 @@
   border: 1px solid var(--account-line);
   border-radius: 10px;
   color: var(--account-muted);
-  font-size: 13px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
 }
 .account-notice svg {
@@ -273,47 +279,61 @@
 }
 .account-tabs {
   display: flex;
-  gap: 6px;
-  border-bottom: 1px solid var(--account-line);
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px;
+  border: 1px solid var(--account-line);
+  border-radius: 12px;
+  background: var(--paper);
   margin-bottom: var(--workspace-section-gap);
   overflow-x: auto;
 }
 .account-tab {
   border: 0;
-  border-bottom: 2px solid transparent;
-  padding: 13px 18px;
+  border-radius: var(--radius);
+  padding: 9px 14px;
   background: none;
   color: var(--account-muted);
   display: flex;
   gap: 8px;
   align-items: center;
   font: inherit;
-  font-size: 14px;
+  font-size: var(--text-ui);
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease;
+}
+.account-tab:hover {
+  background: var(--hover);
+  color: var(--account-ink);
 }
 .account-tab[aria-selected='true'] {
-  color: var(--account-ink);
-  border-bottom-color: var(--accent, #2764d5);
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 550;
 }
 .account-section {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  gap: 36px;
-  padding: 28px 0;
-  border-bottom: 1px solid var(--account-line);
-}
-.account-section:first-child {
-  padding-top: 0;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 28px;
+  padding: var(--card-padding);
+  margin-bottom: var(--card-gap);
+  border: 1px solid var(--account-line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .account-section-heading h2 {
-  font-size: 16px;
+  font-size: var(--text-body);
   margin: 0 0 9px;
   font-weight: 600;
   line-height: 1.4;
 }
 .account-section-heading p {
-  font-size: 13px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
   color: var(--account-muted);
   margin: 0;
@@ -351,7 +371,7 @@
   gap: 9px;
 }
 .account-avatar-controls p {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--account-muted);
   margin: 0;
 }
@@ -364,7 +384,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   border: 1px solid var(--account-line);
   border-radius: 20px;
   padding: 4px 8px;
@@ -386,12 +406,12 @@
   margin-bottom: 18px;
 }
 .account-binding-row strong {
-  font-size: 14px;
+  font-size: var(--text-body);
   font-weight: 550;
   overflow-wrap: anywhere;
 }
 .account-binding-row p {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--account-muted);
   margin: 5px 0 0;
 }
@@ -408,7 +428,7 @@
   gap: 12px;
   border-top: 1px solid var(--account-line);
   padding: 15px 0;
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 .account-row-grow {
   min-width: 0;
@@ -422,7 +442,7 @@
 .account-row-grow small {
   display: block;
   color: var(--account-muted);
-  font-size: 12px;
+  font-size: var(--text-meta);
   line-height: 1.6;
   margin-top: 4px;
   overflow-wrap: anywhere;
@@ -434,7 +454,7 @@
 .account-enroll {
   padding: 20px;
   border: 1px solid var(--account-line);
-  border-radius: 12px;
+  border-radius: var(--card-radius);
   margin: 20px 0;
   display: grid;
   gap: 18px;
@@ -451,7 +471,7 @@
   flex: none;
 }
 .account-qr p {
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.7;
   color: var(--account-muted);
   margin: 0;
@@ -463,7 +483,7 @@
   margin: 16px 0;
 }
 .account-codes code {
-  font-size: 13px;
+  font-size: var(--text-ui);
   text-align: center;
   padding: 10px;
   background: var(--surface-subtle, #f6f7f9);
@@ -474,12 +494,11 @@
 .account-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgb(0 0 0 / 0.38);
+  background: var(--scrim);
   z-index: 150;
   display: grid;
   place-items: center;
   padding: 20px;
-  backdrop-filter: blur(4px);
 }
 .account-modal {
   position: fixed;
@@ -493,10 +512,10 @@
   overflow: auto;
   background: var(--account-bg);
   border: 1px solid var(--account-line);
-  border-radius: 16px;
+  border-radius: var(--card-radius);
   padding: 28px;
   color: var(--account-ink);
-  box-shadow: 0 20px 80px rgb(0 0 0 / 0.15);
+  box-shadow: 0 20px 60px var(--shadow-dialog);
 }
 .account-modal h2 {
   font-size: 22px;
@@ -506,7 +525,7 @@
 .account-empty {
   padding: 18px 0;
   color: var(--account-muted);
-  font-size: 13px;
+  font-size: var(--text-secondary);
 }
 .account-file-input {
   position: absolute;
@@ -519,14 +538,14 @@
   .account-section {
     grid-template-columns: 1fr;
     gap: 20px;
-    padding: 26px 0;
+    padding: var(--card-padding);
   }
   .account-tabs {
     margin-bottom: 26px;
   }
   .account-tab {
-    padding: 12px 11px;
-    font-size: 13px;
+    padding: 9px 11px;
+    font-size: var(--text-ui);
   }
   .account-field-row {
     grid-template-columns: 1fr;
@@ -568,12 +587,12 @@
 }
 .account-device-details {
   margin-top: 8px;
-  font-size: 12px;
+  font-size: var(--text-meta);
   color: var(--muted);
 }
 .account-device-details code {
   display: block;
   overflow-wrap: anywhere;
   white-space: normal;
-  font-size: 11px;
+  font-size: var(--text-meta);
 }

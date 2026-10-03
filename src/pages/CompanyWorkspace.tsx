@@ -504,13 +504,13 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               </button>
             </p>
           )}
-          <CompanyBrief run={run} />
           <CompanyResearchReport
             key={'report-' + run.id}
             run={run}
             onRefresh={(focus) => void refreshAssessment(focus)}
             refreshing={assessmentUpdating}
           />
+          <CompanyBrief run={run} />
           <details
             id="company-evidence-lab"
             className="company-review-details company-explanation-trial"

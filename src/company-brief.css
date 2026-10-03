@@ -2,9 +2,12 @@
   --brief-pressure: #8a6418;
   --brief-quote-up: #b42335;
   --brief-quote-down: #23705a;
-  margin: 0 0 30px;
-  padding-bottom: 22px;
-  border-bottom: 1px solid var(--line);
+  margin: var(--card-gap) 0;
+  padding: var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
   min-width: 0;
 }
 [data-theme='dark'] .company-brief {
@@ -24,10 +27,10 @@
 }
 .company-brief-heading h2 {
   margin: 0;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 550;
   line-height: 1.7;
-  color: var(--muted);
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 .company-brief-identifiers {
@@ -37,7 +40,7 @@
   align-items: center;
   margin-top: 5px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
   line-height: 1.7;
 }
 .company-brief-identifiers > span + span::before {
@@ -56,6 +59,9 @@
   gap: 9px 22px;
   align-items: center;
   margin: 0 0 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: var(--canvas);
   font-variant-numeric: tabular-nums;
 }
 .company-brief-quote-price {
@@ -66,18 +72,18 @@
 .company-brief-quote-price > span:first-child,
 .company-brief-quote-price small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .company-brief-quote-price strong {
   color: var(--ink);
-  font-size: 20px;
+  font-size: 24px;
   font-weight: 550;
   letter-spacing: -0.025em;
 }
 .company-brief-quote-change {
   margin-left: 3px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .company-brief-quote-change.is-up {
   color: var(--brief-quote-up);
@@ -90,7 +96,7 @@
   flex-wrap: wrap;
   gap: 8px 16px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .company-brief-quote-range b {
   color: var(--ink);
@@ -102,7 +108,7 @@
   align-items: center;
   gap: 5px;
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-meta);
   line-height: 1.8;
   margin-left: auto;
 }
@@ -116,7 +122,7 @@
   align-items: center;
   gap: 8px;
   padding: 4px 0;
-  font-size: 12px;
+  font-size: var(--text-ui);
   color: var(--ink);
   cursor: pointer;
   list-style: none;
@@ -138,7 +144,7 @@
   color: var(--subtle);
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 11px;
+  font-size: var(--text-meta);
   min-width: 0;
 }
 .company-brief-facts {
@@ -154,12 +160,12 @@
 }
 .company-brief-fact dt {
   margin-bottom: 5px;
-  font-size: 11px;
+  font-size: var(--text-secondary);
   color: var(--subtle);
 }
 .company-brief-fact dd {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.8;
   color: var(--ink);
   overflow-wrap: anywhere;
@@ -172,12 +178,12 @@
   grid-template-columns: 70px minmax(0, 1fr);
   gap: 14px;
   padding: 14px 0 4px;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.9;
 }
 .company-brief-business > span {
   color: var(--subtle);
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .company-brief-business p {
   margin: 0;
@@ -186,6 +192,8 @@
 }
 .company-brief-footer {
   padding-top: 14px;
+  margin-top: 14px;
+  border-top: 1px solid var(--line-soft);
 }
 .company-brief-source-chips,
 .company-brief-footer-bottom,
@@ -203,7 +211,7 @@
   align-items: center;
   gap: 5px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-meta);
   line-height: 1.8;
 }
 .company-brief-source i {
@@ -227,7 +235,7 @@
   align-items: center;
   gap: 4px;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: var(--text-meta);
   color: var(--muted);
   line-height: 1.8;
 }
@@ -238,7 +246,7 @@
 }
 .company-brief-timestamp {
   gap: 5px;
-  font-size: 10px;
+  font-size: var(--text-meta);
   line-height: 1.8;
   color: var(--subtle);
 }
@@ -249,7 +257,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
+  font-size: var(--text-ui);
   color: var(--accent);
   text-decoration: none;
 }
@@ -312,12 +320,14 @@
   .company-brief {
     --brief-quote-up: var(--ink);
     --brief-quote-down: var(--ink);
+    background: transparent;
+    box-shadow: none;
   }
 }
 
 .company-brief-coverage-heading {
   margin: 18px 0 8px;
-  font-size: 11px;
+  font-size: var(--text-secondary);
   font-weight: 500;
   color: var(--muted);
 }

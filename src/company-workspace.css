@@ -26,7 +26,7 @@
   gap: 3px;
   padding: 9px 42px 9px 10px;
   border-radius: 6px;
-  font-size: 12px;
+  font-size: var(--text-ui);
   color: var(--muted);
 }
 .sidebar-company > span {
@@ -36,7 +36,7 @@
 }
 .sidebar-company small {
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-meta);
   font-variant-numeric: tabular-nums;
 }
 .sidebar-company-delete.icon-button {
@@ -86,7 +86,7 @@
   gap: 6px;
   padding: 8px 10px;
   color: var(--subtle);
-  font-size: 11px;
+  font-size: var(--text-secondary);
   line-height: 1.6;
 }
 .workspace-sidebar > .sidebar-brand,
@@ -121,7 +121,7 @@
 .company-query-description {
   margin: 0 0 28px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.8;
   text-align: center;
 }
@@ -153,7 +153,7 @@
   background: transparent;
   text-align: left;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: var(--text-ui);
   color: var(--ink);
 }
 .company-completions > button:hover,
@@ -166,7 +166,7 @@
 .company-completions small,
 .company-completions-state {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .company-completions-state {
   margin: 0;
@@ -208,8 +208,11 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  padding-bottom: 20px;
-  border-bottom: 1px solid var(--line-soft);
+  padding: var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .context-company-heading h2 {
   margin: 0 0 5px;
@@ -220,7 +223,7 @@
 .context-company-heading p {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .context-heading-actions,
 .context-disclosure-actions {
@@ -231,22 +234,22 @@
 }
 .context-segmented {
   display: inline-flex;
-  gap: 2px;
-  padding: 3px;
+  gap: 4px;
+  padding: 5px;
   border: 1px solid var(--line-soft);
-  border-radius: 6px;
-  background: var(--surface);
+  border-radius: 10px;
+  background: var(--canvas);
 }
 .context-segmented button {
-  padding: 6px 9px;
+  padding: 8px 12px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 7px;
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .context-segmented button[aria-pressed='true'] {
-  color: var(--ink);
+  color: var(--accent);
   background: var(--paper);
   box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 7%, transparent);
 }
@@ -258,7 +261,7 @@
   padding: 16px 0;
   border-bottom: 1px solid var(--line-soft);
   margin-bottom: 20px;
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
 }
 .context-freshness > button {
@@ -288,7 +291,7 @@
 }
 .context-section-title > span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-meta);
 }
 .context-interim {
   display: flex;
@@ -305,7 +308,7 @@
   flex-wrap: wrap;
   gap: 10px;
   width: 100%;
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .context-interim > div > span {
   color: var(--muted);
@@ -320,7 +323,7 @@
 .context-interim dl > div {
   display: flex;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .context-interim dt {
   color: var(--muted);
@@ -344,22 +347,22 @@
 }
 .context-question-cards > article > span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .context-question-cards h2 {
   margin: 12px 0 9px;
-  font-size: 15px;
+  font-size: var(--text-ui);
   line-height: 1.55;
   font-weight: 550;
 }
 .context-question-cards p {
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .context-question-cards small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-secondary);
   line-height: 1.65;
 }
 .context-question-cards .context-evidence-button {
@@ -384,7 +387,7 @@
   background: var(--surface);
   color: var(--muted);
   border-radius: 4px;
-  font-size: 10px;
+  font-size: var(--text-meta);
   white-space: nowrap;
 }
 .context-evidence-button:hover {
@@ -393,7 +396,7 @@
 }
 .context-data-note {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.75;
   margin: 14px 0;
 }
@@ -419,12 +422,12 @@
   gap: 9px;
 }
 .context-priority h3 {
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 550;
   margin: 0;
 }
 .context-priority p {
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .context-priority-detail {
@@ -435,22 +438,22 @@
 }
 .context-priority-detail h4 {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 .context-priority-detail a {
   display: block;
   margin-top: 6px;
-  font-size: 12px;
+  font-size: var(--text-ui);
   line-height: 1.7;
 }
 .context-material-request {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.7;
 }
 .context-material-request b {
-  font-size: 11px;
+  font-size: var(--text-secondary);
   font-weight: 500;
   margin-right: 8px;
   color: var(--ink);
@@ -463,7 +466,7 @@
 .company-workspace table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .company-workspace th {
   background: var(--surface);
@@ -482,7 +485,7 @@
 }
 .company-workspace td small {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-meta);
   line-height: 1.65;
   color: var(--muted);
   margin-top: 5px;
@@ -491,7 +494,7 @@
 .dialog-body code {
   display: block;
   overflow-wrap: anywhere;
-  font-size: 10px;
+  font-size: var(--text-meta);
   margin-top: 8px;
 }
 .context-profile-grid {
@@ -505,13 +508,13 @@
   border-bottom: 1px solid var(--line-soft);
 }
 .context-profile-grid dt {
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
   margin-bottom: 5px;
 }
 .context-profile-grid dd {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.7;
   overflow-wrap: anywhere;
 }
@@ -522,18 +525,18 @@
 .context-news-list article > span {
   display: block;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-meta);
   margin-bottom: 7px;
 }
 .context-news-list article > a {
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 .context-news-list article > p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .context-verification-grid,
@@ -545,27 +548,28 @@
 .context-verification-grid > article,
 .context-coverage-grid > article {
   border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 18px;
+  border-radius: 12px;
+  padding: 20px;
+  background: var(--paper);
 }
 .context-verification-grid a {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: var(--text-ui);
 }
 .context-verification-grid p,
 .context-coverage-grid p {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
   line-height: 1.75;
 }
 .context-verification-grid small {
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--subtle);
 }
 .context-coverage-grid h2 {
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 550;
   margin: 0 0 12px;
 }
@@ -577,14 +581,14 @@
   color: var(--muted);
   text-align: center;
   padding: 48px 24px;
-  font-size: 13px;
+  font-size: var(--text-secondary);
   line-height: 1.8;
 }
 .context-disclosure-counts {
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .context-disclosure-counts span {
@@ -609,12 +613,12 @@
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .context-filters .select-trigger {
   width: auto;
   padding: 6px 9px;
-  font-size: var(--select-font-size, 12px);
+  font-size: var(--text-ui);
 }
 .context-topic-summary {
   padding: 14px 0 18px;
@@ -624,11 +628,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .context-topic-summary p {
-  font-size: 11px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .context-disclosure-card {
@@ -639,16 +643,16 @@
   display: flex;
   gap: 10px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--text-meta);
   color: var(--muted);
 }
 .context-disclosure-card h3 {
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 550;
   margin: 12px 0 8px;
 }
 .context-disclosure-card p {
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .context-disclosure-card blockquote {
@@ -656,7 +660,7 @@
   margin: 14px 0;
   border-left: 2px solid var(--line);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .context-disclosure-actions a,
@@ -664,42 +668,48 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: var(--text-secondary);
 }
 .context-routine {
   margin-top: 28px;
 }
 .context-routine summary {
-  font-size: 12px;
+  font-size: var(--text-ui);
   color: var(--muted);
 }
 .context-routine p {
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.75;
 }
 .context-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 18px;
-  border-bottom: 1px solid var(--line);
+  gap: 5px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--canvas);
 }
 .context-tabs button {
   border: 0;
-  background: none;
-  padding: 12px 0;
-  font-size: 12px;
+  background: transparent;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: var(--text-ui);
   color: var(--muted);
-  border-bottom: 2px solid transparent;
 }
 .context-tabs button[aria-selected='true'] {
-  border-color: var(--ink);
-  color: var(--ink);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+  color: var(--accent);
 }
 .context-chart-panel {
   padding: 20px 0;
 }
 .context-chart-plot > span {
-  font-size: 11px;
+  font-size: var(--text-meta);
 }
 .context-chart-scroll {
   overflow-x: auto;
@@ -714,7 +724,7 @@
 .context-chart-scroll svg text {
   font-family: inherit;
   fill: var(--muted);
-  font-size: 10px;
+  font-size: var(--text-caption);
 }
 .context-chart-grid {
   stroke: var(--line-soft);
@@ -724,7 +734,7 @@
   fill: transparent;
 }
 .context-chart-selection.selected {
-  fill: var(--surface);
+  fill: var(--accent-soft);
 }
 .context-chart-scroll svg g[role='button'] {
   cursor: pointer;
@@ -733,15 +743,16 @@
   outline: none;
 }
 .context-chart-scroll svg g[role='button']:focus-visible .context-chart-selection {
-  stroke: var(--ink);
+  stroke: var(--accent);
   stroke-width: 1;
 }
 .context-chart-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  justify-content: center;
-  font-size: 11px;
+  gap: 10px 18px;
+  justify-content: flex-start;
+  padding-top: 16px;
+  font-size: var(--text-meta);
   color: var(--muted);
 }
 .context-chart-legend > span {
@@ -756,14 +767,14 @@
 }
 .context-chart-multiples {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
 .context-chart-multiples > section {
   min-width: 0;
 }
 .context-chart-multiples h3 {
-  font-size: 12px;
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 .context-exact-fields {
@@ -773,9 +784,10 @@
   margin-top: 16px;
 }
 .context-exact-fields > article {
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 15px;
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  padding: 18px;
+  background: var(--canvas);
   display: flex;
   align-items: flex-start;
   flex-direction: column;
@@ -783,7 +795,7 @@
 }
 .context-exact-fields > article > span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .context-exact-fields strong {
   font-size: 20px;
@@ -797,12 +809,12 @@
   border-radius: 4px;
   background: transparent;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--text-ui);
 }
 .context-year-button[aria-pressed='true'] {
-  color: var(--ink);
-  border-color: var(--line);
-  background: var(--surface);
+  color: var(--accent);
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
 }
 .context-industry-heading {
   display: flex;
@@ -816,11 +828,11 @@
   gap: 5px;
 }
 .context-industry-heading strong {
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 500;
 }
 .context-industry-heading span {
-  font-size: 11px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .context-industry-table td {
@@ -839,7 +851,7 @@
   padding: 8px 10px;
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .context-question-suggestions button:hover {
   color: var(--ink);
@@ -850,12 +862,12 @@
   border-bottom: 1px solid var(--line-soft);
 }
 .context-question-history h3 {
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .context-answer-text {
   white-space: pre-wrap;
-  font-size: 13px;
+  font-size: var(--text-body);
   line-height: 1.85;
 }
 .context-answer-citations {
@@ -868,12 +880,12 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: var(--text-secondary);
   color: var(--muted);
 }
 .context-question-history article > small {
   color: var(--subtle);
-  font-size: 10px;
+  font-size: var(--text-meta);
 }
 .context-question-composer {
   margin-top: 28px;
@@ -946,7 +958,7 @@
   background: transparent;
   border-radius: 6px;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--text-ui);
 }
 .sidebar-tools > svg:last-child {
   margin-left: auto;
@@ -974,8 +986,8 @@
   margin: 5px 0 8px;
 }
 .context-eyebrow {
-  color: var(--muted);
-  font-size: 12px;
+  color: var(--accent);
+  font-size: var(--text-meta);
   margin: 0;
 }
 .context-page-actions {
@@ -992,7 +1004,7 @@
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-secondary);
 }
 .context-original-status a {
   margin-left: auto;
@@ -1007,11 +1019,11 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: var(--text-ui);
   color: var(--muted);
 }
 .context-reading-controls .select-trigger {
-  font-size: var(--select-font-size, 12px);
+  font-size: var(--text-ui);
   min-width: 140px;
 }
 .context-empty {
@@ -1020,7 +1032,7 @@
   line-height: 1.8;
 }
 .context-warnings {
-  font-size: 12px;
+  font-size: var(--text-secondary);
   color: var(--muted);
   line-height: 1.7;
   margin: 12px 0 25px;
@@ -1098,11 +1110,11 @@
 }
 .context-priority h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-ui);
   font-weight: 550;
 }
 .context-priority > p {
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.85;
   margin: 8px 0;
   color: var(--muted);
@@ -1114,12 +1126,12 @@
   margin: 16px 0;
 }
 .context-priority-detail h4 {
-  font-size: 12px;
+  font-size: var(--text-ui);
   margin: 0 0 8px;
 }
 .context-priority-detail p,
 .context-priority-detail a {
-  font-size: 12px;
+  font-size: var(--text-body);
   line-height: 1.8;
 }
 .context-priority-detail a {
@@ -1157,57 +1169,71 @@
 .company-page-index {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 24px;
-  padding: 4px 0 12px;
-  margin: 0 0 24px;
-  border-bottom: 1px solid var(--line-soft);
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 5px;
+  margin: 0 0 var(--card-gap);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
 }
 .company-page-index button {
   min-height: 32px;
-  padding: 5px 0;
+  padding: 8px 12px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
   cursor: pointer;
 }
 .company-page-index button:hover {
-  color: var(--ink);
+  color: var(--accent);
+  background: var(--accent-soft);
 }
 .company-workspace-section {
+  padding: var(--card-padding);
+  border: 1px solid var(--line);
+  border-radius: var(--card-radius);
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
+  min-width: 0;
   scroll-margin-top: calc(var(--site-header-height) + 20px);
 }
 .company-workspace-section + .company-workspace-section {
-  margin-top: 32px;
-  padding-top: 28px;
-  border-top: 1px solid var(--line-soft);
+  margin-top: var(--card-gap);
 }
 .company-workspace-section-title {
   margin: 0 0 18px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 550;
 }
 .company-next-sections {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0 24px;
-  padding-top: 18px;
-  margin-top: 28px;
-  border-top: 1px solid var(--line);
+  gap: var(--card-gap);
+  margin-top: var(--card-gap);
 }
 .company-next-sections a {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: 54px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  box-shadow: var(--shadow-card);
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-ui);
   text-decoration: none;
 }
 .company-next-sections a:hover {
-  color: var(--ink);
+  color: var(--accent);
+  border-color: var(--accent-border);
 }
 .company-next-sections svg {
   flex: 0 0 auto;
@@ -1230,20 +1256,47 @@
 }
 @media (max-width: 680px) {
   .company-page-index {
-    gap: 2px 18px;
-    margin-bottom: 20px;
+    gap: 3px;
+    margin-bottom: var(--card-gap);
   }
   .company-next-sections {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0;
+    gap: 10px;
   }
   .company-next-sections a + a {
-    border-top: 1px solid var(--line-soft);
+    border-top: 1px solid var(--line);
   }
 }
 @media print {
   .company-page-index,
   .company-next-sections {
     display: none !important;
+  }
+}
+
+.company-workspace-section > .company-public-information {
+  margin: 0;
+}
+.company-workspace-section > .context-section:first-child {
+  margin-top: 0;
+}
+.context-chart-multiples > section {
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+}
+.context-tabs button:hover {
+  color: var(--accent);
+}
+.context-page-actions > .text-link {
+  color: var(--accent);
+}
+@media print {
+  .company-workspace-section,
+  .context-company-heading,
+  .context-chart-multiples > section {
+    padding: 0;
+    border: 0;
+    box-shadow: none;
   }
 }
