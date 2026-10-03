@@ -25,6 +25,7 @@ import {
 } from '../shared/company-research-view';
 import { companyReviewSummary } from '../shared/company-review';
 import { companyResearchAvailability } from '../shared/company-research-availability';
+import { companyPendingReview } from '../shared/company-pending-review';
 import { companyPath } from '../shared/company-workspace';
 import { CompanyAssessmentEvidence } from './CompanyAssessment';
 import { CompanyContextEvidence } from './CompanyContextViews';
@@ -76,7 +77,10 @@ export function openCompanyReportSection(id: string, focusInput = false, focusSe
           : 0;
       focus.style.setProperty('--research-focus-toolbar-height', `${toolbarHeight}px`);
     }
-    (focusSelector && focus ? focus : target).scrollIntoView({
+    const alignedTarget = focusSelector && focus ? focus : target;
+    alignedTarget.style.scrollMarginTop =
+      'calc(var(--site-header-height) + var(--company-reading-index-height, 0px) + var(--research-focus-toolbar-height, 0px) + 16px)';
+    alignedTarget.scrollIntoView({
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
         ? 'instant'
         : 'smooth',
@@ -301,6 +305,7 @@ export function CompanyResearchReport({
   const brief = deriveCompanyResearchBrief(run);
   const progress = deriveCompanyResearchProgress(run);
   const amounts = companyReviewSummary(run);
+  const pendingReview = companyPendingReview(run);
   const [selected, setSelected] = useState<{ title: string; judgment: AssessmentJudgment } | null>(
     null
   );
@@ -308,7 +313,17 @@ export function CompanyResearchReport({
     progress.snapshot === 'mismatch' || run.informationGap ? undefined : run.assessment;
   const provisionalRating = assessment?.grade === 'NR' ? brief.provisionalRating : undefined;
   const reportGrade = provisionalRating?.grade || assessment?.grade || 'NR';
-  useEffect(() => setSelected(null), [run.id, run.assessment?.generatedAt]);
+  useEffect(
+    () => setSelected(null),
+    [
+      run.id,
+      run.input.securityCode,
+      run.input.orgId,
+      run.input.year,
+      run.assessment?.generatedAt,
+      run.assessment?.snapshotFetchedAt,
+    ]
+  );
   const loading = refreshing || progress.state === 'running';
   const gradePending =
     !assessment && loading && !run.informationGap && progress.snapshot !== 'mismatch';
@@ -365,6 +380,20 @@ export function CompanyResearchReport({
                         : t('判断待形成', 'Analysis pending')}
                   </span>
                   {basis(t('分析摘要', 'Analysis summary'), brief.summary)}
+                  {pendingReview.count !== null && pendingReview.count > 0 && (
+                    <button
+                      type="button"
+                      className="text-link research-pending-link"
+                      aria-controls="company-next-checks"
+                      onClick={() => openCompanyReportSection('company-next-checks')}
+                    >
+                      <ListChecks size={13} aria-hidden="true" />
+                      {t(
+                        `待核对 ${pendingReview.count} 项`,
+                        `${pendingReview.count} follow-up checks`
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
               <h2 id="research-summary-heading" className="research-summary-headline">
@@ -686,18 +715,55 @@ export function CompanyResearchReport({
             <ArrowRight size={13} />
           </button>
         </div>
-        {brief.nextChecks.length > 0 && (
-          <ol className="research-judgments research-next-checks">
-            {brief.nextChecks.map((judgment, index) => (
-              <li key={index}>
-                <span className="research-judgment-number" aria-hidden="true">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-                <p>{judgmentText(judgment)}</p>
-                {basis(t('下一步核查 ', 'Next check ') + (index + 1), judgment)}
-              </li>
-            ))}
-          </ol>
+        {pendingReview.items.length > 0 && (
+          <details
+            id="company-next-checks"
+            className="research-pending-checks"
+            open
+            key={JSON.stringify([
+              run.id,
+              run.input.year,
+              run.assessment?.generatedAt,
+              pendingReview.previous,
+            ])}
+          >
+            <summary>
+              <span>
+                {t('核查清单', 'Check list')} · {pendingReview.count} {t('项', 'checks')}
+              </span>
+              <ChevronDown size={14} aria-hidden="true" />
+            </summary>
+            {pendingReview.previous && pendingReview.snapshotFetchedAt && (
+              <p className="research-pending-snapshot">
+                {t('上次分析', 'Previous analysis')} ·{' '}
+                {date(pendingReview.snapshotFetchedAt, locale)}
+              </p>
+            )}
+            <ol className="research-judgments research-next-checks">
+              {pendingReview.items.map(({ judgment, hasEvidence }, index) => (
+                <li key={index}>
+                  <span className="research-judgment-number" aria-hidden="true">
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <p>{judgmentText(judgment)}</p>
+                  {hasEvidence ? (
+                    basis(t('下一步核查 ', 'Next check ') + (index + 1), judgment)
+                  ) : (
+                    <a
+                      className="text-link research-basis"
+                      href={companyPath(run.id, 'evidence')}
+                      aria-label={
+                        t('核对原件：', 'Review originals for: ') + judgmentText(judgment)
+                      }
+                    >
+                      <FileSearch size={13} aria-hidden="true" />
+                      {t('核对原件', 'Review originals')}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </details>
         )}
         <CompanyReview run={run} />
       </section>

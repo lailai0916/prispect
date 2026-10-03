@@ -40,6 +40,8 @@ import { CompanyAssessment } from '../CompanyAssessment';
 import { SourceTrust } from '../SourceTrust';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
+import { CompanyPageIndex } from '../CompanyPageIndex';
+import { CompanyReadingSession } from '../CompanyReadingSession';
 import { CompanyResearchReport, openCompanyReportSection } from '../CompanyResearchReport';
 import { CompanyPublicInformation } from '../CompanyPublicInformation';
 import { PageLoading } from '../Experience';
@@ -74,6 +76,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const request = useRef<AbortController | null>(null);
   const cancelOperation = useRef<symbol | null>(null);
   const assessmentRequested = useRef(new Set<string>());
+  const revealedLocation = useRef<string | null>(null);
   const clearResolvedFailure = (next: CompanyResearchRun) =>
     setFailure((previous) =>
       previous?.kind === 'status' ||
@@ -206,15 +209,25 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
                 'company-source-comparison',
               ]
             : [];
-    const reveal = () => {
+    const reveal = (explicit = false) => {
       const hashId = location.hash.slice(1);
       const target =
         resolveCompanyFocus(section, reportFocus) || (targets.includes(hashId) ? hashId : '');
-      if (target) openCompanyReportSection(target, target === 'company-research-goal');
+      if (!target) {
+        revealedLocation.current = null;
+        return;
+      }
+      const key = `${id}:${section}:${target}`;
+      // A snapshot refresh is not a new navigation. Late-arriving sections still reveal once.
+      if (!explicit && revealedLocation.current === key) return;
+      if (!document.getElementById(target)) return;
+      revealedLocation.current = key;
+      openCompanyReportSection(target, target === 'company-research-goal');
     };
     reveal();
-    window.addEventListener('hashchange', reveal);
-    return () => window.removeEventListener('hashchange', reveal);
+    const revealHash = () => reveal(true);
+    window.addEventListener('hashchange', revealHash);
+    return () => window.removeEventListener('hashchange', revealHash);
   }, [run?.id, run?.context?.fetchedAt, id, section, reportFocus]);
   const refresh = async () => {
     if (!run || !researchSupported(run) || updating) return;
@@ -419,6 +432,15 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     <div
       className={'company-workspace' + (section === 'overview' ? ' company-workspace-report' : '')}
     >
+      {user && (
+        <CompanyReadingSession
+          key={`${user.id}:${run.id}`}
+          owner={user.id}
+          run={run}
+          section={section}
+          focus={reportFocus}
+        />
+      )}
       <header className="context-page-heading">
         <div>
           {section !== 'overview' && (
@@ -486,13 +508,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         </div>
       </header>
       {pageAnchors.length > 0 && !pausedMarket && (snapshot || section === 'overview') && (
-        <nav className="company-page-index" aria-label={t('本页内容', 'On this page')}>
-          {pageAnchors.map(([target, zh, en]) => (
-            <button type="button" key={target} onClick={() => openCompanyReportSection(target)}>
-              {t(zh, en)}
-            </button>
-          ))}
-        </nav>
+        <CompanyPageIndex key={`${user?.id}:${run.id}:${section}`} anchors={pageAnchors} />
       )}
       {error && (
         <p role="alert" className="field-error">

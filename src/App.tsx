@@ -36,6 +36,7 @@ import type {
 import { api, setCsrfToken, RequestError, requestErrorText } from './api';
 import { type Locale, setDisplayTimeZone } from './format';
 import { changeComposerOwner } from './start-draft';
+import { companyReadingMemory } from './company-reading-memory';
 import { RouteErrorBoundary } from './RouteErrorBoundary';
 import { AssistantErrorBoundary } from './AssistantErrorBoundary';
 import { lazyPage, resetFailedLazyPages } from './lazy-page';
@@ -177,6 +178,7 @@ export function App() {
   const [route, setRoute] = useState(readBrowserRoute);
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [user, setUser] = useState<AccountUser | null>(null);
+  useLayoutEffect(() => companyReadingMemory.changeOwner(user?.id || null), [user?.id]);
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [cases, setCases] = useState<DemoCase[]>([]);
