@@ -109,6 +109,14 @@ prispect/
 └── vite.config.ts                  # 前端构建与本地接口代理
 ```
 
+## 扩展：未上市中国公司
+
+核心管线目前只覆盖上市公司：A股（巨潮）与美股（SEC EDGAR）。未上市中国公司的接口已预留，可快速接入：
+
+- `CompanyIdentity.exchange` 支持 `'cn-private'`；`CompanySearchResponse` 返回 `unlisted` 与 `privateSource`（`pending`/`ready`）。
+- 两个上市源均无结果且关键词像中文公司名时，搜索 API 标记 `unlisted: true`，前端明确提示「可能未上市 · 接口已预留」，不再静默无结果。
+- 启用方式：在 `server/company-private.ts` 用工商/融资/舆情类 API（如企查查、天眼查）实现 `searchPrivateCompanies`，把 `privateCompanySource.status` 改为 `'ready'`，前端自动切换为「未上市主体可核查」，主流程无需改动。
+
 ## 许可协议
 
 本项目代码采用 [MIT 许可协议](LICENSE)，网站内容采用 [CC BY 4.0 许可协议](LICENSE-docs)。内容许可覆盖原创网站文字、文档与展示材料。第三方依赖、字体及公开财报保留原有权利；项目许可不授予这些财报的商业再分发权。参见[数据与素材来源](docs/sources.md)。

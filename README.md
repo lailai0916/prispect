@@ -109,6 +109,14 @@ prispect/
 └── vite.config.ts                  # Client build and local API proxy
 ```
 
+## Extending to Unlisted Chinese Companies
+
+The core pipeline covers listed companies only: A-shares (cninfo) and US-listed (SEC EDGAR). The interface for unlisted Chinese companies is reserved and ready for fast integration:
+
+- `CompanyIdentity.exchange` supports `'cn-private'`; `CompanySearchResponse` returns `unlisted` and `privateSource` (`pending`/`ready`).
+- When both listed sources miss and the query looks like a Chinese company name, the search API marks it `unlisted: true` and the UI explains that the unlisted interface is reserved — no silent empty result.
+- To activate: implement `searchPrivateCompanies` in `server/company-private.ts` with a registry/funding/sentiment API (e.g. Qichacha, Tianyancha), set `privateCompanySource.status` to `'ready'`, and the UI will switch to "unlisted company can be reviewed" with no change to the main flow.
+
 ## License
 
 This project's code is licensed under [MIT License](LICENSE), and this website's content is licensed under [CC BY 4.0](LICENSE-docs). The content license covers original website text, documentation and presentation material. Third-party libraries, fonts and disclosed financial reports retain their original rights; neither project license grants commercial redistribution rights to those reports. See [sources and notices](docs/sources.md).
