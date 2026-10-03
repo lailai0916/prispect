@@ -337,6 +337,9 @@
   color: var(--muted);
 }
 .observation-editor {
+  min-width: 0;
+  margin: 0;
+  border: 0;
   border-top: 1px solid var(--line);
   padding: 18px 0;
 }

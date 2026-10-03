@@ -1,9 +1,15 @@
 import type { CompanyResearchRun } from '../shared/contracts.js';
-import type { CompanyQuestionAnswer, CompanyContextSnapshot } from '../shared/company-workspace.js';
+import {
+  contextAmountFields,
+  type CompanyQuestionAnswer,
+  type CompanyContextSnapshot,
+  type ContextAmountField,
+} from '../shared/company-workspace.js';
 import {
   analyzeCompanyContext,
   contextFieldLabels,
   contextFen,
+  contextRatio,
   contextSum,
   contextYuan,
   companyCheckPriorities,
@@ -17,9 +23,14 @@ import { deriveCompanyAssessment } from '../shared/company-assessment.js';
 import { deriveCompanyResearchBrief } from '../shared/company-research-view.js';
 import { productTerms } from '../shared/product-terms.js';
 import { buildAssessmentPublicPayload, renderAssessmentText } from './company-assessment.js';
+import {
+  buildFinancialChartPoints,
+  financialChartAmount,
+} from '../shared/company-financial-charts.js';
+import { companyEvidenceSourceUrls } from '../shared/company-source-evidence.js';
 
 const isRatingQuestion = (question: string) =>
-  /评级|暂定|综合分析|总体|公司怎么样|值得信任|rating|grade|provisional|overall|assess/i.test(
+  /评级|暂定|综合分析|总体|公司怎么样|值得信任|\b(?:rating|grade|provisional|overall|assess(?:ment)?)\b/i.test(
     question
   );
 const display = (value: string | null) => (value === null ? '未知' : `${value} 元`);
@@ -35,6 +46,45 @@ const sourceCitations = (snapshot: CompanyContextSnapshot): CompanyQuestionAnswe
         url: row.originalUrl || row.sourceUrls[0] || 'https://www.cninfo.com.cn/',
       },
     ]);
+
+function financialCitations(
+  snapshot: CompanyContextSnapshot,
+  periods: string[],
+  fields: ContextAmountField[]
+): CompanyQuestionAnswer['citations'] {
+  return snapshot.financials
+    .filter((row) => row.annual && periods.includes(row.period))
+    .flatMap((row) =>
+      fields.flatMap((field) => {
+        const provider = row.fieldSources[field];
+        const urls = [
+          ...(provider !== '新浪财经'
+            ? companyEvidenceSourceUrls(snapshot, row, field, 'primary')
+            : []),
+          ...(provider !== '东方财富'
+            ? companyEvidenceSourceUrls(snapshot, row, field, 'secondary')
+            : []),
+        ];
+        // Legacy snapshots can retain only row-level links. Use recorded links,
+        // never substitute another annual period or invent a provider homepage.
+        const recorded = urls.length
+          ? urls
+          : row.originalUrl
+            ? [row.originalUrl]
+            : provider
+              ? []
+              : row.sourceUrls;
+        return recorded.map((url) => ({
+          label: `${row.period} · ${contextFieldLabels[field][0]}`,
+          url,
+        }));
+      })
+    )
+    .filter(
+      (source, index, all) =>
+        all.findIndex((item) => item.url === source.url && item.label === source.label) === index
+    );
+}
 
 export function answerCompanyRules(
   run: CompanyResearchRun,
@@ -54,11 +104,35 @@ export function answerCompanyRules(
     answer.text = '当前企业概览尚未取得。请先读取或更新数据，未取得的信息不能补成事实。';
     return answer;
   }
-  const analysis = analyzeCompanyContext(snapshot, basis),
-    last = analysis.latestAnnual,
-    amounts = last?.amounts;
+  const analysis = analyzeCompanyContext(snapshot, basis);
+  const period = `${run.input.year}-12-31`;
+  const sameEntity =
+    snapshot.securityCode === run.input.securityCode && snapshot.orgId === run.input.orgId;
+  const selected = sameEntity
+    ? snapshot.financials.find((row) => row.annual && row.period === period)
+    : undefined;
+  const chartPoints = sameEntity ? buildFinancialChartPoints(snapshot, basis) : null;
+  const last = selected
+    ? {
+        ...selected,
+        amounts: Object.fromEntries(
+          contextAmountFields.map((field) => [field, financialChartAmount(snapshot, period, field)])
+        ) as typeof selected.amounts,
+        ratios: {
+          grossMargin:
+            chartPoints!.grossMargin.find((point) => point.period === period)?.company ?? null,
+          roe: chartPoints!.roe.find((point) => point.period === period)?.company ?? null,
+          revenueGrowth:
+            chartPoints!.revenueGrowth.find((point) => point.period === period)?.company ?? null,
+        },
+      }
+    : null;
+  const amounts = last?.amounts;
+  const selectedAnalysis = analyzeCompanyContext(
+    { ...snapshot, financials: last ? [last] : [] },
+    basis
+  );
   answer.citations = sourceCitations(snapshot);
-  const profitName = contextFieldLabels[analysis.profitField][0];
   if (isRatingQuestion(question)) {
     const assessment = deriveCompanyAssessment(run);
     const provisional = deriveCompanyResearchBrief({ ...run, assessment }).provisionalRating;
@@ -148,26 +222,104 @@ export function answerCompanyRules(
     /现金|现金流|含量|回款|cash|conversion/i.test(question) &&
     !/债|偿付|还款|debt|repay|liquid/i.test(question)
   ) {
-    const three = analysis.threeYear;
-    answer.text = !three.complete
-      ? '近三个连续年度的利润、经营现金或营收存在缺失，暂停三年比例。已取得的金额仍可在历史走势查看。'
-      : `近三年 ${profitName}合计 ${display(three.profit)}，经营现金净额合计 ${display(three.cash)}；比例 ${percentage(three.ratio)}。${three.thinProfit ? '利润占营收不到 2%，薄基数不作通常比例解释。' : ''}经营现金净额不是销售回款，比例不能单独解释差额成因；需要原件现金流补充资料与期后回款。`;
+    const english = /^[\x00-\x7f]+$/.test(question);
+    const threeYears =
+      /三(?:个)?(?:连续)?年(?:度)?|3\s*(?:年|个年度)|(?:three|3)[\s-]*(?:consecutive[\s-]*)?years?/i.test(
+        question
+      );
+    const profitField = analysis.profitField;
+    const periods = threeYears
+      ? [run.input.year - 2, run.input.year - 1, run.input.year].map((year) => `${year}-12-31`)
+      : [period];
+    const value = (field: ContextAmountField) =>
+      sameEntity
+        ? contextSum(periods.map((period) => financialChartAmount(snapshot, period, field)))
+        : null;
+    const profit = value(profitField),
+      cash = value('ocf'),
+      revenue = threeYears ? value('revenue') : null;
+    const p = contextFen(profit),
+      c = contextFen(cash);
+    const difference = p !== null && c !== null ? contextYuan(p - c) : null;
+    const complete = p !== null && c !== null && (!threeYears || revenue !== null);
+    const profitShare = threeYears ? contextRatio(profit, revenue) : null;
+    const thinProfit = profitShare !== null && Math.abs(profitShare) < 0.02;
+    const ratio = complete && !thinProfit ? contextRatio(cash, profit) : null;
+    const name = contextFieldLabels[profitField][english ? 1 : 0];
+    const scope = threeYears
+      ? `${run.input.year - 2}–${run.input.year}${english ? ' (three consecutive annual periods)' : ' 年（三个连续年度）'}`
+      : `${run.input.year}${english ? ' annual period' : ' 年全年'}`;
+    const amount = (value: string | null) =>
+      english ? (value === null ? 'unknown' : `CNY ${value}`) : display(value);
+    const comparison = !complete
+      ? english
+        ? 'Selected-period fields are missing or conflicting; the cash-to-profit ratio is withheld and unknown fields are not filled from other periods.'
+        : '所选期间字段缺失或冲突，现金利润比暂不计算；未知字段不由其他期间补齐。'
+      : p! <= 0n
+        ? english
+          ? 'Profit is nonpositive; the cash-to-profit ratio is inapplicable.'
+          : '利润非正，现金利润比不适用。'
+        : thinProfit
+          ? english
+            ? 'Profit is less than 2% of revenue; the thin profit base makes the three-year ratio unsuitable for ordinary interpretation.'
+            : '利润占营收不到 2%，薄基数不作通常三年比例解释。'
+          : ratio === null
+            ? english
+              ? 'The cash-to-profit ratio is unavailable.'
+              : '现金利润比未知。'
+            : english
+              ? `Operating cash ${c! < p! ? 'trails' : 'covers'} the selected profit; cash-to-profit${basis === 'parent' ? ' reference' : ''} ratio ${(ratio! * 100).toFixed(2)}%.`
+              : `经营现金${c! < p! ? '低于' : '覆盖'}所选利润，${basis === 'parent' ? '经营现金 / 归母净利润参考比' : '现金利润比'} ${(ratio! * 100).toFixed(2)}%。`;
+    answer.text = english
+      ? `${scope}: ${name}${threeYears ? ' total' : ''} ${amount(profit)}, consolidated operating cash${threeYears ? ' total' : ''} ${amount(cash)}; profit minus operating cash ${amount(difference)}. ${comparison} Operating cash is not sales receipts; the difference does not establish a cause. Check original cash-flow reconciliation and subsequent collections.`
+      : `${scope}：${name}${threeYears ? '合计' : ''} ${amount(profit)}，合并经营现金净额${threeYears ? '合计' : ''} ${amount(cash)}；利润减经营现金差额 ${amount(difference)}。${comparison}经营现金净额不是销售回款；差额成因还需原件现金流补充资料与期后回款核对。`;
+    answer.citations = sameEntity
+      ? financialCitations(snapshot, periods, [
+          profitField,
+          'ocf',
+          ...(threeYears ? ['revenue' as const] : []),
+        ])
+      : [];
   } else if (/债|偿付|还款|覆盖|debt|repay|liquid/i.test(question)) {
-    const debt = contextFen(analysis.shortDebt);
-    answer.text =
-      analysis.shortDebt === null || amounts?.cash === null || !amounts
-        ? '货币资金或短债分项缺失，无法确认覆盖程度，也不能因此认定没有债务。'
+    const debt = contextFen(selectedAnalysis.shortDebt);
+    const debtComponents = [amounts?.shortLoan, amounts?.currentPortionDebt].map(contextFen);
+    const invalidDebt = debtComponents.some((amount) => amount !== null && amount < 0n);
+    answer.text = invalidDebt
+      ? `${run.input.year} 年短债分项存在负值异常，暂停合计与覆盖计算；货币资金 ${display(amounts?.cash ?? null)}。请核对短期借款与一年内到期非流动负债的来源。`
+      : selectedAnalysis.shortDebt === null || amounts?.cash === null || !amounts
+        ? `${run.input.year} 年货币资金或短债分项缺失、冲突，无法确认覆盖程度，也不能因此认定没有债务。`
         : debt === 0n
           ? '已取得两项短债字段合计为零；这不代表没有其他负债、担保或现金支出。'
-          : `${last!.period} 货币资金 ${display(amounts.cash)}；短期借款与一年内到期非流动负债合计 ${display(analysis.shortDebt)}；两项覆盖倍数 ${analysis.debtCoverage?.toFixed(2) ?? '未知'}。历史货币资金不是当前可用现金，短债范围也不包含全部偿付责任。`;
+          : `${last!.period} 货币资金 ${display(amounts.cash)}；短期借款与一年内到期非流动负债合计 ${display(selectedAnalysis.shortDebt)}；两项覆盖倍数 ${selectedAnalysis.debtCoverage?.toFixed(2) ?? '未知'}。历史货币资金不是当前可用现金，短债范围也不包含全部偿付责任。`;
+    answer.citations = sameEntity
+      ? financialCitations(snapshot, [period], ['cash', 'shortLoan', 'currentPortionDebt'])
+      : [];
   } else if (/利润|营收|收入|赚钱|profit|revenue|earn/i.test(question)) {
+    const lossYears = sameEntity
+      ? [
+          ...new Set(
+            snapshot.financials
+              .filter((row) => row.annual && row.period <= period)
+              .map((row) => row.period)
+          ),
+        ].filter((period) => {
+          const profit = contextFen(financialChartAmount(snapshot, period, analysis.profitField));
+          return profit !== null && profit < 0n;
+        }).length
+      : 0;
     answer.text = amounts
-      ? `${last!.period} 营业总收入 ${display(amounts.revenue)}，合并净利润 ${display(amounts.netProfit)}，归母净利润 ${display(amounts.parentProfit)}；已取得年度中有 ${analysis.lossYears} 年按当前利润口径为负。亏损与现金关系需要现金流补充资料核实。`
-      : '本次没有可用年度财务快照。';
+      ? `${last!.period} 营业总收入 ${display(amounts.revenue)}，合并净利润 ${display(amounts.netProfit)}，归母净利润 ${display(amounts.parentProfit)}；截至所选年，已核对年度中有 ${lossYears} 年按当前利润口径为负。亏损与现金关系需要现金流补充资料核实。`
+      : `${run.input.year} 年没有可用年度财务快照，不使用其他期间代替。`;
+    answer.citations = sameEntity
+      ? financialCitations(snapshot, [period], ['revenue', 'netProfit', 'parentProfit'])
+      : [];
   } else if (/存货|应收|库存|inventory|receiv/i.test(question)) {
     answer.text = amounts
       ? `${last!.period} 应收账款 ${display(amounts.receivables)}，存货 ${display(amounts.inventory)}。余额不等于现金流补充表的经营性应收或存货调整，也不能单独认定坏账或滞销。请补充账龄、期后回款、减值与存货明细。`
-      : '本次应收与存货字段未取得。';
+      : `${run.input.year} 年应收与存货字段未取得。`;
+    answer.citations = sameEntity
+      ? financialCitations(snapshot, [period], ['receivables', 'inventory'])
+      : [];
   } else if (/审计|audit/i.test(question)) {
     answer.text = `网页来源审计意见字段：${last?.auditOpinion || '未取得'}。${run.agent?.auditOpinion?.evidence[0]?.quote || '原件意见定位尚未完成，请继续原件核查。'} 审计意见按原文与适用期间分别核实，不合成为企业评级。`;
     answer.citations =
@@ -177,7 +329,21 @@ export function answerCompanyRules(
         page: row.page,
       })) || answer.citations;
   } else if (/毛利|ROE|净资产|负债率|gross|ratio|equity/i.test(question)) {
-    answer.text = `毛利率 ${last?.ratios.grossMargin ?? '未知'}%，ROE ${last?.ratios.roe ?? '未知'}%，资产负债率 ${percentage(analysis.assetLiabilityRatio)}，流动比率 ${analysis.currentRatio?.toFixed(2) ?? '未知'}。不同指标分别核实，不相加或合成健康分。`;
+    answer.text = `${run.input.year} 年毛利率 ${last?.ratios.grossMargin ?? '未知'}%，ROE ${last?.ratios.roe ?? '未知'}%，资产负债率 ${percentage(selectedAnalysis.assetLiabilityRatio)}，流动比率 ${selectedAnalysis.currentRatio?.toFixed(2) ?? '未知'}。不同指标分别核实，不相加或合成健康分。`;
+    answer.citations = sameEntity
+      ? financialCitations(
+          snapshot,
+          [period],
+          [
+            'revenue',
+            'netProfit',
+            'totalAssets',
+            'totalLiabilities',
+            'currentAssets',
+            'currentLiabilities',
+          ]
+        )
+      : [];
   } else if (
     /材料|接手|尽调|该查|怎么查|下一步|优点|优势|缺点|不足|handover|diligence|next|strength|weak/i.test(
       question
@@ -190,7 +356,7 @@ export function answerCompanyRules(
       )
       .join('\n');
   } else {
-    answer.text = `可根据当前公开材料核对收入、利润、现金、短债、行业对比、股东、公告、新闻及数据缺口。当前最新年度为 ${last?.period || '未知'}。请具体说明要核对哪个字段或事项；资料不足时不会代填。`;
+    answer.text = `可根据当前公开材料核对收入、利润、现金、短债、行业对比、股东、公告、新闻及数据缺口。本研究年度为 ${run.input.year} 年。请具体说明要核对哪个字段或事项；资料不足时不会代填。`;
   }
   if (snapshot.comparisons.some((check) => !check.matches))
     answer.warning = '本次跨来源比对存在金额差异，相关解释需要核对双方来源与原文。';

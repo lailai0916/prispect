@@ -332,6 +332,26 @@ test('saved company questions automatically resolve names, annual scope and conv
       },
       { request: { question: '贵州茅台 2024 年的利润如何？', locale: 'zh' }, expected: old },
       {
+        request: { question: '贵州茅台的现金质量怎么样？', locale: 'zh', currentRunId: old.id },
+        expected: old,
+      },
+      {
+        request: { question: '贵州茅台的现金质量怎么样？', locale: 'zh', previousRunId: old.id },
+        expected: old,
+      },
+      {
+        request: { question: '贵州茅台 2025 年的利润如何？', locale: 'zh', currentRunId: old.id },
+        expected: latest,
+      },
+      {
+        request: {
+          question: '贵州茅台 2024 年的利润如何？',
+          locale: 'zh',
+          currentRunId: latest.id,
+        },
+        expected: old,
+      },
+      {
         request: {
           question: '经营现金如何？',
           locale: 'zh',
@@ -382,6 +402,33 @@ test('saved company questions automatically resolve names, annual scope and conv
       assert.equal(h.inputs.at(-1)?.useModel, true);
       assert.equal(h.inputs.at(-1)?.basis, request.basis || 'consolidated');
     }
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('a newer unfinished same-company record cannot replace the named company on the current page', async () => {
+  const h = await harness();
+  try {
+    const owner = await h.register();
+    const current = company(moutai, 2024);
+    current.updatedAt = new Date(Date.now() - 86400000).toISOString();
+    const unfinished = company(moutai, 2025);
+    unfinished.context = undefined;
+    unfinished.contextStatus = 'loading';
+    unfinished.assessment = undefined;
+    unfinished.assessmentStatus = 'loading';
+    unfinished.status = 'running';
+    await h.save(owner.userId, [unfinished, current]);
+    const response = await h.message(
+      { question: '贵州茅台的利润与经营现金有什么差异？', locale: 'zh', currentRunId: current.id },
+      owner.headers
+    );
+    assert.equal(response.status, 200);
+    const answer = (await response.json()) as AssistantAnswer;
+    assert.equal(answer.company?.runId, current.id);
+    assert.equal(answer.company?.year, 2024);
+    assert.equal(h.inputs.at(-1)?.run.id, current.id);
   } finally {
     await h.dispose();
   }

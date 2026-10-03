@@ -63,7 +63,7 @@ Challenge research runs on a public copy. Supplements and results do not overwri
 
 ## Walkthrough
 
-1. On the homepage, select the 2025 Songyuan original-report example and inspect a fact's source page and excerpt.
+1. In your account, import `data/cases/songyuan-2025.json` through Materials, confirm its fields, and create a financial review from that material. Open its evidence lab and inspect a fact's source page and excerpt. This saved annual-report excerpt is not a newly retrieved PDF; the former homepage example entry has been removed.
 2. Withdraw the inventory adjustment. Its calculation, expansion/inventory hypotheses and full cash bridge pause. Cash/profit and the independent collection hypothesis remain available because they do not depend on that adjustment.
 3. Restore the fact. The checked amounts and dependency paths return without changing a saved record or requesting AI.
 4. Open a saved company's lab. Inspect inventory/receivables **balance changes** and their web provenance; no cash bridge is created from them.

@@ -130,7 +130,14 @@ export function resolveAssistantCompany(
       ),
     };
   const chooseYear = (matches: CompanyResearchRun[]): CompanyResolution => {
-    const run = year ? matches.find((item) => item.input.year === year) : matches[0];
+    const preferred =
+      matches.find((item) => item.id === request.currentRunId) ||
+      matches.find((item) => item.id === request.previousRunId);
+    const run = year
+      ? preferred?.input.year === year
+        ? preferred
+        : matches.find((item) => item.input.year === year)
+      : preferred || matches[0];
     return run
       ? { kind: 'company', run }
       : {

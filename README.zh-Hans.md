@@ -96,6 +96,8 @@ npm run data:samples
 
 参见[方案](docs/plan.md)、[方法与数据调研](docs/research.md)、[API 合同](docs/api.md)、[数据链路交接](docs/data-lineage.md)、[参考方案鉴别](docs/reference-data-review.md)、[AI 使用披露](docs/ai-usage.md)及[赛事提交要求](docs/submission-checklist.md)。私有仓库徽章可能无法显示。
 
+可复现本机演练：先运行 `npm run build`，再运行 `node --import tsx scripts/serve-research-demo.ts`，打开输出的本机地址，注册演练账号并搜索 `601234`。演练使用明确标记的合成企业数据、新建临时工作区和规则分析，不查询公开来源或调用模型；拒绝载入非空工作区，也拒绝生产模式。两条演示路线和验收边界见[完整流程验收](docs/research-flow-acceptance-2026-10-03.md)。
+
 ## 项目结构
 
 ```bash

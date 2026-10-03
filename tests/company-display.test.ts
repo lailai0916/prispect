@@ -12,6 +12,7 @@ import {
 import { AppContext, type AppContextValue } from '../src/context.js';
 import { CompanyContextOverview, CompanyCoverageView } from '../src/CompanyContextViews.js';
 import { CompanyContextHistory } from '../src/CompanyContextHistory.js';
+import { CompanyFinancialChartsSection } from '../src/CompanyFinancialChartsSection.js';
 import {
   ChartMetricSummary,
   HistoryMetricChart,
@@ -204,6 +205,38 @@ function chartMarkup(element: ReactElement, locale: 'zh-Hans' | 'en' = 'zh-Hans'
     )
   );
 }
+
+test('financial charts begin at the research year and explain a fallback to an acquired annual period', () => {
+  const run = fixture('12.00');
+  const row = run.context!.financials[0]!;
+  run.context!.financials.unshift({ ...row, period: '2024-12-31' });
+  for (const locale of ['zh-Hans', 'en'] as const) {
+    for (const year of [2024, 2023]) {
+      run.input.year = year;
+      const $ = load(
+        chartMarkup(
+          createElement(CompanyFinancialChartsSection, {
+            run,
+            snapshot: run.context!,
+            basis: 'consolidated',
+          }),
+          locale
+        )
+      );
+      const selectedYear = year === 2024 ? '2024' : '2025';
+      assert.equal($('.context-history [aria-pressed="true"]').first().text(), selectedYear);
+      assert.match($('.financial-chart-meta').first().text(), new RegExp(selectedYear));
+      if (year === 2023)
+        assert.match(
+          $('.context-data-note').first().text(),
+          locale === 'en'
+            ? /Financial data for 2023 is unavailable; showing 2025/
+            : /未取得 2023 年度财务资料，当前展示 2025 年度/
+        );
+      else assert.doesNotMatch($('.context-data-note').first().text(), /未取得|unavailable/);
+    }
+  }
+});
 
 test('history retains the complete themed scan and supplementary working-capital amounts', () => {
   const $ = load(

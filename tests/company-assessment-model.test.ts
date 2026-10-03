@@ -695,3 +695,168 @@ test('the complete authorized research goal reaches the analysis input', async (
   );
   assert.equal(output.model.status, 'completed');
 });
+
+test('valid metric tokens cannot disguise a reversed cash/profit judgment in either language', async () => {
+  const run = company();
+  const seed = deriveCompanyAssessment(run);
+  for (const text of [
+    {
+      zh: '经营现金超过利润，现金利润比为 {{metric:cash-profit}}。',
+      en: 'Cash conversion is weak.',
+    },
+    { zh: '经营现金低于利润。', en: 'Operating cash exceeds profit at {{metric:cash-profit}}.' },
+    { zh: '经营现金覆盖合并净利润。', en: 'Operating cash covers consolidated net profit.' },
+    { zh: '经营现金等于利润。', en: 'Operating cash equals profit.' },
+    {
+      zh: '去年收入增长，但经营现金超过利润。',
+      en: 'Last year revenue grew, but operating cash exceeds profit.',
+    },
+    {
+      zh: '上年收入增长，经营现金超过利润。',
+      en: 'Previous revenue grew, however operating cash covers profit.',
+    },
+  ]) {
+    let calls = 0;
+    const result = await analyzeCompanyWithModel(
+      run,
+      config(async () => {
+        calls++;
+        const answer = narrative(seed);
+        answer.summary = { text, metricIds: ['cash-profit'], evidenceIds: [] };
+        return response(answer);
+      })
+    );
+    assert.equal(result.model.status, 'failed');
+    assert.equal(calls, 1);
+    assert.equal(result.narrative, undefined);
+    assert.deepEqual(financialResult(result), financialResult(seed));
+  }
+});
+
+test('proportional cash/profit statements do not become equal-amount assertions', async () => {
+  const run = company();
+  const seed = deriveCompanyAssessment(run);
+  for (const zh of [
+    '经营现金相当于利润的 {{metric:cash-profit}}。',
+    '经营现金仅相当于合并净利润的 {{metric:cash-profit}}。',
+    '经营现金等于利润的 {{metric:cash-profit}}。',
+  ]) {
+    const answer = narrative(seed);
+    answer.summary = {
+      text: { zh, en: 'Operating cash is {{metric:cash-profit}} of consolidated net profit.' },
+      metricIds: ['cash-profit'],
+      evidenceIds: [],
+    };
+    const result = await analyzeCompanyWithModel(
+      run,
+      config(async () => response(answer))
+    );
+    assert.equal(result.model.status, 'completed');
+    assert.equal(result.narrative!.summary.text.zh, zh.replace('{{metric:cash-profit}}', '7.15%'));
+  }
+});
+
+test('cash/profit relation validation preserves exact facts, independent judgments and future conditions', async () => {
+  const cases = [
+    [
+      '7.15',
+      '经营现金明显低于合并净利润。',
+      'Operating cash materially trails consolidated net profit.',
+    ],
+    ['180.00', '经营现金超过利润。', 'Operating cash flow exceeds profit.'],
+    [
+      '100.00',
+      '经营现金等于利润，也完全覆盖合并净利润。',
+      'Operating cash equals profit and covers net profit.',
+    ],
+  ] as const;
+  for (const [cash, zh, en] of cases) {
+    const run = company();
+    run.context!.financials.find((row) => row.period === '2025-12-31')!.amounts.ocf = cash;
+    const seed = deriveCompanyAssessment(run);
+    const answer = narrative(seed);
+    answer.summary = { text: { zh, en }, metricIds: ['cash-profit'], evidenceIds: [] };
+    answer.strengths = [
+      {
+        text: { zh: '收入增长。', en: 'Revenue grew.' },
+        metricIds: ['revenue-growth'],
+        evidenceIds: [],
+      },
+    ];
+    answer.changeConditions[0] = {
+      text: {
+        zh: '若回款改善，经营现金超过利润，判断可改善。',
+        en: 'If collections improve, operating cash exceeds profit and the judgment improves.',
+      },
+      metricIds: ['cash-profit'],
+      evidenceIds: [],
+    };
+    answer.changeConditions[1] = {
+      text: {
+        zh: '若现金转化继续恶化，经营现金低于利润，判断会恶化。',
+        en: 'If cash conversion weakens, operating cash trails profit and the judgment worsens.',
+      },
+      metricIds: ['cash-profit'],
+      evidenceIds: [],
+    };
+    const result = await analyzeCompanyWithModel(
+      run,
+      config(async () => response(answer))
+    );
+    assert.equal(result.model.status, 'completed');
+    assert.equal(result.narrative!.summary.text.zh, zh);
+    assert.equal(result.narrative!.strengths[0]!.text.zh, '收入增长。');
+    assert.deepEqual(financialResult(result), financialResult(seed));
+  }
+});
+
+test('cash/profit comparisons use integer cents and reject unavailable or inapplicable coverage', () => {
+  const run = company();
+  const row = run.context!.financials.find((item) => item.period === '2025-12-31')!;
+  row.amounts.netProfit = '1000000.00';
+  row.amounts.ocf = '1000000.01';
+  const exact = deriveCompanyAssessment(run);
+  assert.equal(exact.metrics.find((item) => item.id === 'cash-profit')!.display[0], '100.00%');
+  assert.equal(renderAssessmentText('经营现金超过利润。', exact, 'zh'), '经营现金超过利润。');
+  assert.throws(
+    () => renderAssessmentText('经营现金等于利润。', exact, 'zh'),
+    /MODEL_UNSUPPORTED_CLAIM/
+  );
+  for (const [profit, cash] of [
+    ['0.00', '0.00'],
+    ['-100.00', '-50.00'],
+  ] as const) {
+    row.amounts.netProfit = profit;
+    row.amounts.ocf = cash;
+    const result = deriveCompanyAssessment(run);
+    assert.throws(
+      () => renderAssessmentText('经营现金覆盖利润。', result, 'zh'),
+      /MODEL_UNSUPPORTED_CLAIM/
+    );
+    assert.throws(
+      () => renderAssessmentText('Operating cash cannot cover profit.', result, 'en'),
+      /MODEL_UNSUPPORTED_CLAIM/
+    );
+    const text = profit === cash ? '经营现金等于利润。' : '经营现金高于利润。';
+    assert.equal(renderAssessmentText(text, result, 'zh'), text);
+  }
+  row.amounts.netProfit = '100.00';
+  row.amounts.ocf = null;
+  assert.throws(
+    () => renderAssessmentText('经营现金低于利润。', deriveCompanyAssessment(run), 'zh'),
+    /MODEL_UNSUPPORTED_CLAIM/
+  );
+  row.amounts.ocf = '7.15';
+  run.context!.comparisons.push({
+    period: '2025-12-31',
+    field: 'ocf',
+    primary: '7.15',
+    secondary: '180.00',
+    difference: '-172.85',
+    matches: false,
+  });
+  assert.throws(
+    () => renderAssessmentText('Operating cash trails profit.', deriveCompanyAssessment(run), 'en'),
+    /MODEL_UNSUPPORTED_CLAIM/
+  );
+});

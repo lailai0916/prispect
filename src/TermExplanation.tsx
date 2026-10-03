@@ -21,6 +21,7 @@ export function TermExplanation({ title, children }: { title: string; children: 
         <Popover.Positioner
           sideOffset={7}
           collisionPadding={12}
+          collisionAvoidance={{ side: 'shift', align: 'shift' }}
           className="term-explanation-positioner"
         >
           <Popover.Popup className="term-explanation-popup">
@@ -33,7 +34,7 @@ export function TermExplanation({ title, children }: { title: string; children: 
                 <X size={14} aria-hidden="true" />
               </Popover.Close>
             </div>
-            <Popover.Description render={<div className="term-explanation-content" />}>
+            <Popover.Description render={<div className="term-explanation-content" tabIndex={0} />}>
               {children}
             </Popover.Description>
             <a className="text-link" href="/docs/methodology#method-decision">

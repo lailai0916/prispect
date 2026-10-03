@@ -87,7 +87,7 @@
   font-size: var(--text-meta);
 }
 .source-trust-state.state-error {
-  color: var(--danger);
+  color: var(--red);
 }
 .source-trust-paging {
   display: flex;

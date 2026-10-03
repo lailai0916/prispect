@@ -1085,6 +1085,10 @@ pre {
   border-radius: var(--card-radius);
   background: var(--paper);
 }
+.table-wrap:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 table {
   width: 100%;
   border-collapse: collapse;
@@ -1131,6 +1135,8 @@ thead th {
 }
 .table-subtitle {
   display: block;
+  max-width: 340px;
+  overflow-wrap: anywhere;
   color: var(--muted);
   font-size: var(--text-meta);
   margin-top: 3px;
