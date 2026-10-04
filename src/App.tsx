@@ -46,14 +46,7 @@ import {
   trackPageScroll,
 } from './page-scroll';
 import { LOCALE_STORAGE_KEY, storedLocale, storePreference } from './appearance';
-import {
-  appLinkPath,
-  readBrowserRoute,
-  writeBrowserRoute,
-  resolveCompanySection,
-  ROUTE_CHANGE_EVENT,
-} from './routing';
-import { companySections } from '../shared/company-workspace';
+import { appLinkPath, readBrowserRoute, writeBrowserRoute, ROUTE_CHANGE_EVENT } from './routing';
 import {
   documentPaths,
   documentationTitle,
@@ -511,18 +504,16 @@ export function App() {
   useEffect(() => {
     if (
       documentPaths.includes(route.split('?')[0] as DocumentPath) ||
-      route.split('?')[0] === '/docs'
+      route.split('?')[0] === '/docs' ||
+      route.split('?')[0] === '/company'
     )
       return;
     const titles: Record<string, string> = {
+      '/':
+        user && new URLSearchParams(route.split('?')[1]).get('view') !== 'story'
+          ? t(...productTerms.newResearch)
+          : '',
       '/query': t(...productTerms.newResearch),
-      '/company': (() => {
-        const section = resolveCompanySection(
-          new URLSearchParams(route.split('?')[1]).get('section')
-        );
-        const entry = companySections.find(([id]) => id === section)!;
-        return t(entry[1], entry[2]);
-      })(),
       '/workspace': t(...productTerms.financialReviews),
       '/materials': t(...productTerms.materials),
       '/account': t(...productTerms.accountSettings),
@@ -540,7 +531,7 @@ export function App() {
     document.title = title
       ? `${title} · ${t('析光', 'Prispect')}`
       : `${t('析光', 'Prispect')} · ${t(...productTagline)}`;
-  }, [t, route, workspace]);
+  }, [t, route, workspace, user]);
   useEffect(() => {
     for (const selector of [
       'meta[name="description"]',

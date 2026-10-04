@@ -23,6 +23,7 @@ import { appendCompanyAnswer } from './company-question-state';
 import { useCompanyRecords } from './CompanyRecordsContext';
 import { COMPANY_RECORDS_EVENT } from './company-record-events';
 import { AssistantCharacter } from './AssistantCharacter';
+import { IconButton } from './components';
 import './company-assistant.css';
 
 interface AssistantMessage {
@@ -453,23 +454,12 @@ export function CompanyAssistant({ route }: { route: string }) {
             <h2 id={`${panelId}-title`}>{t('析光助手', 'Prispect assistant')}</h2>
           </div>
           <div className="company-assistant-header-actions">
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={t('新建对话', 'New conversation')}
-              title={t('新建对话', 'New conversation')}
-              onClick={newConversation}
-            >
+            <IconButton label={t('新建对话', 'New conversation')} onClick={newConversation}>
               <Plus size={17} aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className="icon-button"
-              aria-label={t('收起助手', 'Close assistant')}
-              onClick={close}
-            >
-              <X size={17} />
-            </button>
+            </IconButton>
+            <IconButton label={t('收起助手', 'Close assistant')} onClick={close}>
+              <X size={17} aria-hidden="true" />
+            </IconButton>
           </div>
         </header>
         <div

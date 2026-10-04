@@ -8,6 +8,7 @@ playwright-report/
 .playwright-cli/
 output/playwright/
 output/browser-qa/
+output/interface-audit/
 output/reference-review/
 .pnp
 .pnp.js

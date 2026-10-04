@@ -1,7 +1,9 @@
 import {
   useEffect,
+  useId,
   useRef,
   useState,
+  type ButtonHTMLAttributes,
   type ReactElement,
   type ReactNode,
   type RefObject,
@@ -181,13 +183,15 @@ export function Dialog({
         >
           <div className="dialog-header">
             <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
-            <DialogPrimitive.Close
-              className="icon-button"
-              disabled={closeDisabled}
-              aria-label={t('关闭对话框', 'Close dialog')}
-            >
-              <X size={18} />
-            </DialogPrimitive.Close>
+            <Hint label={t('关闭对话框', 'Close dialog')}>
+              <DialogPrimitive.Close
+                className="icon-button"
+                disabled={closeDisabled}
+                aria-label={t('关闭对话框', 'Close dialog')}
+              >
+                <X size={18} aria-hidden="true" />
+              </DialogPrimitive.Close>
+            </Hint>
           </div>
           <div className="dialog-body">{children}</div>
         </DialogPrimitive.Popup>
@@ -257,21 +261,59 @@ export function ActionMenu({
 }
 
 export function Hint({ label, children }: { label: string; children: ReactElement }) {
+  const id = useId();
+  const [open, setOpen] = useState(false);
+  const existingDescription = (children.props as { 'aria-describedby'?: string })[
+    'aria-describedby'
+  ];
+  const description = [existingDescription, open ? id : undefined].filter(Boolean).join(' ');
   return (
     <TooltipPrimitive.Provider delay={500}>
-      <TooltipPrimitive.Root>
-        <TooltipPrimitive.Trigger render={children} />
+      <TooltipPrimitive.Root
+        onOpenChange={(next, details) => {
+          // A transient hint must not consume Escape intended for its dialog or menu.
+          if (details.reason === 'escape-key') details.allowPropagation();
+          setOpen(next);
+        }}
+      >
+        <TooltipPrimitive.Trigger render={children} aria-describedby={description || undefined} />
         <TooltipPrimitive.Portal>
           <TooltipPrimitive.Positioner
             sideOffset={6}
             collisionPadding={8}
             className="tooltip-positioner"
           >
-            <TooltipPrimitive.Popup className="tooltip-popup">{label}</TooltipPrimitive.Popup>
+            <TooltipPrimitive.Popup id={id} role="tooltip" className="tooltip-popup">
+              {label}
+            </TooltipPrimitive.Popup>
           </TooltipPrimitive.Positioner>
         </TooltipPrimitive.Portal>
       </TooltipPrimitive.Root>
     </TooltipPrimitive.Provider>
+  );
+}
+
+/** Icon actions share the same accessible name, focus behavior and visual hint. */
+export function IconButton({
+  label,
+  className = '',
+  children,
+  type = 'button',
+  ...props
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'aria-label' | 'title'> & {
+  label: string;
+}) {
+  return (
+    <Hint label={label}>
+      <button
+        {...props}
+        type={type}
+        className={`icon-button ${className}`.trim()}
+        aria-label={label}
+      >
+        {children}
+      </button>
+    </Hint>
   );
 }
 
@@ -298,12 +340,14 @@ export function NavigationPanel({
         <DialogPrimitive.Popup className="navigation-panel" finalFocus={returnFocus}>
           <div className="dialog-header">
             <DialogPrimitive.Title>{title}</DialogPrimitive.Title>
-            <DialogPrimitive.Close
-              className="icon-button"
-              aria-label={t('关闭导航', 'Close navigation')}
-            >
-              <X size={18} />
-            </DialogPrimitive.Close>
+            <Hint label={t('关闭导航', 'Close navigation')}>
+              <DialogPrimitive.Close
+                className="icon-button"
+                aria-label={t('关闭导航', 'Close navigation')}
+              >
+                <X size={18} aria-hidden="true" />
+              </DialogPrimitive.Close>
+            </Hint>
           </div>
           <div className="navigation-panel-body">{children}</div>
         </DialogPrimitive.Popup>

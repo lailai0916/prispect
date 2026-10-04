@@ -17,6 +17,7 @@ export function WorkspacePage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<ReviewFilter>('all');
   const [sort, setSort] = useState('recent');
+  const filtered = Boolean(search.trim() || filter !== 'all');
   const tasks = workspace!.tasks
     .filter((task) =>
       `${task.title} ${task.company}`.toLowerCase().includes(search.trim().toLowerCase())
@@ -99,20 +100,20 @@ export function WorkspacePage() {
       {!tasks.length ? (
         <EmptyState
           title={
-            search || filter !== 'all'
+            filtered
               ? t('没有匹配的核查', 'No matching reviews')
               : t('暂无财报核查', 'No financial reviews yet')
           }
           text={
-            search || filter !== 'all'
-              ? t('换一个搜索词，或查看全部核查。', 'Try another search or view all reviews.')
+            filtered
+              ? t('换一个搜索词，或清除筛选。', 'Try another search or clear the filters.')
               : t(
                   '查询公司公开年报，或使用你已有的材料。',
                   'Look up public annual reports or use your own materials.'
                 )
           }
           action={
-            search || filter !== 'all' ? (
+            filtered ? (
               <button
                 className="button button-secondary"
                 onClick={() => {
@@ -120,12 +121,12 @@ export function WorkspacePage() {
                   setFilter('all');
                 }}
               >
-                {t('查看全部', 'View all')}
+                {t('清除筛选', 'Clear filters')}
               </button>
             ) : (
               <div className="empty-state-actions">
-                <button className="button button-primary" onClick={() => navigate('/company')}>
-                  {t('开始公司研究', 'Start company research')}
+                <button className="button button-primary" onClick={() => navigate('/query')}>
+                  {t(...productTerms.newResearch)}
                   <ArrowRight size={15} />
                 </button>
                 <button

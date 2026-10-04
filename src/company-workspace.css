@@ -1037,7 +1037,7 @@
   font-size: var(--workspace-heading-size);
   font-weight: var(--workspace-heading-weight);
   letter-spacing: var(--workspace-heading-letter-spacing);
-  margin: 5px 0 8px;
+  margin: 0 0 8px;
   overflow-wrap: anywhere;
 }
 .company-workspace-report .context-page-heading h1 {

@@ -28,7 +28,7 @@ export const documentMetadata = {
       '企业财务、来源核对与兼容核查流程。',
       'Company financials, source checks and compatible review workflows.',
     ],
-    version: '1.13',
+    version: '1.14',
     updatedAt: '2026-10-05',
   },
   '/docs/methodology': {

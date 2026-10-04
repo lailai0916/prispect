@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, CircleAlert, LoaderCircle, Search, X } from 'lucide-react';
 import { useApp } from './context';
+import { Hint, IconButton } from './components';
 
 export function SearchField({
   value,
@@ -38,14 +39,16 @@ export function SearchField({
         }}
       />
       {value && (
-        <button
-          type="button"
-          className="search-clear"
-          onClick={clear}
-          aria-label={t('清除搜索', 'Clear search')}
-        >
-          <X size={14} />
-        </button>
+        <Hint label={t('清除搜索', 'Clear search')}>
+          <button
+            type="button"
+            className="search-clear"
+            onClick={clear}
+            aria-label={t('清除搜索', 'Clear search')}
+          >
+            <X size={14} aria-hidden="true" />
+          </button>
+        </Hint>
       )}
     </div>
   );
@@ -191,17 +194,13 @@ export function ToastNotice({
         {notice.text}
       </span>
       {onRetry && (
-        <button className="text-link" disabled={retrying} onClick={onRetry}>
+        <button type="button" className="text-link" disabled={retrying} onClick={onRetry}>
           {retrying ? t('正在读取…', 'Loading…') : t('重新读取', 'Reload')}
         </button>
       )}
-      <button
-        className="icon-button"
-        onClick={onDismiss}
-        aria-label={t('关闭提示', 'Dismiss message')}
-      >
-        <X size={16} />
-      </button>
+      <IconButton label={t('关闭提示', 'Dismiss message')} onClick={onDismiss}>
+        <X size={16} aria-hidden="true" />
+      </IconButton>
       {!notice.error && (
         <span
           key={notice.text}

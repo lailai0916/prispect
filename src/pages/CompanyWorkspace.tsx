@@ -1,5 +1,6 @@
 import { productTerms } from '../../shared/product-terms';
 import { Select } from '../Select';
+import { IconButton } from '../components';
 import { useContext, useEffect, useRef, useState, Suspense } from 'react';
 import {
   ArrowUpRight,
@@ -643,16 +644,23 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           )}
           {!run.informationGap && !pausedMarket && (
             <button
+              type="button"
               className="button button-secondary"
               disabled={updating || run.contextStatus === 'loading' || !canWriteRun}
+              aria-busy={updating || run.contextStatus === 'loading'}
               onClick={() => void refresh()}
             >
-              <RefreshCw size={14} />
-              {t('更新', 'Refresh')}
+              {updating || run.contextStatus === 'loading' ? (
+                <LoaderCircle size={14} className="spinner" aria-hidden="true" />
+              ) : (
+                <RefreshCw size={14} aria-hidden="true" />
+              )}
+              {updating || run.contextStatus === 'loading'
+                ? t('更新中…', 'Refreshing…')
+                : t('更新', 'Refresh')}
             </button>
           )}
-          <button
-            className="icon-button"
+          <IconButton
             disabled={
               !canWriteRun ||
               active ||
@@ -660,11 +668,12 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               run.assessmentStatus === 'loading' ||
               run.challenge?.status === 'loading'
             }
-            aria-label={t('删除研究记录', 'Delete research record')}
+            label={t('删除研究记录', 'Delete research record')}
+            aria-haspopup="dialog"
             onClick={remove}
           >
-            <Trash2 size={15} />
-          </button>
+            <Trash2 size={15} aria-hidden="true" />
+          </IconButton>
         </div>
       </header>
       {!aiReport &&

@@ -441,10 +441,12 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
     return () => cancelAnimationFrame(frame);
   }, [selectedId]);
   const materialImport = useMaterialImport();
+  const searchTerm = search.trim().toLowerCase();
+  const filtered = Boolean(searchTerm || filter !== 'all');
   const materials = workspace!.materials.filter(
     (material) =>
       (filter === 'all' || material.origin === filter) &&
-      `${material.title} ${material.company}`.toLowerCase().includes(search.toLowerCase())
+      `${material.title} ${material.company}`.toLowerCase().includes(searchTerm)
   );
   return (
     <div
@@ -542,10 +544,18 @@ export function MaterialsPage({ selectedId }: { selectedId?: string | null }) {
       </div>
       {!materials.length ? (
         <EmptyState
-          title={t('没有找到材料', 'No materials found')}
-          text={t('导入一份材料，或调整筛选条件。', 'Import a material or adjust your filter.')}
+          title={
+            filtered
+              ? t('没有匹配的材料', 'No matching materials')
+              : t('暂无材料', 'No materials yet')
+          }
+          text={
+            filtered
+              ? t('换一个搜索词，或清除筛选。', 'Try another search or clear the filters.')
+              : t('导入一份材料，开始核查。', 'Import a material to start a review.')
+          }
           action={
-            search || filter !== 'all' ? (
+            filtered ? (
               <button
                 className="button button-secondary"
                 onClick={() => {

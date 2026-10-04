@@ -19,7 +19,7 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 10,
+  version: 11,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: true,
@@ -507,6 +507,63 @@ try {
   await layout(page, 'company report');
   await sharedAssistant(page, 'desktop');
   await capture(page, 'report-light-1440');
+  assert.equal(await page.title(), `${'研究报告'} · ${identities[0].companyName} · 析光`);
+  const assistantTrigger = page.locator('.company-assistant-trigger');
+  await assistantTrigger.click();
+  await page.waitForFunction(() =>
+    document.activeElement?.matches('.company-assistant-panel textarea')
+  );
+  await page.keyboard.press('Tab');
+  const newConversation = page.getByRole('button', { name: '新建对话', exact: true });
+  await newConversation.focus();
+  await page.getByRole('tooltip', { name: '新建对话', exact: true }).waitFor();
+  await page.locator('.company-assistant-panel textarea').fill('尚未发送的走查草稿');
+  await newConversation.click();
+  assert.equal(await page.locator('.company-assistant-panel textarea').inputValue(), '');
+  await page.keyboard.press('Escape');
+  assert.equal(
+    await assistantTrigger.evaluate((element) => element === document.activeElement),
+    true
+  );
+  const deleteRecord = page.getByRole('button', { name: '删除研究记录', exact: true });
+  await deleteRecord.focus();
+  await page.getByRole('tooltip', { name: '删除研究记录', exact: true }).waitFor();
+  await deleteRecord.click();
+  const confirmation = page.getByRole('dialog');
+  await confirmation.waitFor();
+  await confirmation.evaluate((element) =>
+    Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => {})))
+  );
+  await confirmation.getByRole('button', { name: '关闭对话框', exact: true }).focus();
+  await page.getByRole('tooltip', { name: '关闭对话框', exact: true }).waitFor();
+  await page.keyboard.press('Escape');
+  await confirmation.waitFor({ state: 'hidden' });
+  assert.equal(await deleteRecord.evaluate((element) => element === document.activeElement), true);
+  check(
+    'Shared icon hints work with keyboard focus; new conversation clears its draft and closed dialogs restore the trigger'
+  );
+  await page.goto(`${base}/materials`, { waitUntil: 'networkidle' });
+  assert.equal(await page.getByRole('heading', { name: '暂无材料', exact: true }).count(), 1);
+  const materialSearch = page.getByRole('searchbox', { name: '搜索材料', exact: true });
+  await materialSearch.fill('  没有这份材料  ');
+  assert.equal(await page.getByRole('heading', { name: '没有匹配的材料', exact: true }).count(), 1);
+  await page.getByRole('button', { name: '清除搜索', exact: true }).click();
+  assert.equal(await materialSearch.inputValue(), '');
+  assert.equal(
+    await materialSearch.evaluate((element) => element === document.activeElement),
+    true
+  );
+  await materialSearch.fill('   ');
+  assert.equal(await page.getByRole('heading', { name: '暂无材料', exact: true }).count(), 1);
+  await page.getByRole('button', { name: '用户导入', exact: false }).click();
+  await page.getByRole('button', { name: '清除筛选', exact: true }).click();
+  assert.equal(await materialSearch.inputValue(), '');
+  assert.equal(await page.getByRole('heading', { name: '暂无材料', exact: true }).count(), 1);
+  await capture(page, 'materials-empty-light-1440');
+  check(
+    'Material empty states distinguish an empty workspace from unmatched filters; clear-search restores input focus and whitespace is treated as an empty filter'
+  );
+  await page.goto(base + company, { waitUntil: 'networkidle' });
   // Exercise actual browser consumers of saved status; the job itself remains a synthetic
   // GET overlay, so these checks never launch a source or model retry.
   const statusReads = [];
@@ -652,6 +709,11 @@ try {
   await context.route(`**/api/company-runs/${run.id}/context`, delayedRefresh);
   await page.reload({ waitUntil: 'networkidle' });
   await page.getByRole('button', { name: '更新', exact: true }).click();
+  const updatingButton = page.getByRole('button', { name: '更新中…', exact: true });
+  assert.equal(await updatingButton.isDisabled(), true);
+  assert.equal(await updatingButton.getAttribute('aria-busy'), 'true');
+  assert.equal(await updatingButton.locator('.spinner').count(), 1);
+  check('Refreshing public data shows a disabled busy button and real loading indicator');
   const freshRead = page.waitForResponse(
     (response) =>
       response.url() === `${base}/api/company-runs/${run.id}` && response.status() === 200
@@ -755,7 +817,7 @@ try {
   await page.locator(`.sidebar-company-row a[href*="${secondRunId}"]`).click();
   await page.waitForURL((url) => url.searchParams.get('run') === secondRunId);
   await page.locator('.company-workspace').filter({ hasText: '合成乙企业' }).waitFor();
-  const newCompanyUpdate = page.getByRole('button', { name: '更新', exact: true });
+  const newCompanyUpdate = page.locator('.context-page-actions button[aria-busy]');
   await newCompanyUpdate.click();
   releaseOldCompany();
   await page.waitForTimeout(150);
