@@ -803,19 +803,16 @@ kbd {
 }
 @media (max-width: 400px) {
   /* The professional mobile sidebar retains these guest account destinations. */
-  .app-shell:not(.showcase-shell) .site-header .header-actions .login-link {
+  .app-shell .site-header .header-actions .login-link {
     display: none;
   }
 }
 @media (max-width: 320px) {
-  .app-shell:not(.showcase-shell) .site-header .brand {
+  .app-shell .site-header .brand {
     gap: 4px;
   }
-  .app-shell:not(.showcase-shell) .site-header .brand-name {
+  .app-shell .site-header .brand-name {
     font-size: 14px;
-  }
-  .app-shell:not(.showcase-shell) .experience-switch > a {
-    padding-inline: 4px;
   }
 }
 @media print {

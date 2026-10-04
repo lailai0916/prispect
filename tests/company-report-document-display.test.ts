@@ -7,8 +7,6 @@ import { load } from 'cheerio';
 import type { AssessmentJudgment, CompanyAssessment } from '../shared/company-assessment.js';
 import type { CompanyResearchRun } from '../shared/contracts.js';
 import { AppContext, type AppContextValue } from '../src/context.js';
-import { CompanyRecordsProvider } from '../src/CompanyRecordsContext.js';
-import { companyRunCache } from '../src/company-run-cache.js';
 
 // These are deliberately synthetic rendering fixtures, not source or production
 // acceptance evidence. CSS has no role in the SSR assertions below.
@@ -19,10 +17,8 @@ const cssHook = registerHooks({
   },
 });
 let CompanyReportDocument: typeof import('../src/CompanyReportDocument.js').CompanyReportDocument;
-let LiteResearchPage: typeof import('../src/showcase/LiteResearch.js').LiteResearchPage;
 try {
   ({ CompanyReportDocument } = await import('../src/CompanyReportDocument.js'));
-  ({ LiteResearchPage } = await import('../src/showcase/LiteResearch.js'));
 } finally {
   cssHook.deregister();
 }
@@ -189,34 +185,15 @@ function render(element: ReactElement, locale: 'zh-Hans' | 'en') {
   return load(renderToStaticMarkup(createElement(AppContext.Provider, { value }, element)));
 }
 
-function renderBoth(
-  t: TestContext,
+function renderReports(
+  _t: TestContext,
   run: CompanyResearchRun,
-  locale: 'zh-Hans' | 'en' = 'zh-Hans',
-  page = 'finance'
+  locale: 'zh-Hans' | 'en' = 'zh-Hans'
 ) {
-  // The Lite reading seam is owner-checked just as its API response is; no global
-  // record or production account is installed for these rendering tests.
-  t.mock.method(companyRunCache, 'read', (reader: string, id: string) =>
-    reader === owner && id === run.id ? run : null
-  );
   return [
     [
-      'Pro',
+      'Report',
       render(createElement(CompanyReportDocument, { run, onInspect: () => undefined }), locale),
-    ],
-    [
-      'Lite',
-      render(
-        createElement(
-          CompanyRecordsProvider,
-          null,
-          createElement(LiteResearchPage, {
-            query: new URLSearchParams({ run: run.id, experience: 'lite', page, basis: 'parent' }),
-          })
-        ),
-        locale
-      ),
     ],
   ] as const;
 }
@@ -230,7 +207,7 @@ function hasSavedOriginal($: ReturnType<typeof load>) {
     });
 }
 
-test('Pro and Lite retain every saved dimension, risk, action and change condition in both locales', (t) => {
+test('Reports retain every saved dimension, risk, action and change condition in both locales', (t) => {
   const run = fixture();
   const markers = [
     'SUMMARY_SENTINEL',
@@ -250,7 +227,7 @@ test('Pro and Lite retain every saved dimension, risk, action and change conditi
     'GAP_SENTINEL',
   ];
   for (const locale of ['zh-Hans', 'en'] as const) {
-    for (const [experience, $] of renderBoth(t, run, locale)) {
+    for (const [experience, $] of renderReports(t, run, locale)) {
       const text = $.root().text();
       for (const marker of markers)
         assert.ok(text.includes(marker), `${experience} ${locale} discarded ${marker}`);
@@ -265,9 +242,8 @@ test('Pro and Lite retain every saved dimension, risk, action and change conditi
 });
 
 test('report reading structures expose the full analysis through native document sections', (t) => {
-  const [pro, lite] = renderBoth(t, fixture());
+  const [pro] = renderReports(t, fixture());
   const $pro = pro[1];
-  const $lite = lite[1];
   assert.equal($pro('#company-report-document').attr('data-mode'), 'model');
   for (const section of [
     'summary',
@@ -286,17 +262,6 @@ test('report reading structures expose the full analysis through native document
     );
   }
   assert.equal($pro('#company-report-dimensions details').length, 6);
-  assert.equal($lite('details.lite-report-detail').length, 1);
-  for (const section of ['dimensions', 'strengths', 'risks', 'actions', 'change-conditions']) {
-    assert.equal(
-      $lite(`.lite-report-detail [data-report-section="${section}"]`).length,
-      1,
-      `Missing Lite detail section: ${section}`
-    );
-  }
-  for (const channel of ['finance', 'public', 'reputation', 'original'])
-    assert.equal($lite(`[data-lite-page="${channel}"]`).length, 1);
-  assert.equal($lite('[data-lite-print-document]').length, 1);
 });
 
 test('failed refreshes keep the saved report generation and source snapshot readable', (t) => {
@@ -304,11 +269,11 @@ test('failed refreshes keep the saved report generation and source snapshot read
   run.assessmentStatus = 'failed';
   run.assessmentError = 'Synthetic rerun failure';
   run.context!.fetchedAt = '2026-10-03T01:00:00.000Z';
-  const [pro, lite] = renderBoth(t, run);
+  const [pro] = renderReports(t, run);
   const $pro = pro[1];
   assert.equal($pro('#company-report-document').attr('data-generated-at'), generatedAt);
   assert.equal($pro('#company-report-document').attr('data-snapshot'), 'previous');
-  for (const [experience, $] of [pro, lite]) {
+  for (const [experience, $] of [pro]) {
     assert.match($.root().text(), /SUMMARY_SENTINEL/);
     assert.match($.root().text(), /ACTION_4/);
     assert.match($.root().text(), /CHANGE_2/);
@@ -316,12 +281,12 @@ test('failed refreshes keep the saved report generation and source snapshot read
   }
 });
 
-test('issuer or selected-year mismatches withhold saved judgments, actions and grades in both reports', (t) => {
+test('issuer or selected-year mismatches withhold saved judgments, actions and grades in the report', (t) => {
   for (const mismatch of ['issuer', 'year'] as const) {
     const run = fixture();
     if (mismatch === 'issuer') run.context!.securityCode = '600519';
     else run.assessment!.year = 2024;
-    for (const [experience, $] of renderBoth(t, run)) {
+    for (const [experience, $] of renderReports(t, run)) {
       const text = $.root().text();
       for (const marker of [
         'SUMMARY_SENTINEL',
@@ -344,7 +309,7 @@ test('an incomplete model cannot present saved narrative text as a completed AI 
   for (const status of ['not-configured', 'failed'] as const) {
     const run = fixture();
     run.assessment!.model.status = status;
-    for (const [experience, $] of renderBoth(t, run)) {
+    for (const [experience, $] of renderReports(t, run)) {
       assert.doesNotMatch(
         $.root().text(),
         /SUMMARY_SENTINEL|RISK_4|ACTION_4|CHANGE_2/,
@@ -361,12 +326,12 @@ test('report paragraphs and saved quotes render as escaped text rather than mode
   const malicious = '<img src=x onerror=alert(1)> SAFE_TEXT_SENTINEL';
   run.assessment!.narrative!.summary.text = { zh: malicious, en: malicious };
   run.assessment!.evidence[0].quote = '<script>alert(1)</script> SAFE_QUOTE_SENTINEL';
-  for (const [experience, $] of renderBoth(t, run)) {
+  for (const [experience, $] of renderReports(t, run)) {
     assert.equal($('img[src="x"]').length, 0, `${experience} rendered model markup`);
     assert.equal($('script').length, 0, `${experience} rendered source markup`);
     assert.match($.root().text(), /<img src=x onerror=alert\(1\)> SAFE_TEXT_SENTINEL/);
   }
-  const $pro = renderBoth(t, run)[0][1];
+  const $pro = renderReports(t, run)[0][1];
   assert.match(
     $pro('#company-report-references').text(),
     /<script>alert\(1\)<\/script> SAFE_QUOTE_SENTINEL/
@@ -380,8 +345,8 @@ test('document citations stay targeted and unreferenced or unsupported claims do
     metricIds: ['unknown-metric'],
     evidenceIds: ['unrelated-news'],
   });
-  const [pro, lite] = renderBoth(t, run);
-  for (const [experience, $] of [pro, lite]) {
+  const [pro] = renderReports(t, run);
+  for (const [experience, $] of [pro]) {
     assert.doesNotMatch($.root().text(), /UNSUPPORTED_RISK_SENTINEL/);
     assert.equal(
       $('a[href="https://example.invalid/unrelated-news"]').length,
@@ -403,7 +368,7 @@ test('older saved reports keep their full paragraphs without optional highlighti
   const run = fixture();
   delete run.assessment!.narrative!.summaryHighlights;
   delete run.assessment!.narrative!.suggestedQuestions;
-  for (const [experience, $] of renderBoth(t, run)) {
+  for (const [experience, $] of renderReports(t, run)) {
     assert.match($.root().text(), /SUMMARY_SENTINEL/);
     assert.match($.root().text(), /RISK_4/);
     assert.match($.root().text(), /ACTION_4/);
@@ -412,7 +377,7 @@ test('older saved reports keep their full paragraphs without optional highlighti
   }
 });
 
-test('saved follow-ups retain their run, annual scope and report generation, and cached Lite remains disabled', (t) => {
+test('saved follow-ups retain their run, annual scope and report generation', (t) => {
   const run = fixture();
   const $pro = render(createElement(CompanyReportDocument, { run, disabled: true }), 'zh-Hans');
   const buttons = $pro('.report-document-followups button').toArray();
@@ -423,104 +388,5 @@ test('saved follow-ups retain their run, annual scope and report generation, and
     assert.equal($pro(button).attr('data-basis'), 'consolidated');
     assert.equal($pro(button).attr('data-report-generated-at'), generatedAt);
     assert.equal($pro(button).is(':disabled'), true);
-  }
-  const $lite = renderBoth(t, run)[1][1];
-  assert.equal($lite('.lite-question-list button').length, 2);
-  assert.equal($lite('.lite-question-list button:disabled').length, 2);
-  assert.match($lite('.lite-question-list').text(), /QUESTION_1/);
-});
-
-test('Lite shows the approved four topical channels while retaining the complete same-generation printable report', (t) => {
-  const run = fixture();
-  const channels = ['finance', 'public', 'reputation', 'original'];
-  for (const locale of ['zh-Hans', 'en'] as const) {
-    for (const page of channels) {
-      const [, lite] = renderBoth(t, run, locale, page);
-      const $ = lite[1];
-      assert.equal($('.lite-research').attr('data-reading-page'), page);
-      assert.equal($('[data-lite-page]').length, 4);
-      assert.equal($('[data-lite-page]:not([hidden])').length, 1);
-      assert.equal($('[data-lite-page]:not([hidden])').attr('data-lite-page'), page);
-      assert.equal($('[data-lite-page]:not([hidden]) [data-lite-page-title]').length, 1);
-      assert.equal($('.lite-company-screen a[aria-current="page"]').length, 1);
-      for (const marker of [
-        'SUMMARY_SENTINEL',
-        'DIMENSION_cash',
-        'ACTION_4',
-        'CHANGE_2',
-        'GAP_SENTINEL',
-      ])
-        assert.ok(
-          $('[data-lite-print-document]').text().includes(marker),
-          `Channel ${page} discarded printable ${marker}`
-        );
-      assert.equal($('[data-lite-print-document] .lite-report-detail').length, 1);
-      assert.equal($('[data-lite-print-document] [data-lite-page]').length, 0);
-      assert.ok(hasSavedOriginal($));
-      const channelLinks = $('.lite-company-screen .signal-channel-tabs a').toArray();
-      assert.equal(channelLinks.length, 4);
-      for (const link of channelLinks) {
-        const url = new URL($(link).attr('href')!, 'https://prispect.com');
-        assert.equal(url.searchParams.get('run'), run.id);
-        assert.equal(url.searchParams.get('basis'), 'parent');
-        assert.ok(channels.includes(url.searchParams.get('page')!));
-        assert.equal(url.hash, '');
-      }
-      for (const link of $('.lite-report-evidence-route').toArray()) {
-        const url = new URL($(link).attr('href')!, 'https://prispect.com');
-        assert.equal(url.searchParams.get('run'), run.id);
-        assert.equal(url.searchParams.get('page'), 'original');
-        assert.equal(url.searchParams.get('generation'), generatedAt);
-        assert.ok(url.searchParams.get('claim'));
-      }
-    }
-  }
-});
-
-test('old Lite report URLs open their canonical topical channel without losing saved source details', (t) => {
-  for (const [legacy, canonical] of [
-    ['overview', 'finance'],
-    ['numbers', 'finance'],
-    ['sources', 'original'],
-    ['questions', 'reputation'],
-  ]) {
-    const run = fixture();
-    const [, lite] = renderBoth(t, run, 'zh-Hans', legacy);
-    const $ = lite[1];
-    assert.equal($('.lite-research').attr('data-reading-page'), canonical);
-    assert.equal($('[data-lite-page]:not([hidden])').attr('data-lite-page'), canonical);
-    assert.equal($('[data-lite-page]:not([hidden])').length, 1);
-    assert.match($('[data-lite-print-document]').text(), /SOURCE_QUOTE_SENTINEL/);
-    assert.ok(hasSavedOriginal($));
-  }
-});
-
-test('real-company channels use the selected issuer and never borrow the Songyuan example original', (t) => {
-  for (const [securityCode, orgId, companyName] of [
-    ['600519', 'synthetic-issuer-a', '合成主体甲 ISSUER_A'],
-    ['300893', 'synthetic-issuer-b', '合成主体乙 ISSUER_B'],
-  ]) {
-    const run = fixture();
-    run.id = `synthetic-channel-${securityCode}`;
-    run.input.securityCode = securityCode!;
-    run.input.orgId = orgId!;
-    run.context!.securityCode = securityCode!;
-    run.context!.orgId = orgId!;
-    run.context!.companyName = companyName!;
-    delete run.assessment;
-    for (const page of ['finance', 'public', 'reputation', 'original']) {
-      const [, lite] = renderBoth(t, run, 'zh-Hans', page);
-      const $ = lite[1];
-      const visible = $('[data-lite-page]:not([hidden])');
-      assert.equal(visible.length, 1);
-      assert.ok($('.lite-company-screen').text().includes(companyName!));
-      assert.doesNotMatch(visible.text(), /松原安全|366,373,098\.93|26,197,123\.70/);
-      assert.equal(
-        visible.find('img[src*="songyuan"], img[alt*="松原"], img[src*="annual-2025-page"]').length,
-        0,
-        `${securityCode} ${page} borrowed a historical example crop`
-      );
-      assert.equal(visible.find('[data-grade]').length, 0);
-    }
   }
 });

@@ -39,7 +39,7 @@ jobs:
       - name: Install browser for entry-flow acceptance
         run: node node_modules/playwright/cli.js install --with-deps chromium
         working-directory: project
-      - name: Verify real Lite and Pro entry flows
+      - name: Verify company research entry and reading flows
         run: node --import tsx scripts/browser-qa.mjs
         working-directory: project
       - name: Upload browser acceptance evidence

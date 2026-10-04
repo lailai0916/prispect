@@ -19,7 +19,6 @@ const pages = new Set([
   '/new',
   '/materials',
   '/company',
-  '/companies/compare',
   '/query',
   '/decisions',
   '/compare',
@@ -27,11 +26,23 @@ const pages = new Set([
 
 const legacyPages: Record<string, string> = {
   '/research': '/query',
+  '/companies/compare': '/query',
   '/about': '/docs/about',
   '/method': '/docs/methodology',
   '/privacy': '/docs/privacy',
   '/terms': '/docs/terms',
   '/copyright': '/docs/copyright',
+};
+
+const retiredCompanyPages: Record<string, { section: CompanySection; focus?: string }> = {
+  finance: { section: 'overview' },
+  overview: { section: 'overview' },
+  numbers: { section: 'trends' },
+  public: { section: 'disclosures', focus: 'announcements' },
+  reputation: { section: 'disclosures', focus: 'news' },
+  questions: { section: 'disclosures', focus: 'news' },
+  original: { section: 'sources' },
+  sources: { section: 'sources' },
 };
 
 /** Accept only local application pages, never server endpoints or external URLs. */
@@ -41,7 +52,7 @@ export function appPath(value: string, origin: string): string | null {
   try {
     const url = new URL(value, origin);
     const originalPath = url.pathname.replace(/\/+$/, '') || '/';
-    const pathname =
+    let pathname =
       legacyPages[originalPath] ||
       (originalPath === '/docs' &&
       (url.searchParams.has('section') || url.hash.startsWith('#document-'))
@@ -49,7 +60,36 @@ export function appPath(value: string, origin: string): string | null {
         : originalPath);
     if (url.origin !== origin || (!pages.has(pathname) && !/^\/tasks\/[^/]+$/.test(pathname)))
       return null;
+    if (originalPath === '/companies/compare') {
+      for (const key of ['a', 'b', 'basis']) url.searchParams.delete(key);
+    }
+    if (originalPath === '/') {
+      const view = url.searchParams.get('view');
+      if (view === 'search' || view === 'guide' || view === 'example') {
+        pathname = view === 'search' ? '/query' : view === 'guide' ? '/docs/guide' : '/';
+        url.searchParams.delete('view');
+        if (url.hash.startsWith('#showcase-')) url.hash = '';
+      }
+    }
     if (pathname === '/company') {
+      const experience = url.searchParams.get('experience');
+      const retiredPage = url.searchParams.get('page');
+      if (experience === 'lite') {
+        const anchoredPage = url.hash.startsWith('#lite-') ? url.hash.slice(6) : null;
+        const mapping =
+          [anchoredPage, retiredPage].find(
+            (value) => value && Object.hasOwn(retiredCompanyPages, value)
+          ) || 'finance';
+        const target = retiredCompanyPages[mapping]!;
+        url.searchParams.set('section', target.section);
+        if (target.focus) url.searchParams.set('focus', target.focus);
+        else url.searchParams.delete('focus');
+        for (const key of ['page', 'basis', 'claim', 'source', 'generation'])
+          url.searchParams.delete(key);
+        if (url.hash.startsWith('#lite-')) url.hash = '';
+        if (url.searchParams.get('run')) url.searchParams.set('cached', '1');
+      }
+      if (experience === 'lite' || experience === 'pro') url.searchParams.delete('experience');
       const requestedSection = url.searchParams.get('section');
       const requestedFocus = url.searchParams.get('focus');
       const oldAnchor =

@@ -227,15 +227,11 @@ export function usePageEntrance(route: string) {
       if (child === current) return;
       current = child;
       animation?.cancel();
-      // Lite pages own their entrance and chapter transitions. Keep their roots
-      // outside the generic route animation so a same-run page has one owner.
       if (
         !preference.matches &&
         child &&
         !child.classList.contains('page-loading') &&
-        !child.classList.contains('cinematic-home') &&
-        !child.classList.contains('showcase-home') &&
-        !child.classList.contains('lite-research')
+        !child.classList.contains('cinematic-home')
       ) {
         animation = child.animate([{ opacity: 0.85 }, { opacity: 1 }], {
           duration: 120,

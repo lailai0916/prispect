@@ -26,11 +26,11 @@ export const guideDocument: ProductDocument = {
         rows: [
           [
             ['先看懂一家公司的公开线索', 'Start understanding a company’s public evidence'],
-            ['Lite 首页', 'Lite home'],
+            ['首页', 'Home'],
           ],
           [
             ['系统核对财务、走势与同行', 'Inspect financials, trends and peers'],
-            ['Pro 公司研究', 'Pro company research'],
+            productTerms.companyResearch,
           ],
           [
             [
@@ -53,46 +53,15 @@ export const guideDocument: ProductDocument = {
         ],
       },
       links: [
-        { label: ['Lite 首页', 'Lite home'], href: '/' },
-        { label: ['Pro 公司研究', 'Pro company research'], href: '/query' },
+        { label: ['首页', 'Home'], href: '/' },
+        { label: productTerms.companyResearch, href: '/query' },
         { label: productTerms.paymentsAndHandovers, href: '/decisions' },
         { label: productTerms.materials, href: '/materials' },
       ],
     },
     {
-      id: 'experience',
-      title: ['Lite 与 Pro', 'Lite and Pro'],
-      paragraphs: [
-        [
-          'Lite 首屏将析光标志、字标和搜索框放在一起，可以直接查询，不需要额外进入步骤；“查公司、读样例、阅读路径”保持为紧凑入口。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。每家公司都有财务、公开事项、口碑线索和原文四个独立页面，点击标签切换，浏览器返回和直接刷新也可继续阅读。四页使用当前企业自己的已保存资料，未取得内容会如实说明。',
-          'Lite places the Prispect mark, wordmark and usable search together on the first screen, with no extra entry step. Search, Example and Reading guide remain compact links. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Each company has four separate pages: Finance, Public records, Reputation and Original. Use their tabs to switch pages, or continue through browser history and direct refresh. All four use the current company’s own saved materials and label anything not acquired.',
-        ],
-        [
-          '财务页从利润与经营现金对照开始，继续展开完整财务分析、行动与待核查内容；舍入金额注明约数与单位，详情保留精确原值。公开事项页阅读已取得的公司公告，口碑线索页阅读媒体与公众讨论记录；标题、摘要和已取得节选分别标注，公众观点不等于已证实事实，重复报道也不等于独立佐证。各页可自然向下阅读，以原生折叠打开更多内容。',
-          'Finance starts with a profit and operating-cash comparison, with the complete financial analysis, actions and unresolved checks available in details. Rounded figures state their units and approximation; details retain exact values. Public records shows acquired company disclosures, while Reputation shows saved media and public-discussion leads. Titles, digests and acquired excerpts are distinguished: public opinion is not established fact, and repetition is not independent corroboration. Read down each page and open native details for more content.',
-        ],
-        [
-          '原文页只展示这家企业已记录的出处、字段和节选，来源保留期间、已知页码与读取范围，并可回看相关判断。没有取得 PDF、页码或全文时会明确说明，不用其他公司的年报图片填补。松原安全年报第 190／191 页裁图只在历史样例中展示，样例保留原公司、年度与出处。筛选、翻页和展开只整理已取得材料；从任一企业页打印仍保留完整报告及来源。',
-          'Original shows only this company’s recorded sources, fields and excerpts, retaining their periods, known pages and reading scope, with access to related judgments. Missing PDFs, page numbers or full text are labeled; another company’s report images never fill the gap. Songyuan Safety annual-report crops from pages 190/191 appear only in the historical example, which retains its original company, year and sources. Filtering, paging and expansion organize acquired materials only. Printing from any company page retains the complete report and sources.',
-        ],
-        [
-          '从“对比”选择当前账号或浏览器访客的两份已有企业记录，并排阅读营业收入、所选口径净利润、经营现金流和货币资金。各列保留自己的年度、资料日期和出处；同年度、主体及人民币口径核对通过且字段可用时才显示 A 减 B。缺失或来源冲突不补零，不同年度只分别展示。选择、交换与切换口径不发起研究或模型调用；可从任一列回到这家企业的四个页面。',
-          'Choose two saved company records from Compare to read revenue, the selected net-profit basis, operating cash and monetary funds side by side. Each column retains its own year, snapshot date and sources. A minus B requires distinct verified issuers, matching annual CNY scope and available fields. Missing or conflicting inputs are not zero-filled; different years remain separate. Selection, swapping and basis changes do not start research or model calls. Each column links back to that company’s four pages.',
-        ],
-        [
-          'Pro 从独立公司研究入口进入，使用原有七项侧边栏查看研究报告、财务走势、行业对比等专业页面。两版使用相同的数据源、研究记录和分析结果，分别组织展示与操作。切换 Lite／Pro 或在 Lite 翻页，保留当前企业、研究记录、年度及已保存资料、来源／报告版本，不新建查询、重新采集或调用模型；已经开始的后台分析按原状态继续。Lite 翻页保留所选利润口径，Pro 使用原有默认值与口径控件。判断与追问绑定各自的保存报告及引用代次，旧报告会注明原日期。未生成 AI 报告时，仍可核对已取得的金额和规则观察。',
-          'Pro keeps its separate research entry and seven sidebar destinations, including Research report, Financial trends and Industry comparison. Both experiences use the same data sources, research record and analysis results, with distinct presentation and interactions. Switching Lite/Pro or turning a Lite page retains the company, research record, year and saved data/source/report versions without creating a query, acquiring sources or calling a model; existing background analysis continues in its current state. Lite page links retain its selected profit basis, while Pro keeps its existing default and basis control. Judgments and follow-ups stay bound to their saved report and reference generation, and older reports retain their original dates. Before an AI report is available, acquired amounts and rule observations remain readable.',
-        ],
-      ],
-      links: [
-        { label: ['打开 Lite', 'Open Lite'], href: '/' },
-        { label: ['两家公司对比', 'Compare two companies'], href: '/companies/compare' },
-        { label: ['打开 Pro', 'Open Pro'], href: '/query' },
-      ],
-    },
-    {
       id: 'company',
-      title: ['Pro 公司研究与确认候选', 'Pro company research and candidate confirmation'],
+      title: ['公司研究与确认候选', 'Company research and candidate confirmation'],
       bullets: [
         [
           '进入“新建研究”，输入公司名称或证券代码，确认披露主体后进入研究报告。先取得年度金额、经营现金与规则观察，点击“数据与计算”核对字段、公式和来源。资料保存后，可用的 AI 服务在后台继续分析公开资料；你可以继续阅读数据，完成后点击“查看 AI 报告”。原件核查仍需单独开始，不会自动采用候选。入口保留当前账号或访客的输入草稿。',
@@ -519,8 +488,8 @@ export const guideDocument: ProductDocument = {
           'Company queries display structured public data first. After sources are saved, an available AI service generates a report in the background; reading the data does not require waiting. Deep research, financial-report explanations and company or signed-in product answers can also use AI. An unavailable or incomplete service retains rule results with its actual status. Visitor product questions search local documents only. See the privacy policy for processing scope and third-party services.',
         ],
         [
-          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。Lite 使用固定深蓝、亮蓝与白色外观；Pro 和文档在打开网页或系统主题变化时跟随系统，也可点击顶栏图标切换深色与浅色。',
-          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Lite uses a fixed navy, blue and white appearance. Pro and documentation follow the system on page load or system theme changes; their header icon also switches between light and dark.',
+          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。网站在打开网页或系统主题变化时跟随系统，也可点击顶栏图标切换深色与浅色。',
+          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. The website follows the system on page load or system theme changes; the header icon also switches between light and dark.',
         ],
         [
           '点击顶栏搜索，或按 ⌘ K / Ctrl K，跳转到页面、已保存公司、核查报告和材料。键入时只筛选当前工作区，不发送模型请求；用方向键选择、Enter 打开、Esc 关闭。列表搜索可用 Esc 清除；页面动画遵循系统的减少动态效果设置。',

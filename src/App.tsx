@@ -29,7 +29,6 @@ import type {
   AccountUser,
 } from '../shared/contracts';
 import { api, setCsrfToken, RequestError, requestErrorText } from './api';
-import { companyPath } from '../shared/company-workspace';
 import { type Locale, setDisplayTimeZone } from './format';
 import { changeComposerOwner } from './start-draft';
 import { companyReadingMemory } from './company-reading-memory';
@@ -63,14 +62,11 @@ import {
 import { CompanySidebar } from './CompanySidebar';
 import { CompanyRecordsProvider } from './CompanyRecordsContext';
 import { CompanyHeaderContext } from './CompanyHeaderContext';
-import { ShowcaseNavigation } from './showcase/ShowcaseNavigation';
 import { CommandMenu } from './CommandMenu';
 import { PageLoading, ToastNotice, usePageEntrance } from './Experience';
 import './polish.css';
 import './company-workspace.css';
 import './research-shell.css';
-import './showcase/lite-hermes-theme.css';
-import './showcase/lite-shell.css';
 import { CompanyAssistantContext, type AssistantCompany } from './company-assistant-context';
 const CompanyAssistant = lazyPage(
   () => import('./CompanyAssistant'),
@@ -98,14 +94,6 @@ const Decisions = lazyPage(
 const CompanyWorkspacePage = lazyPage(
   () => import('./pages/CompanyWorkspace'),
   (module) => module.CompanyWorkspacePage
-);
-const LiteResearchPage = lazyPage(
-  () => import('./showcase/LiteResearch'),
-  (module) => module.LiteResearchPage
-);
-const LiteCompanyComparePage = lazyPage(
-  () => import('./showcase/LiteCompanyCompare'),
-  (module) => module.LiteCompanyComparePage
 );
 const CompanyQueryPage = lazyPage(
   () => import('./pages/CompanyQuery'),
@@ -147,34 +135,23 @@ const DocsHome = lazyPage(
   () => import('./pages/DocsHome'),
   (module) => module.DocsHome
 );
-const publicPages = [
-  '/',
-  '/query',
-  '/company',
-  '/companies/compare',
-  '/docs',
-  '/login',
-  '/register',
-  ...documentPaths,
-];
+const publicPages = ['/', '/query', '/company', '/docs', '/login', '/register', ...documentPaths];
 
-function pageResource(path: string) {
+function pageResource(path: string, signedIn = false) {
   const page = path.split('?')[0];
   if (documentPaths.includes(page as DocumentPath)) return DocumentationPage;
   if (page.startsWith('/tasks/')) return TaskPage;
   switch (page) {
     case '/':
-      return Home;
+      return signedIn && new URLSearchParams(path.split('?')[1]).get('view') !== 'story'
+        ? CompanyQueryPage
+        : Home;
     case '/docs':
       return DocsHome;
     case '/query':
       return CompanyQueryPage;
     case '/company':
-      return new URLSearchParams(path.split('?')[1]).get('experience') === 'lite'
-        ? LiteResearchPage
-        : CompanyWorkspacePage;
-    case '/companies/compare':
-      return LiteCompanyComparePage;
+      return CompanyWorkspacePage;
     case '/workspace':
       return WorkspacePage;
     case '/materials':
@@ -442,7 +419,7 @@ export function App() {
         return;
       const path = appLinkPath(link.getAttribute('href')!, location.origin);
       if (path)
-        void pageResource(path)
+        void pageResource(path, committedAccount.current)
           ?.preload()
           .catch(() => {});
     };
@@ -610,26 +587,16 @@ export function App() {
     ['/compare', t(...productTerms.compareReviews)],
   ] as const;
   const sessionAvailable = loaded && !loadError;
-  const showcaseHome =
-    page === '/' && new URLSearchParams(route.split('?')[1]).get('view') !== 'story';
-  const liteSearchActive =
-    showcaseHome &&
-    !['example', 'guide'].includes(new URLSearchParams(route.split('?')[1]).get('view') || '');
-  const liteCompany =
-    page === '/company' && new URLSearchParams(route.split('?')[1]).get('experience') === 'lite';
-  const liteComparison = page === '/companies/compare';
-  const liteExperience = showcaseHome || liteCompany || liteComparison;
-  const experienceRun =
+  const storyHome =
+    page === '/' && new URLSearchParams(route.split('?')[1]).get('view') === 'story';
+  const companyRun =
     page === '/company' ? new URLSearchParams(route.split('?')[1]).get('run') : null;
-  const liteLink = experienceRun ? `${companyPath(experienceRun)}&experience=lite` : '/';
-  const proLink = experienceRun ? `${companyPath(experienceRun)}&cached=1` : '/query';
   const business = Boolean(
     sessionAvailable &&
       user &&
       (!protectedPage || accountUser) &&
-      page !== '/' &&
-      !liteCompany &&
-      !liteComparison &&
+      (page !== '/' || accountUser) &&
+      !storyHome &&
       !['/login', '/register', '/docs', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
@@ -728,35 +695,15 @@ export function App() {
             publish: publishAssistantCompany,
           }}
         >
-          <div
-            className={`app-shell ${business ? 'business-shell' : 'public-shell'}${liteExperience ? ' showcase-shell lite-workspace-shell' : ''}${showcaseHome ? ' showcase-home-shell' : liteExperience ? ' showcase-research-shell' : ''}`}
-          >
+          <div className={`app-shell ${business ? 'business-shell' : 'public-shell'}`}>
             <header className="site-header">
               <a className="brand-link" href="/" aria-label={t('析光首页', 'Prispect home')}>
                 <Logo />
               </a>
               {business && <CompanyHeaderContext route={route} label={currentSection} />}
               {!business && !documentationRoute && (
-                <nav
-                  className={`navigation${liteExperience ? ' lite-header-navigation' : ''}`}
-                  aria-label={t('主导航', 'Main navigation')}
-                >
-                  {liteExperience ? (
-                    <>
-                      <a href="/?view=search" aria-current={liteSearchActive ? 'page' : undefined}>
-                        {t('查公司', 'Find a company')}
-                      </a>
-                      <a
-                        href="/companies/compare"
-                        aria-current={liteComparison ? 'page' : undefined}
-                      >
-                        {t('对比', 'Compare')}
-                      </a>
-                      <a href="/?view=guide">{t('如何阅读', 'How to read')}</a>
-                    </>
-                  ) : (
-                    <a href="/docs">{t(...documentationTitle)}</a>
-                  )}
+                <nav className="navigation" aria-label={t('主导航', 'Main navigation')}>
+                  <a href="/docs">{t(...documentationTitle)}</a>
                 </nav>
               )}
               <div className="header-actions">
@@ -797,20 +744,7 @@ export function App() {
                     {locale === 'en' ? 'EN' : '中'}
                   </button>
                 </Hint>
-                {!liteExperience && <ThemeControl />}
-                {(liteExperience || page === '/query' || page === '/company') && (
-                  <nav
-                    className="experience-switch"
-                    aria-label={t('选择版本', 'Choose experience')}
-                  >
-                    <a href={liteLink} aria-current={liteExperience ? 'page' : undefined}>
-                      Lite
-                    </a>
-                    <a href={proLink} aria-current={!liteExperience ? 'page' : undefined}>
-                      Pro
-                    </a>
-                  </nav>
-                )}
+                <ThemeControl />
                 {business && (
                   <button
                     className="icon-button mobile-menu"
@@ -843,9 +777,6 @@ export function App() {
                     )}
                   </>
                 ) : null}
-                {liteExperience && (
-                  <ShowcaseNavigation homeActive={liteSearchActive} proLink={proLink} />
-                )}
               </div>
               {(pending > 0 || openingPage || (loaded && refreshingWorkspace)) && (
                 <div
@@ -914,11 +845,8 @@ export function App() {
                       path={page as DocumentPath}
                       section={new URLSearchParams(route.split('?')[1]).get('section')}
                     />
-                  ) : showcaseHome ? (
-                    <Home
-                      query={new URLSearchParams(route.split('?')[1])}
-                      connectionError={loadError}
-                    />
+                  ) : page === '/' && (!accountUser || storyHome) ? (
+                    <Home />
                   ) : loadError ? (
                     <div className="connection-error">
                       <CircleAlert />
@@ -935,7 +863,7 @@ export function App() {
                   ) : !loaded ? (
                     <PageLoading label={t('正在读取工作区…', 'Loading your workspace…')} />
                   ) : page === '/' ? (
-                    <Home query={new URLSearchParams(route.split('?')[1])} />
+                    <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/login' ||
                     page === '/register' ||
                     !user ||
@@ -955,20 +883,11 @@ export function App() {
                     <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/query' ? (
                     <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
-                  ) : liteComparison ? (
-                    <LiteCompanyComparePage query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/company' ? (
-                    liteCompany ? (
-                      <LiteResearchPage
-                        key={experienceRun || 'query'}
-                        query={new URLSearchParams(route.split('?')[1])}
-                      />
-                    ) : (
-                      <CompanyWorkspacePage
-                        key={experienceRun || 'query'}
-                        query={new URLSearchParams(route.split('?')[1])}
-                      />
-                    )
+                    <CompanyWorkspacePage
+                      key={companyRun || 'query'}
+                      query={new URLSearchParams(route.split('?')[1])}
+                    />
                   ) : page === '/new' ? (
                     <NewReview key={route} query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/materials' ? (
@@ -996,7 +915,7 @@ export function App() {
                 </Suspense>
               </RouteErrorBoundary>
             </main>
-            {!business && !showcaseHome && (
+            {!business && (
               <footer className="site-footer">
                 <span>{t('© 2026 析光', '© 2026 Prispect')}</span>
                 <div>

@@ -15,24 +15,65 @@ import {
 
 const origin = 'https://prispect.com';
 
-test('company comparison supports native selection, empty sides and encoded owning-record return links', () => {
-  for (const query of [
-    '',
-    '?a=record%2Fone&b=record%3Ftwo&basis=consolidated',
-    '?a=record%3Ftwo&b=record%2Fone&basis=parent',
-    '?a=record%2Fone&b=&basis=parent',
-    '?a=&b=&basis=consolidated',
-  ]) {
+test('retired company-comparison links return to research without importing unrelated review IDs', () => {
+  for (const query of ['', '?a=record%2Fone&b=record%3Ftwo&basis=consolidated', '?a=&b=']) {
     const path = '/companies/compare' + query;
-    assert.equal(appPath(path, origin), path);
-    assert.equal(appLinkPath(path, origin), path);
-    assert.equal(appLinkPath(origin + path, origin), path);
-    assert.equal(loginDestination(path, origin), path);
-    assert.equal(legacyRoute('#' + path, origin), path);
+    assert.equal(appPath(path, origin), '/query');
+    assert.equal(appLinkPath(origin + path, origin), '/query');
+    assert.equal(loginDestination(path, origin), '/query');
+    assert.equal(legacyRoute('#' + path, origin), '/query');
   }
   assert.equal(appPath('/compare?first=private-review', origin), '/compare?first=private-review');
   assert.equal(appLinkPath('https://foreign.example/companies/compare?a=record', origin), null);
   assert.equal(appPath('/api/company-runs/record', origin), null);
+});
+
+test('retired Lite company pages retain the owning saved record and open the corresponding full page', () => {
+  for (const [page, section, focus] of [
+    ['finance', null, null],
+    ['overview', null, null],
+    ['numbers', 'trends', null],
+    ['public', 'disclosures', 'announcements'],
+    ['reputation', 'disclosures', 'news'],
+    ['questions', 'disclosures', 'news'],
+    ['original', 'sources', null],
+    ['sources', 'sources', null],
+  ]) {
+    const old =
+      '/company?run=record%2Fone&experience=lite&page=' +
+      page +
+      '&year=2025&basis=parent&claim=c&source=s&generation=old';
+    const path = appPath(old, origin)!;
+    const params = new URL(path, origin).searchParams;
+    assert.equal(params.get('run'), 'record/one');
+    assert.equal(params.get('year'), '2025');
+    assert.equal(params.get('cached'), '1');
+    assert.equal(params.get('section'), section);
+    assert.equal(params.get('focus'), focus);
+    for (const key of ['experience', 'page', 'basis', 'claim', 'source', 'generation'])
+      assert.equal(params.has(key), false);
+    assert.equal(appPath(path, origin), path);
+    assert.equal(legacyRoute('#' + old, origin), path);
+    assert.equal(loginDestination(old, origin), path);
+  }
+  assert.equal(
+    appPath('/company?run=record&experience=pro&report=ai', origin),
+    '/company?run=record&report=ai'
+  );
+  assert.equal(
+    appPath('/company?run=record&experience=lite&page=finance#lite-original', origin),
+    '/company?run=record&section=sources&cached=1'
+  );
+});
+
+test('retired home entry links resolve to research and canonical documentation', () => {
+  assert.equal(
+    appPath('/?view=search&query=abc&year=2025#showcase-query', origin),
+    '/query?query=abc&year=2025'
+  );
+  assert.equal(appPath('/?view=guide', origin), '/docs/guide');
+  assert.equal(appPath('/?view=example', origin), '/');
+  assert.equal(appPath('/?view=story', origin), '/?view=story');
 });
 
 test('fixed company pages resolve consistently and old combined routes remain readable', () => {
