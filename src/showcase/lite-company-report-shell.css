@@ -1,0 +1,108 @@
+.lite-company-print-document {
+  display: none;
+}
+
+.lite-company-screen .lite-company-detail-fold {
+  margin-top: 18px;
+  border: 1px solid var(--lite-line, #2b3f5c);
+  border-radius: 12px;
+  background: var(--lite-surface, #101d30);
+  color: var(--lite-ink, #f4f7fc);
+}
+
+.lite-company-detail-fold > summary {
+  min-height: 44px;
+  padding: 12px 18px;
+  color: var(--lite-primary-bright, #b8d5ff);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.lite-company-finance-detail,
+.lite-company-source-links {
+  padding: 18px;
+}
+
+.lite-company-screen .lite-company-report-section {
+  margin-top: 24px;
+}
+
+.lite-company-screen .lite-company-report-section > h3 {
+  font-size: 17px;
+  color: var(--lite-ink, #f4f7fc);
+}
+
+.lite-company-detail-figures {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0 24px;
+}
+
+.lite-company-detail-figures > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--lite-line, #2b3f5c);
+  border-radius: 8px;
+}
+
+.lite-company-detail-figures dt {
+  color: var(--lite-muted, #b9c8dd);
+  font-size: 12px;
+}
+
+.lite-company-detail-figures dd {
+  margin: 8px 0 0;
+  color: var(--lite-ink, #f4f7fc);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.lite-company-source-links {
+  list-style: none;
+  margin: 0;
+}
+
+.lite-company-source-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--lite-primary-bright, #b8d5ff);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 440px) {
+  .lite-company-detail-figures {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media print {
+  .lite-research .lite-company-screen {
+    display: none !important;
+  }
+  .lite-research .lite-company-print-document {
+    display: block !important;
+  }
+  .lite-company-print-document .lite-chapter[hidden] {
+    display: block !important;
+  }
+  .lite-research .lite-company-print-document,
+  .lite-research
+    .lite-company-print-document
+    :is(.lite-chapter, .lite-report-body, .lite-grade, .lite-evidence-explorer) {
+    --lite-paper: #fff;
+    --lite-ink: #111;
+    --lite-muted: #444;
+    --lite-faint: #444;
+    --lite-line: #bbb;
+    --lite-accent: #111;
+    --lite-cyan: #111;
+    --lite-primary-bright: #111;
+  }
+  .lite-research .lite-company-print-document :is(a, strong) {
+    color: #111 !important;
+  }
+}

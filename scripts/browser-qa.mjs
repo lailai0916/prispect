@@ -1,4 +1,4 @@
-/** Browser acceptance of real entry flows; no financial/model requests or fixtures. */
+/** Real entry acceptance plus explicit local synthetic company-channel rendering. */
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
@@ -19,10 +19,11 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 5,
+  version: 6,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
-  financialFixtures: false,
+  financialFixtures: true,
+  syntheticCompanyRecords: [],
   buildAssets: Array.from(
     (await readFile(path.join(root, 'dist/index.html'), 'utf8')).matchAll(
       /(?:src|href)="(\/assets\/[^\"]+)"/g
@@ -44,9 +45,9 @@ const receipt = {
   injectedReadFailures: [],
   metadataProtocolFixtures: [],
   limits: [
-    'No company research is submitted; live company-result, financial acquisition, same-run switching and model/assistant answers are outside this entry-flow check.',
+    'Two explicit local synthetic owning records are created through the isolated API for channel rendering; live financial acquisition and model/assistant answers remain outside this check.',
     'Screenshots require a separate visual comparison with the selected source; successful assertions are not a fidelity verdict.',
-    'Guest storage is fresh and temporary; no production records or synthetic financial responses are used.',
+    'Guest storage is fresh and temporary. Two synthetic snapshots and pure-rule saved-assessment GET overlays test issuer-bound presentation; no production records are used.',
     'The existing analytics.lailai.one/script.js telemetry script receives empty JavaScript locally; analytics behavior is outside this check.',
     'Three exactly scoped synthetic company metadata GET controls exercise empty results, HTTP failure and cancellation; real bundled public-catalog candidates are verified separately. They do not replace financial or model responses.',
   ],
@@ -776,6 +777,15 @@ async function evidenceExample(page, name) {
   );
 }
 async function capture(page, name) {
+  await page.waitForFunction(() =>
+    [
+      ...document.querySelectorAll(
+        '.lite-search-detail-heading, .lite-search-guide-cards [data-lite-card]'
+      ),
+    ]
+      .filter((node) => node.getClientRects().length)
+      .every((node) => Number(getComputedStyle(node).opacity) > 0.99)
+  );
   const filename = `${name}.png`;
   await page.screenshot({
     path: path.join(output, filename),
@@ -787,7 +797,10 @@ async function capture(page, name) {
     deviceScaleFactor: 1,
     url: new URL(page.url()).pathname + new URL(page.url()).search + new URL(page.url()).hash,
     theme: await page.locator('html').getAttribute('data-theme'),
-    locale: await page.locator('.showcase-home, .company-query-page').getAttribute('data-locale'),
+    locale: await page
+      .locator('.showcase-home, .company-query-page, .lite-research')
+      .first()
+      .getAttribute('data-locale'),
     reducedMotion: await page.evaluate(
       () => matchMedia('(prefers-reduced-motion: reduce)').matches
     ),
@@ -799,6 +812,7 @@ async function openContext({
   height = 1024,
   colorScheme = 'light',
   reducedMotion = 'no-preference',
+  measureSignal = false,
 } = {}) {
   const context = await browser.newContext({
     viewport: { width, height },
@@ -806,10 +820,20 @@ async function openContext({
     colorScheme,
     reducedMotion,
   });
-  await context.addInitScript(
-    (language) => localStorage.setItem('cashlens-locale', language),
-    locale
-  );
+  if (measureSignal)
+    await context.addInitScript(() => {
+      const clear = CanvasRenderingContext2D.prototype.clearRect;
+      CanvasRenderingContext2D.prototype.clearRect = function (...args) {
+        if (this.canvas.closest('.lite-company-stage'))
+          this.canvas.dataset.browserQaPaints = String(
+            Number(this.canvas.dataset.browserQaPaints || 0) + 1
+          );
+        return clear.apply(this, args);
+      };
+    });
+  await context.addInitScript((language) => {
+    if (!localStorage.getItem('cashlens-locale')) localStorage.setItem('cashlens-locale', language);
+  }, locale);
   await context.route('**/*', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -921,13 +945,581 @@ async function openContext({
   );
   return { page, context };
 }
+// This provider is confined to two local synthetic identities. The real bundled
+// issuer directory remains installed for the existing search acceptance checks.
+const channelIdentities = [
+  {
+    securityCode: '601234',
+    orgId: 'syntheticuiorg',
+    shortName: '合成甲企业（非真实企业）',
+    companyName: '合成甲企业（非真实企业）',
+    exchange: 'sse',
+    sourceUrl: 'https://example.invalid/601234/identity',
+  },
+  {
+    securityCode: '601235',
+    orgId: 'syntheticsecondorg',
+    shortName: '合成乙企业（非真实企业）',
+    companyName: '合成乙企业（非真实企业）',
+    exchange: 'sse',
+    sourceUrl: 'https://example.invalid/601235/identity',
+  },
+];
+let demoSnapshot;
+let deriveAssessment;
+function channelSnapshot(identity) {
+  const snapshot = demoSnapshot();
+  const second = identity.securityCode === '601235';
+  Object.assign(snapshot, {
+    securityCode: identity.securityCode,
+    orgId: identity.orgId,
+    companyName: identity.companyName,
+  });
+  const tables = {
+    income: 'RPT_F10_FINANCE_GINCOME',
+    cashflow: 'RPT_F10_FINANCE_GCASHFLOW',
+    balance: 'RPT_F10_FINANCE_GBALANCE',
+  };
+  const urls = Object.fromEntries(
+    Object.entries(tables).map(([table, reportName]) => [
+      table,
+      `https://datacenter.eastmoney.com/api/data/v1/get?reportName=${reportName}&syntheticCode=${identity.securityCode}`,
+    ])
+  );
+  snapshot.sources = Object.entries(urls).map(([table, url]) => ({
+    id: `em-${table}`,
+    provider: 'Synthetic offline annual fields',
+    dimension: 'financial',
+    url,
+    status: 'available',
+    fetchedAt: snapshot.fetchedAt,
+    latestDate: '2025-12-31',
+    count: 2,
+    note: 'Synthetic UI test data; no public response was downloaded.',
+    responseHashes: [],
+  }));
+  for (const row of snapshot.financials) {
+    row.sourceUrls = Object.values(urls);
+    row.fieldSources = Object.fromEntries(
+      Object.keys(row.amounts)
+        .filter((field) => row.amounts[field] !== null)
+        .map((field) => [field, '东方财富'])
+    );
+    row.amounts.parentProfit =
+      row.period === '2025-12-31' ? (second ? '1500000' : '70000') : '50000';
+    row.fieldSources.parentProfit = '东方财富';
+    row.originalUrl = second
+      ? `https://example.invalid/${identity.securityCode}/${row.period.slice(0, 4)}-synthetic-annual.pdf`
+      : null;
+    if (second && row.period === '2025-12-31')
+      Object.assign(row.amounts, { netProfit: '2000000', ocf: '3000000' });
+  }
+  snapshot.announcements = [
+    {
+      id: `synthetic-public-${identity.securityCode}`,
+      title: `Synthetic ${identity.securityCode} public disclosure`,
+      date: '2026-09-30',
+      url: `https://example.invalid/${identity.securityCode}/public`,
+      sources: [
+        {
+          provider: 'Synthetic offline disclosure',
+          url: `https://example.invalid/${identity.securityCode}/public`,
+        },
+      ],
+      category: 'Synthetic public record',
+      attention: 'routine',
+      matched: '',
+      meaning: `Stored disclosure prompt for ${identity.securityCode}`,
+      nextQuestion: 'Verify the original before attributing a cause.',
+      excerpt: {
+        quote: `Literal synthetic ${identity.securityCode} disclosure excerpt; not a real issuer statement.`,
+        page: 7,
+        url: `https://example.invalid/${identity.securityCode}/public`,
+        sha256: 'synthetic-input-only',
+        pagesRead: 1,
+      },
+    },
+  ];
+  snapshot.news = [
+    {
+      title: `Synthetic ${identity.securityCode} media headline`,
+      date: '2026-10-01',
+      media: 'Synthetic offline media',
+      provider: 'Synthetic provider',
+      url: `https://example.invalid/${identity.securityCode}/news`,
+      digest: `Saved synthetic ${identity.securityCode} media digest; article body not acquired.`,
+      contentScope: 'digest',
+    },
+  ];
+  snapshot.discussions = [
+    {
+      id: `synthetic-post-${identity.securityCode}`,
+      securityCode: identity.securityCode,
+      title: `Synthetic ${identity.securityCode} public opinion`,
+      date: '2026-10-02',
+      url: `https://example.invalid/${identity.securityCode}/discussion`,
+      provider: 'Synthetic public platform',
+      textScope: 'post-excerpt',
+      excerpt: {
+        text: `Literal synthetic ${identity.securityCode} public opinion; unverified.`,
+        url: `https://example.invalid/${identity.securityCode}/discussion`,
+        sha256: 'synthetic-input-only',
+        readAt: snapshot.fetchedAt,
+      },
+    },
+    {
+      id: 'foreign-issuer-post',
+      securityCode: second ? '601234' : '601235',
+      title: 'FOREIGN_ISSUER_DISCUSSION_MUST_STAY_ABSENT',
+      date: '2026-10-02',
+      url: 'https://example.invalid/foreign/discussion',
+      provider: 'Synthetic other issuer',
+      textScope: 'title',
+    },
+  ];
+  snapshot.warnings = [
+    'All data is synthetic offline UI acceptance input. No financial source, PDF or model was contacted.',
+  ];
+  return snapshot;
+}
+function channelSearch(query) {
+  return Promise.resolve({
+    query,
+    candidates: channelIdentities
+      .filter((identity) => identity.securityCode === query.trim())
+      .map((identity) => structuredClone(identity)),
+    limitedToListed: true,
+    source: 'cninfo',
+    truncated: false,
+  });
+}
+async function compactHomeModes(page, name) {
+  const measured = await page.locator('.lite-search-modes').evaluate((nav) => ({
+    width: nav.getBoundingClientRect().width,
+    links: [...nav.querySelectorAll('a')].map((link) => {
+      const box = link.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(link);
+      return {
+        height: box.height,
+        left: box.left,
+        right: box.right,
+        text: [...range.getClientRects()].map((r) => ({ left: r.left, right: r.right })),
+      };
+    }),
+  }));
+  assert.ok(measured.width <= 341, `${name}: mode rail wider than 340px: ${measured.width}`);
+  assert.equal(measured.links.length, 3);
+  for (const link of measured.links) {
+    assert.ok(link.height >= 43.5, `${name}: mode hit target below 44px`);
+    for (const text of link.text)
+      assert.ok(
+        text.left >= link.left - 1 && text.right <= link.right + 1,
+        `${name}: mode label clipped`
+      );
+  }
+  check(`${name}: three compact native destinations have 44px targets and complete labels`);
+}
+async function companyChannelsAcceptance() {
+  const { page, context } = await openContext({
+    locale: 'en',
+    reducedMotion: 'reduce',
+    measureSignal: true,
+  });
+  const account = await (await context.request.get(`${base}/api/auth/session`)).json();
+  assert.equal(account.user.isGuest, true);
+  const saved = [];
+  for (const identity of channelIdentities) {
+    const response = await context.request.post(`${base}/api/company-runs`, {
+      headers: {
+        Origin: base,
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-Token': account.csrfToken,
+      },
+      data: {
+        securityCode: identity.securityCode,
+        orgId: identity.orgId,
+        year: 2025,
+        purpose: 'external',
+        researchMode: 'financial',
+      },
+    });
+    assert.equal(response.status(), 202, await response.text());
+    const created = await response.json();
+    await application.waitForIdle();
+    const run = await (await context.request.get(`${base}/api/company-runs/${created.id}`)).json();
+    assert.equal(run.status, 'ready');
+    assert.equal(run.identity.securityCode, identity.securityCode);
+    assert.equal(run.context.securityCode, identity.securityCode);
+    // Pure rule derivation is a synthetic saved-assessment GET overlay. The
+    // owning record and its context were created by the real local store above.
+    run.assessment = deriveAssessment(run);
+    run.assessmentStatus = 'ready';
+    run.assessment.model = { status: 'not-configured' };
+    saved.push(run);
+    receipt.syntheticCompanyRecords.push({
+      runId: run.id,
+      securityCode: identity.securityCode,
+      owner: account.user.id,
+      year: run.input.year,
+      snapshot: run.context.fetchedAt,
+      generation: run.assessment.generatedAt,
+      modelCalls: 0,
+      financialRetrievalCalls: 0,
+    });
+  }
+  const records = new Map(saved.map((run) => [run.id, run]));
+  await context.route('**/api/company-runs/*', async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const run = records.get(url.pathname.slice('/api/company-runs/'.length));
+    if (request.method() === 'GET' && run)
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(run),
+      });
+    else await route.fallback();
+  });
+  check(
+    'Two distinct local owning company records use explicit synthetic snapshots and pure rules, with zero retrieval/model calls'
+  );
+  const href = (run, page = 'finance', basis = 'consolidated') =>
+    `${base}/company?run=${run.id}&experience=lite&page=${page}&basis=${basis}`;
+  const screen = () => page.locator('.lite-company-screen');
+  const stage = () => screen().locator('.lite-company-stage');
+  async function stable(run, channel, basis = 'consolidated') {
+    await page
+      .locator(
+        `.lite-research[data-run-id="${run.id}"][data-reading-page="${channel}"][data-basis="${basis}"]`
+      )
+      .waitFor();
+    await page.evaluate(() => document.fonts.ready);
+    await page.waitForFunction(() => {
+      const node = document.querySelector(
+        '.lite-company-screen .signal-channel-panel:not([hidden])'
+      );
+      if (!node) return false;
+      const targets = [node, ...node.querySelectorAll('h2,dl,li')];
+      return targets.every((target) => Number(getComputedStyle(target).opacity) > 0.99);
+    });
+    assert.equal(await screen().locator('[data-company-channel]:visible').count(), 1);
+    assert.equal(await stage().locator('nav a[aria-current="page"]').count(), 1);
+    assert.equal(
+      await page.locator('.lite-research').getAttribute('data-report-generation'),
+      run.assessment.generatedAt
+    );
+    assert.equal(await page.locator('.lite-research').getAttribute('data-snapshot'), 'current');
+    assert.equal(run.assessment.snapshotFetchedAt, run.context.fetchedAt);
+    assert.ok((await screen().innerText()).includes(run.identity.shortName));
+    assert.ok(!(await screen().innerText()).includes('松原'));
+    assert.equal(
+      await screen()
+        .locator('img[src*="songyuan"],img[src*="page-190"],img[src*="page-191"]')
+        .count(),
+      0
+    );
+    assert.equal(await page.locator('[data-lite-print-document]').isVisible(), false);
+  }
+  for (const [index, run] of saved.entries()) {
+    await page.goto(href(run), { waitUntil: 'networkidle' });
+    await stable(run, 'finance');
+    const expected =
+      index === 0
+        ? { profit: '100000.00', cash: '60000.00', delta: '40000.00', parent: '70000.00' }
+        : { profit: '2000000.00', cash: '3000000.00', delta: '-1000000.00', parent: '1500000.00' };
+    assert.equal(
+      await stage().locator('[data-company-field=netProfit] dd').getAttribute('data-exact-yuan'),
+      expected.profit
+    );
+    assert.equal(
+      await stage().locator('[data-company-field=ocf] dd').getAttribute('data-exact-yuan'),
+      expected.cash
+    );
+    const widths = await stage()
+      .locator('.signal-bar')
+      .evaluateAll((bars) =>
+        bars.map((bar) => parseFloat(bar.style.getPropertyValue('--signal-bar-width')))
+      );
+    assert.equal(widths.length, 2);
+    assert.ok(
+      Math.abs(widths[0] / widths[1] - Number(expected.profit) / Number(expected.cash)) < 0.001
+    );
+    await stage().locator('.signal-scene-controls button').nth(1).click();
+    assert.equal(
+      await stage().locator('.signal-difference-amount').getAttribute('data-exact-yuan'),
+      expected.delta
+    );
+    await stage().locator('.signal-exact-data summary').click();
+    const disclosed = await stage().locator('.signal-exact-data dl dd').allTextContents();
+    assert.deepEqual(
+      disclosed.map((text) => text.replace(/CNY|[,\s]/g, '')),
+      [expected.profit, expected.cash, expected.delta]
+    );
+    const sources = await stage()
+      .locator('.lite-company-amount-sources a')
+      .evaluateAll((anchors) => anchors.map((anchor) => anchor.href));
+    assert.equal(sources.length, 2);
+    assert.ok(
+      sources.every(
+        (url) => new URL(url).searchParams.get('syntheticCode') === run.input.securityCode
+      )
+    );
+    check(
+      `${run.input.securityCode}: own exact finance, signed difference, same amount scale and field-specific source URLs`
+    );
+    await capture(page, `company-${run.input.securityCode}-finance-1440-en`);
+    for (const channel of ['public', 'reputation', 'original']) {
+      const next = stage().locator(`nav a[href*="page=${channel}"]`);
+      await next.focus();
+      await page.keyboard.press('Enter');
+      await page.waitForURL(href(run, channel));
+      await stable(run, channel);
+      assert.equal(
+        await stage()
+          .locator('[data-lite-page-title]:visible')
+          .evaluate((node) => node === document.activeElement),
+        true
+      );
+      if (channel === 'public') {
+        assert.ok(
+          (await screen().innerText()).includes(
+            `Synthetic ${run.input.securityCode} public disclosure`
+          )
+        );
+        await screen().locator('.lite-company-signal-detail summary:visible').first().click();
+        assert.ok(
+          (await screen().innerText()).includes(
+            `Literal synthetic ${run.input.securityCode} disclosure excerpt`
+          )
+        );
+        assert.equal(
+          await screen().locator('.lite-company-signal-source').first().getAttribute('href'),
+          `https://example.invalid/${run.input.securityCode}/public`
+        );
+      }
+      if (channel === 'reputation') {
+        const text = await screen().innerText();
+        assert.ok(text.includes(`Synthetic ${run.input.securityCode} media headline`));
+        assert.ok(text.includes(`Synthetic ${run.input.securityCode} public opinion`));
+        assert.ok(!text.includes('FOREIGN_ISSUER_DISCUSSION_MUST_STAY_ABSENT'));
+        for (const detail of await screen()
+          .locator('.lite-company-signal-detail summary:visible')
+          .all())
+          await detail.click();
+        assert.ok(
+          (await screen().innerText()).includes(
+            `Literal synthetic ${run.input.securityCode} public opinion; unverified.`
+          )
+        );
+      }
+      if (channel === 'original') {
+        const original = stage().locator('.lite-company-original');
+        if (index === 0) {
+          assert.ok((await original.innerText()).includes('No usable original-document address'));
+          assert.equal(await original.locator('a').count(), 0);
+        } else
+          assert.equal(
+            await original.locator('a').getAttribute('href'),
+            `https://example.invalid/${run.input.securityCode}/2025-synthetic-annual.pdf`
+          );
+      }
+      await page.reload({ waitUntil: 'networkidle' });
+      await stable(run, channel);
+      check(
+        `${run.input.securityCode}: native ${channel} URL, direct refresh, selected focus and issuer-bound saved content`
+      );
+      if (index === 0) await capture(page, `company-${channel}-1440-en`);
+    }
+    await page.goBack({ waitUntil: 'networkidle' });
+    await stable(run, 'reputation');
+    await page.goForward({ waitUntil: 'networkidle' });
+    await stable(run, 'original');
+    check(
+      `${run.input.securityCode}: Back and Forward restore the actual selected native channel without research writes`
+    );
+  }
+  const run = saved[0];
+  for (const [old, channel] of [
+    ['overview', 'finance'],
+    ['numbers', 'finance'],
+    ['sources', 'original'],
+    ['questions', 'reputation'],
+  ]) {
+    await page.goto(href(run, old), { waitUntil: 'networkidle' });
+    await stable(run, channel);
+  }
+  for (const [hash, channel] of [
+    ['lite-judgment', 'finance'],
+    ['lite-numbers', 'finance'],
+    ['lite-sources', 'original'],
+    ['lite-questions', 'reputation'],
+  ]) {
+    await page.goto(`${href(run, 'finance')}#${hash}`, { waitUntil: 'networkidle' });
+    await stable(run, channel);
+    assert.equal(new URL(page.url()).searchParams.get('page'), channel);
+  }
+  check(
+    'All four legacy page names and chapter hashes resolve to their canonical company channels'
+  );
+  await page.goto(href(saved[1], 'finance', 'parent'), { waitUntil: 'networkidle' });
+  await stable(saved[1], 'finance', 'parent');
+  assert.equal(
+    await stage().locator('[data-company-field=parentProfit] dd').getAttribute('data-exact-yuan'),
+    '1500000.00'
+  );
+  for (const channel of ['public', 'reputation', 'original']) {
+    await stage().locator(`nav a[href*="page=${channel}"]`).click();
+    await stable(saved[1], channel, 'parent');
+    assert.equal(new URL(page.url()).searchParams.get('basis'), 'parent');
+  }
+  check(
+    'Attributable profit and every native channel retain the same owning record, year, snapshot, generation and selected basis'
+  );
+  await page.goto(base, { waitUntil: 'networkidle' });
+  await page.locator('.showcase-search-history').waitFor();
+  const recentLinks = page.locator('.showcase-search-history a');
+  for (const issuer of saved) {
+    const link = recentLinks.filter({ hasText: issuer.identity.shortName });
+    assert.equal(await link.count(), 1);
+    await link.click();
+    await stable(issuer, 'finance');
+    await page.goto(base, { waitUntil: 'networkidle' });
+  }
+  check(
+    'Real owner-scoped recent-company links switch between the two actual local records without substituting another issuer'
+  );
+  for (const [width, locale] of [
+    [320, 'zh-Hans'],
+    [390, 'en'],
+    [1024, 'en'],
+  ]) {
+    await page.setViewportSize({ width, height: width === 320 ? 568 : 844 });
+    await page.evaluate((language) => localStorage.setItem('cashlens-locale', language), locale);
+    for (const channel of ['finance', 'public', 'reputation', 'original']) {
+      await page.goto(href(saved[1], channel), { waitUntil: 'networkidle' });
+      await stable(saved[1], channel);
+      await noOverflow(page, `${width}px ${locale} company ${channel}`);
+      const geometry = await stage()
+        .locator('nav a')
+        .evaluateAll((anchors) =>
+          anchors.map((anchor) => {
+            const rect = anchor.getBoundingClientRect();
+            const range = document.createRange();
+            range.selectNodeContents(anchor);
+            return {
+              left: rect.left,
+              right: rect.right,
+              height: rect.height,
+              text: [...range.getClientRects()].map((r) => ({ left: r.left, right: r.right })),
+            };
+          })
+        );
+      assert.equal(geometry.length, 4);
+      const navBox = await stage().locator('nav').boundingBox();
+      for (const tab of geometry) {
+        assert.ok(tab.height >= 43.5);
+        for (const line of tab.text)
+          assert.ok(
+            line.left >= navBox.x - 1 && line.right <= navBox.x + navBox.width + 1,
+            `${width} ${channel}: cropped tab label ${JSON.stringify(tab)}`
+          );
+      }
+      for (let i = 1; i < geometry.length; i++)
+        assert.ok(
+          Math.max(...geometry[i - 1].text.map((line) => line.right)) <=
+            Math.min(...geometry[i].text.map((line) => line.left)) + 1,
+          `${width} ${channel}: adjacent native labels overlap`
+        );
+      assert.equal(await page.locator('.lite-research').getAttribute('data-locale'), locale);
+      if (channel === 'finance') await capture(page, `company-finance-${width}-${locale}`);
+    }
+  }
+  await page.goto(href(saved[1]), { waitUntil: 'networkidle' });
+  await stable(saved[1], 'finance');
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.evaluate(() => window.scrollTo(0, 180));
+  const canvas = stage().locator('canvas.signal-field');
+  const normalPaints = Number(await canvas.getAttribute('data-browser-qa-paints'));
+  await page.waitForFunction(
+    (before) =>
+      Number(document.querySelector('.lite-company-stage canvas')?.dataset.browserQaPaints) >
+      before,
+    normalPaints
+  );
+  const readingY = await page.evaluate(() => scrollY);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  );
+  assert.equal(await page.evaluate(() => scrollY), readingY);
+  const reducedPaints = Number(await canvas.getAttribute('data-browser-qa-paints'));
+  await page.waitForTimeout(150);
+  assert.equal(Number(await canvas.getAttribute('data-browser-qa-paints')), reducedPaints);
+  const reducedFacts = await stage()
+    .locator('.signal-finance-facts > div')
+    .evaluateAll((nodes) =>
+      nodes.map((node) => {
+        const style = getComputedStyle(node);
+        return { animation: style.animationName, opacity: style.opacity };
+      })
+    );
+  assert.ok(reducedFacts.every((fact) => fact.animation === 'none' && Number(fact.opacity) === 1));
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.waitForFunction(
+    (before) =>
+      Number(document.querySelector('.lite-company-stage canvas')?.dataset.browserQaPaints) >
+      before,
+    reducedPaints
+  );
+  assert.equal(await page.evaluate(() => scrollY), readingY);
+  check(
+    'Actual company stage normal/reduced/normal motion retains native reading position, stops decorative canvas paints and keeps exact facts legible'
+  );
+  await context.close();
+}
+
 try {
   const { createApp } = await import(pathToFileURL(path.join(root, 'server', 'app.ts')).href);
+  const { loadCompanyDirectory } = await import(
+    pathToFileURL(path.join(root, 'server/company-search.ts')).href
+  );
+  ({ researchDemoSnapshot: demoSnapshot } = await import(
+    pathToFileURL(path.join(root, 'scripts/serve-research-demo.ts')).href
+  ));
+  ({ deriveCompanyAssessment: deriveAssessment } = await import(
+    pathToFileURL(path.join(root, 'shared/company-assessment.ts')).href
+  ));
   application = await createApp({
     root,
     dataDir,
     model: {},
     registrationEnabled: true,
+    companyDirectory: await loadCompanyDirectory(root),
+    companyService: {
+      searchCompanies: channelSearch,
+      runCompanyResearch: async () => {
+        throw new Error('QA prohibits model/original research');
+      },
+    },
+    companyContextService: {
+      searchCompanies: channelSearch,
+      context: async (identity, options) => {
+        const snapshot = channelSnapshot(identity);
+        await options?.onSnapshot?.(structuredClone(snapshot));
+        return snapshot;
+      },
+      industry: async () => {
+        throw new Error('QA prohibits industry retrieval');
+      },
+      question: async () => {
+        throw new Error('QA prohibits model questions');
+      },
+      research: async () => {
+        throw new Error('QA prohibits model research');
+      },
+      assessment: async (run) => deriveAssessment(run),
+    },
   });
   server = await new Promise((resolve, reject) => {
     const instance = application.app.listen(4338, '127.0.0.1', () => resolve(instance));
@@ -946,6 +1538,7 @@ try {
   await headlineFits(page, 'desktop Lite');
   await submitLabelFits(page, 'desktop Lite');
   await readableComposer(page, 'desktop Lite');
+  await compactHomeModes(page, '1440px home');
   await capture(page, 'lite-desktop-zh-light');
   await pointerOptics(page);
   const input = page.locator('.showcase-search textarea');
@@ -1112,6 +1705,7 @@ try {
   await submitLabelFits(narrow.page, '320px English Lite');
   await readableComposer(narrow.page, '320px English Lite');
   await sharedAssistant(narrow.page, '320-en', { dock: true });
+  await compactHomeModes(narrow.page, '320px English home');
   await capture(narrow.page, 'lite-320-en-light');
   await staticOptics(narrow.page, '320px reduced motion');
   await narrow.page.locator('.showcase-examples button').filter({ hasText: '松原安全' }).click();
@@ -1150,6 +1744,7 @@ try {
   await noOverflow(narrow.page, '320px English Pro');
   await capture(narrow.page, 'pro-query-320-en-shared-assistant');
   await narrow.context.close();
+  await companyChannelsAcceptance();
   for (const name of [
     'pageErrors',
     'consoleErrors',

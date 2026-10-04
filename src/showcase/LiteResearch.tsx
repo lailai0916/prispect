@@ -64,9 +64,12 @@ import { date } from '../format';
 import './showcase.css';
 import './lite-research.css';
 import { LiteMetricChips } from './LiteMetricChips';
+import { LiteCompanyChannels } from './LiteCompanyChannels';
+import { LiteCompanyPublicItems, LiteCompanyReputation } from './LiteCompanySignals';
 import { LiteEvidenceExplorer, resolveLiteEvidenceSelection } from './LiteEvidenceExplorer';
 import './lite-research-v4.css';
 import './lite-research-v5.css';
+import './lite-company-report-shell.css';
 import { liteAmountDisplay, liteAmountScale } from './lite-amount-display';
 import { liteSummaryRepeatsHeadline } from './lite-report-copy';
 import {
@@ -80,7 +83,12 @@ import {
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const chapters = liteReportPages.map((page) => [page.anchor, ...page.label] as const);
+const chapters = [
+  ['lite-judgment', '财务判断', 'Financial analysis'],
+  ['lite-numbers', '财务数字', 'Financial figures'],
+  ['lite-sources', '原文与出处', 'Original sources'],
+  ['lite-questions', '后续核对', 'Follow-up checks'],
+] as const;
 const activeRun = (run: CompanyResearchRun) =>
   run.status === 'queued' ||
   run.status === 'running' ||
@@ -266,7 +274,19 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
     const oldPage = litePageForAnchor(legacyHash);
     if (!oldPage || query.get('page') === oldPage) return;
     // Upgrade a chapter bookmark in place; it remains the same owning run.
-    navigate(liteReportPageHref(query, oldPage, { basis }), { replace: true });
+    navigate(
+      liteReportPageHref(query, oldPage, {
+        basis,
+        ...(oldPage === 'original'
+          ? {
+              claim: query.get('claim') || undefined,
+              source: query.get('source') || undefined,
+              generation: query.get('generation') || undefined,
+            }
+          : {}),
+      }),
+      { replace: true }
+    );
   }, [legacyHash, query.get('page'), scope, navigate]);
 
   useEffect(() => {
@@ -355,7 +375,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
     const prepare = () => {
       root.current
         ?.querySelectorAll<HTMLDetailsElement>(
-          '.lite-report-detail:not([open]), .lite-report-metrics:not([open]), .lite-source-register-detail:not([open])'
+          '.lite-report-detail:not([open]), .lite-report-metrics:not([open]), .lite-source-register-detail:not([open]), .lite-company-print-document .lite-company-signal-detail:not([open]), .lite-company-print-document .lite-company-signals-more:not([open])'
         )
         .forEach((details) => {
           expandedForPrint.add(details);
@@ -384,7 +404,7 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
           `[data-lite-page="${readingPage}"]`
         );
         if (!active) return;
-        if (readingPage === 'overview')
+        if (readingPage === 'finance')
           gsap.from(active.querySelectorAll('.lite-title-glyph'), {
             yPercent: 110,
             rotation: 4,
@@ -955,34 +975,6 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
       data-testid="lite-research"
       key={scope}
     >
-      <nav className="lite-chapter-nav" aria-label={t('研究阅读页面', 'Research reading pages')}>
-        <a
-          className="lite-back"
-          href="/#showcase-query"
-          aria-label={t('查另一家', 'Another company')}
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-          <span>{t('查另一家', 'Another company')}</span>
-        </a>
-        <div>
-          {chapters.map(([anchor, zh, en], index) => (
-            <a
-              key={anchor}
-              href={pageLink(liteReportPages[index].id)}
-              aria-label={t(`第 ${index + 1} 页：${zh}`, `Page ${index + 1}: ${en}`)}
-              aria-current={readingPage === liteReportPages[index].id ? 'page' : undefined}
-            >
-              <span>0{index + 1}</span>
-              <span>{t(zh, en)}</span>
-            </a>
-          ))}
-        </div>
-        <a className="lite-pro-link" href={`${companyPath(run.id)}&cached=1&experience=pro`}>
-          Pro
-          <ArrowUpRight size={16} aria-hidden="true" />
-        </a>
-      </nav>
-
       {(error || pollPaused === scope) && (
         <div className="lite-reading-notice" role={error ? 'alert' : 'status'}>
           <p>
@@ -1003,865 +995,1029 @@ export function LiteResearchPage({ query }: { query: URLSearchParams }) {
         </div>
       )}
 
-      <section
-        className="lite-chapter lite-intro"
-        id="lite-judgment"
-        data-lite-page="overview"
-        hidden={readingPage !== 'overview'}
-        tabIndex={-1}
-        aria-labelledby="lite-company-title"
-      >
-        <span className="lite-year-watermark" aria-hidden="true">
-          {run.input.year}
-        </span>
-        <div className="lite-intro-top">
-          <p className="lite-kicker">{t('核心判断', 'Overview')}</p>
-          {report && (
-            <aside
-              className="lite-grade"
-              aria-label={
-                provisional
-                  ? t('初步财务评级', 'Provisional financial grade')
-                  : t('财务评级', 'Financial grade')
-              }
-            >
-              <span>
-                {provisional
-                  ? t('初步财务评级', 'Provisional financial grade')
-                  : t('财务评级', 'Financial grade')}
-              </span>
-              <strong className="lite-grade-mark" data-grade={grade}>
-                {grade}
-              </strong>
-              <p>
-                {provisional
-                  ? t(
-                      `已覆盖 ${provisional.coveredDimensions} / ${provisional.totalDimensions} 个核心维度`,
-                      `${provisional.coveredDimensions} / ${provisional.totalDimensions} core dimensions covered`
-                    )
-                  : !report
-                    ? t('尚无可用财务评级', 'No financial grade is available yet')
-                    : grade === 'NR'
-                      ? t('综合评级暂未形成', 'An overall grade is not yet available')
-                      : t('所选年度 · 合并口径', 'Selected annual year · consolidated basis')}
-              </p>
-              {report && <small>{date(report.snapshotFetchedAt, locale)}</small>}
-            </aside>
-          )}
-        </div>
-        <div className="lite-intro-layout">
-          <div className="lite-intro-copy">
-            <h1 id="lite-company-title" data-lite-page-title tabIndex={-1} aria-label={companyName}>
-              <span className="lite-title-mask">
-                <span className="lite-title-reveal" aria-hidden="true">
-                  {Array.from(companyName).map((glyph, index) => (
-                    <span className="lite-title-glyph" key={`${index}:${glyph}`}>
-                      {glyph === ' ' ? '\u00a0' : glyph}
-                    </span>
-                  ))}
-                </span>
-              </span>
-            </h1>
-            <dl className="lite-dossier">
-              <div>
-                <dt>{t('证券代码', 'Security code')}</dt>
-                <dd>{run.input.securityCode}</dd>
-              </div>
-              <div>
-                <dt>{t('阅读年度', 'Annual period')}</dt>
-                <dd>{run.input.year}</dd>
-              </div>
-              <div>
-                <dt>{t('报告版本', 'Report version')}</dt>
-                <dd>
-                  {reportDocument.generatedAt
-                    ? date(reportDocument.generatedAt, locale)
-                    : t('尚未生成', 'Not generated yet')}
-                </dd>
-              </div>
-            </dl>
-            {readingStatus && (
-              <div
-                className="lite-reading-status"
-                role="status"
-                aria-live="polite"
-                aria-atomic="true"
-                data-state={progress.state}
-                data-snapshot={progress.snapshot}
-                data-report-generation={report?.generatedAt}
-              >
-                <strong>{readingStatus.label}</strong>
-                <p>{readingStatus.detail}</p>
-                {statusNumbersLink && (
-                  <a href={pageLink('numbers')}>
-                    {t('先看已取得的数字', 'Check the acquired figures first')}
-                    <ArrowDown size={13} aria-hidden="true" />
-                  </a>
+      <div className="lite-company-screen">
+        <LiteCompanyChannels
+          run={run}
+          basis={basis}
+          activePage={readingPage}
+          pageHref={pageLink}
+          financeDetails={
+            <details className="lite-company-detail-fold">
+              <summary>{t('继续读财务细节', 'Read the financial details')}</summary>
+              <div className="lite-company-finance-detail">
+                {readingStatus && (
+                  <p className="lite-snapshot-note" role="status">
+                    {readingStatus.label} · {readingStatus.detail}
+                  </p>
                 )}
-              </div>
-            )}
-            <p className="lite-result-label">
-              {!report && !hasNumbers
-                ? t('尚无可用报告', 'No report is available yet')
-                : reportDocument.mode === 'model'
-                  ? t('AI 核心判断', 'AI core judgment')
-                  : report
-                    ? t('规则结果', 'Rule results')
-                    : t('已取得数据的财务观察', 'Financial observations from acquired data')}
-              {(report || hasNumbers) && (
-                <>
-                  {' '}
-                  ·{' '}
-                  {report
-                    ? t('合并口径', 'Consolidated basis')
-                    : t(...contextFieldLabels[profitField])}
-                </>
-              )}
-            </p>
-            {!repeatedHeadline && <h2 className="lite-headline">{headline}</h2>}
-            {summary ? (
-              <p className={`lite-summary${repeatedHeadline ? ' lite-summary-primary' : ''}`}>
-                {summarySegments.map((segment, index) =>
-                  segment.highlight ? (
-                    <strong key={index}>{segment.text}</strong>
-                  ) : (
-                    <span key={index}>{segment.text}</span>
-                  )
+                {annual && overview.state === 'available' && (
+                  <dl className="lite-company-detail-figures">
+                    {fields.map((field) => (
+                      <div key={field}>
+                        <dt>{t(...contextFieldLabels[field])}</dt>
+                        <dd>
+                          {liteAmountDisplay(annual.amounts[field], locale)?.exactText ||
+                            t('未取得', 'Not obtained')}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
                 )}
-              </p>
-            ) : (
-              <p className="lite-summary">
-                {ruleLead
-                  ? t(...ruleLead.detail)
-                  : t(
-                      hasNumbers
-                        ? '已取得的资料在下面。缺少资料的部分，暂不作推断。'
-                        : '尚无可用的财务资料，暂不作推断。',
-                      hasNumbers
-                        ? 'Acquired data appears below. Fields without evidence remain unknown.'
-                        : 'No usable financial materials are available yet. No judgment is made.'
+                {summary && (
+                  <div className="lite-report-highlight">
+                    <p>{summary.text[language]}</p>
+                    {printCitations(summary)}
+                    <LiteMetricChips
+                      document={reportDocument}
+                      judgment={summary}
+                      compact
+                      onInspect={
+                        report
+                          ? (judgment) =>
+                              inspectJudgment(judgment, t('财务细节的依据', 'Financial evidence'))
+                          : undefined
+                      }
+                      sourcePageHref={
+                        report
+                          ? (source) =>
+                              liteReportPageHref(query, 'original', {
+                                basis,
+                                source,
+                                generation: report.generatedAt,
+                              })
+                          : undefined
+                      }
+                    />
+                  </div>
+                )}
+                {reportSections.map(([kind, title, items]) =>
+                  items.length ? (
+                    <section key={kind} className="lite-company-report-section">
+                      <h3>{title}</h3>
+                      {reportItems(items, title, '', true)}
+                    </section>
+                  ) : null
+                )}
+                {reportDocument.dimensions.map((dimension) => (
+                  <section key={dimension.id} className="lite-company-report-section">
+                    <h3>{t(...dimension.label)}</h3>
+                    {reportItems([dimension.judgment], t(...dimension.label), '', true)}
+                  </section>
+                ))}
+                {reportDocument.unknowns.length > 0 && (
+                  <section className="lite-company-report-section">
+                    <h3>{t('还需要核实什么', 'What remains to be checked')}</h3>
+                    {reportItems(
+                      reportDocument.unknowns,
+                      t('待核实的依据', 'Evidence to verify'),
+                      '',
+                      true
                     )}
-              </p>
-            )}
-            {reportDocument.headline && printCitations(reportDocument.headline)}
-            {reportDocument.summary && printCitations(reportDocument.summary)}
-            {reportDocument.summary && (
-              <LiteMetricChips
-                document={reportDocument}
-                judgment={reportDocument.summary}
-                maxVisible={3}
-                compact
-                sourcePageHref={
-                  report
-                    ? (source) =>
-                        liteReportPageHref(query, 'sources', {
-                          basis,
-                          claim: reportDocument.summary!.id,
-                          source,
-                          generation: report.generatedAt,
-                        })
-                    : undefined
-                }
+                  </section>
+                )}
+                {(brief.warnings.length > 0 ||
+                  run.contextError ||
+                  run.assessmentError ||
+                  run.error) && (
+                  <div className="lite-scope-notes" role="status">
+                    {brief.warnings.map((warning, index) => (
+                      <p key={index}>{t(...warning)}</p>
+                    ))}
+                    {run.contextError && <p>{run.contextError}</p>}
+                    {run.assessmentError && <p>{run.assessmentError}</p>}
+                    {run.error && <p>{run.error}</p>}
+                  </div>
+                )}
+              </div>
+            </details>
+          }
+          originalDetails={
+            <div className="lite-company-source-detail">
+              {unresolvedEvidenceLink && (
+                <p className="lite-snapshot-note" role="status">
+                  {t(
+                    '这条引用与当前保存版本不匹配。下方仍可查看这份研究自己的出处。',
+                    'This reference does not match the saved version. The current research sources remain available below.'
+                  )}
+                </p>
+              )}
+              {acquiredSources.size > 0 && (
+                <details className="lite-company-detail-fold">
+                  <summary>
+                    {t('财务字段的公开出处', 'Public sources of the financial fields')}
+                  </summary>
+                  <ul className="lite-company-source-links">
+                    {[...acquiredSources.values()].map((source) => (
+                      <li key={source.href}>
+                        <a href={source.href} target="_blank" rel="noopener noreferrer">
+                          {source.provider} ·{' '}
+                          {source.fields
+                            .map((field) => t(...contextFieldLabels[field]))
+                            .join(' / ')}
+                          <ArrowUpRight size={14} aria-hidden="true" />
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              <LiteEvidenceExplorer
+                run={run}
+                basis={basis}
+                initialSelection={readingPage === 'original' ? evidenceSelection : undefined}
                 onInspect={
                   report
                     ? (judgment) =>
-                        inspectJudgment(
-                          judgment,
-                          t('核心判断的依据', 'Evidence for the core judgment')
-                        )
+                        inspectJudgment(judgment, t('原文与判断的依据', 'Original evidence'))
                     : undefined
                 }
               />
-            )}
-            <div className="lite-intro-actions">
-              <a
-                href={
-                  summary && report
-                    ? liteReportPageHref(query, 'sources', {
-                        basis,
-                        claim: summary.id,
-                        generation: report.generatedAt,
-                      })
-                    : pageLink('sources')
+            </div>
+          }
+        />
+      </div>
+      <div className="lite-company-print-document" data-lite-print-document>
+        <section
+          className="lite-chapter lite-intro"
+          id="lite-judgment"
+          hidden={readingPage !== 'finance'}
+          tabIndex={-1}
+          aria-labelledby="lite-company-title"
+        >
+          <span className="lite-year-watermark" aria-hidden="true">
+            {run.input.year}
+          </span>
+          <div className="lite-intro-top">
+            <p className="lite-kicker">{t('核心判断', 'Overview')}</p>
+            {report && (
+              <aside
+                className="lite-grade"
+                aria-label={
+                  provisional
+                    ? t('初步财务评级', 'Provisional financial grade')
+                    : t('财务评级', 'Financial grade')
                 }
               >
-                {t('跟着问题，找到依据', 'Follow a question to its evidence')}
-                <ArrowDown size={18} aria-hidden="true" />
-              </a>
-              {summary && report && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    inspectJudgment(summary, t('核心判断的依据', 'Evidence for the core judgment'))
-                  }
-                >
-                  <FileSearch size={17} aria-hidden="true" />
-                  {t('判断依据', 'Judgment evidence')}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-        <div className="lite-report-highlights">
-          <section className="lite-report-highlight" data-report-section="findings">
-            <div className="lite-report-card-heading">
-              <Check size={20} aria-hidden="true" />
-              <h3>{t('已有依据的重点', 'Source-backed highlights')}</h3>
-            </div>
-            {reportDocument.findings.length > 0 ? (
-              overviewItems(
-                reportDocument.findings,
-                t('已有依据的重点', 'Source-backed highlights')
-              )
-            ) : (
-              <p className="lite-report-empty">
-                {t(
-                  '尚未形成有依据的报告重点。已取得的数字可在数字页核对。',
-                  'Evidence-backed report findings are not available yet. Check acquired figures in the next page.'
-                )}
-              </p>
+                <span>
+                  {provisional
+                    ? t('初步财务评级', 'Provisional financial grade')
+                    : t('财务评级', 'Financial grade')}
+                </span>
+                <strong className="lite-grade-mark" data-grade={grade}>
+                  {grade}
+                </strong>
+                <p>
+                  {provisional
+                    ? t(
+                        `已覆盖 ${provisional.coveredDimensions} / ${provisional.totalDimensions} 个核心维度`,
+                        `${provisional.coveredDimensions} / ${provisional.totalDimensions} core dimensions covered`
+                      )
+                    : !report
+                      ? t('尚无可用财务评级', 'No financial grade is available yet')
+                      : grade === 'NR'
+                        ? t('综合评级暂未形成', 'An overall grade is not yet available')
+                        : t('所选年度 · 合并口径', 'Selected annual year · consolidated basis')}
+                </p>
+                {report && <small>{date(report.snapshotFetchedAt, locale)}</small>}
+              </aside>
             )}
-          </section>
-          <section className="lite-report-highlight" data-report-section="unknowns">
-            <div className="lite-report-card-heading">
-              <FileSearch size={20} aria-hidden="true" />
-              <h3>{t('还待核查', 'What still needs checking')}</h3>
-            </div>
-            {reportDocument.unknowns.length > 0 ? (
-              overviewItems(reportDocument.unknowns, t('还待核查', 'What still needs checking'))
-            ) : (
-              <p className="lite-report-empty">
-                {t(
-                  '这份报告没有记录额外的待核查项；仍需结合原文理解其范围。',
-                  'No additional unresolved items are recorded in this report. Read the originals to understand its scope.'
-                )}
-              </p>
-            )}
-          </section>
-        </div>
-        <div className="lite-progress" aria-label={t('实际研究进度', 'Recorded research progress')}>
-          <span>{t(...progress.label)}</span>
-          <ol>
-            {progress.stages.map((stage, index) => (
-              <li key={stage.id} data-status={stage.status} title={t(...stage.summary)}>
-                <span>0{index + 1}</span>
-                <strong>{t(...stage.label)}</strong>
-                <small>{t(stageLabels[stage.status][0], stageLabels[stage.status][1])}</small>
-              </li>
-            ))}
-          </ol>
-        </div>
-        {(brief.warnings.length > 0 || run.contextError || run.assessmentError || run.error) && (
-          <div className="lite-scope-notes" role="status">
-            {brief.warnings.map((warning, index) => (
-              <p key={index}>{t(...warning)}</p>
-            ))}
-            {run.contextError && <p>{run.contextError}</p>}
-            {run.assessmentError && <p>{run.assessmentError}</p>}
-            {run.error && <p>{run.error}</p>}
           </div>
-        )}
-        {stepLink(0)}
-      </section>
-
-      <section
-        className="lite-chapter lite-number-chapter"
-        id="lite-numbers"
-        data-lite-page="numbers"
-        hidden={readingPage !== 'numbers'}
-        tabIndex={-1}
-        aria-labelledby="lite-numbers-heading"
-      >
-        {chapterHeading(
-          1,
-          <span id="lite-numbers-heading">
-            {t('赚到的钱，', 'Money earned.')}
-            <br />
-            {t('留下了多少？', 'Cash retained?')}
-          </span>,
-          t(
-            `${run.input.year} 年这一年的经营，先看四个数字。`,
-            `Start with four figures from ${run.input.year}.`
-          )
-        )}
-        <div className="lite-number-controls lite-reveal">
-          <span>
-            {run.input.year} · {t('年度 · 人民币', 'Annual period · CNY')}
-          </span>
-          <div role="group" aria-label={t('利润口径', 'Profit basis')}>
-            <button
-              type="button"
-              aria-pressed={basis === 'consolidated'}
-              onClick={() => changeBasis('consolidated')}
-            >
-              {t('合并净利润', 'Consolidated profit')}
-            </button>
-            <button
-              type="button"
-              aria-pressed={basis === 'parent'}
-              onClick={() => changeBasis('parent')}
-            >
-              {t('归母净利润', 'Attributable profit')}
-            </button>
-          </div>
-        </div>
-        <dl className="lite-numbers-grid">
-          {fields.map((field, index) => {
-            const amount = annual?.amounts[field] ?? null;
-            const display = liteAmountDisplay(amount, locale, { compact: true });
-            const original = run.context?.financials.find(
-              (row) => row.annual && row.period === `${run.input.year}-12-31`
-            );
-            const conflict = run.context?.comparisons.some(
-              (check) =>
-                check.period === `${run.input.year}-12-31` &&
-                check.field === field &&
-                !check.matches
-            );
-            return (
-              <div
-                key={field}
-                className="lite-number lite-reveal"
-                data-field={field}
-                data-available={amount !== null}
+          <div className="lite-intro-layout">
+            <div className="lite-intro-copy">
+              <h1
+                id="lite-company-title"
+                data-lite-page-title
+                tabIndex={-1}
+                aria-label={companyName}
               >
-                <dt>
-                  <span>0{index + 1}</span>
-                  {t(...contextFieldLabels[field])}
-                </dt>
-                <dd title={display?.exactText} data-exact-yuan={display?.exactYuan}>
-                  <strong>{display?.text || '—'}</strong>
-                </dd>
-                {display ? (
-                  <details className="lite-number-precision">
-                    <summary>{t('查看精确金额', 'Read the exact amount')}</summary>
-                    <p>{display.exactText}</p>
-                  </details>
-                ) : (
-                  <p>
-                    {conflict
-                      ? t('来源有差异，暂不采用', 'Source conflict; value withheld')
-                      : t('未取得或待核对', 'Unavailable or needs review')}
-                  </p>
-                )}
-                {original && overview.state === 'available' && (
-                  <CompanyContextEvidence
-                    key={`${scope}:${run.context?.fetchedAt}:${field}:${readingPage}`}
-                    snapshot={run.context}
-                    row={original}
-                    fields={[field]}
-                    formula={t(
-                      `${run.input.year} 年度；${field === 'cash' ? '期末余额' : '报告期累计金额'}。`,
-                      `${run.input.year} annual period; ${field === 'cash' ? 'period-end balance' : 'amount over the reporting period'}.`
-                    )}
-                  >
-                    {t('这个数字从哪来', 'Where this figure comes from')}
-                  </CompanyContextEvidence>
-                )}
-              </div>
-            );
-          })}
-        </dl>
-        {cashComparison && (
-          <figure className="lite-cash-comparison lite-reveal">
-            <figcaption>
-              <h3>{t('利润与现金，放在一起看。', 'Compare profit with operating cash.')}</h3>
-              <p>
-                {run.input.year} · {t(...contextFieldLabels[profitField])} ·{' '}
-                {t('两条柱线使用同一金额刻度', 'Both bars use the same amount scale')}
-              </p>
-            </figcaption>
-            <div
-              className="lite-cash-comparison-plot"
-              role="img"
-              aria-label={cashComparison.rows
-                .map((row) => `${t(...contextFieldLabels[row.field])}: ${row.display.exactText}`)
-                .join('; ')}
-              data-signed={cashComparison.signed}
-            >
-              {cashComparison.rows.map((row) => (
-                <div className="lite-cash-comparison-row" key={row.field}>
-                  <span>{t(...contextFieldLabels[row.field])}</span>
-                  <div className="lite-cash-comparison-track">
-                    <span
-                      className="lite-cash-zero"
-                      style={{ left: cashComparison.signed ? '50%' : '0%' }}
-                    />
-                    <span
-                      className="lite-cash-bar"
-                      style={{ width: `${row.width}%`, left: `${row.start}%` }}
-                    />
-                  </div>
-                  <strong title={row.display.exactText}>{row.display.text}</strong>
-                </div>
-              ))}
-            </div>
-            <p className="lite-snapshot-note">
-              {t(
-                '精确金额与各自来源，可在上方展开核对。',
-                'Expand the cards above for exact amounts and their own sources.'
-              )}
-            </p>
-          </figure>
-        )}
-        {overview.state === 'mismatch' && (
-          <p className="lite-scope-notes" role="status">
-            {t(
-              '来源主体或范围不匹配，相关数字与判断暂不采用。',
-              'Source issuer or scope does not match; dependent values and judgments are withheld.'
-            )}
-          </p>
-        )}
-        {overview.state === 'available' && !annual && (
-          <p className="lite-scope-notes" role="status">
-            {t(
-              `尚未取得 ${run.input.year} 年度数据；本节数值保持未知。`,
-              `${run.input.year} annual data has not been acquired; the values on this page remain unknown.`
-            )}
-          </p>
-        )}
-        <div className="lite-observations lite-reveal">
-          {overview.cards.map((card) => {
-            const rows = companyOverviewEvidencePeriods(run.context, card.evidence);
-            const row = rows.at(-1);
-            return (
-              <article key={card.id}>
-                <h3>{t(...card.question)}</h3>
-                <strong>{t(...card.judgment)}</strong>
-                <p>{t(...card.detail)}</p>
-                {row && (
-                  <CompanyContextEvidence
-                    key={`${scope}:${run.context?.fetchedAt}:${card.id}:${readingPage}`}
-                    snapshot={run.context}
-                    row={row}
-                    periods={rows}
-                    fields={card.evidence.fields}
-                    formula={t(...card.evidence.formula)}
-                  >
-                    {t('看数据与计算', 'Data and calculation')}
-                  </CompanyContextEvidence>
-                )}
-              </article>
-            );
-          })}
-        </div>
-        <p className="lite-snapshot-note">
-          {t('本页资料快照', 'Data snapshot on this page')} ·{' '}
-          {run.context ? date(run.context.fetchedAt, locale) : t('尚未取得', 'Not yet acquired')}
-        </p>
-        {stepLink(1)}
-      </section>
-
-      <section
-        className="lite-chapter lite-evidence-chapter"
-        id="lite-sources"
-        data-lite-page="sources"
-        hidden={readingPage !== 'sources'}
-        tabIndex={-1}
-        aria-labelledby="lite-sources-page-title"
-      >
-        <header className="lite-sources-page-heading">
-          <p className="lite-kicker">
-            03 / {run.input.year} / {companyName}
-          </p>
-          <h2 id="lite-sources-page-title" data-lite-page-title tabIndex={-1}>
-            {t('每条判断，都能往回查。', 'Trace each finding to its evidence.')}
-          </h2>
-        </header>
-        {unresolvedEvidenceLink && (
-          <p className="lite-evidence-link-notice" role="status">
-            {t(
-              '这条链接的报告版本或引用已不匹配。当前保留已保存的报告，请重新选择要追溯的判断。',
-              'The linked report version or reference no longer matches. The saved report remains available; choose a finding to trace again.'
-            )}
-          </p>
-        )}
-        <LiteEvidenceExplorer
-          initialSelection={readingPage === 'sources' ? evidenceSelection : undefined}
-          printJudgments={false}
-          run={run}
-          basis="consolidated"
-          onInspect={
-            report
-              ? (judgment) =>
-                  inspectJudgment(judgment, t('线索的依据', 'Evidence supporting this finding'))
-              : undefined
-          }
-          disabled={!owner || verified !== scope}
-        />
-        <details className="lite-source-register-detail" onToggle={() => ScrollTrigger.refresh()}>
-          <summary>
-            <span id="lite-sources-heading">
-              {t('完整来源登记与年度字段', 'Complete source register and annual fields')}
-            </span>
-            <ChevronDown size={18} aria-hidden="true" />
-          </summary>
-          <div className="lite-evidence-layout lite-reveal">
-            <aside className="lite-source-register" aria-labelledby="lite-source-register-title">
-              <span className="lite-source-register-kicker">
-                <FileSearch size={20} aria-hidden="true" />
-                {t('来源登记', 'SOURCE REGISTER')}
-              </span>
-              <h3 id="lite-source-register-title">{run.input.year}</h3>
-              <p>
-                {t(
-                  '每条出处，连到它支撑的内容。',
-                  'Each source connects to the content it supports.'
-                )}
-              </p>
-              <dl className="lite-source-register-facts">
+                <span className="lite-title-mask">
+                  <span className="lite-title-reveal" aria-hidden="true">
+                    {Array.from(companyName).map((glyph, index) => (
+                      <span className="lite-title-glyph" key={`${index}:${glyph}`}>
+                        {glyph === ' ' ? '\u00a0' : glyph}
+                      </span>
+                    ))}
+                  </span>
+                </span>
+              </h1>
+              <dl className="lite-dossier">
                 <div>
-                  <dt>{t('已链接的分析出处', 'Linked analysis references')}</dt>
-                  <dd>{sourceCards.length}</dd>
+                  <dt>{t('证券代码', 'Security code')}</dt>
+                  <dd>{run.input.securityCode}</dd>
                 </div>
                 <div>
-                  <dt>{t('有来源链接的本年字段', 'Annual fields with source links')}</dt>
-                  <dd>{linkedFieldCount}</dd>
+                  <dt>{t('阅读年度', 'Annual period')}</dt>
+                  <dd>{run.input.year}</dd>
+                </div>
+                <div>
+                  <dt>{t('报告版本', 'Report version')}</dt>
+                  <dd>
+                    {reportDocument.generatedAt
+                      ? date(reportDocument.generatedAt, locale)
+                      : t('尚未生成', 'Not generated yet')}
+                  </dd>
                 </div>
               </dl>
-              {acquiredSources.size > 0 && (
-                <ol
-                  className="lite-source-connections"
-                  aria-label={t('本年度字段与来源的对应', 'Annual fields and their sources')}
+              {readingStatus && (
+                <div
+                  className="lite-reading-status"
+                  role="status"
+                  aria-live="polite"
+                  aria-atomic="true"
+                  data-state={progress.state}
+                  data-snapshot={progress.snapshot}
+                  data-report-generation={report?.generatedAt}
                 >
-                  {[...acquiredSources.values()].map((source) => (
-                    <li key={source.href}>
-                      <span>
-                        {source.fields.map((field) => t(...contextFieldLabels[field])).join(' / ')}
-                      </span>
-                      <ArrowRight size={18} aria-hidden="true" />
-                      <a href={source.href} target="_blank" rel="noopener noreferrer">
-                        {source.provider}
-                        <ArrowUpRight size={14} aria-hidden="true" />
-                      </a>
-                    </li>
-                  ))}
-                </ol>
+                  <strong>{readingStatus.label}</strong>
+                  <p>{readingStatus.detail}</p>
+                  {statusNumbersLink && (
+                    <a href={pageLink('finance')}>
+                      {t('先看已取得的数字', 'Check the acquired figures first')}
+                      <ArrowDown size={13} aria-hidden="true" />
+                    </a>
+                  )}
+                </div>
               )}
-              <p className="lite-source-register-note">
-                {t(
-                  '链接数量只描述本页已记录的出处，不代表独立性或可信度。网页字段仍需核对原件。',
-                  'Counts describe recorded links on this page, not independence or confidence. Public web fields still need original-document checks.'
+              <p className="lite-result-label">
+                {!report && !hasNumbers
+                  ? t('尚无可用报告', 'No report is available yet')
+                  : reportDocument.mode === 'model'
+                    ? t('AI 核心判断', 'AI core judgment')
+                    : report
+                      ? t('规则结果', 'Rule results')
+                      : t('已取得数据的财务观察', 'Financial observations from acquired data')}
+                {(report || hasNumbers) && (
+                  <>
+                    {' '}
+                    ·{' '}
+                    {report
+                      ? t('合并口径', 'Consolidated basis')
+                      : t(...contextFieldLabels[profitField])}
+                  </>
                 )}
               </p>
-            </aside>
-            <div className="lite-source-list">
-              {sourceCards.length > 0 && (
-                <p className="lite-source-group-label">
-                  {report
-                    ? t('报告中的引用出处', 'References used in the report')
+              {!repeatedHeadline && <h2 className="lite-headline">{headline}</h2>}
+              {summary ? (
+                <p className={`lite-summary${repeatedHeadline ? ' lite-summary-primary' : ''}`}>
+                  {summarySegments.map((segment, index) =>
+                    segment.highlight ? (
+                      <strong key={index}>{segment.text}</strong>
+                    ) : (
+                      <span key={index}>{segment.text}</span>
+                    )
+                  )}
+                </p>
+              ) : (
+                <p className="lite-summary">
+                  {ruleLead
+                    ? t(...ruleLead.detail)
                     : t(
-                        '已取得字段与观察的出处',
-                        'Sources for acquired fields and observations'
-                      )}{' '}
-                  ·{' '}
-                  {reportDocument.snapshotFetchedAt
-                    ? date(reportDocument.snapshotFetchedAt, locale)
-                    : ''}
-                </p>
-              )}
-              {sourceCards.map((source, index) => (
-                <a
-                  className="lite-reference-entry"
-                  key={source.id}
-                  href={source.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <span className="lite-source-index">0{index + 1}</span>
-                  <div>
-                    <small>
-                      {source.kind}
-                      {source.period ? ` · ${source.period}` : ''}
-                    </small>
-                    <h3>{source.label}</h3>
-                    <div className="lite-source-print">
-                      {source.page && (
-                        <p>
-                          {t('原文页码', 'Source page')} · {source.page}
-                        </p>
+                        hasNumbers
+                          ? '已取得的资料在下面。缺少资料的部分，暂不作推断。'
+                          : '尚无可用的财务资料，暂不作推断。',
+                        hasNumbers
+                          ? 'Acquired data appears below. Fields without evidence remain unknown.'
+                          : 'No usable financial materials are available yet. No judgment is made.'
                       )}
-                      {source.quote && <blockquote>{source.quote}</blockquote>}
-                      <p>{source.href}</p>
-                    </div>
-                  </div>
-                  <ArrowUpRight size={21} aria-hidden="true" />
-                </a>
-              ))}
-              {(originals.length > 0 || acquiredSources.size > 0) && (
-                <p className="lite-source-group-label">
-                  {run.input.year} ·{' '}
-                  {t('本年度数字的来源', 'Sources for the selected year’s figures')}
-                  {run.context ? ` · ${date(run.context.fetchedAt, locale)}` : ''}
                 </p>
               )}
-              {originals.map((href) => (
-                <a key={href} href={href} target="_blank" rel="noopener noreferrer">
-                  <FileSearch size={22} aria-hidden="true" />
-                  <div>
-                    <small>
-                      {run.input.year} ·{' '}
-                      {t('已记录的披露原文链接', 'Recorded original disclosure link')}
-                    </small>
-                    <h3>{t('打开这一年的原文', 'Open the selected year’s original')}</h3>
-                  </div>
-                  <ArrowUpRight size={21} aria-hidden="true" />
-                </a>
-              ))}
-              {acquiredSources.size > 0 && (
-                <p className="lite-source-group-label">
-                  {t(
-                    '网页字段尚未逐项核对原件。',
-                    'Public web fields have not been individually checked against the original.'
-                  )}
-                </p>
+              {reportDocument.headline && printCitations(reportDocument.headline)}
+              {reportDocument.summary && printCitations(reportDocument.summary)}
+              {reportDocument.summary && (
+                <LiteMetricChips
+                  document={reportDocument}
+                  judgment={reportDocument.summary}
+                  maxVisible={3}
+                  compact
+                  sourcePageHref={
+                    report
+                      ? (source) =>
+                          liteReportPageHref(query, 'sources', {
+                            basis,
+                            claim: reportDocument.summary!.id,
+                            source,
+                            generation: report.generatedAt,
+                          })
+                      : undefined
+                  }
+                  onInspect={
+                    report
+                      ? (judgment) =>
+                          inspectJudgment(
+                            judgment,
+                            t('核心判断的依据', 'Evidence for the core judgment')
+                          )
+                      : undefined
+                  }
+                />
               )}
-              {[...acquiredSources.values()].map((source) => (
-                <a key={source.href} href={source.href} target="_blank" rel="noopener noreferrer">
-                  <FileSearch size={22} aria-hidden="true" />
-                  <div>
-                    <small>
-                      {source.provider} · {run.input.year} ·{' '}
-                      {t('结构化财务数据', 'Structured financial data')}
-                    </small>
-                    <h3>
-                      {source.fields.map((field) => t(...contextFieldLabels[field])).join(' / ')}
-                    </h3>
-                  </div>
-                  <ArrowUpRight size={21} aria-hidden="true" />
+              <div className="lite-intro-actions">
+                <a
+                  href={
+                    summary && report
+                      ? liteReportPageHref(query, 'sources', {
+                          basis,
+                          claim: summary.id,
+                          generation: report.generatedAt,
+                        })
+                      : pageLink('original')
+                  }
+                >
+                  {t('跟着问题，找到依据', 'Follow a question to its evidence')}
+                  <ArrowDown size={18} aria-hidden="true" />
                 </a>
-              ))}
-              {!sourceCards.length && !originals.length && !acquiredSources.size && (
-                <p className="lite-source-empty">
-                  {t(
-                    '尚未取得支撑核心判断的原文。已取得的字段仍可在上一节逐项核对。',
-                    'Original evidence for the core judgment is not yet available. Acquired fields can still be checked in the previous chapter.'
-                  )}
-                </p>
-              )}
-              <a
-                className="lite-source-full"
-                href={`${companyPath(run.id, 'sources')}&cached=1&experience=pro`}
-              >
-                <span>{t('在 Pro 中核对全部来源', 'Check all sources in Pro')}</span>
-                <ArrowRight size={19} aria-hidden="true" />
-              </a>
-            </div>
-          </div>
-          {report && (
-            <p className="lite-snapshot-note">
-              {t('判断所用资料快照', 'Snapshot supporting the judgment')} ·{' '}
-              {date(report.snapshotFetchedAt, locale)}
-            </p>
-          )}
-        </details>
-        {(reportDocument.dimensions.length > 0 ||
-          reportSections.some(([, , items]) => items.length > 0)) && (
-          <details className="lite-report-detail" onToggle={() => ScrollTrigger.refresh()}>
-            <summary>
-              <span>
-                <small>{t('报告正文', 'THE FULL REPORT')}</small>
-                <strong>{t('展开完整分析', 'Read the complete analysis')}</strong>
-              </span>
-              <ChevronDown size={24} aria-hidden="true" />
-            </summary>
-            <div className="lite-report-body">
-              <div className="lite-report-version">
-                <span>
-                  {run.input.year} · {t('合并口径', 'Consolidated basis')}
-                </span>
-                {reportDocument.generatedAt && (
-                  <span>
-                    {t('报告生成', 'Report generated')} · {date(reportDocument.generatedAt, locale)}
-                  </span>
-                )}
-                {reportDocument.snapshotFetchedAt && (
-                  <span>
-                    {t('资料快照', 'Source snapshot')} ·{' '}
-                    {date(reportDocument.snapshotFetchedAt, locale)}
-                  </span>
+                {summary && report && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      inspectJudgment(
+                        summary,
+                        t('核心判断的依据', 'Evidence for the core judgment')
+                      )
+                    }
+                  >
+                    <FileSearch size={17} aria-hidden="true" />
+                    {t('判断依据', 'Judgment evidence')}
+                  </button>
                 )}
               </div>
-              {reportDocument.dimensions.length > 0 && (
-                <section className="lite-report-section" data-report-section="dimensions">
-                  <h3>{t('逐个维度，理解判断', 'Understand each dimension')}</h3>
-                  <div className="lite-report-dimensions">
-                    {reportDocument.dimensions.map((dimension, index) => (
-                      <article key={dimension.id} data-status={dimension.status}>
-                        <span className="lite-report-dimension-index" aria-hidden="true">
-                          {String(index + 1).padStart(2, '0')}
+            </div>
+          </div>
+          <div className="lite-report-highlights">
+            <section className="lite-report-highlight" data-report-section="findings">
+              <div className="lite-report-card-heading">
+                <Check size={20} aria-hidden="true" />
+                <h3>{t('已有依据的重点', 'Source-backed highlights')}</h3>
+              </div>
+              {reportDocument.findings.length > 0 ? (
+                overviewItems(
+                  reportDocument.findings,
+                  t('已有依据的重点', 'Source-backed highlights')
+                )
+              ) : (
+                <p className="lite-report-empty">
+                  {t(
+                    '尚未形成有依据的报告重点。已取得的数字可在数字页核对。',
+                    'Evidence-backed report findings are not available yet. Check acquired figures in the next page.'
+                  )}
+                </p>
+              )}
+            </section>
+            <section className="lite-report-highlight" data-report-section="unknowns">
+              <div className="lite-report-card-heading">
+                <FileSearch size={20} aria-hidden="true" />
+                <h3>{t('还待核查', 'What still needs checking')}</h3>
+              </div>
+              {reportDocument.unknowns.length > 0 ? (
+                overviewItems(reportDocument.unknowns, t('还待核查', 'What still needs checking'))
+              ) : (
+                <p className="lite-report-empty">
+                  {t(
+                    '这份报告没有记录额外的待核查项；仍需结合原文理解其范围。',
+                    'No additional unresolved items are recorded in this report. Read the originals to understand its scope.'
+                  )}
+                </p>
+              )}
+            </section>
+          </div>
+          <div
+            className="lite-progress"
+            aria-label={t('实际研究进度', 'Recorded research progress')}
+          >
+            <span>{t(...progress.label)}</span>
+            <ol>
+              {progress.stages.map((stage, index) => (
+                <li key={stage.id} data-status={stage.status} title={t(...stage.summary)}>
+                  <span>0{index + 1}</span>
+                  <strong>{t(...stage.label)}</strong>
+                  <small>{t(stageLabels[stage.status][0], stageLabels[stage.status][1])}</small>
+                </li>
+              ))}
+            </ol>
+          </div>
+          {(brief.warnings.length > 0 || run.contextError || run.assessmentError || run.error) && (
+            <div className="lite-scope-notes" role="status">
+              {brief.warnings.map((warning, index) => (
+                <p key={index}>{t(...warning)}</p>
+              ))}
+              {run.contextError && <p>{run.contextError}</p>}
+              {run.assessmentError && <p>{run.assessmentError}</p>}
+              {run.error && <p>{run.error}</p>}
+            </div>
+          )}
+          {stepLink(0)}
+        </section>
+
+        <section
+          className="lite-chapter lite-number-chapter"
+          id="lite-numbers"
+          hidden={readingPage !== 'finance'}
+          tabIndex={-1}
+          aria-labelledby="lite-numbers-heading"
+        >
+          {chapterHeading(
+            1,
+            <span id="lite-numbers-heading">
+              {t('赚到的钱，', 'Money earned.')}
+              <br />
+              {t('留下了多少？', 'Cash retained?')}
+            </span>,
+            t(
+              `${run.input.year} 年这一年的经营，先看四个数字。`,
+              `Start with four figures from ${run.input.year}.`
+            )
+          )}
+          <div className="lite-number-controls lite-reveal">
+            <span>
+              {run.input.year} · {t('年度 · 人民币', 'Annual period · CNY')}
+            </span>
+            <div role="group" aria-label={t('利润口径', 'Profit basis')}>
+              <button
+                type="button"
+                aria-pressed={basis === 'consolidated'}
+                onClick={() => changeBasis('consolidated')}
+              >
+                {t('合并净利润', 'Consolidated profit')}
+              </button>
+              <button
+                type="button"
+                aria-pressed={basis === 'parent'}
+                onClick={() => changeBasis('parent')}
+              >
+                {t('归母净利润', 'Attributable profit')}
+              </button>
+            </div>
+          </div>
+          <dl className="lite-numbers-grid">
+            {fields.map((field, index) => {
+              const amount = annual?.amounts[field] ?? null;
+              const display = liteAmountDisplay(amount, locale, { compact: true });
+              const original = run.context?.financials.find(
+                (row) => row.annual && row.period === `${run.input.year}-12-31`
+              );
+              const conflict = run.context?.comparisons.some(
+                (check) =>
+                  check.period === `${run.input.year}-12-31` &&
+                  check.field === field &&
+                  !check.matches
+              );
+              return (
+                <div
+                  key={field}
+                  className="lite-number lite-reveal"
+                  data-field={field}
+                  data-available={amount !== null}
+                >
+                  <dt>
+                    <span>0{index + 1}</span>
+                    {t(...contextFieldLabels[field])}
+                  </dt>
+                  <dd title={display?.exactText} data-exact-yuan={display?.exactYuan}>
+                    <strong>{display?.text || '—'}</strong>
+                  </dd>
+                  {display ? (
+                    <details className="lite-number-precision">
+                      <summary>{t('查看精确金额', 'Read the exact amount')}</summary>
+                      <p>{display.exactText}</p>
+                    </details>
+                  ) : (
+                    <p>
+                      {conflict
+                        ? t('来源有差异，暂不采用', 'Source conflict; value withheld')
+                        : t('未取得或待核对', 'Unavailable or needs review')}
+                    </p>
+                  )}
+                  {original && overview.state === 'available' && (
+                    <CompanyContextEvidence
+                      key={`${scope}:${run.context?.fetchedAt}:${field}:${readingPage}`}
+                      snapshot={run.context}
+                      row={original}
+                      fields={[field]}
+                      formula={t(
+                        `${run.input.year} 年度；${field === 'cash' ? '期末余额' : '报告期累计金额'}。`,
+                        `${run.input.year} annual period; ${field === 'cash' ? 'period-end balance' : 'amount over the reporting period'}.`
+                      )}
+                    >
+                      {t('这个数字从哪来', 'Where this figure comes from')}
+                    </CompanyContextEvidence>
+                  )}
+                </div>
+              );
+            })}
+          </dl>
+          {cashComparison && (
+            <figure className="lite-cash-comparison lite-reveal">
+              <figcaption>
+                <h3>{t('利润与现金，放在一起看。', 'Compare profit with operating cash.')}</h3>
+                <p>
+                  {run.input.year} · {t(...contextFieldLabels[profitField])} ·{' '}
+                  {t('两条柱线使用同一金额刻度', 'Both bars use the same amount scale')}
+                </p>
+              </figcaption>
+              <div
+                className="lite-cash-comparison-plot"
+                role="img"
+                aria-label={cashComparison.rows
+                  .map((row) => `${t(...contextFieldLabels[row.field])}: ${row.display.exactText}`)
+                  .join('; ')}
+                data-signed={cashComparison.signed}
+              >
+                {cashComparison.rows.map((row) => (
+                  <div className="lite-cash-comparison-row" key={row.field}>
+                    <span>{t(...contextFieldLabels[row.field])}</span>
+                    <div className="lite-cash-comparison-track">
+                      <span
+                        className="lite-cash-zero"
+                        style={{ left: cashComparison.signed ? '50%' : '0%' }}
+                      />
+                      <span
+                        className="lite-cash-bar"
+                        style={{ width: `${row.width}%`, left: `${row.start}%` }}
+                      />
+                    </div>
+                    <strong title={row.display.exactText}>{row.display.text}</strong>
+                  </div>
+                ))}
+              </div>
+              <p className="lite-snapshot-note">
+                {t(
+                  '精确金额与各自来源，可在上方展开核对。',
+                  'Expand the cards above for exact amounts and their own sources.'
+                )}
+              </p>
+            </figure>
+          )}
+          {overview.state === 'mismatch' && (
+            <p className="lite-scope-notes" role="status">
+              {t(
+                '来源主体或范围不匹配，相关数字与判断暂不采用。',
+                'Source issuer or scope does not match; dependent values and judgments are withheld.'
+              )}
+            </p>
+          )}
+          {overview.state === 'available' && !annual && (
+            <p className="lite-scope-notes" role="status">
+              {t(
+                `尚未取得 ${run.input.year} 年度数据；本节数值保持未知。`,
+                `${run.input.year} annual data has not been acquired; the values on this page remain unknown.`
+              )}
+            </p>
+          )}
+          <div className="lite-observations lite-reveal">
+            {overview.cards.map((card) => {
+              const rows = companyOverviewEvidencePeriods(run.context, card.evidence);
+              const row = rows.at(-1);
+              return (
+                <article key={card.id}>
+                  <h3>{t(...card.question)}</h3>
+                  <strong>{t(...card.judgment)}</strong>
+                  <p>{t(...card.detail)}</p>
+                  {row && (
+                    <CompanyContextEvidence
+                      key={`${scope}:${run.context?.fetchedAt}:${card.id}:${readingPage}`}
+                      snapshot={run.context}
+                      row={row}
+                      periods={rows}
+                      fields={card.evidence.fields}
+                      formula={t(...card.evidence.formula)}
+                    >
+                      {t('看数据与计算', 'Data and calculation')}
+                    </CompanyContextEvidence>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+          <p className="lite-snapshot-note">
+            {t('本页资料快照', 'Data snapshot on this page')} ·{' '}
+            {run.context ? date(run.context.fetchedAt, locale) : t('尚未取得', 'Not yet acquired')}
+          </p>
+          {stepLink(1)}
+        </section>
+
+        <section className="lite-chapter lite-company-signals-print">
+          <h2>{t('公开事项', 'Public records')}</h2>
+          <LiteCompanyPublicItems run={run} />
+        </section>
+        <section className="lite-chapter lite-company-signals-print">
+          <h2>{t('口碑线索', 'Reputation')}</h2>
+          <LiteCompanyReputation run={run} />
+        </section>
+
+        <section
+          className="lite-chapter lite-evidence-chapter"
+          id="lite-sources"
+          hidden={readingPage !== 'original'}
+          tabIndex={-1}
+          aria-labelledby="lite-sources-page-title"
+        >
+          <header className="lite-sources-page-heading">
+            <p className="lite-kicker">
+              03 / {run.input.year} / {companyName}
+            </p>
+            <h2 id="lite-sources-page-title" data-lite-page-title tabIndex={-1}>
+              {t('每条判断，都能往回查。', 'Trace each finding to its evidence.')}
+            </h2>
+          </header>
+          {unresolvedEvidenceLink && (
+            <p className="lite-evidence-link-notice" role="status">
+              {t(
+                '这条链接的报告版本或引用已不匹配。当前保留已保存的报告，请重新选择要追溯的判断。',
+                'The linked report version or reference no longer matches. The saved report remains available; choose a finding to trace again.'
+              )}
+            </p>
+          )}
+          <LiteEvidenceExplorer
+            initialSelection={undefined}
+            printJudgments={false}
+            run={run}
+            basis="consolidated"
+            onInspect={
+              report
+                ? (judgment) =>
+                    inspectJudgment(judgment, t('线索的依据', 'Evidence supporting this finding'))
+                : undefined
+            }
+            disabled={!owner || verified !== scope}
+          />
+          <details className="lite-source-register-detail" onToggle={() => ScrollTrigger.refresh()}>
+            <summary>
+              <span id="lite-sources-heading">
+                {t('完整来源登记与年度字段', 'Complete source register and annual fields')}
+              </span>
+              <ChevronDown size={18} aria-hidden="true" />
+            </summary>
+            <div className="lite-evidence-layout lite-reveal">
+              <aside className="lite-source-register" aria-labelledby="lite-source-register-title">
+                <span className="lite-source-register-kicker">
+                  <FileSearch size={20} aria-hidden="true" />
+                  {t('来源登记', 'SOURCE REGISTER')}
+                </span>
+                <h3 id="lite-source-register-title">{run.input.year}</h3>
+                <p>
+                  {t(
+                    '每条出处，连到它支撑的内容。',
+                    'Each source connects to the content it supports.'
+                  )}
+                </p>
+                <dl className="lite-source-register-facts">
+                  <div>
+                    <dt>{t('已链接的分析出处', 'Linked analysis references')}</dt>
+                    <dd>{sourceCards.length}</dd>
+                  </div>
+                  <div>
+                    <dt>{t('有来源链接的本年字段', 'Annual fields with source links')}</dt>
+                    <dd>{linkedFieldCount}</dd>
+                  </div>
+                </dl>
+                {acquiredSources.size > 0 && (
+                  <ol
+                    className="lite-source-connections"
+                    aria-label={t('本年度字段与来源的对应', 'Annual fields and their sources')}
+                  >
+                    {[...acquiredSources.values()].map((source) => (
+                      <li key={source.href}>
+                        <span>
+                          {source.fields
+                            .map((field) => t(...contextFieldLabels[field]))
+                            .join(' / ')}
                         </span>
-                        <h4>{t(...dimension.label)}</h4>
-                        <p>{dimension.judgment.text[language]}</p>
-                        {printCitations(dimension.judgment)}
-                        <LiteMetricChips
-                          document={reportDocument}
-                          judgment={dimension.judgment}
-                          onInspect={
-                            report
-                              ? (judgment) => inspectJudgment(judgment, t(...dimension.label))
-                              : undefined
-                          }
-                        />
-                        {report &&
-                          (dimension.judgment.metricIds.length > 0 ||
-                            dimension.judgment.evidenceIds.length > 0) && (
+                        <ArrowRight size={18} aria-hidden="true" />
+                        <a href={source.href} target="_blank" rel="noopener noreferrer">
+                          {source.provider}
+                          <ArrowUpRight size={14} aria-hidden="true" />
+                        </a>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+                <p className="lite-source-register-note">
+                  {t(
+                    '链接数量只描述本页已记录的出处，不代表独立性或可信度。网页字段仍需核对原件。',
+                    'Counts describe recorded links on this page, not independence or confidence. Public web fields still need original-document checks.'
+                  )}
+                </p>
+              </aside>
+              <div className="lite-source-list">
+                {sourceCards.length > 0 && (
+                  <p className="lite-source-group-label">
+                    {report
+                      ? t('报告中的引用出处', 'References used in the report')
+                      : t(
+                          '已取得字段与观察的出处',
+                          'Sources for acquired fields and observations'
+                        )}{' '}
+                    ·{' '}
+                    {reportDocument.snapshotFetchedAt
+                      ? date(reportDocument.snapshotFetchedAt, locale)
+                      : ''}
+                  </p>
+                )}
+                {sourceCards.map((source, index) => (
+                  <a
+                    className="lite-reference-entry"
+                    key={source.id}
+                    href={source.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="lite-source-index">0{index + 1}</span>
+                    <div>
+                      <small>
+                        {source.kind}
+                        {source.period ? ` · ${source.period}` : ''}
+                      </small>
+                      <h3>{source.label}</h3>
+                      <div className="lite-source-print">
+                        {source.page && (
+                          <p>
+                            {t('原文页码', 'Source page')} · {source.page}
+                          </p>
+                        )}
+                        {source.quote && <blockquote>{source.quote}</blockquote>}
+                        <p>{source.href}</p>
+                      </div>
+                    </div>
+                    <ArrowUpRight size={21} aria-hidden="true" />
+                  </a>
+                ))}
+                {(originals.length > 0 || acquiredSources.size > 0) && (
+                  <p className="lite-source-group-label">
+                    {run.input.year} ·{' '}
+                    {t('本年度数字的来源', 'Sources for the selected year’s figures')}
+                    {run.context ? ` · ${date(run.context.fetchedAt, locale)}` : ''}
+                  </p>
+                )}
+                {originals.map((href) => (
+                  <a key={href} href={href} target="_blank" rel="noopener noreferrer">
+                    <FileSearch size={22} aria-hidden="true" />
+                    <div>
+                      <small>
+                        {run.input.year} ·{' '}
+                        {t('已记录的披露原文链接', 'Recorded original disclosure link')}
+                      </small>
+                      <h3>{t('打开这一年的原文', 'Open the selected year’s original')}</h3>
+                    </div>
+                    <ArrowUpRight size={21} aria-hidden="true" />
+                  </a>
+                ))}
+                {acquiredSources.size > 0 && (
+                  <p className="lite-source-group-label">
+                    {t(
+                      '网页字段尚未逐项核对原件。',
+                      'Public web fields have not been individually checked against the original.'
+                    )}
+                  </p>
+                )}
+                {[...acquiredSources.values()].map((source) => (
+                  <a key={source.href} href={source.href} target="_blank" rel="noopener noreferrer">
+                    <FileSearch size={22} aria-hidden="true" />
+                    <div>
+                      <small>
+                        {source.provider} · {run.input.year} ·{' '}
+                        {t('结构化财务数据', 'Structured financial data')}
+                      </small>
+                      <h3>
+                        {source.fields.map((field) => t(...contextFieldLabels[field])).join(' / ')}
+                      </h3>
+                    </div>
+                    <ArrowUpRight size={21} aria-hidden="true" />
+                  </a>
+                ))}
+                {!sourceCards.length && !originals.length && !acquiredSources.size && (
+                  <p className="lite-source-empty">
+                    {t(
+                      '尚未取得支撑核心判断的原文。已取得的字段仍可在上一节逐项核对。',
+                      'Original evidence for the core judgment is not yet available. Acquired fields can still be checked in the previous chapter.'
+                    )}
+                  </p>
+                )}
+                <a
+                  className="lite-source-full"
+                  href={`${companyPath(run.id, 'sources')}&cached=1&experience=pro`}
+                >
+                  <span>{t('在 Pro 中核对全部来源', 'Check all sources in Pro')}</span>
+                  <ArrowRight size={19} aria-hidden="true" />
+                </a>
+              </div>
+            </div>
+            {report && (
+              <p className="lite-snapshot-note">
+                {t('判断所用资料快照', 'Snapshot supporting the judgment')} ·{' '}
+                {date(report.snapshotFetchedAt, locale)}
+              </p>
+            )}
+          </details>
+          {(reportDocument.dimensions.length > 0 ||
+            reportSections.some(([, , items]) => items.length > 0)) && (
+            <details className="lite-report-detail" onToggle={() => ScrollTrigger.refresh()}>
+              <summary>
+                <span>
+                  <small>{t('报告正文', 'THE FULL REPORT')}</small>
+                  <strong>{t('展开完整分析', 'Read the complete analysis')}</strong>
+                </span>
+                <ChevronDown size={24} aria-hidden="true" />
+              </summary>
+              <div className="lite-report-body">
+                <div className="lite-report-version">
+                  <span>
+                    {run.input.year} · {t('合并口径', 'Consolidated basis')}
+                  </span>
+                  {reportDocument.generatedAt && (
+                    <span>
+                      {t('报告生成', 'Report generated')} ·{' '}
+                      {date(reportDocument.generatedAt, locale)}
+                    </span>
+                  )}
+                  {reportDocument.snapshotFetchedAt && (
+                    <span>
+                      {t('资料快照', 'Source snapshot')} ·{' '}
+                      {date(reportDocument.snapshotFetchedAt, locale)}
+                    </span>
+                  )}
+                </div>
+                {reportDocument.dimensions.length > 0 && (
+                  <section className="lite-report-section" data-report-section="dimensions">
+                    <h3>{t('逐个维度，理解判断', 'Understand each dimension')}</h3>
+                    <div className="lite-report-dimensions">
+                      {reportDocument.dimensions.map((dimension, index) => (
+                        <article key={dimension.id} data-status={dimension.status}>
+                          <span className="lite-report-dimension-index" aria-hidden="true">
+                            {String(index + 1).padStart(2, '0')}
+                          </span>
+                          <h4>{t(...dimension.label)}</h4>
+                          <p>{dimension.judgment.text[language]}</p>
+                          {printCitations(dimension.judgment)}
+                          <LiteMetricChips
+                            document={reportDocument}
+                            judgment={dimension.judgment}
+                            onInspect={
+                              report
+                                ? (judgment) => inspectJudgment(judgment, t(...dimension.label))
+                                : undefined
+                            }
+                          />
+                          {report &&
+                            (dimension.judgment.metricIds.length > 0 ||
+                              dimension.judgment.evidenceIds.length > 0) && (
+                              <button
+                                className="lite-report-evidence"
+                                type="button"
+                                onClick={() =>
+                                  inspectJudgment(dimension.judgment, t(...dimension.label))
+                                }
+                                aria-label={
+                                  t('查看依据：', 'Evidence for: ') + t(...dimension.label)
+                                }
+                              >
+                                <FileSearch size={14} aria-hidden="true" />
+                                {t('核对依据', 'Check the evidence')}
+                                <ArrowUpRight size={14} aria-hidden="true" />
+                              </button>
+                            )}
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                )}
+                {reportSections.map(
+                  ([sectionId, title, items]) =>
+                    items.length > 0 && (
+                      <section
+                        className="lite-report-section"
+                        data-report-section={sectionId}
+                        key={sectionId}
+                      >
+                        <h3>{title}</h3>
+                        {reportItems(items, title)}
+                      </section>
+                    )
+                )}
+                {reportDocument.facts.length > 0 && (
+                  <details
+                    className="lite-report-metrics"
+                    data-report-section="metrics"
+                    onToggle={() => ScrollTrigger.refresh()}
+                  >
+                    <summary>
+                      <span>{t('核对完整指标与计算口径', 'Inspect all metrics and formulas')}</span>
+                      <ChevronDown size={18} aria-hidden="true" />
+                    </summary>
+                    <dl>
+                      {reportDocument.facts.map((metric) => (
+                        <div key={metric.id} data-status={metric.status}>
+                          <dt>{t(...metric.label)}</dt>
+                          <dd>{t(...metric.display)}</dd>
+                          {metric.unit === 'CNY' && metric.value !== null && (
+                            <p className="lite-report-exact">{metric.value} CNY</p>
+                          )}
+                          <p>{t(...metric.formula)}</p>
+                          {report && metric.status === 'available' && (
                             <button
                               className="lite-report-evidence"
                               type="button"
                               onClick={() =>
-                                inspectJudgment(dimension.judgment, t(...dimension.label))
+                                inspectJudgment(
+                                  {
+                                    text: { zh: metric.label[0], en: metric.label[1] },
+                                    metricIds: [metric.id],
+                                    evidenceIds: metric.evidenceIds,
+                                  },
+                                  t(...metric.label)
+                                )
                               }
-                              aria-label={t('查看依据：', 'Evidence for: ') + t(...dimension.label)}
+                              aria-label={t('查看依据：', 'Evidence for: ') + t(...metric.label)}
                             >
                               <FileSearch size={14} aria-hidden="true" />
                               {t('核对依据', 'Check the evidence')}
-                              <ArrowUpRight size={14} aria-hidden="true" />
                             </button>
                           )}
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-              {reportSections.map(
-                ([sectionId, title, items]) =>
-                  items.length > 0 && (
-                    <section
-                      className="lite-report-section"
-                      data-report-section={sectionId}
-                      key={sectionId}
-                    >
-                      <h3>{title}</h3>
-                      {reportItems(items, title)}
-                    </section>
-                  )
-              )}
-              {reportDocument.facts.length > 0 && (
-                <details
-                  className="lite-report-metrics"
-                  data-report-section="metrics"
-                  onToggle={() => ScrollTrigger.refresh()}
-                >
-                  <summary>
-                    <span>{t('核对完整指标与计算口径', 'Inspect all metrics and formulas')}</span>
-                    <ChevronDown size={18} aria-hidden="true" />
-                  </summary>
-                  <dl>
-                    {reportDocument.facts.map((metric) => (
-                      <div key={metric.id} data-status={metric.status}>
-                        <dt>{t(...metric.label)}</dt>
-                        <dd>{t(...metric.display)}</dd>
-                        {metric.unit === 'CNY' && metric.value !== null && (
-                          <p className="lite-report-exact">{metric.value} CNY</p>
-                        )}
-                        <p>{t(...metric.formula)}</p>
-                        {report && metric.status === 'available' && (
-                          <button
-                            className="lite-report-evidence"
-                            type="button"
-                            onClick={() =>
-                              inspectJudgment(
-                                {
-                                  text: { zh: metric.label[0], en: metric.label[1] },
-                                  metricIds: [metric.id],
-                                  evidenceIds: metric.evidenceIds,
-                                },
-                                t(...metric.label)
-                              )
-                            }
-                            aria-label={t('查看依据：', 'Evidence for: ') + t(...metric.label)}
-                          >
-                            <FileSearch size={14} aria-hidden="true" />
-                            {t('核对依据', 'Check the evidence')}
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </dl>
-                </details>
-              )}
-            </div>
-          </details>
-        )}
-        {stepLink(2)}
-      </section>
-
-      <section
-        className="lite-chapter lite-question-chapter"
-        id="lite-questions"
-        data-lite-page="questions"
-        hidden={readingPage !== 'questions'}
-        tabIndex={-1}
-        aria-labelledby="lite-questions-heading"
-      >
-        {chapterHeading(
-          3,
-          <span id="lite-questions-heading">
-            {t('看懂之后，', 'Now you see it.')}
-            <br />
-            {t('再问一步。', 'Ask one step further.')}
-          </span>,
-          t(
-            '选择一个问题，基于这份研究继续追问。',
-            'Choose a question to continue with this research.'
-          )
-        )}
-        <div className="lite-question-list lite-reveal">
-          {questions.map((question, index) => (
-            <button
-              key={question.id}
-              type="button"
-              disabled={!canAsk}
-              onClick={() => ask(question.text)}
-            >
-              <span>0{index + 1}</span>
-              <strong>{question.text}</strong>
-              <MessageCircle size={22} aria-hidden="true" />
-            </button>
-          ))}
-        </div>
-        <p className="lite-snapshot-note" role={!canAsk ? 'status' : undefined}>
-          {canAsk
-            ? t(
-                `点击问题即提交给析光助手，沿用这份研究的 ${run.input.year} 年度、${basis === 'consolidated' ? '合并口径' : '归母口径'}${reportQuestions.length ? '及已保存报告版本' : ''}。`,
-                `Selecting a question submits it to the Prispect assistant with this research’s ${run.input.year} annual period, ${basis === 'consolidated' ? 'consolidated' : 'attributable'} basis${reportQuestions.length ? ' and saved report version' : ''}.`
-              )
-            : verified !== scope
-              ? error
-                ? t(
-                    '暂未能确认这份研究记录。重新读取状态后，可继续追问；已有资料仍可阅读。',
-                    'This research record could not be confirmed. Read its status again to enable follow-ups; saved data remains readable.'
-                  )
-                : t(
-                    '正在确认这份研究记录，确认后可继续追问。',
-                    'Confirming this research record before follow-up questions become available.'
-                  )
-              : t(
-                  '取得可用的公开资料后，可基于这份研究继续追问。',
-                  'Follow-up questions become available when usable public sources have been acquired.'
+                        </div>
+                      ))}
+                    </dl>
+                  </details>
                 )}
-        </p>
-        {stepLink(3)}
-        <div className="lite-finish lite-reveal">
-          <p>{t('继续核对趋势与数据口径', 'Continue checking trends and data scope')}</p>
-          <a href={`${companyPath(run.id)}&cached=1&experience=pro`}>
-            {t('进入 Pro，逐项核对', 'Open Pro to inspect each field')}
-            <ArrowUpRight size={22} aria-hidden="true" />
-          </a>
-          <a href="/#showcase-query">
-            {t('再看一家公司', 'Read another company')}
-            <ArrowRight size={18} aria-hidden="true" />
-          </a>
-        </div>
-        <footer className="lite-reading-footer">
-          <span>析光 / Prispect</span>
-          <a href="/docs/methodology">
-            {t('评级与方法', 'Grades and methodology')}
-            <ArrowUpRight size={14} aria-hidden="true" />
-          </a>
-        </footer>
-      </section>
+              </div>
+            </details>
+          )}
+          {stepLink(2)}
+        </section>
+
+        <section
+          className="lite-chapter lite-question-chapter"
+          id="lite-questions"
+          hidden={readingPage !== 'reputation'}
+          tabIndex={-1}
+          aria-labelledby="lite-questions-heading"
+        >
+          {chapterHeading(
+            3,
+            <span id="lite-questions-heading">
+              {t('看懂之后，', 'Now you see it.')}
+              <br />
+              {t('再问一步。', 'Ask one step further.')}
+            </span>,
+            t(
+              '选择一个问题，基于这份研究继续追问。',
+              'Choose a question to continue with this research.'
+            )
+          )}
+          <div className="lite-question-list lite-reveal">
+            {questions.map((question, index) => (
+              <button
+                key={question.id}
+                type="button"
+                disabled={!canAsk}
+                onClick={() => ask(question.text)}
+              >
+                <span>0{index + 1}</span>
+                <strong>{question.text}</strong>
+                <MessageCircle size={22} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+          <p className="lite-snapshot-note" role={!canAsk ? 'status' : undefined}>
+            {canAsk
+              ? t(
+                  `点击问题即提交给析光助手，沿用这份研究的 ${run.input.year} 年度、${basis === 'consolidated' ? '合并口径' : '归母口径'}${reportQuestions.length ? '及已保存报告版本' : ''}。`,
+                  `Selecting a question submits it to the Prispect assistant with this research’s ${run.input.year} annual period, ${basis === 'consolidated' ? 'consolidated' : 'attributable'} basis${reportQuestions.length ? ' and saved report version' : ''}.`
+                )
+              : verified !== scope
+                ? error
+                  ? t(
+                      '暂未能确认这份研究记录。重新读取状态后，可继续追问；已有资料仍可阅读。',
+                      'This research record could not be confirmed. Read its status again to enable follow-ups; saved data remains readable.'
+                    )
+                  : t(
+                      '正在确认这份研究记录，确认后可继续追问。',
+                      'Confirming this research record before follow-up questions become available.'
+                    )
+                : t(
+                    '取得可用的公开资料后，可基于这份研究继续追问。',
+                    'Follow-up questions become available when usable public sources have been acquired.'
+                  )}
+          </p>
+          {stepLink(3)}
+          <div className="lite-finish lite-reveal">
+            <p>{t('继续核对趋势与数据口径', 'Continue checking trends and data scope')}</p>
+            <a href={`${companyPath(run.id)}&cached=1&experience=pro`}>
+              {t('进入 Pro，逐项核对', 'Open Pro to inspect each field')}
+              <ArrowUpRight size={22} aria-hidden="true" />
+            </a>
+            <a href="/#showcase-query">
+              {t('再看一家公司', 'Read another company')}
+              <ArrowRight size={18} aria-hidden="true" />
+            </a>
+          </div>
+          <footer className="lite-reading-footer">
+            <span>析光 / Prispect</span>
+            <a href="/docs/methodology">
+              {t('评级与方法', 'Grades and methodology')}
+              <ArrowUpRight size={14} aria-hidden="true" />
+            </a>
+          </footer>
+        </section>
+      </div>
       {inspected?.scope === scope && inspected.generatedAt === report?.generatedAt && report && (
         <CompanyAssessmentEvidence
           key={`${scope}:${report.generatedAt}`}

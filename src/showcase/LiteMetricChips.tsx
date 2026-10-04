@@ -129,7 +129,7 @@ export function LiteMetricChips({
         url.pathname === '/company' &&
         url.searchParams.get('run') === binding.runId &&
         url.searchParams.get('experience') === 'lite' &&
-        url.searchParams.get('page') === 'sources' &&
+        ['original', 'sources'].includes(url.searchParams.get('page') || '') &&
         url.searchParams.get('source') === sources[0].id &&
         url.searchParams.get('generation') === binding.reportGeneratedAt
       )

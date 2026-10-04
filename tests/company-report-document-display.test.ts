@@ -193,7 +193,7 @@ function renderBoth(
   t: TestContext,
   run: CompanyResearchRun,
   locale: 'zh-Hans' | 'en' = 'zh-Hans',
-  page = 'overview'
+  page = 'finance'
 ) {
   // The Lite reading seam is owner-checked just as its API response is; no global
   // record or production account is installed for these rendering tests.
@@ -294,8 +294,9 @@ test('report reading structures expose the full analysis through native document
       `Missing Lite detail section: ${section}`
     );
   }
-  for (const id of ['judgment', 'numbers', 'sources', 'questions'])
-    assert.equal($lite(`#lite-${id}`).length, 1);
+  for (const channel of ['finance', 'public', 'reputation', 'original'])
+    assert.equal($lite(`[data-lite-page="${channel}"]`).length, 1);
+  assert.equal($lite('[data-lite-print-document]').length, 1);
 });
 
 test('failed refreshes keep the saved report generation and source snapshot readable', (t) => {
@@ -429,10 +430,11 @@ test('saved follow-ups retain their run, annual scope and report generation, and
   assert.match($lite('.lite-question-list').text(), /QUESTION_1/);
 });
 
-test('Lite has four independent reading pages while retaining the full saved report for printing', (t) => {
+test('Lite shows the approved four topical channels while retaining the complete same-generation printable report', (t) => {
   const run = fixture();
+  const channels = ['finance', 'public', 'reputation', 'original'];
   for (const locale of ['zh-Hans', 'en'] as const) {
-    for (const page of ['overview', 'numbers', 'sources', 'questions']) {
+    for (const page of channels) {
       const [, lite] = renderBoth(t, run, locale, page);
       const $ = lite[1];
       assert.equal($('.lite-research').attr('data-reading-page'), page);
@@ -440,7 +442,7 @@ test('Lite has four independent reading pages while retaining the full saved rep
       assert.equal($('[data-lite-page]:not([hidden])').length, 1);
       assert.equal($('[data-lite-page]:not([hidden])').attr('data-lite-page'), page);
       assert.equal($('[data-lite-page]:not([hidden]) [data-lite-page-title]').length, 1);
-      assert.equal($('.lite-chapter-nav a[aria-current="page"]').length, 1);
+      assert.equal($('.lite-company-screen a[aria-current="page"]').length, 1);
       for (const marker of [
         'SUMMARY_SENTINEL',
         'DIMENSION_cash',
@@ -448,26 +450,77 @@ test('Lite has four independent reading pages while retaining the full saved rep
         'CHANGE_2',
         'GAP_SENTINEL',
       ])
-        assert.ok($.root().text().includes(marker), `Page ${page} discarded printable ${marker}`);
-      assert.equal($('#lite-sources .lite-report-detail').length, 1);
-      assert.equal($('#lite-judgment .lite-report-detail').length, 0);
+        assert.ok(
+          $('[data-lite-print-document]').text().includes(marker),
+          `Channel ${page} discarded printable ${marker}`
+        );
+      assert.equal($('[data-lite-print-document] .lite-report-detail').length, 1);
+      assert.equal($('[data-lite-print-document] [data-lite-page]').length, 0);
       assert.ok(hasSavedOriginal($));
-      for (const link of $('.lite-chapter-nav > div a').toArray()) {
+      const channelLinks = $('.lite-company-screen .signal-channel-tabs a').toArray();
+      assert.equal(channelLinks.length, 4);
+      for (const link of channelLinks) {
         const url = new URL($(link).attr('href')!, 'https://prispect.com');
         assert.equal(url.searchParams.get('run'), run.id);
         assert.equal(url.searchParams.get('basis'), 'parent');
-        assert.ok(
-          ['overview', 'numbers', 'sources', 'questions'].includes(url.searchParams.get('page')!)
-        );
+        assert.ok(channels.includes(url.searchParams.get('page')!));
         assert.equal(url.hash, '');
       }
       for (const link of $('.lite-report-evidence-route').toArray()) {
         const url = new URL($(link).attr('href')!, 'https://prispect.com');
         assert.equal(url.searchParams.get('run'), run.id);
-        assert.equal(url.searchParams.get('page'), 'sources');
+        assert.equal(url.searchParams.get('page'), 'original');
         assert.equal(url.searchParams.get('generation'), generatedAt);
         assert.ok(url.searchParams.get('claim'));
       }
+    }
+  }
+});
+
+test('old Lite report URLs open their canonical topical channel without losing saved source details', (t) => {
+  for (const [legacy, canonical] of [
+    ['overview', 'finance'],
+    ['numbers', 'finance'],
+    ['sources', 'original'],
+    ['questions', 'reputation'],
+  ]) {
+    const run = fixture();
+    const [, lite] = renderBoth(t, run, 'zh-Hans', legacy);
+    const $ = lite[1];
+    assert.equal($('.lite-research').attr('data-reading-page'), canonical);
+    assert.equal($('[data-lite-page]:not([hidden])').attr('data-lite-page'), canonical);
+    assert.equal($('[data-lite-page]:not([hidden])').length, 1);
+    assert.match($('[data-lite-print-document]').text(), /SOURCE_QUOTE_SENTINEL/);
+    assert.ok(hasSavedOriginal($));
+  }
+});
+
+test('real-company channels use the selected issuer and never borrow the Songyuan example original', (t) => {
+  for (const [securityCode, orgId, companyName] of [
+    ['600519', 'synthetic-issuer-a', '合成主体甲 ISSUER_A'],
+    ['300893', 'synthetic-issuer-b', '合成主体乙 ISSUER_B'],
+  ]) {
+    const run = fixture();
+    run.id = `synthetic-channel-${securityCode}`;
+    run.input.securityCode = securityCode!;
+    run.input.orgId = orgId!;
+    run.context!.securityCode = securityCode!;
+    run.context!.orgId = orgId!;
+    run.context!.companyName = companyName!;
+    delete run.assessment;
+    for (const page of ['finance', 'public', 'reputation', 'original']) {
+      const [, lite] = renderBoth(t, run, 'zh-Hans', page);
+      const $ = lite[1];
+      const visible = $('[data-lite-page]:not([hidden])');
+      assert.equal(visible.length, 1);
+      assert.ok($('.lite-company-screen').text().includes(companyName!));
+      assert.doesNotMatch(visible.text(), /松原安全|366,373,098\.93|26,197,123\.70/);
+      assert.equal(
+        visible.find('img[src*="songyuan"], img[alt*="松原"], img[src*="annual-2025-page"]').length,
+        0,
+        `${securityCode} ${page} borrowed a historical example crop`
+      );
+      assert.equal(visible.find('[data-grade]').length, 0);
     }
   }
 });

@@ -24,7 +24,7 @@ const cashWidth =
   (Number(landingExample.summary.cash) / Number(landingExample.summary.profit)) * 100;
 
 /** Decorative local geometry, without any research or financial-data requests. */
-function SignalField({ channel }: { channel: Channel }) {
+export function SignalField({ channel }: { channel: Channel }) {
   const surface = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const canvas = surface.current;

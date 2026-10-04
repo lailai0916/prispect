@@ -64,16 +64,20 @@ export const guideDocument: ProductDocument = {
       title: ['Lite 与 Pro', 'Lite and Pro'],
       paragraphs: [
         [
-          'Lite 从集中搜索页开始。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。公司结果分为概览、数字、线索调查和下一问四个独立页面，点击导航或前后页切换；每页围绕一个阅读任务展示同一份研究资料。历史样例和阅读路径也各有自己的页面，样例保留原公司、年度与出处。',
-          'Lite starts with a focused search page. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Company results have four separate pages: Overview, Figures, Evidence questions and Next questions. Use the navigation or previous/next links to switch pages; each presents one reading task from the same research record. Historical examples and the reading guide also have separate pages, and examples retain their original company, year and sources.',
+          'Lite 首页以紧凑的“查公司、读样例、阅读路径”入口开始。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。每家公司都有财务、公开事项、口碑线索和原文四个独立页面，点击标签切换，浏览器返回和直接刷新也可继续阅读。四页使用当前企业自己的已保存资料，未取得内容会如实说明。',
+          'Lite home starts with compact Search, Example and Reading guide links. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Each company has four separate pages: Finance, Public records, Reputation and Original. Use their tabs to switch pages, or continue through browser history and direct refresh. All four use the current company’s own saved materials and label anything not acquired.',
         ],
         [
-          '在线索调查中选择一个问题，沿着判断、金额与原文查看依据；带“追到依据”的金额可打开对应来源。来源保留已有的期间、页码与节选，也可回看引用它的判断。类型筛选与翻页只整理已取得材料；展开完整档案或打印时，正文和全部来源仍保留。推荐问题承接当前企业、年度和显示口径，资料缺失或报告未完成时会明确说明。',
-          'Select an evidence question and follow its judgment, figures and original excerpts. Figures marked Trace the source open their own references. Sources retain recorded periods, pages and excerpts, with links back to the judgments citing them. Type filters and pages organize acquired materials only. The complete dossier and print view retain the full narrative and source list. Recommended questions keep the current company, year and displayed basis; missing materials and unfinished reports are labeled.',
+          '财务页从利润与经营现金对照开始，继续展开完整财务分析、行动与待核查内容；舍入金额注明约数与单位，详情保留精确原值。公开事项页阅读已取得的公司公告，口碑线索页阅读媒体与公众讨论记录；标题、摘要和已取得节选分别标注，公众观点不等于已证实事实，重复报道也不等于独立佐证。各页可自然向下阅读，以原生折叠打开更多内容。',
+          'Finance starts with a profit and operating-cash comparison, with the complete financial analysis, actions and unresolved checks available in details. Rounded figures state their units and approximation; details retain exact values. Public records shows acquired company disclosures, while Reputation shows saved media and public-discussion leads. Titles, digests and acquired excerpts are distinguished: public opinion is not established fact, and repetition is not independent corroboration. Read down each page and open native details for more content.',
         ],
         [
-          'Pro 从独立公司研究入口进入，使用侧边栏查看研究报告、财务走势、行业对比等专业页面。两版使用相同的数据源、研究记录和分析结果，分别组织展示与操作。企业页切换 Lite／Pro 或在 Lite 翻页，不新建查询或重新采集；已经开始的后台分析按原状态继续。未生成 AI 报告时，仍可核对已取得的金额和规则观察；生成失败保留已有报告及其原生成日期。',
-          'Pro has a separate research entry and sidebar for Research report, Financial trends, Industry comparison and other detailed pages. Both experiences use the same data sources, research record and analysis results, with distinct presentation and interactions. Switching Lite/Pro or turning a Lite page does not create a query or acquire sources again; existing background analysis continues in its current state. Before an AI report is available, acquired amounts and rule observations remain readable. A failed generation retains any saved report and its original generation date.',
+          '原文页只展示这家企业已记录的出处、字段和节选，来源保留期间、已知页码与读取范围，并可回看相关判断。没有取得 PDF、页码或全文时会明确说明，不用其他公司的年报图片填补。松原安全年报第 190／191 页裁图只在历史样例中展示，样例保留原公司、年度与出处。筛选、翻页和展开只整理已取得材料；从任一企业页打印仍保留完整报告及来源。',
+          'Original shows only this company’s recorded sources, fields and excerpts, retaining their periods, known pages and reading scope, with access to related judgments. Missing PDFs, page numbers or full text are labeled; another company’s report images never fill the gap. Songyuan Safety annual-report crops from pages 190/191 appear only in the historical example, which retains its original company, year and sources. Filtering, paging and expansion organize acquired materials only. Printing from any company page retains the complete report and sources.',
+        ],
+        [
+          'Pro 从独立公司研究入口进入，使用原有七项侧边栏查看研究报告、财务走势、行业对比等专业页面。两版使用相同的数据源、研究记录和分析结果，分别组织展示与操作。切换 Lite／Pro 或在 Lite 翻页，保留当前企业、研究记录、年度及已保存资料、来源／报告版本，不新建查询、重新采集或调用模型；已经开始的后台分析按原状态继续。Lite 翻页保留所选利润口径，Pro 使用原有默认值与口径控件。判断与追问绑定各自的保存报告及引用代次，旧报告会注明原日期。未生成 AI 报告时，仍可核对已取得的金额和规则观察。',
+          'Pro keeps its separate research entry and seven sidebar destinations, including Research report, Financial trends and Industry comparison. Both experiences use the same data sources, research record and analysis results, with distinct presentation and interactions. Switching Lite/Pro or turning a Lite page retains the company, research record, year and saved data/source/report versions without creating a query, acquiring sources or calling a model; existing background analysis continues in its current state. Lite page links retain its selected profit basis, while Pro keeps its existing default and basis control. Judgments and follow-ups stay bound to their saved report and reference generation, and older reports retain their original dates. Before an AI report is available, acquired amounts and rule observations remain readable.',
         ],
       ],
       links: [
@@ -506,8 +510,8 @@ export const guideDocument: ProductDocument = {
           'Company queries display structured public data first. After sources are saved, an available AI service generates a report in the background; reading the data does not require waiting. Deep research, financial-report explanations and company or signed-in product answers can also use AI. An unavailable or incomplete service retains rule results with its actual status. Visitor product questions search local documents only. See the privacy policy for processing scope and third-party services.',
         ],
         [
-          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。打开网页或系统主题变化时，外观自动跟随系统；随时点击顶栏图标即可切换深色与浅色。',
-          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Appearance follows your system when the page opens or the system theme changes. Click the header icon anytime to switch between light and dark.',
+          '顶栏显示当前语言，可切换中文或 English。原件摘录、你填写的内容及模型原始答复可能保留原语言。Lite 使用固定深蓝、亮蓝与白色外观；Pro 和文档在打开网页或系统主题变化时跟随系统，也可点击顶栏图标切换深色与浅色。',
+          'The header shows the current language and switches between Chinese and English. Source excerpts, your content and original model responses may retain their original language. Lite uses a fixed navy, blue and white appearance. Pro and documentation follow the system on page load or system theme changes; their header icon also switches between light and dark.',
         ],
         [
           '点击顶栏搜索，或按 ⌘ K / Ctrl K，跳转到页面、已保存公司、核查报告和材料。键入时只筛选当前工作区，不发送模型请求；用方向键选择、Enter 打开、Esc 关闭。列表搜索可用 Esc 清除；页面动画遵循系统的减少动态效果设置。',
