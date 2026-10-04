@@ -734,9 +734,6 @@ export function CompanyAssistant({ route }: { route: string }) {
             <X size={12} />
           </span>
         )}
-        <span className="company-assistant-trigger-label" aria-hidden="true">
-          {open ? t('收起对话', 'Close chat') : t('问问助手', 'Ask me')}
-        </span>
       </button>
     </>
   );

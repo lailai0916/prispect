@@ -64,12 +64,6 @@
 .company-assistant-trigger[aria-expanded='true'] > .assistant-character {
   animation: assistant-character-delight 460ms ease-out;
 }
-.company-assistant-trigger-label {
-  font-size: var(--text-meta);
-  font-weight: 550;
-  line-height: 1.5;
-  white-space: nowrap;
-}
 .company-assistant-close-mark {
   position: absolute;
   top: 1px;
