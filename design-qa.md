@@ -65,6 +65,8 @@ The final tracked browser acceptance passed **119 checks / 47 screenshots** on `
 
 The final factual guide-copy correction distinguishes Lite's URL-retained profit basis from Pro's existing independent basis control; it does not change company/report components. A subsequent documentation-only build and the exact new CI/deployment version are recorded in the ignored release receipt, rather than reusing the prior production baseline as this release's proof.
 
+Normal integration retained the teammate's concurrent Pro commits through `0ddb6d7`; no shared report, source-binding, financial-overview or backend contract changed. The single instructions-file conflict was resolved by preserving both the new Pro requirements and the canonical Lite four-channel requirements. The merged full `npm run check` passed **1112 tests**, types, all 493 frozen research files, build and formatting. The merged build uses `index-DF0FScsH.js`, `LiteResearch-BNXI0Wcy.js` and the unchanged `LiteResearch-CajaSQ3y.css`. The earlier local screen/PDF receipts remain scoped implementation evidence; final merged CI reruns the tracked browser suite.
+
 The previous `184b8829bd5fd0f038fe0884257755c8d030edff` release passed CI 37164277672, Deploy 37164583065 and strict HTTPS health with healthy storage. Its attempted production browser smoke passed eight checks before a transient 320px Pro-header geometry failure; the bounded settled reproduction measured 305px and showed no persistent overflow. The incomplete smoke is preserved and is not acceptance of this new all-company layout.
 
 ## Hermes-focused Lite and blue/white readability
