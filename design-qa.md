@@ -1,3 +1,50 @@
+# Selected Pro research report QA
+
+Date: 2026-10-04 (UTC). This is the current Pro acceptance record. The earlier Lite and shared-product records below are retained; the latest Lite release and shared assistant were integrated from `184b882`.
+
+## Visual target and evidence
+
+- Selected visual truth: `/workspace/generated_images/exec-3bfd0f17-777d-44c8-a23a-aeb9d0633065.png`; preserved as `output/browser-qa/pro-selected-20261004/selected-reference.png`.
+- Real implementation: the built React/Express application at loopback, with a fresh disposable owning account, isolated storage and explicitly synthetic financial snapshots. No production user data or model-generated outcome is asserted.
+- Desktop: 1488 × 1058 CSS pixels, deviceScaleFactor 1. Source: 1488 × 1057 image pixels. The comparison preserves original density and pads the one-pixel height difference rather than scaling text.
+- Full-view combined comparison: `output/browser-qa/pro-selected-20261004/selected-vs-implementation-1x.png`. Final light screenshot: `captures/02a-ai-desktop-light-first-screen.png` in that directory.
+- Focused combined chart comparison: `chart-selected-vs-implementation-1x.png`. It exposes labels, hatching, common axes, annual spacing, the difference marker and the ratio row at original pixel density.
+- Other opened evidence: `captures/08-ai-desktop-dark.png`, `captures/10-ai-mobile-390-light.png`, `captures/10b-mobile-shared-assistant.png`, `captures/13-report-print-page1.png` and its actual PDF.
+
+State differences are intentional: the image is an illustrative report, while the implementation displays an actual saved synthetic generation with its own headline, citations, dates, partial-review warning and grading constraints. Its company name identifies the synthetic case. The chosen layout and subdued typography are applied using existing product roles; illustrative names, scores, growth rates and prose are not inserted into real records. The required additional metadata pushes the three insights below the initial desktop viewport, while all three annual bars, annual labels, the ratio row and the grade/radar remain visible. A generic chart heading remains valid for improving and deteriorating actual records.
+
+## Findings and repair history
+
+1. **P2 — Overlong monetary values and broken insight numbering.** The first built comparison rendered raw yuan strings as headline KPIs and wrapped 01/02/03. Compact values now use light smaller units; exact amounts remain in titles, sources and calculations. Numbers no longer wrap. Before evidence is retained in `before/initial-captures/`; post-fix evidence is the final full-view and focused comparison.
+2. **P2 — Excessive process and citation spacing obscured the main chart.** Headline citations now share the headline row, financial cards and metadata have tighter spacing, and the existing real stage list is expandable when research is idle. Running stages, failures and actions remain available. The plot is 240px high. The later inherited 48px process-summary height was diagnosed in `status-css-diagnosis.json` and fixed by a scoped desktop rule; mobile keeps a 44px target. Final desktop evidence shows the complete plot and ratio row.
+3. **P2 — New section links did not reveal their exact nested target after refresh.** The new chart, analysis, calculation and dimension IDs are allowed deep links. Each dimension now reveals its own details. The rail reuses the existing reading-aware index, including keyboard focus, current-location semantics and disclosure opening, without reserving a horizontal index height.
+4. **P2 — Print expanded execution stages in a narrow grid and inherited two-column KPIs.** `before/print-process-expanded-page1.png` preserves the failing paper layout. Print now omits execution controls, retains dates and the partial-review warning, and uses three compact KPIs. The main graph is on the first A4 page; all analysis, exact calculations and references remain in the printed document.
+5. **P2 — Print plot labels were shrunk by a wide emulated viewport.** `before/print-wide-plot-small-labels.png` preserves this intermediate result. Print now uses a 400px plot geometry rather than measuring the wide preview viewport before paper layout. This keeps vector labels readable on paper while screen charts retain their measured widths and local mobile scrolling.
+
+## Required fidelity surfaces
+
+| Surface                   | Review and disposition                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Fonts and typography      | The existing system stack is retained, including Chinese fallbacks. Desktop company title is 25px/600, thesis 26px/550, headline figures 28px/500, grade 42px/500; supporting screen text stays at least 12px. Compact units are lighter and smaller. Mobile wraps long company names without extending the page. The generated image's enlarged presentation text is mapped to the user's existing product hierarchy. |
+| Spacing and layout rhythm | A flat white report uses a flexible main column and 324px evidence rail with a thin divider. The main chart replaces duplicated plots. Full narrative is progressively disclosed, without deleting saved content. Below 1100px the rail moves into the reading flow. The process-summary and print-density findings above were repaired.                                                                               |
+| Colors and tokens         | Blue `#4263DB`, orange ink `#B76816` and pale-orange fill `#FFF3E5` use existing shared light tokens; dark and print inherit their established variants. Orange bars keep diagonal hatching. Neutral text, axes and surfaces preserve the selected restrained direction.                                                                                                                                               |
+| Image quality and assets  | The existing geometric logo, shared assistant assets and icon family are preserved. Quantitative graphs are responsive vector charts driven by document facts, with exact tables and accessible descriptions. No generated report bitmap is used as a page background or substitute for live data.                                                                                                                     |
+| Copy and content          | The displayed narrative, rating, facts and citations belong to the same saved generation. Missing/conflicting values remain distinct; a real zero is a zero mark, nonpositive profit makes cash-to-profit inapplicable, and an incomplete radar never closes a filled polygon. The acquired-data entry uses its current snapshot and does not fabricate a saved AI grade or generation date.                           |
+
+## Verification
+
+The integrated `npm run check` passed **1093/1093 tests**, types, all 493 frozen research files, production build and formatting. Presentation-only print repairs received another build and focused checks.
+
+`browser-receipt.json` records **23/23 passed** on the integrated built application: both entrances, same-record return, exact graph data, evidence drawer, citations, full disclosures, suggested-question generation binding, native keyboard controls, rail current location, separate dimension links, hash refresh, light/dark desktop, 390px mobile, assistant panel/composer/dock access, missing/conflicting/negative/zero values and previous-report/current-snapshot separation. No page runtime errors occurred. The harness blocks the app's existing analytics loads; no external browser transport or model calls were allowed. Those blocked loads are not described as absent attempts.
+
+`targeted-print-desktop-receipt.json` records the final paper and desktop recheck. The actual PDF expands full narrative, calculations and sources even when screen disclosures are closed. The final plot label extraction in `print-font-evidence.json` confirms 9pt axis/year labels and 9.75pt bar values, with the root reviewer also opening the repaired first page. Execution controls are omitted from the document; source dates and the incomplete-review qualification stay visible. The image/receipt manifest records artifact hashes. Only public synthetic evidence is retained in the ignored local output directory; account cookies and browser storage are excluded.
+
+Remaining limits: Chromium was exercised locally; other engines, real source acquisition and live model narrative quality are not established by these fixtures. Production CI, deployment and exact release health are recorded separately once published. No actionable P0/P1/P2 findings remain after the final post-fix comparison.
+
+final result: passed
+
+---
+
 # Search-first Lite redesign QA
 
 Date: 2026-10-04 (Asia/Shanghai). Software references only; the three games are excluded. Pro retains its current professional experience and the previously authorized complete-report repair.

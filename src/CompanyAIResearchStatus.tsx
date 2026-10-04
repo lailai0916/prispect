@@ -15,6 +15,7 @@ export function CompanyAIResearchStatus({
   cancelling = false,
   disabled = false,
   reportView = false,
+  compact = false,
 }: {
   run: CompanyResearchRun;
   reportHref?: string;
@@ -25,6 +26,7 @@ export function CompanyAIResearchStatus({
   cancelling?: boolean;
   disabled?: boolean;
   reportView?: boolean;
+  compact?: boolean;
 }) {
   const { t } = useApp();
   const progress = deriveCompanyResearchProgress(run);
@@ -78,10 +80,38 @@ export function CompanyAIResearchStatus({
     : progress.mode === 'rules'
       ? t('查看规则结果', 'View rule results')
       : t('查看 AI 报告', 'View AI report');
+  const stages = (
+    <ol className="company-ai-stages" aria-label={t('AI研究阶段', 'AI research stages')}>
+      {progress.stages.map((stage) => (
+        <li
+          key={stage.id}
+          data-stage={stage.id}
+          data-status={stage.status}
+          aria-current={stage.status === 'running' ? 'step' : undefined}
+          title={t(...stage.summary)}
+        >
+          <span className="company-ai-stage-bar" aria-hidden="true" />
+          <span className="company-ai-stage-label">
+            {stage.status === 'running' ? (
+              <LoaderCircle size={11} className="spinner" aria-hidden="true" />
+            ) : stage.status === 'completed' ? (
+              <Check size={11} aria-hidden="true" />
+            ) : (
+              <Minus size={11} aria-hidden="true" />
+            )}
+            <span>{t(...stage.label)}</span>
+            <small>{t(stageLabels[stage.status][0], stageLabels[stage.status][1])}</small>
+          </span>
+        </li>
+      ))}
+    </ol>
+  );
   return (
     <section
       id="company-ai-research"
-      className="company-ai-research-status"
+      className={
+        'company-ai-research-status' + (compact ? ' company-ai-research-status-compact' : '')
+      }
       aria-label={t('AI 研究进度', 'AI research progress')}
       data-testid="company-ai-research-status"
       data-state={progress.state}
@@ -143,30 +173,14 @@ export function CompanyAIResearchStatus({
             )}
         </div>
       </div>
-      <ol className="company-ai-stages" aria-label={t('AI研究阶段', 'AI research stages')}>
-        {progress.stages.map((stage) => (
-          <li
-            key={stage.id}
-            data-stage={stage.id}
-            data-status={stage.status}
-            aria-current={stage.status === 'running' ? 'step' : undefined}
-            title={t(...stage.summary)}
-          >
-            <span className="company-ai-stage-bar" aria-hidden="true" />
-            <span className="company-ai-stage-label">
-              {stage.status === 'running' ? (
-                <LoaderCircle size={11} className="spinner" aria-hidden="true" />
-              ) : stage.status === 'completed' ? (
-                <Check size={11} aria-hidden="true" />
-              ) : (
-                <Minus size={11} aria-hidden="true" />
-              )}
-              <span>{t(...stage.label)}</span>
-              <small>{t(stageLabels[stage.status][0], stageLabels[stage.status][1])}</small>
-            </span>
-          </li>
-        ))}
-      </ol>
+      {compact && !busy ? (
+        <details className="company-ai-stage-details">
+          <summary>{t('研究过程', 'Research stages')}</summary>
+          {stages}
+        </details>
+      ) : (
+        stages
+      )}
       {run.assessmentStatus === 'failed' && run.assessmentError && !blocked && (
         <p className="company-ai-status-error" role="alert">
           {run.assessmentError}
