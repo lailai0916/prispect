@@ -7,7 +7,7 @@ import type {
   AssistantStage,
   AssistantStreamEvent,
 } from '../shared/assistant.js';
-import type { AuthContext, AuthStore } from './auth.js';
+import type { AuthStore } from './auth.js';
 import type { WorkspaceStore } from './store.js';
 import type { ModelConfig } from './model.js';
 import { assertCompanyResearchSupported } from './company-sources.js';
@@ -72,7 +72,6 @@ export function installAssistantRoutes(
     auth: AuthStore;
     model: ModelConfig;
     workspaceForUser: (userId: string) => Promise<WorkspaceStore>;
-    workspaceForContext?: (context: AuthContext) => Promise<WorkspaceStore>;
     service?: AssistantService;
   }
 ) {
@@ -123,16 +122,14 @@ export function installAssistantRoutes(
       } else res.json(answer);
     };
     const work = async () => {
+      const session = await options.auth.require(req);
+      signal.throwIfAborted();
+      options.auth.verifyCsrf(req, session);
       const body = requestSchema.safeParse(req.body);
       if (!body.success) throw new ApiFault(400, 'ASSISTANT_INPUT', '请输入最多五百字的问题');
       const request: AssistantRequest = body.data;
-      const session = await options.auth.workspaceSession(req);
-      signal.throwIfAborted();
-      if (session) options.auth.verifyCsrf(req, session);
-      const owner = session
-        ? `${session.user.isGuest ? 'guest' : 'user'}:${session.user.id}`
-        : `anonymous:${req.ip}`;
-      options.auth.rateLimit(`assistant:${owner}`, session ? 30 : 12, session ? 3_600_000 : 60_000);
+      const owner = `user:${session.user.id}`;
+      options.auth.rateLimit(`assistant:${owner}`, 30, 3_600_000);
       if (active >= 8 || (owners.get(owner) || 0) >= 2)
         throw new ApiFault(429, 'ASSISTANT_BUSY', '助手正在处理其他问题，请稍后重试');
       active++;
@@ -140,9 +137,8 @@ export function installAssistantRoutes(
       let reservation: OwnerAnswerReservation | undefined;
       try {
         progress('recognizing');
-        if (!session || isProductQuestion(request.question, request.previousQuestions)) {
+        if (isProductQuestion(request.question, request.previousQuestions)) {
           progress('retrieving');
-          const signedIn = Boolean(session && !session.user.isGuest);
           const key = ownerAnswerCacheKey({
             owner,
             namespace: 'assistant-documentation',
@@ -156,39 +152,29 @@ export function installAssistantRoutes(
             ),
           });
           const bypass = bypassOwnerAnswerCache(request.question, request.refresh);
-          // Anonymous questions stay uncached: an IP address does not identify a person.
-          const cached = session && !bypass ? answers.get(owner, key) : undefined;
+          const cached = !bypass ? answers.get(owner, key) : undefined;
           if (cached) {
             signal.throwIfAborted();
             answerResponse(cached);
             return;
           }
-          if (session) {
-            if (bypass) answers.invalidate(owner, key);
-            reservation = answers.reserve(owner, key);
-          }
+          if (bypass) answers.invalidate(owner, key);
+          reservation = answers.reserve(owner, key);
           progress('composing');
           const answer = await awaitAssistant(
-            service.documentation(
-              request.question,
-              request.locale,
-              signedIn,
-              signedIn ? options.model : {},
-              signal,
-              { previousQuestions: request.previousQuestions }
-            ),
+            service.documentation(request.question, request.locale, true, options.model, signal, {
+              previousQuestions: request.previousQuestions,
+            }),
             signal
           );
           signal.throwIfAborted();
-          if (session && !bypassOwnerAnswerCache(request.question))
+          if (!bypassOwnerAnswerCache(request.question))
             answers.set(owner, key, answer, undefined, reservation);
           answerResponse(answer);
           return;
         }
         progress('retrieving');
-        const store = session.user.isGuest
-          ? await options.workspaceForContext!(session)
-          : await options.workspaceForUser(session.user.id);
+        const store = await options.workspaceForUser(session.user.id);
         signal.throwIfAborted();
         const runs = store.state.companyRuns || [];
         for (const id of [request.currentRunId, request.previousRunId])

@@ -60,8 +60,8 @@ test('portable demo uses real owner routes without public retrieval or model cal
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ question: '你是谁', locale: 'zh' }),
     });
-    assert.equal(help.status, 200);
-    assert.equal((await help.json()).kind, 'documentation');
+    assert.equal(help.status, 401);
+    assert.equal((await help.json()).code, 'AUTH_REQUIRED');
     const response = await nativeFetch(`${base}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -84,6 +84,9 @@ test('portable demo uses real owner routes without public retrieval or model cal
         method: body === undefined ? 'GET' : 'POST',
         ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       });
+    const signedInHelp = await call('/assistant/messages', { question: '你是谁', locale: 'zh' });
+    assert.equal(signedInHelp.status, 200);
+    assert.equal((await signedInHelp.json()).kind, 'documentation');
     const matches = await call('/companies/search?q=601234');
     assert.equal(matches.status, 200);
     assert.equal((await matches.json()).candidates[0].shortName, researchDemoIdentity.shortName);
@@ -131,7 +134,7 @@ test('portable demo uses real owner routes without public retrieval or model cal
     );
     assert.match(JSON.stringify(result.challenge.result?.gaps), /未进行定向搜索/);
     const anonymous = await nativeFetch(`${base}/api/company-runs/${id}`);
-    assert.equal(anonymous.status, 404);
+    assert.equal(anonymous.status, 401);
     assert.equal(externalAttempts, 0);
   } finally {
     try {

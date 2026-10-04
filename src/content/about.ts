@@ -131,8 +131,8 @@ export const aboutDocument: ProductDocument = {
           'Prispect organizes material, traces evidence and calculates conditional results. It does not provide comprehensive corporate-registry, judicial or credit coverage, or replace checks of bank deposit products, legal due diligence, audits or professional financial advice. No matching disclosure does not mean no risk; a completed calculation does not establish that a payment is executable.',
         ],
         [
-          '公司查询取得并保存公开资料后，可自动生成后台 AI 报告。深度研究、原件核查、财报核查解释、企业问题与登录后的产品问题也可使用 AI；访客的产品文档问题只检索本地文档。数据处理范围与外部服务说明见隐私政策。',
-          'Company queries may automatically generate a background AI report after public sources are acquired and saved. Deep research, original-report reviews, financial-review explanations and company or signed-in product questions may also use AI. Visitor product questions search local documents only. See the privacy policy for data-processing scope and external services.',
+          '公司查询取得并保存公开资料后，可自动生成后台 AI 报告。深度研究、原件核查、财报核查解释、企业问题与登录后的产品问题也可使用 AI。数据处理范围与外部服务说明见隐私政策。',
+          'Company queries may automatically generate a background AI report after public sources are acquired and saved. Deep research, original-report reviews, financial-review explanations and company or signed-in product questions may also use AI. See the privacy policy for data-processing scope and external services.',
         ],
       ],
       links: [

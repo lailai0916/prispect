@@ -175,8 +175,8 @@ export const privacyDocument: ProductDocument = {
       emphasis: true,
       paragraphs: [
         [
-          '公司查询先通过公开接口取得结构化年度财务与同行资料；这一取数阶段不调用模型或下载年报 PDF。资料成功保存后，可用的模型会自动在后台分析公开资料，并可补查新闻、公开讨论和官方公告节选。明确请求的深度研究、原件核查、财报核查解释，以及企业问题与登录后的产品问题，也可按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统保留信息缺口、规则回答或文档原文，并显示实际状态。访客的产品文档问题只检索本地文档；企业分析和企业问题只使用本访客研究中已取得的公开资料，不读取账号的私人研究记录。',
-          'Company queries first retrieve structured annual financial and peer data through public interfaces. This acquisition stage does not call a model or download annual-report PDFs. After sources are successfully saved, an available model automatically analyzes public information in the background and may research news, public discussions and official disclosure excerpts. Explicit deep-research, original-report review and financial-review explanation requests, and company or signed-in product questions, may also send data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model retain evidence gaps, rules-based answers or document excerpts with their actual status. Visitor product questions search local documents. Visitor company analysis and questions use public information acquired in that visitor’s own research, without accessing private account records.',
+          '公司查询先通过公开接口取得结构化年度财务与同行资料；这一取数阶段不调用模型或下载年报 PDF。资料成功保存后，可用的模型会自动在后台分析公开资料，并可补查新闻、公开讨论和官方公告节选。明确请求的深度研究、原件核查、财报核查解释，以及企业问题与登录后的产品问题，也可按下列范围向外部模型服务发送数据。未取得必要证据、输入冲突或模型服务不可用时，系统保留信息缺口、规则回答或文档原文，并显示实际状态。研究与助手均需登录，企业分析和企业问题只使用当前账号研究中已取得的公开资料，不读取其他账号的研究记录。',
+          'Company queries first retrieve structured annual financial and peer data through public interfaces. This acquisition stage does not call a model or download annual-report PDFs. After sources are successfully saved, an available model automatically analyzes public information in the background and may research news, public discussions and official disclosure excerpts. Explicit deep-research, original-report review and financial-review explanation requests, and company or signed-in product questions, may also send data to an external model service within the scope below. Missing evidence, conflicting inputs or an unavailable model retain evidence gaps, rules-based answers or document excerpts with their actual status. Research and the assistant require sign-in. Company analysis and questions use public information acquired in the current account’s research, without accessing other accounts’ records.',
         ],
         [
           '企业证据实验室的本地撤回与恢复选择不上传，也不发送给模型。明确点击“挑战这个解释”后，服务端按已匹配公司的年度与固定解释补查，并可向模型发送相关公开字段、已知来源、已读短摘录和公开检索结果；不发送本地试验状态、上传预览、私人备注、账号资料或私人现金计划。挑战目标、实际步骤与结果随公司记录保存。',
@@ -222,8 +222,8 @@ export const privacyDocument: ProductDocument = {
           [
             ['企业问答与析光助手', 'Company questions and the Prispect assistant'],
             [
-              '你提交的问题、为理解追问而提供的最近最多四条问题，以及相关产品文档。企业问题还使用自动匹配的企业与利润口径、已取得的公开快照、公开字段及来源引用；需要补查时使用本次取得的公开资料。问题按原文发送，请勿包含私人信息。访客的产品文档检索不调用模型。',
-              'Your submitted question, up to four preceding questions for follow-ups, and relevant product documents. Company questions also use the automatically matched company and profit basis, retrieved public snapshots, public fields and source references; requested follow-ups can use newly retrieved public material. Questions are sent as entered; do not include private information. Visitor product-document searches do not call a model.',
+              '你提交的问题、为理解追问而提供的最近最多四条问题，以及相关产品文档。企业问题还使用自动匹配的企业与利润口径、已取得的公开快照、公开字段及来源引用；需要补查时使用本次取得的公开资料。问题按原文发送，请勿包含私人信息。',
+              'Your submitted question, up to four preceding questions for follow-ups, and relevant product documents. Company questions also use the automatically matched company and profit basis, retrieved public snapshots, public fields and source references; requested follow-ups can use newly retrieved public material. Questions are sent as entered; do not include private information.',
             ],
             [
               '账号标识与安全凭据、私人核查材料、付款安排、现金计划、私人备注，以及其他账号的企业记录。',
@@ -277,8 +277,8 @@ export const privacyDocument: ProductDocument = {
       title: ['外部服务与访问', 'External services and access'],
       paragraphs: [
         [
-          '公司财务查询先从公开接口读取年度财务与同行数据；资料保存后的后台分析、深度研究与原件核查还可通过东方财富、新浪与巨潮公开来源读取企业资料、新闻、公告、公开股吧帖子、行情或年报内容。目录与正文节选的读取范围分别保存，来源失败时保留未取得状态。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按当前账号或浏览器访客标识隔离保存，删除研究记录时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
-          'Company financial queries first read annual financial and peer data from public interfaces. Background analysis after sources are saved, deep research and original-report reviews may additionally read company profiles, news, disclosures, public Guba posts, quotes or annual-report content from public Eastmoney, Sina and CNINFO sources. Catalog and excerpt coverage are retained separately, and failed sources stay unavailable. Company records, public snapshots, goals and steps, analyses, source comparisons and up to fifty question answers are stored separately for the current account or browser visitor and removed with the research record. Public research and company questions do not send account identifiers, private materials, payment arrangements or security credentials to the model.',
+          '公司财务查询先从公开接口读取年度财务与同行数据；资料保存后的后台分析、深度研究与原件核查还可通过东方财富、新浪与巨潮公开来源读取企业资料、新闻、公告、公开股吧帖子、行情或年报内容。目录与正文节选的读取范围分别保存，来源失败时保留未取得状态。企业记录、公开快照、研究目标与步骤、分析结果、来源比对和最多五十条问答按当前账号标识隔离保存，删除研究记录时一并移除。公开研究与企业问答调用模型时，不发送账号标识、私有材料、付款安排或安全凭据。',
+          'Company financial queries first read annual financial and peer data from public interfaces. Background analysis after sources are saved, deep research and original-report reviews may additionally read company profiles, news, disclosures, public Guba posts, quotes or annual-report content from public Eastmoney, Sina and CNINFO sources. Catalog and excerpt coverage are retained separately, and failed sources stay unavailable. Company records, public snapshots, goals and steps, analyses, source comparisons and up to fifty question answers are stored separately for the current account and removed with the research record. Public research and company questions do not send account identifiers, private materials, payment arrangements or security credentials to the model.',
         ],
         [
           '公司研究的原件检索把你输入的查询词及选定证券代码、主体标识、年度等检索参数发送至巨潮资讯公开披露接口。请在公司搜索框只输入公司名称或证券代码，避免夹带私人交易、个人姓名、账号或其他不必要内容。',
@@ -311,12 +311,12 @@ export const privacyDocument: ProductDocument = {
       title: ['Cookie 与浏览器内保存', 'Cookies and browser storage'],
       paragraphs: [
         [
-          '无需登录即可查询公司、查看公开财务图表和提出企业问题。服务使用有效期七天的必要访客 Cookie，将这些研究记录与其他访客、账号资料分开保存。访客标识不是已注册账号，也不表示身份已验证。清除或停用 Cookie、换用浏览器或标识过期后，原访客记录可能无法继续访问；这不表示服务器记录已立即删除。注册或登录不会自动合并访客记录。私人上传、付款计划和账号安全操作仍需要个人账号。',
-          'You can search companies, read public financial charts and ask company questions without signing in. A necessary seven-day visitor cookie separates these research records from other visitors and account data. The visitor identity is not a registered account or a verified identity. Clearing or blocking cookies, using another browser or letting the cookie expire may prevent access to earlier visitor records; this does not mean the server records were immediately deleted. Registering or signing in does not automatically merge visitor records. Private uploads, payment plans and account-security actions still require a personal account.',
+          '公司查询、财务图表、析光助手和个人工作区均需注册并登录；首页与文档公开访问。服务不再签发游客身份，旧访客 Cookie 不授予功能访问权限。此前的访客研究文件仍与账号资料隔离，本次访问规则调整不删除这些文件，也不自动将它们合并至新账号。',
+          'Company queries, financial charts, the Prispect assistant and personal workspaces require registration and sign-in; home and documentation remain public. The service no longer issues visitor identities, and legacy visitor cookies do not grant feature access. Historical visitor research files remain separate from account data; this access-policy change neither deletes those files nor automatically merges them into a new account.',
         ],
         [
-          '必要 Cookie 用于浏览器访客标识、登录会话、两步验证和通行密钥挑战等认证操作。正式 HTTPS 服务的会话 Cookie 使用 Secure、HttpOnly 和 SameSite 限制。阻止或删除这些 Cookie 可能使你退出登录或无法完成认证。',
-          'Necessary cookies support browser visitor identity, account sessions, two-step verification and passkey challenges. Session cookies on the production HTTPS service use Secure, HttpOnly and SameSite restrictions. Blocking or deleting these cookies may sign you out or prevent authentication.',
+          '必要 Cookie 用于登录会话、两步验证和通行密钥挑战等认证操作。正式 HTTPS 服务的会话 Cookie 使用 Secure、HttpOnly 和 SameSite 限制。阻止或删除这些 Cookie 可能使你退出登录或无法完成认证。',
+          'Necessary cookies support account sessions, two-step verification and passkey challenges. Session cookies on the production HTTPS service use Secure, HttpOnly and SameSite restrictions. Blocking or deleting these cookies may sign you out or prevent authentication.',
         ],
         [
           '语言偏好保存在当前浏览器的 localStorage；外观在打开网页和系统配色变化时跟随系统，手动切换不持久保存。起始输入等短草稿保存在当前标签页的 sessionStorage，并与账号状态关联。匿名草稿可以在登录后接续；退出或切换账号会清理相应账号草稿。',

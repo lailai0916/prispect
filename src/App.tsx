@@ -135,7 +135,7 @@ const DocsHome = lazyPage(
   () => import('./pages/DocsHome'),
   (module) => module.DocsHome
 );
-const publicPages = ['/', '/query', '/company', '/docs', '/login', '/register', ...documentPaths];
+const publicPages = ['/', '/docs', '/login', '/register', ...documentPaths];
 
 function pageResource(path: string, signedIn = false) {
   const page = path.split('?')[0];
@@ -923,7 +923,7 @@ export function App() {
                 </div>
               </footer>
             )}
-            {sessionAvailable && (
+            {sessionAvailable && accountUser && (
               <AssistantErrorBoundary
                 resetKey={user?.id || 'anonymous'}
                 t={t}

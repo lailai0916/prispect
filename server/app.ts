@@ -12,12 +12,7 @@ import { reportHtml } from './export.js';
 import { previewUpload } from './import.js';
 import { DEFAULT_MODEL, explainWithModel, modelConfigFromEnv, type ModelConfig } from './model.js';
 import { seeds, WorkspaceStore } from './store.js';
-import { AuthStore, authentication, workspaceAuthentication, type AuthContext } from './auth.js';
-import {
-  GuestWorkspaceBudget,
-  GuestWorkspaceStore,
-  type GuestDiskStatistics,
-} from './guest-workspace.js';
+import { AuthStore, authentication, type AuthContext } from './auth.js';
 import { installDecisionRoutes } from './decision-routes.js';
 import { installCompanyRoutes, type CompanyService } from './company-routes.js';
 import { installCompanySearchRoutes } from './company-search.js';
@@ -44,8 +39,6 @@ export interface AppOptions {
   companyChallengeService?: CompanyChallengeRouteService;
   assistantService?: AssistantService;
   registrationEnabled?: boolean;
-  /** Isolated tests may provide statistics without changing the production policy. */
-  guestDiskStatistics?: () => Promise<GuestDiskStatistics>;
 }
 export async function createApp(options: AppOptions = {}) {
   const root = options.root || process.cwd();
@@ -63,8 +56,6 @@ export async function createApp(options: AppOptions = {}) {
   );
   const initial = await seeds(root);
   const stores = new Map<string, Promise<WorkspaceStore>>();
-  const guestBudget = new GuestWorkspaceBudget(dataDir, options.guestDiskStatistics);
-  const guestStores = new Map<string, Promise<WorkspaceStore>>();
   const workspaceForUser = async (userId: string) => {
     let promise = stores.get(userId);
     if (!promise) {
@@ -72,39 +63,6 @@ export async function createApp(options: AppOptions = {}) {
       promise = store.initialize().then(() => store);
       stores.set(userId, promise);
       promise.catch(() => stores.delete(userId));
-    }
-    return promise;
-  };
-  const workspaceForContext = async (context: AuthContext, create = true) => {
-    if (!context.user.isGuest) return workspaceForUser(context.user.id);
-    const id = context.user.id;
-    let promise = guestStores.get(id);
-    if (!promise) {
-      if (!create && !(await guestBudget.exists(id))) {
-        // A company clarification or nonexistent-record read never allocates storage.
-        const empty = new GuestWorkspaceStore(
-          root,
-          path.join(guestBudget.directory, id),
-          guestBudget
-        );
-        empty.state = {
-          schemaVersion: 1,
-          materials: [],
-          tasks: [],
-          inputs: {},
-          uploads: {},
-          companyRuns: [],
-          decisions: [],
-        };
-        return empty;
-      }
-      promise = guestBudget.admit(id).then(async (directory) => {
-        const store = new GuestWorkspaceStore(root, directory, guestBudget);
-        await store.initialize();
-        return store;
-      });
-      guestStores.set(id, promise);
-      promise.catch(() => guestStores.delete(id));
     }
     return promise;
   };
@@ -368,7 +326,7 @@ export async function createApp(options: AppOptions = {}) {
   app.get(
     '/api/auth/session',
     wrap(async (req, res) => {
-      res.json(auth.response(await auth.workspaceSession(req, res)));
+      res.json(auth.response(await auth.session(req)));
     })
   );
   app.post('/api/auth/password-reset', (_req, _res, next) =>
@@ -411,31 +369,9 @@ export async function createApp(options: AppOptions = {}) {
     auth,
     model,
     workspaceForUser,
-    workspaceForContext: (context) => workspaceForContext(context, false),
     service: options.assistantService,
   });
-  app.use('/api', workspaceAuthentication(auth));
-  app.use('/api', (req, res, next) => {
-    const current = res.locals.auth as AuthContext;
-    if (!current.user.isGuest) {
-      next();
-      return;
-    }
-    const route = decodeURIComponent(req.path).toLowerCase().replace(/\/+$/, '');
-    const publicResearch =
-      (route === '/company-gaps' || /^\/company-runs(?:\/|$)/.test(route)) &&
-      !/\/adopt$/.test(route);
-    const publicLookup =
-      req.method === 'GET' &&
-      (route === '/company-records' ||
-        route === '/workspace' ||
-        /^\/companies\/(?:directory|search)$/.test(route));
-    if (!publicResearch && !publicLookup) {
-      next(new ApiFault(401, 'AUTH_REQUIRED', '请先登录以使用个人工作区'));
-      return;
-    }
-    next();
-  });
+  app.use('/api', authentication(auth));
   await installCompanySearchRoutes(app, {
     root,
     auth,
@@ -449,23 +385,8 @@ export async function createApp(options: AppOptions = {}) {
   });
   app.use('/api', (req, res, next) => {
     const current = res.locals.auth as AuthContext;
-    if (current.user.isGuest && req.method === 'GET' && req.path === '/workspace') {
-      res.json({ materials: [], tasks: [], provider });
-      return;
-    }
     const work = async () => {
-      if (
-        current.user.isGuest &&
-        req.method === 'GET' &&
-        !(await guestBudget.exists(current.user.id))
-      ) {
-        if (['/company-runs', '/company-records'].includes(req.path)) {
-          res.json([]);
-          return;
-        }
-        throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '未找到当前访客的研究记录');
-      }
-      const store = await workspaceForContext(current);
+      const store = await workspaceForUser(current.user.id);
       await store.cleanupUploads();
       res.locals.store = store;
       next();

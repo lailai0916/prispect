@@ -99,12 +99,12 @@ test('authenticated API cases → task → questions → exports → persistence
   const service = await setup();
   try {
     assert.equal((await service.request('/api/health')).status, 200);
-    assert.equal((await service.request('/api/workspace')).status, 200);
+    assert.equal((await service.request('/api/workspace')).status, 401);
     const visitorSession = (await (
       await service.request('/api/auth/session')
     ).json()) as AuthSession;
-    assert.equal(visitorSession.user?.isGuest, true);
-    assert.ok(visitorSession.csrfToken);
+    assert.equal(visitorSession.user, null);
+    assert.equal(visitorSession.csrfToken, null);
     assert.equal(visitorSession.registrationEnabled, true);
     const cases = (await (await service.request('/api/cases')).json()) as DemoCase[];
     assert.equal(cases.length, 4);

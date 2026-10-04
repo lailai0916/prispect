@@ -19,7 +19,7 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 7,
+  version: 8,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: true,
@@ -33,7 +33,7 @@ const receipt = {
   contextCalls: 0,
   industryCalls: 0,
   limits: [
-    'Fresh temporary visitor/account storage and synthetic company snapshots only; no production data or real external financial/model calls.',
+    'Fresh temporary account storage and synthetic company snapshots only; no production data or real external financial/model calls.',
     'A saved pure-rule assessment is a synthetic GET overlay to exercise report rendering, not an AI generation.',
     'Analytics receives empty JavaScript locally; production release and provider acceptance remain separate.',
   ],
@@ -393,12 +393,58 @@ try {
   const { page, context } = await openContext();
   await page.goto(base, { waitUntil: 'networkidle' });
   await page.locator('.cinematic-home').waitFor();
-  await page.locator('.company-assistant-trigger').waitFor();
+  assert.equal(await page.locator('.company-assistant-trigger').count(), 0);
   assert.equal(await page.locator('.showcase-home, .lite-research').count(), 0);
   await layout(page, 'public home');
   await capture(page, 'home-light-1440');
   await page.locator('.landing-primary:visible').first().click();
-  await page.waitForURL(`${base}/query`);
+  await page.waitForURL((url) => url.pathname === '/login');
+  assert.equal(new URL(page.url()).searchParams.get('next'), '/query');
+  await page.locator('.account-auth-card').waitFor();
+  assert.equal(await page.getByRole('link', { name: '先试用', exact: true }).count(), 0);
+  for (const destination of [
+    '/company?run=retained&section=trends',
+    '/query',
+    '/materials',
+    '/account',
+  ]) {
+    await page.goto(base + destination, { waitUntil: 'networkidle' });
+    assert.equal(new URL(page.url()).pathname, '/login');
+    assert.equal(new URL(page.url()).searchParams.get('next'), destination);
+    assert.equal(
+      await page
+        .locator('.company-workspace, .company-query-page, .company-assistant-trigger')
+        .count(),
+      0
+    );
+  }
+  for (const destination of ['/docs', '/docs/privacy', '/docs/guide']) {
+    await page.goto(base + destination, { waitUntil: 'networkidle' });
+    assert.equal(new URL(page.url()).pathname, destination);
+    assert.equal(await page.locator('.company-assistant-trigger').count(), 0);
+  }
+  assert.equal((await context.request.get(`${base}/api/company-records`)).status(), 401);
+  assert.equal(
+    (
+      await context.request.post(`${base}/api/assistant/messages`, {
+        headers: { Origin: base },
+        data: { question: '隐私政策是什么？', locale: 'zh' },
+      })
+    ).status(),
+    401
+  );
+  check(
+    'Signed-out research deep links preserve the login return URL, docs remain public, and research/assistant APIs require sign-in'
+  );
+  await page.goto(`${base}/login?next=%2Fquery`, { waitUntil: 'networkidle' });
+  await page.locator('.account-auth-switch a[href^="/register"]').click();
+  await page.locator('input[name="name"]').fill('隔离浏览器验收');
+  await page.locator('input[name="email"]').fill('browser-qa-owner@example.test');
+  await page.locator('input[name="password"]').fill('Copper!fjord7-Unusual-velvet');
+  await page.locator('input[name="confirmation"]').fill('Copper!fjord7-Unusual-velvet');
+  await page.locator('form .account-action[type="submit"]').click();
+  await page.waitForURL((url) => url.pathname === '/query');
+  check('Registration returns to the requested company-search entry with a real account');
   const input = page.locator('.company-query-page textarea');
   await input.waitFor();
   assert.equal(
@@ -420,7 +466,7 @@ try {
   );
   await input.fill('');
   const session = await (await context.request.get(`${base}/api/auth/session`)).json();
-  assert.equal(session.user.isGuest, true);
+  assert.ok(session.user && !session.user.isGuest);
   const post = await context.request.post(`${base}/api/company-runs`, {
     headers: {
       Origin: base,
@@ -541,8 +587,40 @@ try {
       check(`${width}px: retained sidebar opens and closes with Escape`);
     }
   }
+  const logoutSession = await (await context.request.get(`${base}/api/auth/session`)).json();
+  const logoutResponse = await context.request.post(`${base}/api/auth/logout`, {
+    headers: { Origin: base, 'X-CSRF-Token': logoutSession.csrfToken },
+    data: {},
+  });
+  assert.equal(logoutResponse.status(), 200);
+  await context.unroute(`**/api/company-runs/${run.id}`);
+  await page.goto(base + company, { waitUntil: 'networkidle' });
+  await page.waitForURL((url) => url.pathname === '/login');
+  assert.equal(new URL(page.url()).searchParams.get('next'), company);
+  assert.equal(await page.locator('.company-workspace, .company-assistant-trigger').count(), 0);
+  await page.locator('input[name="email"]').fill('browser-qa-owner@example.test');
+  await page.locator('input[name="password"]').fill('Copper!fjord7-Unusual-velvet');
+  await page.locator('form .account-action[type="submit"]').click();
+  await page.waitForURL((url) => url.pathname === '/company');
+  assert.equal(new URL(page.url()).searchParams.get('run'), run.id);
+  await page.locator('.company-workspace').waitFor();
+  check(
+    'Logout prevents saved research access; signing back in restores the same owning record and destination'
+  );
   await context.close();
   const other = await openContext({ width: 375, colorScheme: 'dark' });
+  await other.page.goto(`${base}/query`, { waitUntil: 'networkidle' });
+  await other.page.waitForURL((url) => url.pathname === '/login');
+  assert.equal(new URL(other.page.url()).searchParams.get('next'), '/query');
+  const secondRegistration = await other.context.request.post(`${base}/api/auth/register`, {
+    headers: { Origin: base },
+    data: {
+      name: '另一验收账号',
+      email: 'browser-qa-other@example.test',
+      password: 'Copper!fjord7-Unusual-velvet',
+    },
+  });
+  assert.equal(secondRegistration.status(), 201, await secondRegistration.text());
   await other.page.goto(`${base}/query`, { waitUntil: 'networkidle' });
   await other.page.locator('.company-query-page textarea').waitFor();
   assert.equal(await other.page.locator('.sidebar-company-row').count(), 0);
@@ -554,7 +632,7 @@ try {
   assert.equal(await emptyMenu.locator('.company-sidebar-navigation button:disabled').count(), 7);
   await other.page.keyboard.press('Escape');
   check(
-    'A different visitor retains its own empty workspace and cannot borrow the previous saved company'
+    'A different account retains its own empty workspace and cannot borrow the previous saved company'
   );
   await other.context.close();
   assert.equal(receipt.pageErrors.length, 0, JSON.stringify(receipt.pageErrors));

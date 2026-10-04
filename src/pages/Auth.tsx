@@ -415,9 +415,6 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 </a>
               </p>
             )}
-            <p className="account-auth-switch">
-              <a href="/query">{t('先试用', 'Try without an account')}</a>
-            </p>
             <p className="account-auth-fineprint">
               <span>{t('继续即表示接受', 'By continuing, you accept the')} </span>
               <a

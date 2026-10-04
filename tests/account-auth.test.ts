@@ -115,8 +115,8 @@ test('closing registration blocks both public creation routes while preserving e
 
     const anonymous = client(service);
     const anonymousSession = await anonymous.sync();
-    assert.equal(anonymousSession.user?.isGuest, true);
-    assert.ok(anonymousSession.csrfToken);
+    assert.equal(anonymousSession.user, null);
+    assert.equal(anonymousSession.csrfToken, null);
     assert.equal(anonymousSession.registrationEnabled, false);
     for (const route of ['/api/auth/register', '/api/identity/sign-up/email']) {
       for (const body of [

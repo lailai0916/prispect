@@ -105,10 +105,6 @@ const sensitivePaths = new Set([
   '/revoke-sessions',
 ]);
 
-export const VISITOR_COOKIE = 'cashlens-visitor';
-export const VISITOR_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-const visitorId = /^guest-[a-f0-9]{48}$/;
-
 async function authSecret(dataDir: string, secure: boolean) {
   const configured = process.env.BETTER_AUTH_SECRET;
   if (configured) {
@@ -476,77 +472,6 @@ export class AuthStore {
     if (!context) throw new ApiFault(401, 'AUTH_REQUIRED', '请先登录以打开个人工作区');
     return context;
   }
-  /** Visitor identity is signed browser state, never a Better Auth account. */
-  async workspaceSession(req: Request, res?: Response): Promise<AuthContext | null> {
-    const account = await this.session(req);
-    if (account) return account;
-    const cookies = (req.headers.cookie || '')
-      .split(';')
-      .map((part) => part.trim())
-      .filter((part) => part.startsWith(VISITOR_COOKIE + '='));
-    const encoded = cookies.length === 1 ? cookies[0]!.slice(VISITOR_COOKIE.length + 1) : '';
-    const parts = encoded.split('.');
-    if (
-      parts.length === 4 &&
-      visitorId.test(parts[0]!) &&
-      /^\d{13}$/.test(parts[1]!) &&
-      /^\d{13}$/.test(parts[2]!) &&
-      /^[a-f0-9]{64}$/.test(parts[3]!)
-    ) {
-      const [id, issued, expires, signature] = parts as [string, string, string, string];
-      const payload = `${id}.${issued}.${expires}`;
-      const expected = createHmac('sha256', this.secret)
-        .update(`cashlens-visitor-v1:${payload}`)
-        .digest('hex');
-      const now = Date.now();
-      if (
-        Number(issued) <= now &&
-        Number(expires) > now &&
-        Number(expires) - Number(issued) === VISITOR_TTL_MS &&
-        timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
-      ) {
-        return this.visitorContext(id, issued, encoded);
-      }
-    }
-    // A write cannot invent a visitor identity and thereby bypass CSRF.
-    if (!res || !['GET', 'HEAD'].includes(req.method)) return null;
-    this.rateLimit(`visitor-session:${req.ip}`, 30, 3_600_000);
-    const id = `guest-${randomBytes(24).toString('hex')}`;
-    const issued = String(Date.now());
-    const expires = String(Number(issued) + VISITOR_TTL_MS);
-    const payload = `${id}.${issued}.${expires}`;
-    const signature = createHmac('sha256', this.secret)
-      .update(`cashlens-visitor-v1:${payload}`)
-      .digest('hex');
-    const token = `${payload}.${signature}`;
-    res.cookie(VISITOR_COOKIE, token, {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: this.secure,
-      path: '/',
-      maxAge: VISITOR_TTL_MS,
-    });
-    return this.visitorContext(id, issued, token);
-  }
-  private visitorContext(id: string, issued: string, token: string): AuthContext {
-    return {
-      user: {
-        id,
-        email: '',
-        name: '访客',
-        createdAt: new Date(Number(issued)).toISOString(),
-        timezone: 'Asia/Shanghai',
-        isGuest: true,
-      },
-      token,
-      sessionId: `visitor:${id}:${issued}`,
-    };
-  }
-  async requireWorkspace(req: Request, res: Response) {
-    const context = await this.workspaceSession(req, res);
-    if (!context) throw new ApiFault(401, 'VISITOR_SESSION_REQUIRED', '请刷新页面后重试');
-    return context;
-  }
   verifyCsrf(req: Request, context: AuthContext) {
     const got = req.get('X-CSRF-Token'),
       expected = this.csrfFor(context.sessionId, context.user.id);
@@ -781,18 +706,6 @@ export const authentication =
   (auth: AuthStore) => (req: Request, res: Response, next: NextFunction) => {
     void auth
       .require(req)
-      .then((context) => {
-        if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) auth.verifyCsrf(req, context);
-        res.locals.auth = context;
-        next();
-      })
-      .catch(next);
-  };
-
-export const workspaceAuthentication =
-  (auth: AuthStore) => (req: Request, res: Response, next: NextFunction) => {
-    void auth
-      .requireWorkspace(req, res)
       .then((context) => {
         if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) auth.verifyCsrf(req, context);
         res.locals.auth = context;

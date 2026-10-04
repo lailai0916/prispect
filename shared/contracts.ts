@@ -285,7 +285,7 @@ export interface AccountUser {
   name: string;
   createdAt: string;
   timezone?: string;
-  /** A browser-isolated visitor, without an account or account-management privileges. */
+  /** Legacy visitor marker; current authentication only returns registered accounts. */
   isGuest?: boolean;
 }
 

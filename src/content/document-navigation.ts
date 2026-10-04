@@ -19,8 +19,8 @@ export const documentMetadata = {
   '/docs/about': {
     title: documentTitles['/docs/about'],
     description: ['产品用途、功能与适用范围。', 'Product purpose, features and scope.'],
-    version: '1.2',
-    updatedAt: '2026-10-03',
+    version: '1.3',
+    updatedAt: '2026-10-05',
   },
   '/docs/guide': {
     title: documentTitles['/docs/guide'],
@@ -28,8 +28,8 @@ export const documentMetadata = {
       '企业财务、来源核对与兼容核查流程。',
       'Company financials, source checks and compatible review workflows.',
     ],
-    version: '1.11',
-    updatedAt: '2026-10-04',
+    version: '1.12',
+    updatedAt: '2026-10-05',
   },
   '/docs/methodology': {
     title: documentTitles['/docs/methodology'],
@@ -43,8 +43,8 @@ export const documentMetadata = {
   '/docs/privacy': {
     title: documentTitles['/docs/privacy'],
     description: ['数据处理、AI 使用与保存规则。', 'Data processing, AI use and retention.'],
-    version: '1.5',
-    updatedAt: '2026-10-03',
+    version: '1.6',
+    updatedAt: '2026-10-05',
   },
   '/docs/terms': {
     title: documentTitles['/docs/terms'],
@@ -52,8 +52,8 @@ export const documentMetadata = {
       '服务范围、账号使用与双方责任。',
       'Service scope, account use and responsibilities.',
     ],
-    version: '1.3',
-    updatedAt: '2026-10-03',
+    version: '1.4',
+    updatedAt: '2026-10-05',
   },
   '/docs/copyright': {
     title: documentTitles['/docs/copyright'],

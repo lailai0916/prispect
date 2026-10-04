@@ -280,7 +280,7 @@ test('assistant progress reaches the client before documentation generation comp
   let started = false;
   const h = await harness({
     documentation: async (question, _locale, useModel, _model, signal) => {
-      assert.equal(useModel, false);
+      assert.equal(useModel, true);
       started = true;
       await gate.promise;
       signal?.throwIfAborted();
@@ -288,9 +288,10 @@ test('assistant progress reaches the client before documentation generation comp
     },
   });
   try {
+    const owner = await h.register();
     const response = await h.message(
-      { question: '如何核对来源？', locale: 'zh' },
-      { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' }
+      { question: '析光的隐私政策是什么？', locale: 'zh' },
+      { ...owner.headers, Accept: 'application/x-ndjson' }
     );
     assert.equal(response.status, 200);
     assert.equal(response.headers.get('Cache-Control'), 'no-store, no-transform');
@@ -480,9 +481,10 @@ test('assistant stream timeout emits a terminal error and releases its request',
     milliseconds === 90_000 ? deadline.signal : nativeTimeout(milliseconds)
   );
   try {
+    const owner = await h.register();
     const response = await h.message(
       { question: '隐私政策如何？', locale: 'zh' },
-      { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' }
+      { ...owner.headers, Accept: 'application/x-ndjson' }
     );
     const stream = assistantStream(response);
     for (const stage of ['recognizing', 'retrieving', 'composing'])
@@ -545,12 +547,18 @@ test('assistant stream cancellation prevents late answers from being saved', asy
   }
 });
 
-test('anonymous privacy, operator and responsibility questions use real documentation without a model or workspace', async () => {
-  let modelCalls = 0;
+test('anonymous assistant questions require sign-in before documents, models, progress or workspace work', async () => {
+  let documentationCalls = 0,
+    modelCalls = 0;
   const h = await harness(
-    {},
     {
-      apiKey: 'anonymous-documentation-must-not-send-this',
+      documentation: async (question) => {
+        documentationCalls++;
+        return documentationAnswer(question);
+      },
+    },
+    {
+      apiKey: 'isolated-login-required-fixture',
       fetch: async () => {
         modelCalls++;
         throw Error('Unexpected provider call');
@@ -558,36 +566,19 @@ test('anonymous privacy, operator and responsibility questions use real document
     }
   );
   try {
-    const privacyResponse = await h.message({
-      question: '隐私政策怎样处理 AI 对外发送？外部服务是否保存或训练，哪些私人数据不发送？',
-      locale: 'zh',
-    });
-    assert.equal(privacyResponse.status, 200);
-    const privacy = (await privacyResponse.json()) as AssistantAnswer;
-    assert.equal(privacy.kind, 'documentation');
-    assert.equal(privacy.mode, 'rules');
-    assert.match(privacy.text, /TokenFlux|外部模型|外部接口/);
-    assert.match(privacy.text, /尚未|不承诺|不保证/);
-    assert.match(privacy.text, /私人|私有|账号/);
-    assert.ok(privacy.citations.some((item) => item.url.includes('/docs/privacy')));
-    const operatorResponse = await h.message({
-      question: '析光是谁运营的？网站由谁负责？',
-      locale: 'zh',
-    });
-    assert.equal(operatorResponse.status, 200);
-    const operator = (await operatorResponse.json()) as AssistantAnswer;
-    assert.equal(operator.kind, 'documentation');
-    assert.match(operator.text, /析光团队/);
-    assert.doesNotMatch(operator.text, /析光(?:科技)?有限公司|Prispect (?:Inc\.|Ltd\.)/);
-    const responsibilityResponse = await h.message({
-      question: '析光是否承担依法不能免除的责任？服务出错会排除我的法定权利吗？',
-      locale: 'zh',
-    });
-    assert.equal(responsibilityResponse.status, 200);
-    const responsibility = (await responsibilityResponse.json()) as AssistantAnswer;
-    assert.equal(responsibility.kind, 'documentation');
-    assert.match(responsibility.text, /依法|法定|责任/);
-    assert.ok(responsibility.citations.some((item) => item.url.includes('/docs/terms')));
+    for (const question of [
+      '隐私政策怎样处理 AI 对外发送？',
+      '析光是谁运营的？',
+      '析光是否承担依法不能免除的责任？',
+    ]) {
+      for (const accept of ['application/json', 'application/x-ndjson']) {
+        const response = await h.message({ question, locale: 'zh' }, { Accept: accept });
+        assert.equal(response.status, 401);
+        assert.match(response.headers.get('content-type') || '', /application\/json/);
+        assert.equal((await response.json()).code, 'AUTH_REQUIRED');
+      }
+    }
+    assert.equal(documentationCalls, 0);
     assert.equal(modelCalls, 0);
     assert.equal(h.inputs.length, 0);
     assert.deepEqual(await readdir(path.join(h.directory, 'users')).catch(() => []), []);
@@ -760,7 +751,7 @@ test('a newer unfinished same-company record cannot replace the named company on
   }
 });
 
-test('multiple named companies and unavailable years request clarification while anonymous questions stay in documentation', async () => {
+test('multiple named companies and unavailable years request clarification while anonymous questions require sign-in', async () => {
   const h = await harness();
   try {
     const owner = await h.register();
@@ -782,11 +773,8 @@ test('multiple named companies and unavailable years request clarification while
       assert.equal(answer.mode, 'rules');
     }
     const anonymous = await h.message({ question: '贵州茅台现金质量如何？', locale: 'zh' });
-    assert.equal(anonymous.status, 200);
-    const answer = (await anonymous.json()) as AssistantAnswer;
-    assert.equal(answer.kind, 'documentation');
-    assert.equal(answer.company, undefined);
-    assert.equal(answer.mode, 'rules');
+    assert.equal(anonymous.status, 401);
+    assert.equal((await anonymous.json()).code, 'AUTH_REQUIRED');
     assert.equal(h.inputs.length, 0);
   } finally {
     await h.dispose();

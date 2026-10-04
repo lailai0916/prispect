@@ -197,7 +197,7 @@ test('company queries keep real trace events and original files private; confirm
   try {
     const alice = await authenticate(service, 'company-alice@example.com');
     const bob = await authenticate(service, 'company-bob@example.com');
-    assert.equal((await service.request('/api/companies/search?q=300893')).status, 200);
+    assert.equal((await service.request('/api/companies/search?q=300893')).status, 401);
     assert.equal(
       (await service.request('/api/companies/search?q=', requestOptions(alice))).status,
       400

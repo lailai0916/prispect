@@ -52,8 +52,8 @@ export const termsDocument: ProductDocument = {
       title: ['3. 账号与访问安全', '3. Accounts and access'],
       bullets: [
         [
-          '公开公司研究可以访客身份使用，无需注册。访客记录与账号工作区隔离；清除访客 Cookie 或其过期后可能无法继续访问记录，登录或注册不会自动迁移这些记录。私人材料、付款计划与账号管理需要登录。',
-          'Public company research is available to visitors without registration. Visitor records are separate from account workspaces; clearing or expiring the visitor cookie may prevent later access, and signing in or registering does not automatically move those records. Private materials, payment plans and account management require sign-in.',
+          '公司研究、财务图表、析光助手、私人材料、付款计划与账号管理均需要注册并登录。首页与文档公开访问。研究记录和材料按账号隔离；旧访客标识不再提供功能访问权限，历史访客记录不会自动转入账号。',
+          'Company research, financial charts, the Prispect assistant, private materials, payment plans and account management require registration and sign-in. Home and documentation remain public. Records and materials are isolated by account; legacy visitor identities no longer grant feature access, and historical visitor records are not automatically moved into accounts.',
         ],
         [
           '请使用你有权使用的账号资料，妥善保管密码、验证器、通行密钥及恢复码，不向他人提供访问凭据。',
@@ -97,8 +97,8 @@ export const termsDocument: ProductDocument = {
       title: ['5. 数据处理与 AI', '5. Data processing and AI'],
       paragraphs: [
         [
-          '公司查询或刷新取得并保存公开资料后，可自动启动后台 AI 分析。深度研究、原件核查、财报核查解释、企业问题与登录后的产品问题也可使用 AI；这些功能不提供单独关闭模型的选项。研究目标会与相关公开资料一起发送给模型，请勿填写私人信息。访客的产品文档问题仅检索本地文档。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
-          'Company queries or source refreshes may automatically start background AI analysis after public sources are acquired and saved. Deep research, original-report reviews, financial-review explanations and company or signed-in product questions may also use AI; these features have no separate model-disable switch. Research goals are sent to the model with relevant public information; do not include private information. Visitor product questions search local documents only. The privacy policy describes processing scope, external services and record retention.',
+          '公司查询或刷新取得并保存公开资料后，可自动启动后台 AI 分析。深度研究、原件核查、财报核查解释、企业问题与登录后的产品问题也可使用 AI；这些功能不提供单独关闭模型的选项。研究目标会与相关公开资料一起发送给模型，请勿填写私人信息。对应的数据处理范围、外部服务和记录保存方式见隐私政策。',
+          'Company queries or source refreshes may automatically start background AI analysis after public sources are acquired and saved. Deep research, original-report reviews, financial-review explanations and company or signed-in product questions may also use AI; these features have no separate model-disable switch. Research goals are sent to the model with relevant public information; do not include private information. The privacy policy describes processing scope, external services and record retention.',
         ],
         [
           '阅读或接受本协议不替代依法需要的数据使用告知与同意。你可以停止使用相应功能；已发生的数据处理及后续保留，依照隐私政策与适用法律处理。',
