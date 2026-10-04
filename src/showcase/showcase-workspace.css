@@ -154,6 +154,11 @@
 .showcase-hermes .lite-search-footer a:hover {
   color: var(--lite-primary-bright);
 }
+@media (min-width: 441px) {
+  .showcase-hermes .lite-search-footer {
+    padding-inline-end: 130px;
+  }
+}
 .showcase-hermes :is(a, button, summary, input):focus-visible {
   outline: 2px solid var(--lite-primary-bright);
   outline-offset: 4px;

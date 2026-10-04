@@ -27,13 +27,16 @@ const input = {
   year: 2025,
   purpose: 'external',
 };
+// Cache-hit fixtures stay within the 24-hour TTL; repeated revision assertions
+// still share one stable timestamp rather than depending on the wall-clock day.
+const snapshotEpoch = Date.now() - 60_000;
 function snapshot(revision = 1): CompanyContextSnapshot {
   return {
     version: 1,
     securityCode: identity.securityCode,
     orgId: identity.orgId,
     companyName: identity.companyName,
-    fetchedAt: `2026-10-03T00:00:0${revision}.000Z`,
+    fetchedAt: new Date(snapshotEpoch + revision * 1000).toISOString(),
     status: 'partial',
     financials: [
       {
