@@ -1809,7 +1809,7 @@ try {
   await page.goto(`${base}/#showcase-evidence`, { waitUntil: 'networkidle' });
   await page.waitForURL((url) => url.searchParams.get('view') === 'example');
   await page.locator('#showcase-evidence').waitFor();
-  await page.locator('.lite-search-back').click();
+  await page.locator('.lite-search-detail .lite-search-back').click();
   await page.locator('#showcase-query textarea').waitFor();
   check('Legacy historical-example anchor opens the correct independent Lite destination');
   await page.locator('.experience-switch a').filter({ hasText: 'Pro' }).click();
