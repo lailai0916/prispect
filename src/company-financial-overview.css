@@ -1,116 +1,212 @@
 .company-f-overview {
   min-width: 0;
   color: var(--ink);
+  font-size: var(--text-body);
 }
 .company-f-overview-heading,
 .company-f-interim-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 8px 20px;
   flex-wrap: wrap;
 }
 .company-f-overview-heading {
-  margin-bottom: 14px;
-}
-.company-f-overview-heading h2,
-.company-f-findings h3 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-}
-.company-f-overview-heading > span,
-.company-f-interim-heading,
-.company-f-primary > span,
-.company-f-measures,
-.company-f-interim-values dt {
+  margin-bottom: 12px;
   font-size: var(--text-meta);
+  line-height: 1.6;
   color: var(--muted);
 }
-.company-f-interim {
-  padding: 14px 0;
-  margin-bottom: var(--card-gap);
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
+.company-f-core h2 {
+  margin: 0;
+  font-size: clamp(23px, 2.2vw, 28px);
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
 }
-.company-f-interim-heading strong {
-  color: var(--ink);
-  font-weight: 550;
-}
-.company-f-interim-values {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px 20px;
-  margin: 12px 0 0;
-}
-.company-f-interim-values dd {
-  margin: 4px 0 0;
+.company-f-core > p {
+  max-width: 76ch;
+  margin: 14px 0 0;
   font-size: var(--text-body);
-  font-weight: 550;
-  font-variant-numeric: tabular-nums;
+  line-height: 1.8;
+  color: var(--muted);
 }
-.company-f-questions {
+.company-f-key-figures {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--card-gap);
+  gap: 20px 28px;
+  margin: 28px 0 0;
 }
-.company-f-question {
+.company-f-key-figures > div {
   min-width: 0;
-  display: flex;
-  flex-direction: column;
-  padding: var(--card-padding);
-  border: 1px solid var(--line);
-  border-radius: var(--card-radius);
-  background: var(--paper);
 }
-.company-f-question h3 {
-  margin: 0 0 14px;
-  font-size: var(--text-ui);
-  font-weight: 550;
+.company-f-key-figures dt {
+  font-size: var(--text-meta);
+  line-height: 1.6;
   color: var(--muted);
 }
-.company-f-verdict {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  margin: 0 0 16px;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.6;
-}
-.company-f-status-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--subtle);
-  flex-shrink: 0;
-}
-[data-status='risk'] > .company-f-status-dot,
-.company-f-question[data-status='risk'] .company-f-status-dot {
-  background: var(--red);
-}
-.company-f-primary {
-  display: grid;
-  gap: 5px;
-  margin-bottom: 12px;
-}
-.company-f-primary strong {
-  font-size: 21px;
-  font-weight: 600;
+.company-f-key-figures dd {
+  margin: 6px 0;
+  font-size: 26px;
+  font-weight: 500;
   line-height: 1.4;
-  letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
-.company-f-question[data-status='unknown'] .company-f-primary strong {
-  font-size: 17px;
+.company-f-key-figures dd small {
+  margin-left: 2px;
+  font-size: 16px;
+  font-weight: 400;
+}
+.company-f-key-figures dd[data-missing='true'] {
+  font-size: 20px;
   color: var(--muted);
+}
+.company-f-key-figures > div > span {
+  display: block;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.65;
+}
+.company-f-key-evidence {
+  margin-top: 16px;
+}
+.company-f-chart-section {
+  margin-top: 26px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.company-f-chart-scope {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.7;
+}
+.company-f-findings {
+  margin: 26px 0;
+}
+.company-f-insights {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px 28px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.company-f-insights > li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+.company-f-insight-number {
+  flex-shrink: 0;
+  font-size: var(--text-ui);
+  color: var(--subtle);
+  font-variant-numeric: tabular-nums;
+}
+.company-f-insights > li > div {
+  min-width: 0;
+}
+.company-f-insights h3,
+.company-f-finding-list h3,
+.company-f-check-list h3,
+.company-f-question h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.65;
+}
+.company-f-insights p,
+.company-f-finding-list p,
+.company-f-check-list p {
+  margin: 7px 0 0;
+  font-size: var(--text-ui);
+  color: var(--muted);
+  line-height: 1.75;
+}
+.company-f-insights .context-evidence-button,
+.company-f-check-list .context-evidence-button {
+  margin-top: 10px;
+}
+.company-f-finding-value {
+  font-variant-numeric: tabular-nums;
+}
+.company-f-report-details {
+  border-top: 1px solid var(--line);
+}
+.company-f-report-details > summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 14px 0;
+  cursor: pointer;
+  list-style: none;
+  font-size: var(--text-ui);
+  font-weight: 500;
+  line-height: 1.7;
+}
+.company-f-report-details > summary::-webkit-details-marker {
+  display: none;
+}
+.company-f-report-details > summary > svg {
+  position: relative;
+  top: 2px;
+  flex-shrink: 0;
+}
+.company-f-report-details[open] > summary > svg {
+  transform: rotate(90deg);
+}
+.company-f-report-details > summary > small {
+  font-size: var(--text-meta);
+  font-weight: 400;
+  color: var(--muted);
+}
+.company-f-report-details > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+.company-f-more-findings {
+  margin-top: 22px;
+}
+.company-f-finding-list,
+.company-f-check-list {
+  padding: 0;
+  margin: 0 0 18px;
+  list-style: none;
+}
+.company-f-finding-list > li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.company-f-finding-list > li > div {
+  min-width: 0;
+}
+.company-f-detail-sections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px 28px;
+  padding: 8px 0 24px;
+}
+.company-f-question {
+  min-width: 0;
+}
+.company-f-verdict {
+  margin: 10px 0 14px;
+  font-size: var(--text-ui);
+  line-height: 1.75;
 }
 .company-f-measures {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
-  line-height: 1.6;
+  font-size: var(--text-meta);
+  line-height: 1.7;
 }
 .company-f-measures > div {
   display: flex;
@@ -118,103 +214,114 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+.company-f-measures dt {
+  color: var(--muted);
+}
 .company-f-measures dd {
   margin: 0;
-  color: var(--ink);
   font-variant-numeric: tabular-nums;
 }
 .company-f-detail {
-  margin: 12px 0 14px;
-  font-size: var(--text-secondary);
-  line-height: 1.7;
-  color: var(--muted);
-}
-.company-f-question > .context-evidence-button {
-  margin-top: auto;
-  align-self: flex-start;
-}
-.company-f-findings {
-  margin-top: 22px;
-}
-.company-f-findings ul {
-  padding: 0;
-  margin: 9px 0 0;
-  list-style: none;
-}
-.company-f-findings li {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line-soft);
-}
-.company-f-findings li > .company-f-status-dot {
-  margin-top: 8px;
-}
-.company-f-findings li > div {
-  flex: 1;
-  min-width: 0;
-}
-.company-f-findings li strong {
+  margin: 14px 0;
   font-size: var(--text-ui);
-  font-weight: 550;
-  line-height: 1.7;
-}
-.company-f-findings li p {
-  margin: 3px 0 0;
+  line-height: 1.75;
   color: var(--muted);
-  font-size: var(--text-secondary);
-  line-height: 1.7;
 }
-.company-f-finding-value {
-  font-variant-numeric: tabular-nums;
+.company-f-interim {
+  padding: 20px 0;
+  border-top: 1px solid var(--line-soft);
 }
-.company-f-more-findings {
+.company-f-interim-heading {
   font-size: var(--text-meta);
   color: var(--muted);
-  margin-top: 12px;
 }
-.company-f-more-findings summary {
-  cursor: pointer;
+.company-f-interim-heading strong {
+  color: var(--ink);
+  font-weight: 500;
 }
-.company-f-next-check,
+.company-f-interim-values {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin: 14px 0 0;
+}
+.company-f-interim-values dt {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.65;
+}
+.company-f-interim-values dd {
+  margin: 5px 0 0;
+  font-size: var(--text-body);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.company-f-next-check > p,
 .company-f-data-gap {
-  margin: 16px 0 0;
-  font-size: var(--text-secondary);
-  line-height: 1.7;
-}
-.company-f-next-check {
-  display: flex;
-  gap: 12px;
+  margin: 0 0 16px;
+  font-size: var(--text-ui);
+  line-height: 1.75;
   color: var(--muted);
 }
-.company-f-next-check strong {
-  flex-shrink: 0;
-  color: var(--ink);
-  font-weight: 550;
+.company-f-data-gap {
+  margin: 16px 0 0;
 }
-@media (max-width: 1000px) {
-  .company-f-question {
-    padding: 18px;
-  }
-  .company-f-primary strong {
-    font-size: 19px;
-  }
+.company-f-check-list > li {
+  padding: 14px 0;
+  border-top: 1px solid var(--line-soft);
 }
 @media (max-width: 760px) {
-  .company-f-questions {
+  .company-f-key-figures {
+    gap: 18px 14px;
+  }
+  .company-f-key-figures dd {
+    font-size: 23px;
+  }
+  .company-f-key-figures dd small {
+    font-size: var(--text-ui);
+  }
+  .company-f-insights,
+  .company-f-detail-sections {
     grid-template-columns: 1fr;
+  }
+  .company-f-insights > li + li {
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
   }
   .company-f-interim-values {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .company-f-findings li {
+  .company-f-finding-list > li {
     flex-wrap: wrap;
   }
-  .company-f-findings li > div {
-    flex-basis: calc(100% - 15px);
+  .company-f-report-details > summary {
+    flex-wrap: wrap;
   }
-  .company-f-findings li > .context-evidence-button {
-    margin-left: 15px;
+  .company-f-report-details > summary > small {
+    flex-basis: 100%;
+    margin-left: 24px;
+  }
+}
+@media (max-width: 440px) {
+  .company-f-key-figures {
+    grid-template-columns: 1fr;
+  }
+}
+@media print {
+  .company-f-report-details > :not(summary) {
+    display: block !important;
+  }
+  .company-f-report-details::details-content {
+    content-visibility: visible;
+  }
+  .company-f-report-details > summary > svg,
+  .company-f-overview .context-evidence-button {
+    display: none;
+  }
+  .company-f-core,
+  .company-f-key-figures,
+  .company-f-insights > li,
+  .company-f-question {
+    break-inside: avoid;
   }
 }

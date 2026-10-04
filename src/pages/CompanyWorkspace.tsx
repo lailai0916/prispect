@@ -3,7 +3,6 @@ import { Select } from '../Select';
 import { useContext, useEffect, useRef, useState, Suspense } from 'react';
 import {
   ArrowUpRight,
-  ArrowLeft,
   ChevronDown,
   FileSearch,
   LoaderCircle,
@@ -478,6 +477,21 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const pageAnchors = pageAnchorItems(section, aiReport);
   const reportHref = `${companyPath(run.id)}&report=ai${savedOnly ? '&cached=1' : ''}`;
   const dataHref = `${companyPath(run.id)}${savedOnly ? '&cached=1' : ''}`;
+  const researchStatus =
+    section === 'overview' && !pausedMarket && !run.informationGap ? (
+      <CompanyAIResearchStatus
+        run={run}
+        reportHref={reportHref}
+        onStart={() => void refreshAssessment()}
+        onRetrySources={() => void refresh()}
+        onCancel={() => void cancelResearch()}
+        starting={assessmentUpdating}
+        cancelling={cancellingResearch}
+        disabled={!canWriteRun}
+        reportView={aiReport}
+        compact={aiReport}
+      />
+    ) : null;
   const scopeNote = snapshot
     ? `${t('数据更新于', 'Data updated at')} ${date(snapshot.fetchedAt, locale)}`
     : '';
@@ -520,7 +534,11 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   );
   return (
     <div
-      className={'company-workspace' + (section === 'overview' ? ' company-workspace-report' : '')}
+      className={
+        'company-workspace' +
+        (section === 'overview' ? ' company-workspace-report' : '') +
+        (aiReport ? ' company-workspace-ai-report' : '')
+      }
     >
       {user && !aiReport && (
         <CompanyReadingSession
@@ -533,37 +551,45 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
       )}
       <header className="context-page-heading">
         <div>
-          {(section === 'financial' || section === 'evidence' || aiReport) && (
-            <p className="context-eyebrow">
-              {run.informationGap?.name ||
-                run.identity?.companyName ||
-                snapshot?.companyName ||
-                run.input.securityCode}
-            </p>
+          {aiReport ? (
+            <a className="company-report-breadcrumb" href={dataHref}>
+              {t('研究报告 / 返回财务数据', 'Research report / Back to financial data')}
+            </a>
+          ) : (
+            <>
+              {(section === 'financial' || section === 'evidence' || aiReport) && (
+                <p className="context-eyebrow">
+                  {run.informationGap?.name ||
+                    run.identity?.companyName ||
+                    snapshot?.companyName ||
+                    run.input.securityCode}
+                </p>
+              )}
+              <h1>
+                {aiReport
+                  ? t('研究报告', 'Research report')
+                  : section === 'overview'
+                    ? run.informationGap?.name ||
+                      run.identity?.shortName ||
+                      snapshot?.companyName ||
+                      run.input.securityCode
+                    : title}
+              </h1>
+              <p className="context-data-note">
+                {(section !== 'overview' || run.input.securityCode) && (
+                  <>{run.input.securityCode || t('主体待确认', 'Entity needs confirmation')} · </>
+                )}
+                {run.input.year}{' '}
+                {section === 'overview' && !pausedMarket
+                  ? t('年度财务说明书', 'annual financial overview')
+                  : t('年度公开资料', 'annual public sources')}{' '}
+                ·{' '}
+                {run.input.purpose === 'handover'
+                  ? t('内部交接', 'Internal handover')
+                  : t('外部付款', 'External payment')}
+              </p>
+            </>
           )}
-          <h1>
-            {aiReport
-              ? t('研究报告', 'Research report')
-              : section === 'overview'
-                ? run.informationGap?.name ||
-                  run.identity?.shortName ||
-                  snapshot?.companyName ||
-                  run.input.securityCode
-                : title}
-          </h1>
-          <p className="context-data-note">
-            {(section !== 'overview' || run.input.securityCode) && (
-              <>{run.input.securityCode || t('主体待确认', 'Entity needs confirmation')} · </>
-            )}
-            {run.input.year}{' '}
-            {section === 'overview' && !pausedMarket
-              ? t('年度财务说明书', 'annual financial overview')
-              : t('年度公开资料', 'annual public sources')}{' '}
-            ·{' '}
-            {run.input.purpose === 'handover'
-              ? t('内部交接', 'Internal handover')
-              : t('外部付款', 'External payment')}
-          </p>
         </div>
         <div className="context-page-actions">
           {section !== 'overview' && companyResearchAvailability(run).canCancel && (
@@ -575,7 +601,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               {cancellingResearch ? t('正在取消…', 'Cancelling…') : t('取消', 'Cancel')}
             </button>
           )}
-          {section === 'overview' && (
+          {section === 'overview' && !aiReport && (
             <button className="button button-secondary" onClick={() => window.print()}>
               <Printer size={14} />
               {aiReport ? t('打印报告', 'Print report') : t('打印摘要', 'Print summary')}
@@ -607,25 +633,16 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </button>
         </div>
       </header>
-      {section === 'overview' && !pausedMarket && !run.informationGap && (
-        <CompanyAIResearchStatus
-          run={run}
-          reportHref={reportHref}
-          onStart={() => void refreshAssessment()}
-          onRetrySources={() => void refresh()}
-          onCancel={() => void cancelResearch()}
-          starting={assessmentUpdating}
-          cancelling={cancellingResearch}
-          disabled={!canWriteRun}
-          reportView={aiReport}
-        />
-      )}
-      {pageAnchors.length > 1 && !pausedMarket && (snapshot || section === 'overview') && (
-        <CompanyPageIndex
-          key={`${user?.id}:${run.id}:${section}:${aiReport}`}
-          anchors={pageAnchors}
-        />
-      )}
+      {!aiReport && researchStatus}
+      {!aiReport &&
+        pageAnchors.length > 1 &&
+        !pausedMarket &&
+        (snapshot || section === 'overview') && (
+          <CompanyPageIndex
+            key={`${user?.id}:${run.id}:${section}:${aiReport}`}
+            anchors={pageAnchors}
+          />
+        )}
       {error && (
         <p role="alert" className="field-error">
           {error}
@@ -726,16 +743,13 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         emptySources
       ) : aiReport ? (
         <div className="company-ai-report-page">
-          <a className="text-link company-ai-report-return" href={dataHref}>
-            <ArrowLeft size={13} aria-hidden="true" />
-            {t('返回财务数据', 'Back to financial data')}
-          </a>
           <section id="company-full-report">
             <span id="company-ai-core-report" aria-hidden="true" />
             <CompanyReportDocument
               run={run}
               basis="consolidated"
               disabled={!canWriteRun}
+              progress={researchStatus}
               onInspect={(judgment) =>
                 user &&
                 run.assessment &&
@@ -810,8 +824,14 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           )}
           {section === 'overview' ? (
             <>
-              <CompanyBrief run={run} showIdentity={false} />
               <CompanyFinancialOverview run={run} basis={basis} />
+              <details className="company-review-details">
+                <summary>
+                  <ChevronDown size={14} />
+                  {t('企业资料与来源概览', 'Company profile and source overview')}
+                </summary>
+                <CompanyBrief run={run} showIdentity={false} />
+              </details>
               <details id="company-financial-data" className="company-review-details">
                 <summary>
                   <ChevronDown size={14} />
@@ -951,5 +971,11 @@ function pageAnchorIds(
     'company-full-report',
     'company-evidence-lab',
     'company-original-comparison',
+    'company-report-profit-cash',
+    'company-report-analysis',
+    'company-report-metrics',
+    ...['profitability', 'cash', 'solvency', 'workingCapital', 'industry', 'events'].map(
+      (id) => `company-report-dimension-${id}`
+    ),
   ];
 }

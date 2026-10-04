@@ -25,7 +25,13 @@ function availablePageTarget(target: HTMLElement) {
 }
 
 /** One local, reading-aware index; acquiring sources and changing reports stay elsewhere. */
-export function CompanyPageIndex({ anchors }: { anchors: readonly PageAnchor[] }) {
+export function CompanyPageIndex({
+  anchors,
+  variant = 'strip',
+}: {
+  anchors: readonly PageAnchor[];
+  variant?: 'strip' | 'rail';
+}) {
   const { t } = useApp();
   const navigation = useRef<HTMLElement | null>(null);
   const [state, setState] = useState<{ present: string[]; current: string | null }>({
@@ -56,12 +62,15 @@ export function CompanyPageIndex({ anchors }: { anchors: readonly PageAnchor[] }
         getComputedStyle(document.documentElement).getPropertyValue('--site-header-height')
       );
       const headerBottom = Number.isFinite(headerHeight) ? headerHeight : 56;
-      const indexBounds = navigation.current?.getBoundingClientRect();
-      const indexHeight = navigation.current?.hidden ? 0 : indexBounds?.height || 0;
-      const heightValue = `${indexHeight}px`;
-      if (root.style.getPropertyValue('--company-reading-index-height') !== heightValue)
-        root.style.setProperty('--company-reading-index-height', heightValue);
-      const readingLine = Math.max(headerBottom + 24, (indexBounds?.bottom || 0) + 24);
+      let readingLine = headerBottom + 24;
+      if (variant !== 'rail') {
+        const indexBounds = navigation.current?.getBoundingClientRect();
+        const indexHeight = navigation.current?.hidden ? 0 : indexBounds?.height || 0;
+        const heightValue = `${indexHeight}px`;
+        if (root.style.getPropertyValue('--company-reading-index-height') !== heightValue)
+          root.style.setProperty('--company-reading-index-height', heightValue);
+        readingLine = Math.max(readingLine, (indexBounds?.bottom || 0) + 24);
+      }
       const atBottom =
         window.scrollY > 0 &&
         window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
@@ -101,14 +110,17 @@ export function CompanyPageIndex({ anchors }: { anchors: readonly PageAnchor[] }
       root.removeEventListener('toggle', schedule, true);
       root.removeEventListener('transitionend', schedule, true);
       cancelAnimationFrame(frame);
-      root.style.removeProperty('--company-reading-index-height');
+      if (variant !== 'rail') root.style.removeProperty('--company-reading-index-height');
     };
-  }, [anchorKey]);
+  }, [anchorKey, variant]);
 
   return (
     <nav
       ref={navigation}
-      className="company-page-index company-reading-index"
+      className={
+        'company-page-index company-reading-index' +
+        (variant === 'rail' ? ' company-reading-index-rail' : '')
+      }
       aria-label={t('本页内容', 'On this page')}
       hidden={state.present.length === 0}
     >

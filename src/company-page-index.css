@@ -4,6 +4,18 @@
   z-index: 5;
   background: var(--paper);
 }
+.company-reading-index.company-reading-index-rail {
+  position: static;
+  top: auto;
+  z-index: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 4px;
+  padding: 0;
+  margin: 0;
+  border-bottom: 0;
+  background: transparent;
+}
 .company-reading-index[hidden] {
   display: none;
 }
@@ -21,6 +33,9 @@
 .company-reading-index button:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+.company-reading-index-rail button {
+  width: 100%;
 }
 
 .company-workspace .lab-trial-toolbar {
