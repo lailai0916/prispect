@@ -19,7 +19,7 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 9,
+  version: 10,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: true,
@@ -613,6 +613,169 @@ try {
   check('Reconnect reads completion once, stops polling and makes no research or model writes');
   context.off('request', countResearchRequest);
   await context.unroute(`**/api/company-runs/${run.id}`, transientStatus);
+  // A delayed refresh acknowledgement must not roll a newer completed GET back to
+  // its loading state or its retained old amounts (all responses remain synthetic).
+  let showFreshSnapshot = false;
+  let releaseRefresh;
+  const heldRefresh = new Promise((resolve) => {
+    releaseRefresh = resolve;
+  });
+  const freshRun = structuredClone(run);
+  freshRun.contextRevision = (run.contextRevision || 0) + 1;
+  freshRun.context.fetchedAt = new Date(Date.parse(run.context.fetchedAt) + 60_000).toISOString();
+  freshRun.context.financials.find((row) => row.period === '2025-12-31').amounts.parentProfit =
+    '140000';
+  const staleAcknowledgement = {
+    ...run,
+    contextRevision: freshRun.contextRevision,
+    contextStatus: 'loading',
+  };
+  const refreshStatus = (route) =>
+    route.request().method() === 'GET'
+      ? route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(showFreshSnapshot ? freshRun : run),
+        })
+      : route.fallback();
+  const delayedRefresh = async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    showFreshSnapshot = true;
+    await heldRefresh;
+    await route.fulfill({
+      status: 202,
+      contentType: 'application/json',
+      body: JSON.stringify(staleAcknowledgement),
+    });
+  };
+  await context.route(`**/api/company-runs/${run.id}`, refreshStatus);
+  await context.route(`**/api/company-runs/${run.id}/context`, delayedRefresh);
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.getByRole('button', { name: '更新', exact: true }).click();
+  const freshRead = page.waitForResponse(
+    (response) =>
+      response.url() === `${base}/api/company-runs/${run.id}` && response.status() === 200
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await freshRead;
+  const freshAmount = page
+    .locator('.company-f-key-figures dd')
+    .first()
+    .filter({ hasText: '14.00' });
+  await freshAmount.waitFor();
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const refreshResponse = page.waitForResponse(
+    (response) => response.url() === `${base}/api/company-runs/${run.id}/context`
+  );
+  releaseRefresh();
+  await refreshResponse;
+  await page.waitForTimeout(150);
+  assert.equal(
+    await freshAmount.count(),
+    1,
+    'Late loading acknowledgement replaced the completed snapshot'
+  );
+  check('Late refresh acknowledgement preserves newer completed amounts and source status');
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'visibilityState');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await context.unroute(`**/api/company-runs/${run.id}/context`, delayedRefresh);
+  await page.getByRole('link', { name: '查看研究报告', exact: true }).click();
+  const retainedReportDates = await page.locator('.report-document-dates').innerText();
+  await page.locator('.company-report-breadcrumb').click();
+  let failedRefreshes = 0;
+  const unavailableRefresh = async (route) => {
+    failedRefreshes++;
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'QA_REFRESH_FAILURE', error: '合成更新失败，已有资料保留' }),
+    });
+  };
+  await context.route(`**/api/company-runs/${run.id}/context`, unavailableRefresh);
+  await page.getByRole('button', { name: '更新', exact: true }).evaluate((button) => {
+    button.click();
+    button.click();
+  });
+  await page.getByRole('alert').filter({ hasText: '合成更新失败，已有资料保留' }).waitFor();
+  assert.equal(failedRefreshes, 1);
+  assert.equal(await freshAmount.count(), 1);
+  await page.getByRole('link', { name: '查看研究报告', exact: true }).click();
+  assert.equal(await page.locator('.report-document-dates').innerText(), retainedReportDates);
+  check(
+    'Repeated refresh clicks start one write; failed refresh preserves amounts and the prior report’s original dates'
+  );
+  await page.locator('.company-report-breadcrumb').click();
+  await context.unroute(`**/api/company-runs/${run.id}/context`, unavailableRefresh);
+  const secondCreated = await context.request.post(`${base}/api/company-runs`, {
+    headers: { Origin: base, 'X-CSRF-Token': session.csrfToken },
+    data: {
+      securityCode: identities[1].securityCode,
+      orgId: identities[1].orgId,
+      year: 2025,
+      purpose: 'external',
+      researchMode: 'financial',
+    },
+  });
+  assert.equal(secondCreated.status(), 202, await secondCreated.text());
+  const secondRunId = (await secondCreated.json()).id;
+  await application.waitForIdle();
+  await page.evaluate(() => window.dispatchEvent(new Event('prispect:company-records-changed')));
+  let releaseOldCompany;
+  let releaseNewCompany;
+  const oldCompanyGate = new Promise((resolve) => {
+    releaseOldCompany = resolve;
+  });
+  const newCompanyGate = new Promise((resolve) => {
+    releaseNewCompany = resolve;
+  });
+  const oldCompanyRefresh = async (route) => {
+    await oldCompanyGate;
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'QA_OLD_REFRESH', error: '旧公司的合成错误' }),
+    });
+  };
+  const newCompanyRefresh = async (route) => {
+    await newCompanyGate;
+    await route.fulfill({
+      status: 503,
+      contentType: 'application/json',
+      body: JSON.stringify({ code: 'QA_NEW_REFRESH', error: '当前公司的合成更新失败' }),
+    });
+  };
+  await context.route(`**/api/company-runs/${run.id}/context`, oldCompanyRefresh);
+  await context.route(`**/api/company-runs/${secondRunId}/context`, newCompanyRefresh);
+  await page.getByRole('button', { name: '更新', exact: true }).click();
+  await page.locator(`.sidebar-company-row a[href*="${secondRunId}"]`).click();
+  await page.waitForURL((url) => url.searchParams.get('run') === secondRunId);
+  await page.locator('.company-workspace').filter({ hasText: '合成乙企业' }).waitFor();
+  const newCompanyUpdate = page.getByRole('button', { name: '更新', exact: true });
+  await newCompanyUpdate.click();
+  releaseOldCompany();
+  await page.waitForTimeout(150);
+  assert.equal(await newCompanyUpdate.isDisabled(), true);
+  assert.equal(await page.getByText('旧公司的合成错误').count(), 0);
+  assert.match(await page.locator('.company-workspace').innerText(), /合成乙企业/);
+  releaseNewCompany();
+  await page.getByRole('alert').filter({ hasText: '当前公司的合成更新失败' }).waitFor();
+  assert.equal(await newCompanyUpdate.isDisabled(), false);
+  check(
+    'Switching companies isolates refresh callbacks, current-company busy controls and failures'
+  );
+  await context.unroute(`**/api/company-runs/${run.id}/context`, oldCompanyRefresh);
+  await context.unroute(`**/api/company-runs/${secondRunId}/context`, newCompanyRefresh);
+  const removeSecond = await context.request.delete(`${base}/api/company-runs/${secondRunId}`, {
+    headers: { Origin: base, 'X-CSRF-Token': session.csrfToken },
+  });
+  assert.equal(removeSecond.status(), 200, await removeSecond.text());
+  await context.unroute(`**/api/company-runs/${run.id}`, refreshStatus);
+  await page.goto(base + company, { waitUntil: 'networkidle' });
   const calls = receipt.contextCalls;
   await page.goto(`${base}/company?run=${run.id}&experience=lite&page=finance`, {
     waitUntil: 'networkidle',

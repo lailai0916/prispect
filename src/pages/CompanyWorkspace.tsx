@@ -20,6 +20,7 @@ import {
 } from '../../shared/company-workspace';
 import type { CompanyReadingBasis } from '../../shared/company-analysis';
 import { companyResearchAvailability } from '../../shared/company-research-availability';
+import { isOlderCompanyRunSnapshot } from '../../shared/company-run-snapshot';
 import { useApp } from '../context';
 import { api, RequestError, requestErrorText } from '../api';
 import { ResearchStatusPoller, researchStatusErrorText } from '../research-status-poller';
@@ -91,7 +92,15 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   }));
   const run = loadedRun.owner === (user?.id || null) ? loadedRun.run : null;
   const setRun = (next: CompanyResearchRun | null) => {
-    setLoadedRun({ owner: user?.id || null, run: next });
+    const owner = user?.id || null;
+    setLoadedRun((previous) =>
+      next &&
+      previous.owner === owner &&
+      previous.run &&
+      isOlderCompanyRunSnapshot(next, previous.run)
+        ? previous
+        : { owner, run: next }
+    );
     if (user && next) cacheCompanyRun(user.id, next);
   };
   const savedOnly = query.get('cached') === '1';
@@ -133,6 +142,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     judgment: AssessmentJudgment;
   } | null>(null);
   const request = useRef<AbortController | null>(null);
+  const contextOperation = useRef<symbol | null>(null);
   const assessmentOperation = useRef<symbol | null>(null);
   const cancelOperation = useRef<symbol | null>(null);
   const revealedLocation = useRef<string | null>(null);
@@ -158,6 +168,8 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     if ((!run || run.id !== id) && cached) setRun(cached);
     const controller = new AbortController();
     request.current = controller;
+    contextOperation.current = null;
+    setUpdating(false);
     assessmentOperation.current = null;
     setAssessmentUpdating(false);
     cancelOperation.current = null;
@@ -310,9 +322,13 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     historyNavigation,
   ]);
   const refresh = async () => {
-    if (!run || !researchSupported(run) || updating || !canWriteRun) return;
-    if (user) manualScope.current = `${user.id}:${run.id}`;
+    if (!run || !researchSupported(run) || updating || contextOperation.current || !canWriteRun)
+      return;
     const signal = request.current?.signal;
+    if (!signal || signal.aborted) return;
+    const operation = Symbol('context-refresh');
+    contextOperation.current = operation;
+    if (user) manualScope.current = `${user.id}:${run.id}`;
     setUpdating(true);
     setFailure(null);
     try {
@@ -321,17 +337,20 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
         body: JSON.stringify({ refresh: true }),
         signal,
       });
-      if (!signal?.aborted) {
+      if (!signal.aborted && isCurrentOwner() && contextOperation.current === operation) {
         setRun(next);
         setVersion((value) => value + 1);
       }
     } catch (cause) {
-      if (!signal?.aborted) {
+      if (!signal.aborted && isCurrentOwner() && contextOperation.current === operation) {
         manualScope.current = null;
         setFailure({ kind: 'sources', text: requestErrorText(cause, locale) });
       }
     } finally {
-      setUpdating(false);
+      if (contextOperation.current === operation) {
+        contextOperation.current = null;
+        setUpdating(false);
+      }
     }
   };
   const refreshAssessment = async (focus?: string, refresh = false) => {
@@ -376,7 +395,7 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     }
   };
   const cancelResearch = async () => {
-    if (!run || cancellingResearch || !canWriteRun) return;
+    if (!run || cancellingResearch || cancelOperation.current || !canWriteRun) return;
     const available = companyResearchAvailability(run);
     if (!available.canCancel) return;
     const signal = request.current?.signal;

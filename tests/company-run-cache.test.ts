@@ -240,6 +240,25 @@ test('late responses cannot overwrite a newer source generation or revive an alr
   assert.equal(reloaded.read('alice', next.id)!.context!.fetchedAt, newer.context!.fetchedAt);
 });
 
+test('a late older snapshot with the same revision cannot replace completed refreshed data', () => {
+  const cache = new CompanyRunCache(() => null);
+  cache.activate('alice');
+  const previous = fixture();
+  previous.input.researchMode = 'financial';
+  previous.contextRevision = 2;
+  const refreshed = structuredClone(previous);
+  refreshed.context!.fetchedAt = '2026-10-03T02:00:00.000Z';
+  refreshed.assessment!.snapshotFetchedAt = refreshed.context!.fetchedAt;
+  refreshed.context!.financials[0]!.amounts.netProfit = '2000000';
+  cache.save('alice', refreshed);
+  cache.save('alice', previous);
+  assert.equal(
+    cache.read('alice', previous.id)!.context!.financials[0]!.amounts.netProfit,
+    '2000000'
+  );
+  assert.equal(cache.read('alice', previous.id)!.context!.fetchedAt, refreshed.context!.fetchedAt);
+});
+
 test('persistent cache excludes private originals, questions, arbitrary goals and execution summaries', () => {
   const storage = new MemoryStorage();
   const cache = new CompanyRunCache(() => storage);
