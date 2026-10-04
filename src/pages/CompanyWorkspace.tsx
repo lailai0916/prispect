@@ -22,6 +22,7 @@ import type { CompanyReadingBasis } from '../../shared/company-analysis';
 import { companyResearchAvailability } from '../../shared/company-research-availability';
 import { useApp } from '../context';
 import { api, RequestError, requestErrorText } from '../api';
+import { ResearchStatusPoller, researchStatusErrorText } from '../research-status-poller';
 import { date } from '../format';
 import { COMPANY_RECORDS_EVENT } from '../company-record-events';
 import { useCompanyRecords } from '../CompanyRecordsContext';
@@ -161,15 +162,15 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
     setAssessmentUpdating(false);
     cancelOperation.current = null;
     setCancellingResearch(false);
-    let timer: ReturnType<typeof setTimeout>;
     let contextRequested = false;
+    let notice = '';
     const load = async () => {
       let kind: ResearchRequestKind = 'status';
       try {
         let next = await api<CompanyResearchRun>(`/company-runs/${encodeURIComponent(id)}`, {
-          signal: controller.signal,
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
         });
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) return false;
         setRun(next);
         setVerifiedRunScope(scope);
         clearResolvedFailure(next);
@@ -191,18 +192,29 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             signal: controller.signal,
           });
         }
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted) return false;
         setRun(next);
         clearResolvedFailure(next);
-        window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
-        if (
+        const nextNotice = JSON.stringify([
+          next.id,
+          next.status,
+          next.contextStatus,
+          next.assessmentStatus,
+          next.contextRevision,
+          next.assessmentRevision,
+          next.assessment?.generatedAt,
+        ]);
+        if (notice !== nextNotice) {
+          notice = nextNotice;
+          window.dispatchEvent(new Event(COMPANY_RECORDS_EVENT));
+        }
+        const active =
           next.status === 'queued' ||
           next.status === 'running' ||
           next.contextStatus === 'loading' ||
-          next.assessmentStatus === 'loading'
-        )
-          timer = setTimeout(() => void load(), 1500);
-        else if (manualScope.current === scope) manualScope.current = null;
+          next.assessmentStatus === 'loading';
+        if (!active && manualScope.current === scope) manualScope.current = null;
+        return active;
       } catch (cause) {
         if (!controller.signal.aborted) {
           if (manualScope.current === scope) manualScope.current = null;
@@ -214,13 +226,23 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
             removeLocal(id);
             setRun(null);
           }
-          setFailure({ kind, text: requestErrorText(cause, locale) });
+          setFailure({
+            kind,
+            text:
+              kind === 'status'
+                ? researchStatusErrorText(cause, locale)
+                : requestErrorText(cause, locale),
+          });
+          // Reconnect only the GET. A failed automatic source POST requires user retry.
+          if (kind === 'status') throw cause;
         }
+        return false;
       }
     };
-    void load();
+    const poller = new ResearchStatusPoller(load);
+    poller.start();
     return () => {
-      clearTimeout(timer);
+      poller.stop();
       controller.abort();
     };
   }, [id, locale, version, user?.id, savedOnly]);

@@ -8,7 +8,8 @@ import {
   type ReactNode,
 } from 'react';
 import type { CompanyRecordSummary } from '../shared/company-workspace';
-import { api, requestErrorText } from './api';
+import { api } from './api';
+import { ResearchStatusPoller, researchStatusErrorText } from './research-status-poller';
 import { useApp } from './context';
 import { COMPANY_RECORDS_EVENT } from './company-record-events';
 import {
@@ -57,20 +58,17 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const request = useRef<AbortController | null>(null);
-  const pendingRefresh = useRef(false);
   const removedIds = useRef(new Set<string>());
   const generation = useRef(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const poller = useRef<ResearchStatusPoller | null>(null);
   const mounted = useRef(false);
   const currentOwner = useRef(owner);
   currentOwner.current = owner;
-  const reload = useCallback(async () => {
-    if (!owner || !mounted.current || currentOwner.current !== owner) return;
+  const load = useCallback(async () => {
+    if (!owner || !mounted.current || currentOwner.current !== owner) return false;
     if (request.current && !request.current.signal.aborted) {
-      pendingRefresh.current = true;
-      return;
+      return false;
     }
-    if (timer.current) clearTimeout(timer.current);
     const controller = new AbortController();
     request.current = controller;
     const ticket = ++generation.current;
@@ -78,7 +76,7 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
     setRefreshing(true);
     try {
       const next = await api<CompanyRecordSummary[]>('/company-records', {
-        signal: controller.signal,
+        signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
       });
       if (
         !mounted.current ||
@@ -86,7 +84,7 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
         controller.signal.aborted ||
         ticket !== generation.current
       )
-        return;
+        return false;
       const available = next.filter((record) => !removedIds.current.has(record.id));
       retainCachedCompanyRuns(
         owner,
@@ -95,13 +93,9 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
       );
       setCollection({ owner, records: available });
       setError('');
-      if (
-        available.some(
-          (record) => record.deletionBlocked || ['queued', 'running'].includes(record.status)
-        )
-      ) {
-        timer.current = setTimeout(() => void reload(), 2500);
-      }
+      return available.some(
+        (record) => record.deletionBlocked || ['queued', 'running'].includes(record.status)
+      );
     } catch (cause) {
       if (
         mounted.current &&
@@ -109,8 +103,10 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
         !controller.signal.aborted &&
         ticket === generation.current
       ) {
-        setError(requestErrorText(cause, currentLocale.current));
+        setError(researchStatusErrorText(cause, currentLocale.current));
+        throw cause;
       }
+      return false;
     } finally {
       if (
         mounted.current &&
@@ -121,13 +117,12 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
         request.current = null;
         setLoading(false);
         setRefreshing(false);
-        if (pendingRefresh.current) {
-          pendingRefresh.current = false;
-          void reload();
-        }
       }
     }
   }, [owner]);
+  const reload = useCallback(async () => {
+    await poller.current?.request();
+  }, []);
   useEffect(() => {
     mounted.current = true;
     activateCompanyRunCache(owner);
@@ -136,7 +131,9 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
     setError('');
     setLoading(Boolean(owner));
     setRefreshing(false);
-    void reload();
+    const subscription = new ResearchStatusPoller(load, 2500);
+    poller.current = subscription;
+    subscription.start();
     const update = () => void reload();
     const invalidate = (event: Event) => {
       if ((event as CustomEvent<CompanyCacheInvalidation>).detail?.owner === owner) void reload();
@@ -146,16 +143,16 @@ export function CompanyRecordsProvider({ children }: { children: ReactNode }) {
     window.addEventListener(COMPANY_CACHE_EVENT, invalidate);
     return () => {
       mounted.current = false;
+      subscription.stop();
+      if (poller.current === subscription) poller.current = null;
       ++generation.current;
       request.current?.abort();
       request.current = null;
-      pendingRefresh.current = false;
-      if (timer.current) clearTimeout(timer.current);
       window.removeEventListener(COMPANY_RECORDS_EVENT, update);
       window.removeEventListener('prispect:company-run-updated', update);
       window.removeEventListener(COMPANY_CACHE_EVENT, invalidate);
     };
-  }, [owner, reload]);
+  }, [owner, load, reload]);
   const removeLocal = useCallback(
     (id: string) => {
       if (!owner || currentOwner.current !== owner || !mounted.current) return;

@@ -19,7 +19,7 @@ process.env.LANGSMITH_TRACING = 'false';
 process.env.LANGCHAIN_TRACING_V2 = 'false';
 const nativeFetch = globalThis.fetch;
 const receipt = {
-  version: 8,
+  version: 9,
   commit: process.env.GITHUB_SHA || null,
   status: 'working',
   financialFixtures: true,
@@ -507,6 +507,112 @@ try {
   await layout(page, 'company report');
   await sharedAssistant(page, 'desktop');
   await capture(page, 'report-light-1440');
+  // Exercise actual browser consumers of saved status; the job itself remains a synthetic
+  // GET overlay, so these checks never launch a source or model retry.
+  const statusReads = [];
+  const researchWrites = [];
+  const countResearchRequest = (request) => {
+    const pathname = new URL(request.url()).pathname;
+    if (pathname === '/api/company-records' || pathname === `/api/company-runs/${run.id}`) {
+      if (request.method() === 'GET') statusReads.push(pathname);
+      else researchWrites.push(pathname);
+    } else if (pathname.startsWith(`/api/company-runs/${run.id}/`) && request.method() !== 'GET')
+      researchWrites.push(pathname);
+  };
+  context.on('request', countResearchRequest);
+  let releaseFirstRead;
+  const firstRead = new Promise((resolve) => {
+    releaseFirstRead = resolve;
+  });
+  let overlayReads = 0;
+  let overlayActive = true;
+  const transientStatus = async (route) => {
+    if (route.request().method() !== 'GET') return route.fallback();
+    overlayReads++;
+    if (overlayReads === 1) {
+      await firstRead;
+      return route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          code: 'QA_STATUS_UNAVAILABLE',
+          error: '暂时无法读取研究状态',
+        }),
+      });
+    }
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(
+        overlayActive
+          ? {
+              ...run,
+              assessmentStatus: 'loading',
+              assessmentRevision: (run.assessmentRevision || 0) + 1,
+            }
+          : { ...run, assessmentRevision: (run.assessmentRevision || 0) + 1 }
+      ),
+    });
+  };
+  await context.route(`**/api/company-runs/${run.id}`, transientStatus);
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.locator('.company-workspace').waitFor();
+  assert.match(await page.locator('.company-workspace').innerText(), /合成甲企业/);
+  assert.equal(overlayReads, 1);
+  check('Cached company data renders before its pending server existence/status read');
+  const reconnected = page.waitForResponse(
+    (response) =>
+      response.url() === `${base}/api/company-runs/${run.id}` && response.status() === 200
+  );
+  releaseFirstRead();
+  const temporaryError = page.getByRole('alert').filter({ hasText: '暂时无法读取研究状态' });
+  await temporaryError.waitFor();
+  assert.match(await page.locator('.company-workspace').innerText(), /合成甲企业/);
+  await reconnected;
+  await temporaryError.waitFor({ state: 'hidden' });
+  check('One temporary 503 keeps cached data readable, retries saved status and clears the error');
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await page.waitForTimeout(150);
+  const hiddenReads = statusReads.length;
+  await page.waitForTimeout(2800);
+  assert.equal(statusReads.length, hiddenReads);
+  check('Simulated hidden-tab state pauses both workspace and shared sidebar status reads');
+  const foreground = page.waitForResponse(
+    (response) =>
+      response.url() === `${base}/api/company-runs/${run.id}` && response.status() === 200
+  );
+  await page.evaluate(() => {
+    Reflect.deleteProperty(document, 'visibilityState');
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await foreground;
+  await context.setOffline(true);
+  await page.waitForFunction(() => navigator.onLine === false);
+  await page.waitForTimeout(150);
+  const offlineReads = statusReads.length;
+  await page.waitForTimeout(2800);
+  assert.equal(statusReads.length, offlineReads);
+  assert.match(await page.locator('.company-workspace').innerText(), /合成甲企业/);
+  check('Browser offline state pauses saved-status requests while keeping company data readable');
+  overlayActive = false;
+  const completed = page.waitForResponse(
+    (response) =>
+      response.url() === `${base}/api/company-runs/${run.id}` && response.status() === 200
+  );
+  await context.setOffline(false);
+  await completed;
+  await page.waitForTimeout(150);
+  const completedReads = statusReads.length;
+  await page.waitForTimeout(2800);
+  assert.equal(statusReads.length, completedReads);
+  assert.deepEqual(researchWrites, []);
+  assert.equal(receipt.modelCalls, 0);
+  check('Reconnect reads completion once, stops polling and makes no research or model writes');
+  context.off('request', countResearchRequest);
+  await context.unroute(`**/api/company-runs/${run.id}`, transientStatus);
   const calls = receipt.contextCalls;
   await page.goto(`${base}/company?run=${run.id}&experience=lite&page=finance`, {
     waitUntil: 'networkidle',

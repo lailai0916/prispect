@@ -46,7 +46,13 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
     if (locked.current || !user) return;
     const owner = user.id;
     if (identity) {
-      const scope = { securityCode: identity.securityCode, orgId: identity.orgId, year, purpose };
+      const scope = {
+        securityCode: identity.securityCode,
+        orgId: identity.orgId,
+        year,
+        purpose,
+        researchMode: 'financial' as const,
+      };
       // Old summary responses omitted purpose: let the authenticated server resolve those.
       const existing = findReusableCompanyRun(
         records.filter((record) => Boolean(record.input.purpose)),
@@ -75,6 +81,7 @@ export function CompanyQueryPage({ query }: { query?: URLSearchParams }) {
             purpose,
             useModel: true,
             reuseExisting: true,
+            researchMode: 'financial',
           }
         : { name, year, purpose }
     );

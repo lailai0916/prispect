@@ -13,13 +13,18 @@ export function setCsrfToken(value: string | null): void {
 
 export class RequestError extends Error {
   code: string;
-  constructor(message: string, code = 'REQUEST_FAILED') {
+  constructor(
+    message: string,
+    code = 'REQUEST_FAILED',
+    public status?: number
+  ) {
     super(message);
     this.code = code;
   }
 }
 
 const errorMessages: Record<string, string> = {
+  RESEARCH_STATUS_TIMEOUT: 'Reading research status timed out. Please retry.',
   RESEARCH_CANCEL_INPUT: 'Reload research status before cancelling this round.',
   RESEARCH_CANCEL_STALE: 'The research round has changed. Reload its status before cancelling.',
   ASSISTANT_INPUT: 'Enter a question of up to 500 characters.',
@@ -247,7 +252,8 @@ async function apiResponse(path: string, init?: RequestInit): Promise<Response> 
       typeof error.error === 'string' && error.error
         ? error.error
         : response.statusText || `请求失败（${response.status}）`,
-      typeof error.code === 'string' ? error.code : undefined
+      typeof error.code === 'string' ? error.code : undefined,
+      response.status
     );
   }
   return response;

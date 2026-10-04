@@ -192,6 +192,54 @@ function privateFixture(): CompanyResearchRun {
   return run;
 }
 
+test('local lookup uses the same mode boundary as the server, including legacy original-document records', () => {
+  const cache = new CompanyRunCache(() => null);
+  cache.activate('alice');
+  const legacy = fixture('legacy');
+  const financial = fixture('financial');
+  financial.input.researchMode = 'financial';
+  cache.save('alice', legacy);
+  assert.equal(cache.find('alice', { ...legacy.input, researchMode: 'financial' }), null);
+  cache.save('alice', financial);
+  assert.equal(cache.find('alice', financial.input)!.id, financial.id);
+  assert.equal(cache.find('alice', { ...legacy.input, researchMode: 'deep' })!.id, legacy.id);
+});
+
+test('late responses cannot overwrite a newer source generation or revive an already finished analysis', () => {
+  const storage = new MemoryStorage();
+  const cache = new CompanyRunCache(() => storage);
+  cache.activate('alice');
+  const older = fixture();
+  older.input.researchMode = 'financial';
+  older.contextRevision = 1;
+  older.assessmentRevision = 1;
+  const newer = structuredClone(older);
+  newer.contextRevision = 2;
+  newer.assessmentRevision = 3;
+  newer.context!.fetchedAt = '2026-10-03T02:00:00.000Z';
+  newer.assessment!.snapshotFetchedAt = newer.context!.fetchedAt;
+  newer.assessment!.generatedAt = '2026-10-03T02:03:00.000Z';
+  cache.save('alice', newer);
+  cache.save('alice', older);
+  assert.equal(cache.read('alice', newer.id)!.contextRevision, 2);
+  const loading = structuredClone(newer);
+  loading.assessmentStatus = 'loading';
+  cache.save('alice', loading);
+  assert.equal(cache.read('alice', newer.id)!.assessmentStatus, 'ready');
+  const next = structuredClone(loading);
+  next.assessmentRevision = 4;
+  cache.save('alice', next);
+  assert.equal(cache.read('alice', newer.id)!.assessmentStatus, 'loading');
+  cache.save('alice', newer);
+  assert.equal(cache.read('alice', newer.id)!.assessmentRevision, 4);
+  next.assessmentStatus = 'ready';
+  cache.save('alice', next);
+  const reloaded = new CompanyRunCache(() => storage);
+  reloaded.activate('alice');
+  assert.equal(reloaded.read('alice', next.id)!.assessmentStatus, 'ready');
+  assert.equal(reloaded.read('alice', next.id)!.context!.fetchedAt, newer.context!.fetchedAt);
+});
+
 test('persistent cache excludes private originals, questions, arbitrary goals and execution summaries', () => {
   const storage = new MemoryStorage();
   const cache = new CompanyRunCache(() => storage);

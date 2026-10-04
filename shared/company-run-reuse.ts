@@ -3,7 +3,7 @@ import type { CompanyRunInput, CompanyIdentity } from './contracts.js';
 /** Input scope, not display names, determines whether an existing research record applies. */
 export type CompanyRunReuseScope = Pick<
   CompanyRunInput,
-  'securityCode' | 'orgId' | 'year' | 'purpose'
+  'securityCode' | 'orgId' | 'year' | 'purpose' | 'researchMode'
 >;
 
 export interface ReusableCompanyRun {
@@ -31,6 +31,7 @@ export function matchesCompanyRunScope(
     run.input.orgId === scope.orgId &&
     run.input.year === scope.year &&
     (run.input.purpose || 'external') === (scope.purpose || 'external') &&
+    (run.input.researchMode || 'deep') === (scope.researchMode || 'deep') &&
     (!run.identity ||
       (run.identity.exchange !== 'us' &&
         run.identity.securityCode === scope.securityCode &&

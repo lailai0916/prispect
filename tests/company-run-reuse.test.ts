@@ -80,3 +80,23 @@ test('deleted records have no implicit resurrection or fallback to another year'
     undefined
   );
 });
+
+test('financial and original-document research never reuse one another; mode-less history remains deep', () => {
+  const legacy = record('legacy', { context: {} });
+  const deep = record('deep', { input: { ...scope, researchMode: 'deep' }, context: {} });
+  const financial = record('financial', {
+    input: { ...scope, researchMode: 'financial' },
+    context: {},
+  });
+  assert.equal(
+    findReusableCompanyRun([legacy, deep], { ...scope, researchMode: 'financial' }),
+    undefined
+  );
+  assert.equal(findReusableCompanyRun([financial], { ...scope, researchMode: 'deep' }), undefined);
+  assert.equal(findReusableCompanyRun([financial], scope), undefined);
+  assert.equal(findReusableCompanyRun([legacy], { ...scope, researchMode: 'deep' }), legacy);
+  assert.equal(
+    findReusableCompanyRun([deep, financial], { ...scope, researchMode: 'financial' }),
+    financial
+  );
+});

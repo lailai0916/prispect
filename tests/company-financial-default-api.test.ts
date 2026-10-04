@@ -330,6 +330,36 @@ test('financial reuse and idempotency retain owner, year and purpose isolation w
   }
 });
 
+test('quick financial research does not reuse an old deep record and deep reuse retains mode-less history', async () => {
+  const h = await harness();
+  try {
+    const deep = await h.create({ ...input, researchMode: 'deep' });
+    await h.app.waitForIdle();
+    const financial = await h.create({ ...input, reuseExisting: true });
+    await h.app.waitForIdle();
+    assert.notEqual(financial.id, deep.id);
+    assert.equal((await h.get(financial.id)).input.researchMode, 'financial');
+    const before = h.counts();
+    const reuse = await h.call('/company-runs', { ...input, reuseExisting: true });
+    assert.equal(reuse.status, 200);
+    assert.equal((await reuse.json()).id, financial.id);
+    assert.deepEqual(h.counts(), before);
+    const store = await h.app.workspaceForUser(h.owner.userId);
+    delete store.state.companyRuns!.find((run) => run.id === deep.id)!.input.researchMode;
+    await store.persist();
+    const original = await h.call('/company-runs', {
+      ...input,
+      researchMode: 'deep',
+      reuseExisting: true,
+    });
+    assert.equal(original.status, 200);
+    assert.equal((await original.json()).id, deep.id);
+    assert.deepEqual(h.counts(), before);
+  } finally {
+    await h.dispose();
+  }
+});
+
 test('default acquisition cancels by public context revision, preserves early data and fences late callbacks after retry', async () => {
   const started = deferred();
   const held = deferred();

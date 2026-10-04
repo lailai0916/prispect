@@ -1,5 +1,6 @@
 import type { CompanyResearchRun, CompanyRunInput } from '../shared/contracts';
 import type { AssessmentResearchStep } from '../shared/company-assessment';
+import { findReusableCompanyRun } from '../shared/company-run-reuse';
 
 export const COMPANY_CACHE_EVENT = 'prispect:company-cache-invalidated';
 export const COMPANY_CACHE_PREFIX = 'prispect.company-research-cache.v1:';
@@ -230,19 +231,13 @@ export class CompanyRunCache {
   find(owner: string, input: CompanyRunInput): CompanyResearchRun | null {
     if (owner !== this.activeOwner) return null;
     const envelope = this.load(owner);
-    const result =
+    const result = findReusableCompanyRun(
       Object.keys(envelope.entries)
         .filter((id) => !this.removed.get(owner)?.has(id))
         .map((id) => this.decode(id, envelope.entries[id]))
-        .filter(
-          (run): run is CompanyResearchRun =>
-            Boolean(run) &&
-            run!.input.securityCode === input.securityCode &&
-            run!.input.orgId === input.orgId &&
-            run!.input.year === input.year &&
-            (run!.input.purpose || 'external') === (input.purpose || 'external')
-        )
-        .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0] || null;
+        .filter((run): run is CompanyResearchRun => Boolean(run)),
+      input
+    );
     return result ? this.read(owner, result.id) : null;
   }
   ids(owner: string): string[] {
@@ -260,6 +255,8 @@ export class CompanyRunCache {
     const payload = JSON.stringify(publicRun);
     if (payload.length * 2 > COMPANY_CACHE_ENTRY_BYTES) return;
     const envelope = this.load(owner);
+    const previous = this.decode(run.id, envelope.entries[run.id]);
+    if (previous && olderCachedGeneration(publicRun, previous)) return;
     envelope.entries[run.id] = { payload, checksum: checksum(payload), touchedAt: this.now() };
     this.persist(envelope);
   }
@@ -341,6 +338,30 @@ export class CompanyRunCache {
     for (const { owner, ids } of invalidated) this.externalRemoval(owner, ids);
     return invalidated;
   }
+}
+
+/** Arrival order cannot move an acquired snapshot or finished analysis backwards. */
+function olderCachedGeneration(next: CompanyResearchRun, previous: CompanyResearchRun): boolean {
+  if (next.contextRevision !== undefined && previous.contextRevision !== undefined) {
+    if (next.contextRevision !== previous.contextRevision)
+      return next.contextRevision < previous.contextRevision;
+  } else if (next.context?.fetchedAt !== previous.context?.fetchedAt) {
+    const before = Date.parse(previous.context?.fetchedAt || '');
+    const after = Date.parse(next.context?.fetchedAt || '');
+    return Number.isFinite(before) && Number.isFinite(after) && after < before;
+  }
+  if (next.context?.fetchedAt !== previous.context?.fetchedAt) return false;
+  if (
+    next.assessmentRevision !== undefined &&
+    previous.assessmentRevision !== undefined &&
+    next.assessmentRevision !== previous.assessmentRevision
+  )
+    return next.assessmentRevision < previous.assessmentRevision;
+  return (
+    next.assessmentStatus === 'loading' &&
+    ['ready', 'failed'].includes(previous.assessmentStatus || '') &&
+    next.assessmentRevision === previous.assessmentRevision
+  );
 }
 
 const browserStorage = () => {
