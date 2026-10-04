@@ -121,7 +121,7 @@
 }
 .company-extended-holder {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) minmax(70px, 0.8fr) 60px minmax(40px, auto);
+  grid-template-columns: 18px minmax(0, 1fr) minmax(70px, 0.8fr) 60px 80px;
   gap: 2px 8px;
   align-items: center;
   min-width: 0;
@@ -180,6 +180,8 @@
 .company-extended-holder-detail {
   min-width: 0;
   max-width: 80px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 .company-extended-quantities {
@@ -278,11 +280,11 @@
 }
 @media (max-width: 420px) {
   .company-extended-holder {
-    grid-template-columns: 16px minmax(0, 1fr) minmax(36px, 0.5fr) 52px minmax(30px, auto);
+    grid-template-columns: 16px minmax(0, 1fr) minmax(36px, 0.5fr) 52px 70px;
     column-gap: 6px;
   }
   .company-extended-holder-detail {
-    max-width: 50px;
+    max-width: 70px;
   }
 }
 @media print {
