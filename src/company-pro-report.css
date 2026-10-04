@@ -287,8 +287,11 @@
 .company-ai-research-status-compact .company-ai-stage-details[open] {
   grid-column: 1 / -1;
 }
-.company-ai-stage-details > summary {
+.report-pro-main .company-ai-stage-details > summary {
+  min-height: 28px;
+  padding: 0;
   font-size: var(--text-meta);
+  line-height: 20px;
   color: var(--muted);
   cursor: pointer;
 }
@@ -349,13 +352,16 @@
     display: inline-flex;
     align-items: center;
   }
-  .company-ai-research-status-compact .company-ai-stage-details > summary {
+  .report-pro-main .company-ai-research-status-compact .company-ai-stage-details > summary {
     min-height: 44px;
     display: flex;
     align-items: center;
   }
 }
 @media print {
+  .report-pro-main .company-ai-research-status {
+    display: none !important;
+  }
   .report-pro-layout {
     grid-template-columns: minmax(0, 1fr) 230px;
     gap: 20px;
@@ -379,7 +385,13 @@
     display: none;
   }
   .report-pro-main .report-document-figures dd {
-    font-size: 18pt;
+    font-size: 16pt;
+  }
+  .report-pro-main .report-document-figures {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    padding: 12px 0;
+    gap: 10px;
+    margin-bottom: 12px;
   }
   .report-pro-main .report-document-headline {
     font-size: 16pt;

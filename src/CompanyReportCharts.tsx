@@ -44,9 +44,10 @@ function useReportPlotWidth() {
     if (!element) return;
     const print = window.matchMedia('print');
     const measure = () => {
-      // Print uses the narrower paper column; the screen retains readable scrollable labels.
+      // A fixed paper plot keeps labels readable when Chromium captures a wide
+      // emulated viewport before resolving the narrower paged-paper column.
       if (element.clientWidth > 0)
-        setWidth(Math.max(print.matches ? 400 : 480, Math.floor(element.clientWidth)));
+        setWidth(print.matches ? 400 : Math.max(480, Math.floor(element.clientWidth)));
     };
     measure();
     const observer = new ResizeObserver(measure);
