@@ -469,8 +469,8 @@ export const guideDocument: ProductDocument = {
           'Device sessions list sign-ins and let you sign out individual devices. Security actions such as a password change require recent identity confirmation; follow the page instructions.',
         ],
         [
-          '手机号可在个人信息中填写、修改或清空，用于资料展示，无需验证码。当前邮箱验证、换绑及邮件找回暂不可用，不会发送验证邮件。邮箱作为登录名称，不代表已验证邮箱所有权；请保存独立密码与恢复方式。',
-          'Add, change or clear a display phone number in Profile without a verification code. Email verification, email changes and recovery by email are currently unavailable; verification emails cannot be sent. An email used as a sign-in name does not establish verified ownership. Keep your independent password and recovery methods.',
+          '手机号可在个人信息中填写、修改或清空，用于资料展示，无需验证码。邮件服务配置后，可在登录页通过“忘记密码”获取一次性重置链接；重置后需重新登录，已启用的两步验证保留。未配置邮件服务时显示不可用。邮箱作为登录名称，不代表已验证邮箱所有权；请保存独立密码与恢复方式。',
+          'Add, change or clear a display phone number in Profile without a verification code. When email is configured, Forgot password on the login page sends a one-use reset link. Sign in again after resetting; enabled two-step verification remains. Without an email provider, recovery is unavailable. An email used as a sign-in name does not establish verified ownership. Keep your independent password and recovery methods.',
         ],
         [
           '账号页的“清空我的工作区”会清除当前账号的核查资料，不是退出登录或账号注销。请先导出需要保留的底稿，并仔细阅读确认范围。',

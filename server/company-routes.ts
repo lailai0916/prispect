@@ -1,7 +1,7 @@
 import type express from 'express';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
-import { rm, access } from 'node:fs/promises';
+import { access } from 'node:fs/promises';
 import { z } from 'zod';
 import type { CompanyResearchRun, Material } from '../shared/contracts.js';
 import type { AuthContext, AuthStore } from './auth.js';
@@ -472,7 +472,7 @@ export function installCompanyRoutes(
           run.status = 'ready';
           run.updatedAt = new Date().toISOString();
           await store.persist();
-          await rm(directory, { recursive: true, force: true }).catch(() => undefined);
+          await store.removeResearchCheckpoint(run.id, 'research-completed').catch(() => undefined);
         } catch (error) {
           if (!isCurrent()) return;
           run.status = 'failed';
@@ -566,12 +566,20 @@ export function installCompanyRoutes(
         !isFinancialCompanyRun(run.input) &&
         Date.now() - Date.parse(run.createdAt) > 24 * 60 * 60 * 1000
       ) {
-        await rm(path.join(store.dataDir, 'company-agent', run.id), {
-          recursive: true,
-          force: true,
-        });
-        run.agent.recoverable = false;
-        await store.persist();
+        await store.auditOperation(
+          'checkpoint-removed',
+          { ids: [run.id], reason: 'resume-expired', createdAt: run.createdAt },
+          async () => {
+            run.agent!.recoverable = false;
+            try {
+              await store.persist();
+            } catch (error) {
+              run.agent!.recoverable = true;
+              throw error;
+            }
+            await store.removeResearchCheckpoint(run.id, 'resume-expired');
+          }
+        );
         throw new ApiFault(
           409,
           'COMPANY_CHECKPOINT_EXPIRED',
@@ -822,34 +830,42 @@ export function installCompanyRoutes(
       const run = byId(store, String(req.params.id));
       if (deletionBlocked(run))
         throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '研究或保存中不能删除研究记录');
-      const index = records(store).indexOf(run);
-      const before = records(store)[index - 1];
-      const after = records(store)[index + 1];
-      records(store).splice(index, 1);
-      try {
-        await store.persist();
-      } catch (error) {
-        // Restore relative order without overwriting records added during persistence.
-        const following = after ? records(store).indexOf(after) : -1;
-        const preceding = before ? records(store).indexOf(before) : -1;
-        const restoreIndex =
-          following >= 0
-            ? following
-            : preceding >= 0
-              ? preceding + 1
-              : Math.min(index, records(store).length);
-        records(store).splice(restoreIndex, 0, run);
-        throw error;
-      }
-      // Delete originals only after the record removal is durable. Cleanup failure must
-      // not report a failed deletion for an already-removed record; unconfirmed uploads
-      // remain subject to the existing expiry cleanup. Adopted files are never removed.
-      if (run.preview?.material.uploadId)
-        await store.discardUnconfirmedUpload(run.preview.material.uploadId).catch(() => undefined);
-      await rm(path.join(store.dataDir, 'company-agent', run.id), {
-        recursive: true,
-        force: true,
-      }).catch(() => undefined);
+      await store.auditOperation(
+        'research-deleted',
+        { ids: [run.id], reason: 'user' },
+        async () => {
+          // The audit write yields: re-check ownership/existence and activity before mutation.
+          if (byId(store, run.id) !== run || deletionBlocked(run))
+            throw new ApiFault(409, 'COMPANY_AGENT_BUSY', '研究记录已变化，请重试');
+          const index = records(store).indexOf(run);
+          const before = records(store)[index - 1];
+          const after = records(store)[index + 1];
+          records(store).splice(index, 1);
+          try {
+            await store.persist();
+          } catch (error) {
+            // Restore relative order without overwriting records added during persistence.
+            const following = after ? records(store).indexOf(after) : -1;
+            const preceding = before ? records(store).indexOf(before) : -1;
+            const restoreIndex =
+              following >= 0
+                ? following
+                : preceding >= 0
+                  ? preceding + 1
+                  : Math.min(index, records(store).length);
+            records(store).splice(restoreIndex, 0, run);
+            throw error;
+          }
+          // Delete originals only after the record removal is durable. Cleanup failure must
+          // not report a failed deletion for an already-removed record; unconfirmed uploads
+          // remain subject to the existing expiry cleanup. Adopted files are never removed.
+          if (run.preview?.material.uploadId)
+            await store
+              .discardUnconfirmedUpload(run.preview.material.uploadId)
+              .catch(() => undefined);
+          await store.removeResearchCheckpoint(run.id, 'user').catch(() => undefined);
+        }
+      );
       res.json({ ok: true });
     })
   );

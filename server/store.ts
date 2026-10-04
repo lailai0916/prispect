@@ -1,4 +1,15 @@
-import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import {
+  lstat,
+  mkdir,
+  open,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  stat,
+  writeFile,
+} from 'node:fs/promises';
+import { constants } from 'node:fs';
 import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 import type {
@@ -12,6 +23,11 @@ import type { DecisionCase } from '../shared/decision-contracts.js';
 import type { CompanyGraphProgress } from '../shared/company-contracts.js';
 import { ApiFault, validateMaterial } from './validation.js';
 import pdfLimits from './pdf-limits.json' with { type: 'json' };
+import {
+  WorkspaceAudit,
+  type WorkspaceAuditAction,
+  type WorkspaceAuditDetails,
+} from './workspace-audit.js';
 
 export const UPLOAD_QUOTA_BYTES = 250 * 1024 * 1024;
 export const PENDING_UPLOAD_TTL_MS = 24 * 60 * 60 * 1000;
@@ -92,11 +108,56 @@ export class WorkspaceStore {
   private writes = Promise.resolve();
   private uploadOperations = Promise.resolve();
   private lastUploadCleanup = 0;
+  private audit: WorkspaceAudit;
   constructor(
     public root: string,
     public dataDir: string,
     public uploadQuotaBytes: number = UPLOAD_QUOTA_BYTES
-  ) {}
+  ) {
+    this.audit = new WorkspaceAudit(dataDir);
+  }
+  auditOperation<T>(
+    action: WorkspaceAuditAction,
+    details: WorkspaceAuditDetails,
+    work: () => Promise<T>
+  ) {
+    return this.audit.run(action, details, work);
+  }
+  async removeResearchCheckpoint(id: string, reason: WorkspaceAuditDetails['reason']) {
+    if (!/^[a-f0-9-]{36}$/.test(id)) throw new ApiFault(400, 'INVALID_RUN', '研究记录无效');
+    const directory = path.join(this.dataDir, 'company-agent', id);
+    const info = await lstat(directory).catch((error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return null;
+      throw error;
+    });
+    if (!info) return;
+    if (!info.isDirectory()) throw new ApiFault(409, 'CHECKPOINT_INVALID', '研究缓存路径无效');
+    await this.auditOperation('checkpoint-removed', { ids: [id], reason }, async () => {
+      await rm(directory, { recursive: true, force: true });
+    });
+  }
+  private async expireUpload(id: string, record: UploadRecord) {
+    await this.auditOperation(
+      'upload-expired',
+      {
+        ids: [id],
+        reason: 'ttl',
+        createdAt: record.createdAt,
+        eligibleAt: new Date(Date.parse(record.createdAt) + PENDING_UPLOAD_TTL_MS).toISOString(),
+        materialBound: false,
+      },
+      async () => {
+        delete this.state.uploads[id];
+        try {
+          await this.persist();
+        } catch (error) {
+          this.state.uploads[id] = record;
+          throw error;
+        }
+        await rm(this.uploadFilename(id), { force: true });
+      }
+    );
+  }
   async initialize() {
     const initial = await seeds(this.root);
     this.cases = initial.cases;
@@ -222,8 +283,31 @@ export class WorkspaceStore {
   protected async persistSnapshot(content: string) {
     const operation = this.writes.then(async () => {
       const temporary = path.join(this.dataDir, `.workspace-${randomUUID()}.tmp`);
-      await writeFile(temporary, content, { mode: 0o600 });
-      await rename(temporary, path.join(this.dataDir, 'workspace.json'));
+      try {
+        const file = await open(
+          temporary,
+          constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL,
+          0o600
+        );
+        try {
+          await file.writeFile(content);
+          await file.sync();
+        } finally {
+          await file.close();
+        }
+        await rename(temporary, path.join(this.dataDir, 'workspace.json'));
+        const directory = await open(
+          this.dataDir,
+          constants.O_RDONLY | constants.O_DIRECTORY | constants.O_NOFOLLOW
+        );
+        try {
+          await directory.sync();
+        } finally {
+          await directory.close();
+        }
+      } finally {
+        await rm(temporary, { force: true });
+      }
     });
     this.writes = operation.catch(() => undefined);
     await operation;
@@ -247,12 +331,9 @@ export class WorkspaceStore {
   private async cleanupUploadsUnlocked(now = Date.now()) {
     const directory = path.join(this.dataDir, 'uploads');
     await mkdir(directory, { recursive: true, mode: 0o700 });
-    let changed = false;
     for (const [id, record] of Object.entries(this.state.uploads)) {
       if (!record.materialId && Date.parse(record.createdAt) + PENDING_UPLOAD_TTL_MS <= now) {
-        await rm(this.uploadFilename(id), { force: true });
-        delete this.state.uploads[id];
-        changed = true;
+        await this.expireUpload(id, record);
       }
     }
     for (const run of this.state.companyRuns || []) {
@@ -265,12 +346,29 @@ export class WorkspaceStore {
         Number.isFinite(Date.parse(run.createdAt)) &&
         Date.parse(run.createdAt) + PENDING_UPLOAD_TTL_MS <= now
       ) {
-        await rm(path.join(this.dataDir, 'company-agent', run.id), {
-          recursive: true,
-          force: true,
-        });
-        graph.recoverable = false;
-        changed = true;
+        await this.auditOperation(
+          'checkpoint-removed',
+          {
+            ids: [run.id],
+            reason: 'ttl',
+            createdAt: run.createdAt,
+            eligibleAt: new Date(Date.parse(run.createdAt) + PENDING_UPLOAD_TTL_MS).toISOString(),
+            agentState: { status: 'failed', version: 'langgraph-v1', recoverable: true },
+          },
+          async () => {
+            graph.recoverable = false;
+            try {
+              await this.persist();
+            } catch (error) {
+              graph.recoverable = true;
+              throw error;
+            }
+            await rm(path.join(this.dataDir, 'company-agent', run.id), {
+              recursive: true,
+              force: true,
+            });
+          }
+        );
       }
     }
     // Files written just before a process interruption can lack metadata; remove only
@@ -278,11 +376,20 @@ export class WorkspaceStore {
     for (const filename of await readdir(directory)) {
       const match = /^([a-f0-9-]{36})\.blob$/.exec(filename);
       if (!match || this.state.uploads[match[1]!]) continue;
-      const info = await stat(path.join(directory, filename));
-      if (info.mtimeMs + PENDING_UPLOAD_TTL_MS <= now)
-        await rm(path.join(directory, filename), { force: true });
+      const info = await lstat(path.join(directory, filename));
+      if (info.isFile() && info.mtimeMs + PENDING_UPLOAD_TTL_MS <= now)
+        await this.auditOperation(
+          'orphan-upload-expired',
+          {
+            ids: [match[1]!],
+            reason: 'ttl',
+            eligibleAt: new Date(info.mtimeMs + PENDING_UPLOAD_TTL_MS).toISOString(),
+          },
+          async () => {
+            await rm(path.join(directory, filename), { force: true });
+          }
+        );
     }
-    if (changed) await this.persist();
     this.lastUploadCleanup = now;
   }
   async cleanupUploads(force = false) {
@@ -342,9 +449,7 @@ export class WorkspaceStore {
     const record = this.state.uploads[id];
     if (!record) throw new ApiFault(404, 'UPLOAD_NOT_FOUND', '未找到当前账号的原始上传文件');
     if (!record.materialId && Date.parse(record.createdAt) + PENDING_UPLOAD_TTL_MS <= Date.now()) {
-      await rm(this.uploadFilename(id), { force: true });
-      delete this.state.uploads[id];
-      await this.persist();
+      await this.expireUpload(id, record);
       throw new ApiFault(410, 'UPLOAD_EXPIRED', '未确认上传已超过24小时，请重新上传');
     }
     let buffer: Buffer;
@@ -430,14 +535,20 @@ export class WorkspaceStore {
     return this.serializeUploads(async () => {
       const record = this.state.uploads[uploadId];
       if (!record || record.materialId) return;
-      delete this.state.uploads[uploadId];
-      try {
-        await this.persist();
-      } catch (error) {
-        this.state.uploads[uploadId] = record;
-        throw error;
-      }
-      await rm(this.uploadFilename(uploadId), { force: true });
+      await this.auditOperation(
+        'upload-discarded',
+        { ids: [uploadId], reason: 'user', materialBound: false },
+        async () => {
+          delete this.state.uploads[uploadId];
+          try {
+            await this.persist();
+          } catch (error) {
+            this.state.uploads[uploadId] = record;
+            throw error;
+          }
+          await rm(this.uploadFilename(uploadId), { force: true });
+        }
+      );
     });
   }
   async deleteMaterial(id: string) {
@@ -454,40 +565,60 @@ export class WorkspaceStore {
         throw new ApiFault(409, 'MATERIAL_IN_USE', '决定历史版本仍引用这份材料，请保留原件');
       if (this.state.tasks.some((task) => task.materialIds.includes(id)))
         throw new ApiFault(409, 'MATERIAL_IN_USE', '已有任务引用这份材料，请先删除相关任务');
-      this.state.materials = this.state.materials.filter((item) => item.id !== id);
-      const record = material.uploadId ? this.state.uploads[material.uploadId] : undefined;
-      if (material.uploadId) delete this.state.uploads[material.uploadId];
-      try {
-        await this.persist();
-      } catch (error) {
-        this.state.materials.push(material);
-        if (record) this.state.uploads[record.id] = record;
-        throw error;
-      }
-      if (material.uploadId) await rm(this.uploadFilename(material.uploadId), { force: true });
+      await this.auditOperation('material-deleted', { ids: [id], reason: 'user' }, async () => {
+        const index = this.state.materials.indexOf(material);
+        this.state.materials = this.state.materials.filter((item) => item.id !== id);
+        const record = material.uploadId ? this.state.uploads[material.uploadId] : undefined;
+        if (material.uploadId) delete this.state.uploads[material.uploadId];
+        try {
+          await this.persist();
+        } catch (error) {
+          this.state.materials.splice(index, 0, material);
+          if (record) this.state.uploads[record.id] = record;
+          throw error;
+        }
+        if (material.uploadId) await rm(this.uploadFilename(material.uploadId), { force: true });
+      });
     });
   }
   async reset() {
     await this.serializeUploads(async () => {
-      const previous = this.state;
-      this.state = {
-        schemaVersion: 1,
-        materials: [],
-        tasks: [],
-        inputs: {},
-        uploads: {},
-        companyRuns: [],
-        decisions: [],
-      };
-      try {
-        await this.persist();
-      } catch (error) {
-        this.state = previous;
-        throw error;
-      }
-      await rm(path.join(this.dataDir, 'uploads'), { recursive: true, force: true });
-      await rm(path.join(this.dataDir, 'company-agent'), { recursive: true, force: true });
-      await mkdir(path.join(this.dataDir, 'uploads'), { recursive: true, mode: 0o700 });
+      await this.auditOperation(
+        'workspace-reset',
+        {
+          ids: [
+            ...Object.keys(this.state.uploads),
+            ...(this.state.companyRuns || []).map((run) => run.id),
+          ],
+          reason: 'user',
+          count:
+            this.state.materials.length +
+            this.state.tasks.length +
+            (this.state.companyRuns?.length || 0) +
+            (this.state.decisions?.length || 0),
+        },
+        async () => {
+          const previous = this.state;
+          this.state = {
+            schemaVersion: 1,
+            materials: [],
+            tasks: [],
+            inputs: {},
+            uploads: {},
+            companyRuns: [],
+            decisions: [],
+          };
+          try {
+            await this.persist();
+          } catch (error) {
+            this.state = previous;
+            throw error;
+          }
+          await rm(path.join(this.dataDir, 'uploads'), { recursive: true, force: true });
+          await rm(path.join(this.dataDir, 'company-agent'), { recursive: true, force: true });
+          await mkdir(path.join(this.dataDir, 'uploads'), { recursive: true, mode: 0o700 });
+        }
+      );
     });
   }
 }

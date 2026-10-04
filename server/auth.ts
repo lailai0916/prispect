@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { randomBytes, randomUUID, createHmac, timingSafeEqual } from 'node:crypto';
+import { randomBytes, randomUUID, createHmac, createHash, timingSafeEqual } from 'node:crypto';
 import { mkdir, chmod, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { Request, Response, NextFunction } from 'express';
@@ -171,7 +171,9 @@ export class AuthStore {
         minPasswordLength: PASSWORD_MIN_LENGTH,
         maxPasswordLength: PASSWORD_MAX_LENGTH,
         password: { hash: hashPassword, verify: verifyAccountPassword },
-        sendResetPassword: async ({ user, url }) => {
+        sendResetPassword: async ({ user, token }) => {
+          // A fragment keeps this bearer credential out of HTTP URLs and referrers.
+          const url = `${this.origin}/login?reset=1#reset-token=${encodeURIComponent(token)}`;
           await this.mail.send(
             user.email,
             '析光：重置密码',
@@ -488,8 +490,14 @@ export class AuthStore {
           user: context.user,
           csrfToken: this.csrfFor(context.sessionId, context.user.id),
           registrationEnabled: this.registrationEnabled,
+          passwordRecoveryEnabled: this.mail.configured,
         }
-      : { user: null, csrfToken: null, registrationEnabled: this.registrationEnabled };
+      : {
+          user: null,
+          csrfToken: null,
+          registrationEnabled: this.registrationEnabled,
+          passwordRecoveryEnabled: this.mail.configured,
+        };
   }
   profileFor(id: string): AccountProfile {
     const user = this.db
@@ -643,6 +651,41 @@ export class AuthStore {
     if (body.twoFactorRedirect)
       return { ...this.response(null), twoFactorRequired: true, methods: ['totp', 'backup-code'] };
     return this.response(await this.session(req));
+  }
+  async requestPasswordReset(input: unknown, req: Request, res: Response) {
+    this.rateLimit(`recovery:${req.ip}`, 10, 900000);
+    const parsed = z.object({ email }).strict().safeParse(input);
+    if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '请输入有效邮箱');
+    const fingerprint = createHash('sha256').update(parsed.data.email).digest('hex');
+    this.rateLimit(`recovery-email:${fingerprint}`, 3, 900000);
+    await this.accept(
+      await this.identity.api.requestPasswordReset({
+        body: { email: parsed.data.email, redirectTo: `${this.origin}/login?reset=1` },
+        headers: fromNodeHeaders(req.headers),
+        asResponse: true,
+      }),
+      req,
+      res
+    );
+    return { ok: true };
+  }
+  async confirmPasswordReset(input: unknown, req: Request, res: Response) {
+    this.rateLimit(`recovery-confirm:${req.ip}`, 20, 900000);
+    const parsed = z
+      .object({ token: z.string().min(16).max(128), newPassword: z.string().min(8).max(128) })
+      .strict()
+      .safeParse(input);
+    if (!parsed.success) throw new ApiFault(400, 'INVALID_ACCOUNT', '重置链接或密码无效');
+    await this.accept(
+      await this.identity.api.resetPassword({
+        body: parsed.data,
+        headers: fromNodeHeaders(req.headers),
+        asResponse: true,
+      }),
+      req,
+      res
+    );
+    return { ok: true };
   }
   async logout(_context: AuthContext, req: Request, res: Response) {
     await this.accept(

@@ -54,6 +54,8 @@ const errorMessages: Record<string, string> = {
   INVALID_ORIGIN:
     'The request does not match this service origin. Open the site at its configured address.',
   EMAIL_UNAVAILABLE: 'Email delivery is not configured. No email was sent.',
+  EMAIL_DELIVERY_FAILED: 'The email provider did not accept delivery. Please retry later.',
+  AUDIT_UNAVAILABLE: 'The data-change record could not be saved. This cleanup was not performed.',
   CASE_NOT_FOUND: 'The selected public example was not found.',
   MATERIAL_IN_USE:
     'This material is used by a review. Export or remove dependent reviews before deleting it.',

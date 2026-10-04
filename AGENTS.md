@@ -143,6 +143,8 @@ Company research, its seven pages, issuer matching, all assistant questions and 
 
 ## Ownership and product boundaries
 
+Password recovery uses the existing Better Auth single-use, expiring tokens, requires configured SMTP and revokes old sessions without changing factors or workspace ownership. Recovery links carry credentials in a fragment; the early appearance bootstrap removes them before application and analytics startup. Never persist or log these credentials. Account-local `.audit/events.jsonl` records deletion metadata only, survives workspace clearing and must not enter model payloads. Write and synchronize intent before destructive actions; preserve primary outcomes if completion logging fails. `scripts/verify-backup.py` verifies trusted SHA256 and may extract only into a new isolated directory, never overwrite live data or execute archive contents. See `docs/operations/reliability-foundation-2026-10-05.md` for actual verification boundaries.
+
 - `shared/contracts.ts`, `shared/decision-contracts.ts`, `shared/company-contracts.ts` and `shared/account-contracts.ts` define API contracts; `shared/start-intent.ts` handles local entry routing. Coordinate changes before concurrent edits.
 - `server/` owns auth, tenant-scoped access, validation, computation, imports and exports.
 - `src/` owns the bilingual product flow; all visible actions must have actual behavior.

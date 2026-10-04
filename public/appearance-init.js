@@ -1,5 +1,19 @@
 /* Follow the system before styles paint, including when app modules load slowly. */
 (function () {
+  // Remove recovery credentials before application modules and analytics start.
+  if (typeof location !== 'undefined' && location.pathname === '/login') {
+    var recoveryUrl = new URL(location.href);
+    var resetToken =
+      new URLSearchParams(recoveryUrl.hash.slice(1)).get('reset-token') ||
+      recoveryUrl.searchParams.get('token');
+    if (resetToken) {
+      window.prispectRecoveryToken = resetToken;
+      recoveryUrl.searchParams.delete('token');
+      recoveryUrl.searchParams.set('reset', '1');
+      recoveryUrl.hash = '';
+      history.replaceState(history.state, '', recoveryUrl.pathname + recoveryUrl.search);
+    }
+  }
   var locale = 'zh-Hans';
   try {
     if (localStorage.getItem('cashlens-locale') === 'en') locale = 'en';

@@ -329,8 +329,17 @@ export async function createApp(options: AppOptions = {}) {
       res.json(auth.response(await auth.session(req)));
     })
   );
-  app.post('/api/auth/password-reset', (_req, _res, next) =>
-    next(new ApiFault(503, 'EMAIL_UNAVAILABLE', '邮件服务尚未配置，未发送重置邮件'))
+  app.post(
+    '/api/auth/password-reset',
+    wrap(async (req, res) => {
+      res.json(await auth.requestPasswordReset(req.body, req, res));
+    })
+  );
+  app.post(
+    '/api/auth/password-reset/confirm',
+    wrap(async (req, res) => {
+      res.json(await auth.confirmPasswordReset(req.body, req, res));
+    })
   );
   app.post(
     '/api/auth/register',

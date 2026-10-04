@@ -197,6 +197,7 @@ export function App() {
   const [user, setUser] = useState<AccountUser | null>(null);
   useLayoutEffect(() => companyReadingMemory.changeOwner(user?.id || null), [user?.id]);
   const [registrationEnabled, setRegistrationEnabled] = useState(false);
+  const [passwordRecoveryEnabled, setPasswordRecoveryEnabled] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [cases, setCases] = useState<DemoCase[]>([]);
   const [loadError, setLoadError] = useState('');
@@ -304,6 +305,7 @@ export function App() {
       setCsrfToken(session.csrfToken);
       setUser(session.user);
       setRegistrationEnabled(session.registrationEnabled === true);
+      setPasswordRecoveryEnabled(session.passwordRecoveryEnabled === true);
       setWorkspace(nextWorkspace);
       setCases(nextCases);
       setLoadError('');
@@ -572,6 +574,7 @@ export function App() {
     cases,
     user,
     registrationEnabled,
+    passwordRecoveryEnabled,
     refresh,
     navigate,
     execute,

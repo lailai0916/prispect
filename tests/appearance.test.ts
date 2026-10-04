@@ -4,6 +4,36 @@ import { readFile } from 'node:fs/promises';
 import { runInNewContext } from 'node:vm';
 import { applyTheme } from '../src/appearance';
 
+test('recovery credentials leave the address before analytics without entering storage', async () => {
+  const source = await readFile('public/appearance-init.js', 'utf8');
+  for (const url of [
+    'https://prispect.com/login?reset=1#reset-token=synthetic-private-token',
+    'https://prispect.com/login?token=synthetic-private-token',
+  ]) {
+    let replaced = '';
+    const window = { matchMedia: () => ({ matches: false }), prispectRecoveryToken: '' };
+    runInNewContext(source, {
+      URL,
+      URLSearchParams,
+      window,
+      location: new URL(url),
+      history: {
+        state: null,
+        replaceState: (_state: unknown, _title: string, href: string) => {
+          replaced = href;
+        },
+      },
+      localStorage: {
+        getItem: () => null,
+        setItem: () => assert.fail('Recovery token must not persist'),
+      },
+      document: { documentElement: { dataset: {} }, querySelector: () => null },
+    });
+    assert.equal(window.prispectRecoveryToken, 'synthetic-private-token');
+    assert.equal(replaced, '/login?reset=1');
+  }
+});
+
 test('first paint follows the system despite all legacy saved themes and retains the locale', async () => {
   const source = await readFile('public/appearance-init.js', 'utf8');
   for (const saved of [null, 'system', 'light', 'dark', 'corrupt']) {

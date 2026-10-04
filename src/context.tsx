@@ -20,6 +20,7 @@ export type AppContextValue = {
   cases: DemoCase[];
   user: AccountUser | null;
   registrationEnabled: boolean;
+  passwordRecoveryEnabled?: boolean;
   refresh: () => Promise<void>;
   navigate: (path: string, options?: { replace?: boolean }) => void;
   execute: <T>(action: () => Promise<T>, success?: string) => Promise<T | undefined>;

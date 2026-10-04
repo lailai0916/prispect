@@ -28,7 +28,7 @@ export const documentMetadata = {
       '企业财务、来源核对与兼容核查流程。',
       'Company financials, source checks and compatible review workflows.',
     ],
-    version: '1.12',
+    version: '1.13',
     updatedAt: '2026-10-05',
   },
   '/docs/methodology': {
@@ -43,7 +43,7 @@ export const documentMetadata = {
   '/docs/privacy': {
     title: documentTitles['/docs/privacy'],
     description: ['数据处理、AI 使用与保存规则。', 'Data processing, AI use and retention.'],
-    version: '1.6',
+    version: '1.7',
     updatedAt: '2026-10-05',
   },
   '/docs/terms': {

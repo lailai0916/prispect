@@ -195,6 +195,7 @@ test('anonymous and legacy visitor sessions cannot read or mutate research or us
         user: null,
         csrfToken: null,
         registrationEnabled: true,
+        passwordRecoveryEnabled: false,
       });
       assert.equal(response.headers.getSetCookie().length, 0);
       const requests: [string, unknown?, string?][] = [

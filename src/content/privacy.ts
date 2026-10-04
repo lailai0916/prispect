@@ -146,8 +146,8 @@ export const privacyDocument: ProductDocument = {
           'Your device or credential manager holds a passkey’s private key. Prispect stores the public key, credential identifier, device type, backup status, verification counter and related verification information, and requires device verification. It does not receive fingerprint data, facial templates or the passkey private key from that verification.',
         ],
         [
-          '手机号作为个人资料中的联系方式保存，可修改或清空，无需验证码，不用于登录或找回密码。当前邮箱验证、换绑邮箱和邮件密码找回暂不可用，不能发送相关验证邮件。邮箱作为登录名不代表已验证身份。以后提供这些功能时，会先说明相应数据用途和接收方。',
-          'Your phone number is saved as profile contact information and can be changed or cleared without a verification code. It is not used for sign-in or password recovery. Email verification, email changes and password recovery by email are currently unavailable. Verification emails cannot be sent. Using an email as a sign-in name does not mean its ownership has been verified. If these features become available, their data purposes and recipients will be explained first.',
+          '手机号作为个人资料中的联系方式保存，可修改或清空，无需验证码，不用于登录或找回密码。邮箱验证、换绑邮箱和邮件密码找回需要配置邮件服务。找回时，服务向该邮箱发送有效期一小时、只能使用一次的重置链接；重置后注销旧会话，保留两步验证与工作区。邮件提供商处理收件地址与邮件内容；未配置时这些邮件功能不可用。邮箱作为登录名不代表已验证身份。',
+          'Your phone number is display contact information, editable without a code, and is not used for sign-in or recovery. Email verification, changes and recovery require a mail provider. Recovery sends a one-use link valid for one hour to the account email; resetting revokes old sessions and preserves two-step verification and the workspace. The mail provider processes the recipient address and message content. Without a provider these features are unavailable. An email sign-in name does not establish verified identity.',
         ],
       ],
     },
@@ -389,6 +389,13 @@ export const privacyDocument: ProductDocument = {
             [
               '服务备份可能包含账号、材料原件、工作区版本与必要配置。现有备份没有自动滚动删除期限；在线删除不会立即清除备份旧副本。相关删除请求会核对备份范围、法律要求和恢复需要后处理，不承诺立即或永久不可恢复。',
               'Service backups may include accounts, original materials, workspace versions and necessary configuration. Existing backups have no automatic rolling deletion period. Online deletion does not immediately erase earlier backup copies. Deletion requests require review of backup scope, legal requirements and recovery needs; immediate or permanently irreversible erasure is not promised.',
+            ],
+          ],
+          [
+            ['资料变更记录', 'Data-change records'],
+            [
+              '按账号保存资料清理、删除和工作区重置的时间、原因、结果及不含原文的标识哈希，必要时记录过期资格。记录不包含文件名、正文、聊天或安全凭据，也不发送给分析模型。清空工作区时保留，用于排障；目前没有自动删除期限，可通过联系方式提出核验或删除请求。',
+              'Account-local records retain cleanup, deletion and reset times, reasons, results and identifier hashes, with expiry eligibility where needed. They contain no filenames, document text, chat or security credentials and are not sent to analysis models. They survive workspace clearing for troubleshooting. No automatic expiry is applied; contact us for verified access or deletion requests.',
             ],
           ],
         ],

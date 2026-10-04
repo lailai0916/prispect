@@ -293,6 +293,7 @@ export interface AuthSession {
   user: AccountUser | null;
   csrfToken: string | null;
   registrationEnabled: boolean;
+  passwordRecoveryEnabled?: boolean;
 }
 
 export interface CompanyIdentity {

@@ -12,7 +12,7 @@
 
 ## 单台服务器
 
-注册由 `CASHLENS_REGISTRATION_ENABLED` 控制。未配置时，生产环境默认关闭、开发环境默认开放；显式 `true` / `false` 分别开放 / 关闭，修改后重启服务。关闭时移除登录页的注册入口，旧 `/register` 链接转到登录页，两个注册 API 均拒绝新账号；现有账号的登录和安全设置继续可用。页面不增加关闭说明。
+注册由 `CASHLENS_REGISTRATION_ENABLED` 控制。未配置时，生产与开发环境均默认开放；显式 `true` / `false` 分别开放 / 关闭，修改后重启服务。关闭时移除登录页的注册入口，旧 `/register` 链接转到登录页，两个注册 API 均拒绝新账号；现有账号的登录和安全设置继续可用。页面不增加关闭说明。
 
 1. 使用专用部署目录、非 root 用户和当前安全维护的 Node 22；拉取私有源码需要团队授权。
 2. 执行 `npm ci`、`npm run check`。配置 `NODE_ENV=production`、`HOST=127.0.0.1`、`PORT=4317`、`APP_ORIGIN=https://prispect.com` 与独立持久化数据目录。
@@ -47,6 +47,8 @@ APP_ORIGIN=https://cashlens.your-domain.example docker compose up --build -d
 初期单进程部署采用最简单可验证路径：停止服务并等待正在处理的任务结束，然后完整备份 `CASHLENS_DATA_DIR`；同时备份部署配置，密钥另以安全方式保存。只复制某个 JSON 文件不能备份账号，运行中只复制 SQLite 主文件可能遗漏 WAL。
 
 恢复时先停止服务，保留故障目录副本，将完整备份恢复到独立目录，设置正确文件权限，再指向该目录启动。用原账号登录并核对材料、任务、问题状态及导出。不要在未确认备份可恢复前覆盖或删除唯一数据。
+
+`scripts/verify-backup.py` 提供离线校验和全新隔离目录解包，必须提供可信 SHA256，不执行线上替换。账号找回、资料变更记录和实际验收范围见[可靠性检查](operations/reliability-foundation-2026-10-05.md)。工作区 `.audit` 保留删除元数据，清空工作区不会删除该记录；管理员文件操作不在应用记录覆盖内。
 
 认证 schema 2 会保留旧账号 UUID 和工作区归属，迁移旧密码验证记录，并使旧会话失效。`AUTH_SCHEMA.json` 声明发行版可读取的认证版本，固定部署 helper 根据 `cashlens_auth_migrations` 检查数据库版本：发布前拒绝降级；发布失败后，仅自动回退到兼容当前数据库的版本。首次跨越 schema 2 后，旧版自动回滚被拒绝，服务停止并保留现有状态，需发布兼容修复版。已经接受新密码、因素或账号变更后，不能随意恢复旧数据库，否则这些变更也会丢失。
 

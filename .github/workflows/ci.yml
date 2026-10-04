@@ -42,6 +42,9 @@ jobs:
       - name: Verify company research entry and reading flows
         run: node --import tsx scripts/browser-qa.mjs
         working-directory: project
+      - name: Verify isolated account recovery flow
+        run: node --import tsx scripts/browser-reliability-qa.mjs
+        working-directory: project
       - name: Upload browser acceptance evidence
         if: always()
         uses: actions/upload-artifact@v4

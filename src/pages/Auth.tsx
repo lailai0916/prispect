@@ -60,7 +60,20 @@ export function PasswordMeter({ value, context = [] }: { value: string; context?
   );
 }
 export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string }) {
-  const { t, user, registrationEnabled, execute, navigate, busy, refresh } = useApp();
+  const {
+    t,
+    user,
+    registrationEnabled,
+    passwordRecoveryEnabled,
+    execute,
+    navigate,
+    busy,
+    refresh,
+  } = useApp();
+  const [resetToken, setResetToken] = useState(
+    () => (window as Window & { prispectRecoveryToken?: string }).prispectRecoveryToken || ''
+  );
+  const [recoverySent, setRecoverySent] = useState(false);
   const [email, setEmail] = useState(''),
     [name, setName] = useState(''),
     [password, setPassword] = useState(''),
@@ -109,8 +122,11 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     };
   }, []);
   useEffect(() => {
-    if (user && !user.isGuest) navigate(destination);
-  }, [user, navigate, destination]);
+    delete (window as Window & { prispectRecoveryToken?: string }).prispectRecoveryToken;
+  }, []);
+  useEffect(() => {
+    if (user && !user.isGuest && !resetToken) navigate(destination);
+  }, [user, navigate, destination, resetToken]);
   useEffect(() => {
     submitScope.current++;
     setPassword('');
@@ -123,6 +139,38 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
     setValidation('');
     setForgot(false);
   }, [mode, register]);
+  const recover = async (event: FormEvent) => {
+    event.preventDefault();
+    await submitOnce(async (current) => {
+      setValidation('');
+      if (resetToken) {
+        if (password !== confirmation) {
+          setValidation(t('两次输入的密码不一致。', 'The passwords do not match.'));
+          return;
+        }
+        const result = await execute(
+          () =>
+            post<{ ok: boolean }>('/auth/password-reset/confirm', {
+              token: resetToken,
+              newPassword: password,
+            }),
+          t('密码已重置，请重新登录。', 'Password reset. Please sign in again.')
+        );
+        if (result && current()) {
+          setResetToken('');
+          setPassword('');
+          setConfirmation('');
+          setForgot(false);
+          navigate(`/login?next=${encodeURIComponent(destination)}`, { replace: true });
+        }
+      } else {
+        const result = await execute(() =>
+          post<{ ok: boolean }>('/auth/password-reset', { email })
+        );
+        if (result && current()) setRecoverySent(true);
+      }
+    });
+  };
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     await submitOnce(async (current) => {
@@ -211,11 +259,13 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
         <h1>
           {challenge
             ? t('完成两步验证', 'Two-step verification')
-            : forgot
-              ? t('找回密码', 'Reset your password')
-              : register
-                ? t('创建你的账号', 'Create your account')
-                : t('欢迎回来', 'Welcome back')}
+            : resetToken
+              ? t('设置新密码', 'Set a new password')
+              : forgot
+                ? t('找回密码', 'Reset your password')
+                : register
+                  ? t('创建你的账号', 'Create your account')
+                  : t('欢迎回来', 'Welcome back')}
         </h1>
         <p className="account-muted">
           {challenge
@@ -223,10 +273,12 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 '输入验证器中的6位验证码，或使用一次性恢复码。',
                 'Enter a 6-digit authenticator code or a one-time recovery code.'
               )
-            : t(
-                '你的材料与核查事项保存在独立的私人工作区。',
-                'Your materials and review items stay in your private workspace.'
-              )}
+            : resetToken || forgot
+              ? t('通过账号邮箱找回密码。', 'Recover your password through your account email.')
+              : t(
+                  '你的材料与核查事项保存在独立的私人工作区。',
+                  'Your materials and review items stay in your private workspace.'
+                )}
         </p>
         {challenge ? (
           <form onSubmit={verify} className="account-form">
@@ -268,6 +320,94 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
               onClick={() => {
                 setChallenge(false);
                 setCode('');
+              }}
+            >
+              {t('返回登录', 'Back to login')}
+            </button>
+          </form>
+        ) : resetToken || (forgot && passwordRecoveryEnabled) ? (
+          <form onSubmit={recover} className="account-form">
+            {resetToken ? (
+              <>
+                <label>
+                  {t('新密码', 'New password')}
+                  <input
+                    type="password"
+                    name="newPassword"
+                    autoComplete="new-password"
+                    autoFocus
+                    required
+                    minLength={8}
+                    maxLength={128}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                  <PasswordMeter value={password} />
+                </label>
+                <label>
+                  {t('确认密码', 'Confirm password')}
+                  <input
+                    type="password"
+                    name="confirmation"
+                    autoComplete="new-password"
+                    required
+                    minLength={8}
+                    maxLength={128}
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                  />
+                </label>
+              </>
+            ) : recoverySent ? (
+              <p className="account-notice" role="status">
+                {t(
+                  '如果该邮箱已注册，将收到重置链接。请检查收件箱和垃圾邮件。',
+                  'If this email is registered, a reset link will be sent. Check your inbox and spam folder.'
+                )}
+              </p>
+            ) : (
+              <label>
+                {t('账号邮箱', 'Account email')}
+                <input
+                  type="email"
+                  name="email"
+                  autoComplete="email"
+                  autoFocus
+                  required
+                  maxLength={254}
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </label>
+            )}
+            {validation && (
+              <p className="account-error" role="alert">
+                {validation}
+              </p>
+            )}
+            {!recoverySent && (
+              <button className="account-action" type="submit" disabled={pending}>
+                {pending ? (
+                  <LoaderCircle className="spinner" size={17} />
+                ) : (
+                  <ArrowRight size={17} />
+                )}
+                {resetToken
+                  ? t('重置密码', 'Reset password')
+                  : t('发送重置链接', 'Send reset link')}
+              </button>
+            )}
+            <button
+              className="account-link-button"
+              type="button"
+              disabled={pending}
+              onClick={() => {
+                setForgot(false);
+                setRecoverySent(false);
+                setResetToken('');
+                setPassword('');
+                setConfirmation('');
+                setValidation('');
               }}
             >
               {t('返回登录', 'Back to login')}
@@ -397,7 +537,11 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
                 <button
                   className="account-link-button account-full"
                   disabled={pending}
-                  onClick={() => setForgot(true)}
+                  onClick={() => {
+                    setForgot(true);
+                    setRecoverySent(false);
+                    setValidation('');
+                  }}
                 >
                   {t('忘记密码？', 'Forgot password?')}
                 </button>
