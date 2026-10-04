@@ -6,7 +6,11 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import type { AuthSession, CompanyIdentity, CompanyResearchRun } from '../shared/contracts.js';
-import type { AssistantAnswer, AssistantRequest } from '../shared/assistant.js';
+import type {
+  AssistantAnswer,
+  AssistantRequest,
+  AssistantStreamEvent,
+} from '../shared/assistant.js';
 import { contextAmountFields, type CompanyContextSnapshot } from '../shared/company-workspace.js';
 import { deriveCompanyAssessment } from '../shared/company-assessment.js';
 import { createApp } from '../server/app.js';
@@ -239,6 +243,307 @@ async function harness(
   };
   return { app, directory, base, inputs, register, message, save, dispose };
 }
+
+function assistantStream(response: Response) {
+  assert.match(response.headers.get('Content-Type') || '', /^application\/x-ndjson/);
+  assert.ok(response.body);
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let ended = false;
+  const next = async (): Promise<AssistantStreamEvent | null> => {
+    for (;;) {
+      const boundary = buffer.indexOf('\n');
+      if (boundary >= 0) {
+        const line = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 1);
+        if (line.trim()) return JSON.parse(line) as AssistantStreamEvent;
+      } else if (ended) return null;
+      else {
+        const chunk = await reader.read();
+        buffer += decoder.decode(chunk.value, { stream: !chunk.done });
+        ended = chunk.done;
+      }
+    }
+  };
+  const collect = async () => {
+    const events: AssistantStreamEvent[] = [];
+    let event: AssistantStreamEvent | null;
+    while ((event = await next())) events.push(event);
+    return events;
+  };
+  return { next, collect };
+}
+
+test('assistant progress reaches the client before documentation generation completes', async () => {
+  const gate = deferred();
+  let started = false;
+  const h = await harness({
+    documentation: async (question, _locale, useModel, _model, signal) => {
+      assert.equal(useModel, false);
+      started = true;
+      await gate.promise;
+      signal?.throwIfAborted();
+      return documentationAnswer(question);
+    },
+  });
+  try {
+    const response = await h.message(
+      { question: '如何核对来源？', locale: 'zh' },
+      { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' }
+    );
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('Cache-Control'), 'no-store, no-transform');
+    assert.equal(response.headers.get('X-Accel-Buffering'), 'no');
+    assert.equal(response.headers.get('Vary'), 'Accept');
+    const stream = assistantStream(response);
+    for (const stage of ['recognizing', 'retrieving', 'composing'])
+      assert.deepEqual(await stream.next(), { type: 'progress', stage });
+    assert.equal(started, true);
+    gate.resolve();
+    const remaining = await stream.collect();
+    assert.equal(remaining.length, 1);
+    assert.equal(remaining[0]!.type, 'answer');
+    assert.equal((remaining[0] as { answer: AssistantAnswer }).answer.kind, 'documentation');
+  } finally {
+    gate.resolve();
+    await h.dispose();
+  }
+});
+
+test('assistant stream stages track research, answer and actual persistence gates', async (t) => {
+  const researchGate = deferred();
+  const answerGate = deferred();
+  const saveGate = deferred();
+  const h = await harness({
+    wantsResearch: () => true,
+    research: async (run) => {
+      await researchGate.promise;
+      return { run, research: { status: 'completed', toolCalls: 1, sources: [] } };
+    },
+    question: async (run, question) => {
+      await answerGate.promise;
+      return companyAnswer(run, question);
+    },
+  });
+  try {
+    const owner = await h.register();
+    const run = company();
+    const store = await h.save(owner.userId, [run]);
+    const persist = store.persist.bind(store);
+    t.mock.method(store, 'persist', async () => {
+      await saveGate.promise;
+      await persist();
+    });
+    const response = await h.message(
+      { question: '贵州茅台最新公告如何？', locale: 'zh', currentRunId: run.id },
+      { ...owner.headers, Accept: 'application/x-ndjson' }
+    );
+    const stream = assistantStream(response);
+    for (const stage of ['recognizing', 'retrieving', 'researching'])
+      assert.deepEqual(await stream.next(), { type: 'progress', stage });
+    assert.equal(run.questions?.length || 0, 0);
+    researchGate.resolve();
+    assert.deepEqual(await stream.next(), { type: 'progress', stage: 'composing' });
+    answerGate.resolve();
+    assert.deepEqual(await stream.next(), { type: 'progress', stage: 'saving' });
+    saveGate.resolve();
+    const terminal = await stream.next();
+    assert.equal(terminal?.type, 'answer');
+    assert.equal(await stream.next(), null);
+    assert.equal(run.questions?.length, 1);
+    assert.equal((terminal as { answer: AssistantAnswer }).answer.company!.runId, run.id);
+  } finally {
+    researchGate.resolve();
+    answerGate.resolve();
+    saveGate.resolve();
+    await h.dispose();
+  }
+});
+
+test('assistant stream cache hits omit unused work and JSON negotiation remains compatible', async () => {
+  let calls = 0;
+  const h = await harness({
+    documentation: async (question) => {
+      calls++;
+      return documentationAnswer(question);
+    },
+  });
+  try {
+    const owner = await h.register();
+    const body: AssistantRequest = { question: '隐私政策如何？', locale: 'zh' };
+    const first = await h.message(body, owner.headers);
+    assert.match(first.headers.get('Content-Type')!, /^application\/json/);
+    const expected = await first.json();
+    const response = await h.message(body, {
+      ...owner.headers,
+      Accept: 'application/x-ndjson, application/json;q=0.9',
+    });
+    assert.deepEqual(await assistantStream(response).collect(), [
+      { type: 'progress', stage: 'recognizing' },
+      { type: 'progress', stage: 'retrieving' },
+      { type: 'answer', answer: { ...expected, cached: true } },
+    ]);
+    for (const accept of ['*/*', 'application/x-ndjson;q=0, application/json']) {
+      const compatible = await h.message(body, { ...owner.headers, Accept: accept });
+      assert.match(compatible.headers.get('Content-Type')!, /^application\/json/);
+      assert.deepEqual(await compatible.json(), { ...expected, cached: true });
+    }
+    assert.equal(calls, 1);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('assistant streaming rejects invalid input and CSRF before starting a stream', async () => {
+  let calls = 0;
+  const h = await harness({
+    documentation: async (question) => {
+      calls++;
+      return documentationAnswer(question);
+    },
+  });
+  try {
+    const owner = await h.register();
+    const invalid = await h.message(
+      { question: '', locale: 'zh' },
+      { ...owner.headers, Accept: 'application/x-ndjson' }
+    );
+    assert.equal(invalid.status, 400);
+    assert.match(invalid.headers.get('Content-Type')!, /^application\/json/);
+    assert.equal((await invalid.json()).code, 'ASSISTANT_INPUT');
+    const denied = await h.message(
+      { question: '如何保护隐私？', locale: 'zh' },
+      { ...owner.headers, 'X-CSRF-Token': 'wrong-owner-token', Accept: 'application/x-ndjson' }
+    );
+    assert.equal(denied.status, 403);
+    assert.match(denied.headers.get('Content-Type')!, /^application\/json/);
+    assert.equal((await denied.json()).code, 'CSRF_INVALID');
+    assert.equal(calls, 0);
+  } finally {
+    await h.dispose();
+  }
+});
+
+test('assistant stream failures preserve public faults and sanitize unexpected exceptions', async () => {
+  for (const failure of ['stale', 'provider'] as const) {
+    const gate = deferred();
+    const h = await harness({
+      question: async (run, question) => {
+        await gate.promise;
+        if (failure === 'provider') throw new Error('private-provider-secret-must-not-leak');
+        return companyAnswer(run, question);
+      },
+    });
+    try {
+      const owner = await h.register();
+      const run = company();
+      await h.save(owner.userId, [run]);
+      const response = await h.message(
+        { question: '贵州茅台现金如何？', locale: 'zh', currentRunId: run.id },
+        { ...owner.headers, Accept: 'application/x-ndjson' }
+      );
+      const stream = assistantStream(response);
+      for (const stage of ['recognizing', 'retrieving', 'composing'])
+        assert.deepEqual(await stream.next(), { type: 'progress', stage });
+      if (failure === 'stale') run.context!.financials[0]!.amounts.ocf = '123.00';
+      gate.resolve();
+      const terminal = await stream.next();
+      assert.equal(terminal?.type, 'error');
+      assert.equal(
+        (terminal as { code: string }).code,
+        failure === 'stale' ? 'CONTEXT_STALE' : 'INTERNAL_ERROR'
+      );
+      assert.equal(JSON.stringify(terminal).includes('private-provider-secret'), false);
+      assert.equal(await stream.next(), null);
+      assert.equal(run.questions?.length || 0, 0);
+    } finally {
+      gate.resolve();
+      await h.dispose();
+    }
+  }
+});
+
+test('assistant stream timeout emits a terminal error and releases its request', async (t) => {
+  const gate = deferred();
+  const deadline = new AbortController();
+  let receivedSignal: AbortSignal | undefined;
+  const h = await harness({
+    documentation: async (question, _locale, _useModel, _model, signal) => {
+      receivedSignal = signal;
+      await gate.promise;
+      return documentationAnswer(question);
+    },
+  });
+  const nativeTimeout = AbortSignal.timeout.bind(AbortSignal);
+  t.mock.method(AbortSignal, 'timeout', (milliseconds: number) =>
+    milliseconds === 90_000 ? deadline.signal : nativeTimeout(milliseconds)
+  );
+  try {
+    const response = await h.message(
+      { question: '隐私政策如何？', locale: 'zh' },
+      { 'Content-Type': 'application/json', Accept: 'application/x-ndjson' }
+    );
+    const stream = assistantStream(response);
+    for (const stage of ['recognizing', 'retrieving', 'composing'])
+      assert.deepEqual(await stream.next(), { type: 'progress', stage });
+    deadline.abort(new DOMException('Controlled deadline reached', 'TimeoutError'));
+    assert.deepEqual(await stream.next(), {
+      type: 'error',
+      code: 'ASSISTANT_TIMEOUT',
+      error: '回答超时，请稍后重试',
+    });
+    assert.equal(await stream.next(), null);
+    assert.equal(receivedSignal?.aborted, true);
+    await h.app.waitForIdle();
+  } finally {
+    gate.resolve();
+    await h.dispose();
+  }
+});
+
+test('assistant stream cancellation prevents late answers from being saved', async () => {
+  const gate = deferred();
+  let receivedSignal: AbortSignal | undefined;
+  const h = await harness({
+    question: async (run, question, _basis, _useModel, _model, signal) => {
+      receivedSignal = signal;
+      await gate.promise;
+      return companyAnswer(run, question);
+    },
+  });
+  const controller = new AbortController();
+  try {
+    const owner = await h.register();
+    const run = company();
+    await h.save(owner.userId, [run]);
+    const response = await h.message(
+      { question: '贵州茅台现金如何？', locale: 'zh', currentRunId: run.id },
+      { ...owner.headers, Accept: 'application/x-ndjson' },
+      controller.signal
+    );
+    const stream = assistantStream(response);
+    for (const stage of ['recognizing', 'retrieving', 'composing'])
+      assert.deepEqual(await stream.next(), { type: 'progress', stage });
+    controller.abort();
+    await assert.rejects(stream.next(), (error: Error) => error.name === 'AbortError');
+    await waitUntil(() => receivedSignal?.aborted === true);
+    gate.resolve();
+    await h.app.waitForIdle();
+    assert.equal(run.questions?.length || 0, 0);
+    const retry = await h.message(
+      { question: '贵州茅台现金如何？', locale: 'zh', currentRunId: run.id },
+      { ...owner.headers, Accept: 'application/x-ndjson' }
+    );
+    const events = await assistantStream(retry).collect();
+    assert.equal(events.at(-1)?.type, 'answer');
+    assert.equal(run.questions?.length, 1);
+  } finally {
+    controller.abort();
+    gate.resolve();
+    await h.dispose();
+  }
+});
 
 test('anonymous privacy, operator and responsibility questions use real documentation without a model or workspace', async () => {
   let modelCalls = 0;

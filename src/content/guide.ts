@@ -110,6 +110,10 @@ export const guideDocument: ProductDocument = {
           'The lower-right Prispect assistant has one conversation. Ask directly about a researched company: an explicitly named company takes priority, then the current company, the previous conversation company or the latest research; ambiguity prompts a follow-up. You can also ask about features, privacy or how to use the site, with document links in the answer. Ask for fresh company material in the same conversation to see actual sources and gaps. Company answers stay with their research record; visitor company questions use their own research, and visitor product questions search local documents. Model failures retain rules-based answers or document excerpts, and missing fields stay unknown.',
         ],
         [
+          '在助手中输入问题时，会提示相关说明与已载入的企业记录。点击说明可阅读对应文档；点击企业选项会把公司和年度补入草稿，你可以继续修改后再发送。输入推荐不提交问题。发送后，小字提示随实际的识别、资料检索与回答整理步骤变化，快速完成的回答会直接显示；需要时可取消本次查询。',
+          'As you type in the assistant, related documentation and loaded-company records appear. Open a document choice to read its chapter, or select a company to add its name and year to your editable draft before sending. Input recommendations do not submit a question. After sending, small captions follow the actual request recognition, retrieval and answer preparation. Fast answers appear immediately, and you can cancel a request when needed.',
+        ],
+        [
           '输入准确公司名称或证券代码。准确唯一匹配可直接开始；简称有歧义时选择披露主体。当前覆盖巨潮大陆 A 股披露，未匹配不等于公司不存在或没有风险。',
           'Enter an exact company name or security code. An exact unique match can start directly; ambiguous names require choosing a disclosure identity. Coverage is currently mainland A-share disclosures on CNINFO. No match does not establish that a company does not exist or has no risk.',
         ],

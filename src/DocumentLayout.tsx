@@ -74,7 +74,7 @@ export function DocumentLayout({
       const key = new URLSearchParams(location.search).get('section');
       const id =
         hash && !hash.startsWith('#/')
-          ? entries.find((entry) => `#${entry.id}` === hash)?.id
+          ? entries.find((entry) => `#${entry.id}` === hash || `#${entry.key}` === hash)?.id
           : entries.find((entry) => entry.key === key)?.id;
       if (!id) return;
       const target = document.getElementById(id);

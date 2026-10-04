@@ -23,3 +23,11 @@ export interface AssistantAnswer extends CompanyQuestionAnswer {
     sources: { label: string; url: string }[];
   };
 }
+
+/** Stages report real work in the current request, never a timed animation sequence. */
+export type AssistantStage = 'recognizing' | 'retrieving' | 'researching' | 'composing' | 'saving';
+
+export type AssistantStreamEvent =
+  | { type: 'progress'; stage: AssistantStage }
+  | { type: 'answer'; answer: AssistantAnswer }
+  | { type: 'error'; code: string; error: string };

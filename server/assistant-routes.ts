@@ -1,7 +1,12 @@
 import type express from 'express';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
-import type { AssistantAnswer, AssistantRequest } from '../shared/assistant.js';
+import type {
+  AssistantAnswer,
+  AssistantRequest,
+  AssistantStage,
+  AssistantStreamEvent,
+} from '../shared/assistant.js';
 import type { AuthContext, AuthStore } from './auth.js';
 import type { WorkspaceStore } from './store.js';
 import type { ModelConfig } from './model.js';
@@ -86,6 +91,37 @@ export function installAssistantRoutes(
     if (req.aborted) controller.abort();
     const timeout = AbortSignal.timeout(90_000);
     const signal = AbortSignal.any([controller.signal, timeout]);
+    // A wildcard Accept retains the original JSON contract. Only explicit
+    // negotiation enables progress, without adding request-body fields.
+    const streaming =
+      req
+        .get('Accept')
+        ?.split(',')
+        .some((value) => value.split(';')[0]!.trim().toLowerCase() === 'application/x-ndjson') &&
+      req.accepts(['application/x-ndjson', 'application/json']) === 'application/x-ndjson';
+    let streamStarted = false;
+    const progress = (stage: AssistantStage) => {
+      if (!streaming || signal.aborted || res.destroyed || res.writableEnded) return;
+      if (!streamStarted) {
+        res.set({
+          'Content-Type': 'application/x-ndjson; charset=utf-8',
+          'Cache-Control': 'no-store, no-transform',
+          'X-Accel-Buffering': 'no',
+        });
+        res.vary('Accept');
+        res.flushHeaders();
+        streamStarted = true;
+      }
+      const event: AssistantStreamEvent = { type: 'progress', stage };
+      res.write(`${JSON.stringify(event)}\n`);
+    };
+    const answerResponse = (answer: AssistantAnswer) => {
+      signal.throwIfAborted();
+      if (streamStarted) {
+        const event: AssistantStreamEvent = { type: 'answer', answer };
+        res.end(`${JSON.stringify(event)}\n`);
+      } else res.json(answer);
+    };
     const work = async () => {
       const body = requestSchema.safeParse(req.body);
       if (!body.success) throw new ApiFault(400, 'ASSISTANT_INPUT', '请输入最多五百字的问题');
@@ -103,7 +139,9 @@ export function installAssistantRoutes(
       owners.set(owner, (owners.get(owner) || 0) + 1);
       let reservation: OwnerAnswerReservation | undefined;
       try {
+        progress('recognizing');
         if (!session || isProductQuestion(request.question, request.previousQuestions)) {
+          progress('retrieving');
           const signedIn = Boolean(session && !session.user.isGuest);
           const key = ownerAnswerCacheKey({
             owner,
@@ -122,13 +160,14 @@ export function installAssistantRoutes(
           const cached = session && !bypass ? answers.get(owner, key) : undefined;
           if (cached) {
             signal.throwIfAborted();
-            res.json(cached);
+            answerResponse(cached);
             return;
           }
           if (session) {
             if (bypass) answers.invalidate(owner, key);
             reservation = answers.reserve(owner, key);
           }
+          progress('composing');
           const answer = await awaitAssistant(
             service.documentation(
               request.question,
@@ -143,9 +182,10 @@ export function installAssistantRoutes(
           signal.throwIfAborted();
           if (session && !bypassOwnerAnswerCache(request.question))
             answers.set(owner, key, answer, undefined, reservation);
-          res.json(answer);
+          answerResponse(answer);
           return;
         }
+        progress('retrieving');
         const store = session.user.isGuest
           ? await options.workspaceForContext!(session)
           : await options.workspaceForUser(session.user.id);
@@ -156,7 +196,7 @@ export function installAssistantRoutes(
             throw new ApiFault(404, 'COMPANY_RUN_NOT_FOUND', '未找到当前账号的研究记录');
         const resolution = resolveAssistantCompany(runs, request);
         if (resolution.kind === 'clarification') {
-          res.json(assistantClarification(request, resolution.text));
+          answerResponse(assistantClarification(request, resolution.text));
           return;
         }
         const run = resolution.run;
@@ -207,7 +247,7 @@ export function installAssistantRoutes(
         const cached = bypass ? undefined : answers.get(cacheOwner, cacheKey, cacheScope);
         if (cached) {
           signal.throwIfAborted();
-          res.json(cached);
+          answerResponse(cached);
           return;
         }
         if (bypass) answers.invalidate(cacheOwner, cacheKey, cacheScope);
@@ -215,6 +255,7 @@ export function installAssistantRoutes(
         let research: AssistantAnswer['research'];
         let researchWarning: string | undefined;
         if (wantsResearch) {
+          progress('researching');
           try {
             const retrieved = await awaitAssistant(
               service.research(publicRun, request.question, { signal, bypassCache: true }),
@@ -241,6 +282,7 @@ export function installAssistantRoutes(
           }
         }
         signal.throwIfAborted();
+        progress('composing');
         const answer = await awaitAssistant(
           service.question(
             publicRun,
@@ -275,6 +317,7 @@ export function installAssistantRoutes(
         const previousAnswers = run.questions;
         run.questions = [...(previousAnswers || []), result].slice(-50);
         try {
+          progress('saving');
           await store.persist();
         } catch (error) {
           run.questions = previousAnswers;
@@ -289,7 +332,7 @@ export function installAssistantRoutes(
           fingerprint() === expected
         )
           answers.set(cacheOwner, cacheKey, result, cacheScope, reservation);
-        res.json(result);
+        answerResponse(result);
       } finally {
         if (reservation) answers.release(reservation);
         active--;
@@ -300,10 +343,19 @@ export function installAssistantRoutes(
     };
     const task = work()
       .catch((error: unknown) => {
-        if (!controller.signal.aborted)
-          next(
-            timeout.aborted ? new ApiFault(504, 'ASSISTANT_TIMEOUT', '回答超时，请稍后重试') : error
-          );
+        if (controller.signal.aborted) return;
+        const failure = timeout.aborted
+          ? new ApiFault(504, 'ASSISTANT_TIMEOUT', '回答超时，请稍后重试')
+          : error;
+        if (!streamStarted) next(failure);
+        else if (!res.destroyed && !res.writableEnded) {
+          const event: AssistantStreamEvent = {
+            type: 'error',
+            code: failure instanceof ApiFault ? failure.code : 'INTERNAL_ERROR',
+            error: failure instanceof ApiFault ? failure.message : '服务暂未完成此请求，请稍后重试',
+          };
+          res.end(`${JSON.stringify(event)}\n`);
+        }
       })
       .finally(() => {
         pending.delete(task);

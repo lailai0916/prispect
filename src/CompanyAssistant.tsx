@@ -2,7 +2,7 @@ import {
   OPEN_COMPANY_ASSISTANT_EVENT,
   type OpenCompanyAssistantDetail,
 } from '../shared/company-navigation';
-import { useContext, useEffect, useId, useRef, useState, type FormEvent } from 'react';
+import { useContext, useEffect, useId, useMemo, useRef, useState, type FormEvent } from 'react';
 import {
   ArrowUp,
   ArrowUpRight,
@@ -13,9 +13,10 @@ import {
   Square,
   X,
 } from 'lucide-react';
-import type { AssistantAnswer, AssistantRequest } from '../shared/assistant';
+import type { AssistantAnswer, AssistantRequest, AssistantStage } from '../shared/assistant';
+import { getAssistantSuggestions, type AssistantSuggestion } from '../shared/assistant-suggestions';
 import { companyPath } from '../shared/company-workspace';
-import { api, requestErrorText } from './api';
+import { apiAssistant, requestErrorText } from './api';
 import { useApp } from './context';
 import { CompanyAssistantContext } from './company-assistant-context';
 import { appendCompanyAnswer } from './company-question-state';
@@ -28,6 +29,7 @@ interface AssistantMessage {
   id: number;
   request: AssistantRequest;
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  stage?: 'connecting' | AssistantStage;
   answer?: AssistantAnswer;
   cause?: unknown;
 }
@@ -75,6 +77,7 @@ export function CompanyAssistant({ route }: { route: string }) {
     routeRun && company?.owner === owner && company.run.id === routeRun ? company : null;
   const [open, setOpen] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
+  const [composing, setComposing] = useState(false);
   const [conversation, setConversation] = useState<AssistantConversation>({
     owner,
     draft: '',
@@ -84,6 +87,13 @@ export function CompanyAssistant({ route }: { route: string }) {
   const messages = conversation.owner === owner ? conversation.messages : [];
   const draft = conversation.owner === owner ? conversation.draft : '';
   const pending = messages.find((message) => message.status === 'pending');
+  const draftSuggestions = useMemo(
+    () =>
+      open && !composing && !pending
+        ? getAssistantSuggestions(draft, locale === 'en' ? 'en' : 'zh', records, routeRun)
+        : [],
+    [open, composing, pending, draft, locale, records, routeRun]
+  );
   const previousCompany = [...messages].reverse().find((message) => message.answer?.company)
     ?.answer?.company;
   const recent = [...records].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
@@ -200,7 +210,13 @@ export function CompanyAssistant({ route }: { route: string }) {
     following.current = true;
     setConversation((previous) => {
       if (previous.owner !== operation.owner) return previous;
-      const next = { ...message, status: 'pending' as const, answer: undefined, cause: undefined };
+      const next = {
+        ...message,
+        status: 'pending' as const,
+        stage: 'connecting' as const,
+        answer: undefined,
+        cause: undefined,
+      };
       return {
         ...previous,
         draft: clearDraft ? '' : previous.draft,
@@ -215,10 +231,21 @@ export function CompanyAssistant({ route }: { route: string }) {
       !controller.signal.aborted &&
       latest.current.owner === operation.owner;
     try {
-      const answer = await api<AssistantAnswer>('/assistant/messages', {
-        method: 'POST',
+      const answer = await apiAssistant(message.request, {
         signal: controller.signal,
-        body: JSON.stringify(message.request),
+        onProgress: (stage) => {
+          if (!isCurrent()) return;
+          setConversation((previous) =>
+            previous.owner !== operation.owner
+              ? previous
+              : {
+                  ...previous,
+                  messages: previous.messages.map((item) =>
+                    item.id === message.id && item.status === 'pending' ? { ...item, stage } : item
+                  ),
+                }
+          );
+        },
       });
       if (!isCurrent()) return;
       setConversation((previous) => {
@@ -354,6 +381,37 @@ export function CompanyAssistant({ route }: { route: string }) {
     });
     input.current?.focus();
   };
+  const selectDraftSuggestion = (option: AssistantSuggestion) => {
+    if (option.kind !== 'company') return;
+    const sessionOwner = latest.current.owner;
+    if (
+      !sessionOwner ||
+      owner !== sessionOwner ||
+      !records.some((record) => record.id === option.runId)
+    )
+      return;
+    setConversation((previous) =>
+      previous.owner === sessionOwner ? { ...previous, draft: option.question } : previous
+    );
+    setSelectedCompany({ owner: sessionOwner, runId: option.runId });
+    input.current?.focus();
+  };
+  const progressText: Record<'connecting' | AssistantStage, readonly [string, string]> = {
+    connecting: ['正在发送你的问题', 'Sending your question'],
+    recognizing: ['正在识别你的问题', 'Understanding your question'],
+    retrieving: ['正在检索相关资料', 'Finding relevant information'],
+    researching: ['正在查阅公开来源', 'Checking public sources'],
+    composing: ['正在梳理回答', 'Putting your answer together'],
+    saving: ['正在完成这次回答', 'Finishing your answer'],
+  };
+  const progressDetail: Record<'connecting' | AssistantStage, readonly [string, string]> = {
+    connecting: ['稍等一下，我来帮你理清方向。', 'One moment, let’s find a clear direction.'],
+    recognizing: ['先确认你想了解的内容。', 'First, identifying what you want to know.'],
+    retrieving: ['从相关资料中寻找线索。', 'Looking for clues in relevant information.'],
+    researching: ['继续核对相关来源与依据。', 'Checking the relevant sources and evidence.'],
+    composing: ['把资料整理成更易读的回答。', 'Making the information easier to read.'],
+    saving: ['保留这次回答，方便继续追问。', 'Keeping this answer ready for your follow-up.'],
+  };
   const suggestions = backgroundCompany
     ? [
         t(
@@ -432,15 +490,23 @@ export function CompanyAssistant({ route }: { route: string }) {
             <div className="company-assistant-empty">
               <div className="company-assistant-welcome">
                 <p>{t('你好呀，想一起看看什么？', 'Hi! What shall we look into?')}</p>
+                <small>
+                  {t(
+                    '输入公司、指标或使用问题，我帮你找方向。',
+                    'Enter a company, a metric or a product question. I’ll help you find a direction.'
+                  )}
+                </small>
               </div>
-              <div className="company-assistant-suggestions">
-                {suggestions.map((question) => (
-                  <button type="button" key={question} onClick={() => fillSuggestion(question)}>
-                    {question}
-                    <CornerDownLeft size={12} aria-hidden="true" />
-                  </button>
-                ))}
-              </div>
+              {!draft.trim() && (
+                <div className="company-assistant-suggestions">
+                  {suggestions.map((question) => (
+                    <button type="button" key={question} onClick={() => fillSuggestion(question)}>
+                      {question}
+                      <CornerDownLeft size={12} aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {messages.map((message) => {
@@ -454,10 +520,17 @@ export function CompanyAssistant({ route }: { route: string }) {
               <article className="company-assistant-message" key={message.id}>
                 <h3 className="company-assistant-question">{message.request.question}</h3>
                 {message.status === 'pending' ? (
-                  <p className="company-assistant-pending" role="status">
-                    <LoaderCircle size={13} className="spinner" aria-hidden="true" />
-                    {t('正在查阅资料', 'Looking up sources')}
-                  </p>
+                  <div
+                    className="company-assistant-pending"
+                    role="status"
+                    data-stage={message.stage || 'connecting'}
+                  >
+                    <p>
+                      <LoaderCircle size={13} className="spinner" aria-hidden="true" />
+                      {t(...progressText[message.stage || 'connecting'])}
+                    </p>
+                    <small>{t(...progressDetail[message.stage || 'connecting'])}</small>
+                  </div>
                 ) : answer ? (
                   <div className="company-assistant-answer">
                     {answer.company && (
@@ -529,6 +602,57 @@ export function CompanyAssistant({ route }: { route: string }) {
           )}
         </div>
         <div className="company-assistant-footer">
+          {draftSuggestions.length > 0 && (
+            <div className="company-assistant-draft-help">
+              <p>
+                {t(
+                  '找到相关内容，先看看或直接提问。',
+                  'Related information — explore it or send your question.'
+                )}
+              </p>
+              <div
+                className="company-assistant-draft-options"
+                role="group"
+                aria-label={t('相关内容', 'Related information')}
+              >
+                {draftSuggestions.map((option) =>
+                  option.kind === 'documentation' ? (
+                    <a
+                      key={option.id}
+                      href={option.url}
+                      title={option.label}
+                      onClick={(event) => {
+                        if (
+                          event.defaultPrevented ||
+                          event.button !== 0 ||
+                          event.metaKey ||
+                          event.ctrlKey ||
+                          event.shiftKey ||
+                          event.altKey
+                        )
+                          return;
+                        event.preventDefault();
+                        navigate(option.url);
+                      }}
+                    >
+                      <span>{option.label}</span>
+                      <small>{t('查看说明', 'Read more')}</small>
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      key={option.id}
+                      onClick={() => selectDraftSuggestion(option)}
+                      title={`${option.label} · ${option.detail}`}
+                    >
+                      <span>{option.label}</span>
+                      <small>{option.detail}</small>
+                    </button>
+                  )
+                )}
+              </div>
+            </div>
+          )}
           <form className="company-assistant-composer" onSubmit={submit}>
             <label className="sr-only" htmlFor={`${panelId}-question`}>
               {t('向析光助手提问', 'Ask Prispect assistant')}
@@ -540,6 +664,8 @@ export function CompanyAssistant({ route }: { route: string }) {
               rows={2}
               maxLength={500}
               placeholder={t('输入问题', 'Ask a question')}
+              onCompositionStart={() => setComposing(true)}
+              onCompositionEnd={() => setComposing(false)}
               onChange={(event) => {
                 const value = event.target.value;
                 setConversation((previous) =>

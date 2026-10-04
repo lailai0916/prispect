@@ -1,4 +1,10 @@
 import type { ApiError } from '../shared/contracts';
+import type {
+  AssistantAnswer,
+  AssistantRequest,
+  AssistantStage,
+  AssistantStreamEvent,
+} from '../shared/assistant';
 
 let csrfToken: string | null = null;
 export function setCsrfToken(value: string | null): void {
@@ -19,6 +25,7 @@ const errorMessages: Record<string, string> = {
   ASSISTANT_INPUT: 'Enter a question of up to 500 characters.',
   ASSISTANT_BUSY: 'The assistant is handling other questions. Please retry shortly.',
   ASSISTANT_TIMEOUT: 'The answer timed out. Please retry.',
+  ASSISTANT_STREAM: 'The answer was interrupted. Please retry.',
   CONTEXT_INPUT: 'Enter a supported company name, year and refresh options.',
   CONTEXT_BUSY: 'Public sources are busy. Please retry shortly.',
   CONTEXT_IDENTITY: 'Select a supported listed entity before continuing.',
@@ -220,7 +227,7 @@ export function requestErrorText(error: unknown, locale: string): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+async function apiResponse(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers);
   if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type'))
     headers.set('Content-Type', 'application/json');
@@ -241,7 +248,171 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
       typeof error.code === 'string' ? error.code : undefined
     );
   }
-  return response.json() as Promise<T>;
+  return response;
+}
+
+export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  return (await apiResponse(path, init)).json() as Promise<T>;
+}
+
+const assistantStages = new Set<AssistantStage>([
+  'recognizing',
+  'retrieving',
+  'researching',
+  'composing',
+  'saving',
+]);
+
+function assistantStreamError(): RequestError {
+  return new RequestError('回答传输未完成，请重试。', 'ASSISTANT_STREAM');
+}
+
+function objectRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function isAssistantAnswer(value: unknown): value is AssistantAnswer {
+  if (!objectRecord(value)) return false;
+  const source = (item: unknown) =>
+    objectRecord(item) && typeof item.label === 'string' && typeof item.url === 'string';
+  return (
+    typeof value.kind === 'string' &&
+    ['company', 'documentation', 'clarification'].includes(value.kind) &&
+    typeof value.question === 'string' &&
+    typeof value.text === 'string' &&
+    typeof value.mode === 'string' &&
+    ['rules', 'model', 'rules-fallback'].includes(value.mode) &&
+    typeof value.createdAt === 'string' &&
+    typeof value.snapshotFetchedAt === 'string' &&
+    (value.warning === undefined || typeof value.warning === 'string') &&
+    Array.isArray(value.citations) &&
+    value.citations.every(
+      (item) =>
+        source(item) && (item.page === undefined || (Number.isInteger(item.page) && item.page > 0))
+    ) &&
+    (value.company === undefined ||
+      (objectRecord(value.company) &&
+        typeof value.company.runId === 'string' &&
+        typeof value.company.name === 'string' &&
+        Number.isInteger(value.company.year))) &&
+    (value.research === undefined ||
+      (objectRecord(value.research) &&
+        typeof value.research.status === 'string' &&
+        ['completed', 'partial', 'unavailable'].includes(value.research.status) &&
+        Number.isInteger(value.research.toolCalls) &&
+        (value.research.toolCalls as number) >= 0 &&
+        Array.isArray(value.research.sources) &&
+        value.research.sources.every(source)))
+  );
+}
+
+function assistantEvent(line: string): AssistantStreamEvent {
+  let event: unknown;
+  try {
+    event = JSON.parse(line);
+  } catch {
+    throw assistantStreamError();
+  }
+  if (objectRecord(event)) {
+    if (event.type === 'progress' && assistantStages.has(event.stage as AssistantStage))
+      return event as AssistantStreamEvent;
+    if (event.type === 'answer' && isAssistantAnswer(event.answer))
+      return event as AssistantStreamEvent;
+    if (
+      event.type === 'error' &&
+      typeof event.code === 'string' &&
+      event.code.length > 0 &&
+      event.code.length <= 120 &&
+      typeof event.error === 'string' &&
+      event.error.length > 0 &&
+      event.error.length <= 2000
+    )
+      return event as AssistantStreamEvent;
+  }
+  throw assistantStreamError();
+}
+
+/** One POST carries real progress and its answer; older JSON servers need no retry. */
+export async function apiAssistant(
+  request: AssistantRequest,
+  options: { signal?: AbortSignal; onProgress?: (stage: AssistantStage) => void } = {}
+): Promise<AssistantAnswer> {
+  const { signal, onProgress } = options;
+  signal?.throwIfAborted();
+  const response = await apiResponse('/assistant/messages', {
+    method: 'POST',
+    headers: { Accept: 'application/x-ndjson, application/json;q=0.9' },
+    signal,
+    body: JSON.stringify(request),
+  });
+  signal?.throwIfAborted();
+  if (
+    response.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !==
+    'application/x-ndjson'
+  ) {
+    const answer: unknown = await response.json();
+    signal?.throwIfAborted();
+    if (!isAssistantAnswer(answer)) throw assistantStreamError();
+    return answer;
+  }
+  if (!response.body) throw assistantStreamError();
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder('utf-8', { fatal: true });
+  const aborted = () => {
+    void reader.cancel(signal?.reason).catch(() => undefined);
+  };
+  signal?.addEventListener('abort', aborted, { once: true });
+  let buffer = '';
+  let bytes = 0;
+  let events = 0;
+  let answer: AssistantAnswer | undefined;
+  let finished = false;
+  const process = (line: string) => {
+    signal?.throwIfAborted();
+    if (!line.trim()) return;
+    if (++events > 64 || answer) throw assistantStreamError();
+    const event = assistantEvent(line);
+    if (event.type === 'progress') onProgress?.(event.stage);
+    else if (event.type === 'error') throw new RequestError(event.error, event.code);
+    else answer = event.answer;
+  };
+  try {
+    // Check again after subscribing so an already-aborted signal cannot leave a
+    // reader waiting, even when a test/custom fetch ignores cancellation.
+    signal?.throwIfAborted();
+    for (;;) {
+      const chunk = await reader.read();
+      signal?.throwIfAborted();
+      if (chunk.done) {
+        finished = true;
+        try {
+          buffer += decoder.decode();
+        } catch {
+          throw assistantStreamError();
+        }
+        if (buffer.trim()) process(buffer);
+        if (!answer) throw assistantStreamError();
+        return answer;
+      }
+      bytes += chunk.value.byteLength;
+      if (bytes > 1_048_576) throw assistantStreamError();
+      try {
+        buffer += decoder.decode(chunk.value, { stream: true });
+      } catch {
+        throw assistantStreamError();
+      }
+      let boundary: number;
+      while ((boundary = buffer.indexOf('\n')) !== -1) {
+        const line = buffer.slice(0, boundary);
+        buffer = buffer.slice(boundary + 1);
+        process(line);
+      }
+    }
+  } finally {
+    signal?.removeEventListener('abort', aborted);
+    if (!finished) await reader.cancel().catch(() => undefined);
+    reader.releaseLock();
+  }
 }
 
 export function post<T>(path: string, data: unknown): Promise<T> {

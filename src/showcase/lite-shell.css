@@ -132,6 +132,8 @@
 .app-shell.lite-workspace-shell .company-assistant-panel {
   --paper: var(--lite-panel, #101d30);
   --paper-soft: var(--lite-surface, #101d30);
+  --surface: var(--lite-surface, #101d30);
+  --surface-subtle: var(--lite-surface-strong, #101d30);
   --ink: var(--lite-ink, #f4f7fc);
   --muted: var(--lite-muted, #b9c8dd);
   --line: var(--lite-line, #2b3f5c);
@@ -140,6 +142,7 @@
   --focus-ring: #4c8dff33;
   --selection: #4c8dff33;
   --selection-text: var(--lite-ink, #f4f7fc);
+  z-index: 90;
   border-color: var(--lite-line, #2b3f5c);
   background: var(--lite-panel, #101d30);
   color: var(--lite-ink, #f4f7fc);

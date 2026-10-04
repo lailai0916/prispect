@@ -12,6 +12,7 @@ import { privacyDocument } from '../src/content/privacy.js';
 import { termsDocument } from '../src/content/terms.js';
 import { documentMetadata } from '../src/content/document-navigation.js';
 import type { BilingualText, DocumentSection, ProductDocument } from '../src/content/document.js';
+import { searchProductKnowledge as sharedSearchProductKnowledge } from '../shared/product-knowledge.js';
 
 type Locale = 'zh' | 'en';
 const locales: Locale[] = ['zh', 'en'];
@@ -24,6 +25,24 @@ const documents: { path: string; document: ProductDocument }[] = [
 ];
 const languageIndex = (locale: Locale) => (locale === 'zh' ? 0 : 1);
 const normalize = (text: string) => text.replace(/\s+/gu, ' ').trim();
+
+test('server and browser share the same source index while local retrieval can omit fallback', () => {
+  assert.equal(searchProductKnowledge, sharedSearchProductKnowledge);
+  for (const locale of locales) {
+    for (const question of ['', '   ', 'zxqv7319 lunar-flamingo fixture', '万科']) {
+      assert.deepEqual(searchProductKnowledge(question, locale, { fallback: false }), []);
+      assert.ok(searchProductKnowledge(question, locale).length > 0);
+    }
+    const question = locale === 'zh' ? 'AI 训练 数据 隐私' : 'AI training data privacy';
+    const full = searchProductKnowledge(question, locale);
+    const limited = searchProductKnowledge(question, locale, { fallback: false, limit: 3 });
+    assert.deepEqual(limited, full.slice(0, 3));
+    assert.ok(limited.length <= 3);
+    assert.deepEqual(searchProductKnowledge(question, locale, { limit: 0 }), []);
+    assert.ok(searchProductKnowledge(question, locale, { limit: 20 }).length <= 6);
+    assert.deepEqual(searchProductKnowledge(question, locale, { limit: -1 }), []);
+  }
+});
 
 function sectionContent(section: DocumentSection): BilingualText[] {
   return [
