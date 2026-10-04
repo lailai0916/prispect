@@ -9,10 +9,10 @@ import './showcase-signal-stage.css';
 type Channel = 'finance' | 'public' | 'reputation' | 'original';
 const channels: Channel[] = ['finance', 'public', 'reputation', 'original'];
 const colors = {
-  finance: [239, 199, 139],
-  public: [246, 218, 178],
-  reputation: [214, 188, 155],
-  original: [255, 221, 169],
+  finance: [76, 141, 255],
+  public: [76, 141, 255],
+  reputation: [76, 141, 255],
+  original: [76, 141, 255],
 } as const;
 const profitFen = contextFen(landingExample.summary.profit);
 const cashFen = contextFen(landingExample.summary.cash);
@@ -277,6 +277,7 @@ export function ShowcaseSignalStage({
   return (
     <div
       className="showcase-signal-stage showcase-evidence-values"
+      data-lite-card
       data-channel={channel}
       data-scene={scene}
       style={{ '--signal-accent': `rgb(${colors[channel].join(',')})` } as CSSProperties}

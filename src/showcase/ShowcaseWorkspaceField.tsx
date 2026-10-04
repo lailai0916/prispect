@@ -39,7 +39,7 @@ export function ShowcaseWorkspaceField() {
       positions.forEach((point, index) => {
         // Keep the composer region quiet; foreground text remains on its own opaque surface.
         const central = point.x > width * 0.26 && point.x < width * 0.74;
-        context.fillStyle = `rgba(244,222,188,${central ? 0.19 : 0.55})`;
+        context.fillStyle = `rgba(184,213,255,${central ? 0.19 : 0.55})`;
         context.beginPath();
         context.arc(point.x, point.y, index % 4 ? 1.15 : 1.7, 0, Math.PI * 2);
         context.fill();
@@ -47,7 +47,7 @@ export function ShowcaseWorkspaceField() {
           const next = positions[other];
           const distance = Math.hypot(point.x - next.x, point.y - next.y);
           if (distance > 132) continue;
-          context.strokeStyle = `rgba(239,199,139,${(1 - distance / 132) * 0.16})`;
+          context.strokeStyle = `rgba(76,141,255,${(1 - distance / 132) * 0.16})`;
           context.beginPath();
           context.moveTo(point.x, point.y);
           context.lineTo(next.x, next.y);

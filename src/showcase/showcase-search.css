@@ -74,7 +74,7 @@
   border: 1px solid var(--lite-line);
   border-radius: var(--lite-radius);
   color: var(--lite-ink);
-  background: #191713;
+  background: #0b1727;
   box-shadow: 0 12px 40px rgb(0 0 0 / 18%);
   transition:
     border-color 220ms,
@@ -83,9 +83,9 @@
 }
 .showcase-hermes .showcase-search .start-input:focus-within {
   border-color: var(--lite-primary);
-  background: #201c17;
+  background: #101d30;
   box-shadow:
-    0 0 0 3px rgb(239 199 139 / 10%),
+    0 0 0 3px rgb(76 141 255 / 10%),
     0 18px 50px rgb(0 0 0 / 22%);
 }
 .showcase-hermes .showcase-search-icon {
@@ -147,7 +147,7 @@
 }
 .showcase-hermes .showcase-search .start-submit:not(:disabled):hover {
   background: var(--lite-primary-bright);
-  box-shadow: 0 0 20px rgb(239 199 139 / 18%);
+  box-shadow: 0 0 20px rgb(76 141 255 / 18%);
 }
 .showcase-hermes .showcase-search .start-submit:disabled {
   background: var(--lite-primary);
@@ -165,7 +165,7 @@
   border: 1px solid var(--lite-line-strong);
   border-radius: 12px;
   color: var(--lite-ink);
-  background: #221e18;
+  background: #101d30;
   box-shadow: var(--lite-shadow);
   overflow: auto;
   overscroll-behavior: contain;
@@ -180,7 +180,7 @@
 }
 .showcase-hermes .showcase-search .company-completions > button:hover,
 .showcase-hermes .showcase-search .company-completions > button[aria-selected='true'] {
-  background: #382d1f;
+  background: #203754;
 }
 .showcase-hermes
   .showcase-search

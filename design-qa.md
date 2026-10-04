@@ -2,7 +2,23 @@
 
 Date: 2026-10-04 (Asia/Shanghai). Software references only; the three games are excluded. Pro retains its current professional experience and the previously authorized complete-report repair.
 
-## Final whole-flow polish
+## Hermes-focused Lite and blue/white readability
+
+The latest user choice supersedes the amber exploration: deep navy surfaces, white body text and one blue interaction accent. Hermes is the main reference for a centered search composer, compact findings, targeted evidence access and bounded entry motion. Its actual Pro navigation uses long-page anchors; Prispect implements four genuine reading destinations at the user’s explicit request. Pro’s professional report and seven destinations remain intact. A concurrent main commit unifying the shared assistant character was merged and preserved.
+
+Reference evidence is fixed at `abd78e65e15686b1acd6491b24879b5458e16747`: live search/candidates and its original offline report renderer are distinguished in `output/reference-review/hermes-focused-20261004/`. Nineteen accepted captures were inspected; two premature captures were rejected and replaced. Source concepts were independently implemented without transferring third-party code or assets.
+
+The old chapter-local blue/purple ink overrides were removed, every report chapter now shares the readable palette, the homepage letter blur was removed, and English report headings override legacy oversized typography. Compact metric cards retain exact amounts, formulas and every recorded source inside native details. Duplicate headline/summary text is presented once. Menu/source headers and mobile input area were repaired; native focus outlines are retained.
+
+Merged full code checking passed 1086 tests, types, all 493 frozen research files, build and formatting. The subsequent palette-only and typography adjustments passed final type checking, build and formatting. Final blue build uses `index-BcaiGssd.js`, `index-C3YrMKoO.css`, `LiteResearch-DqCdEEkP.js` and `LiteResearch-jUOeQzak.css`; older warm screenshots are not accepted as this build’s evidence.
+
+Bounded final report acceptance passed 21 checks / 10 screenshots with explicitly synthetic owning records, no model configuration, and no research, source or question writes after local setup. It covers source-bound compact metrics, source-only versus explicit action selection, generation fencing, the 122-reference fold, English heading geometry, native Back, current/previous/pending states and negative/zero/very large values. Closed native details and all four screen pages expand for the full 143-reference printed dossier. Actual PDF receipts are retained in `output/browser-qa/report-hermes-final/`.
+
+Final readability acceptance passed 10 checks / 11 screenshots and 33 computed text samples after standard CSS color-space normalization: the lowest sampled contrast was 8.62:1, all measured text had opacity 1 and no filter, English titles were 40px and narrow titles 27px. Sticky page navigation meets the actual 60px mobile header without overlap. The same-generation evidence deep link returns to its recorded scroll position with a 0px difference. Extreme 143-source / 122-fanout synthetic printing yields 75 Lite pages and 12 Pro pages; every source ID and original quote is retained, and each bulk original appears once. These are fixture-specific page counts, not typical real reports. Evidence: `hermes-focused/final-readability/` and `report-hermes-final/pdf-proof.json`.
+
+This redesign validates display and interaction. It does not establish successful live AI generation; the existing production synthesis timeout remains a separate known issue.
+
+## Earlier whole-flow polish
 
 The deployed `30f526b` baseline passed CI 37151361495 and Deploy 37151658315. Its exact production health version, healthy storage and 19 read-only production assertions / six actual screenshots were independently verified. The three games remain excluded; the eight software reference studies remain the design basis.
 

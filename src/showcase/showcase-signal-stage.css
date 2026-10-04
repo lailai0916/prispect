@@ -1,17 +1,17 @@
 .showcase-signal-stage {
-  --signal-accent: #efc78b;
+  --signal-accent: #4c8dff;
   position: relative;
   isolation: isolate;
   width: 100%;
   min-width: 0;
   padding: clamp(16px, 3vw, 28px);
   overflow: clip;
-  border: 1px solid var(--lite-line, #3b3227);
+  border: 1px solid var(--lite-line, #2b3f5c);
   border-radius: 24px;
-  background: var(--lite-surface-strong, #201c17);
-  color: var(--lite-ink, #f5efe5);
+  background: var(--lite-surface-strong, #101d30);
+  color: var(--lite-ink, #f4f7fc);
   box-shadow:
-    0 30px 90px rgb(4 3 2 / 20%),
+    0 30px 90px rgb(2 7 18 / 20%),
     inset 0 1px rgb(255 255 255 / 6%);
   text-align: left;
   transition: border-color 400ms ease;
@@ -62,7 +62,7 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   padding: 5px;
-  border: 1px solid var(--lite-line, #3b3227);
+  border: 1px solid var(--lite-line, #2b3f5c);
   border-radius: 14px;
   background: rgb(0 0 0 / 22%);
 }
@@ -77,7 +77,7 @@
   border: 1px solid transparent;
   border-radius: 9px;
   background: transparent;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   line-height: 1.35;
   transition:
@@ -103,7 +103,7 @@
   gap: 8px;
   align-items: center;
   margin-top: 24px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   line-height: 1.65;
 }
@@ -140,7 +140,7 @@
 .signal-scope {
   margin: 0 0 22px;
   font-size: 12px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   line-height: 1.7;
 }
 
@@ -153,7 +153,7 @@
 .showcase-signal-stage.showcase-evidence-values[data-channel] .signal-finance-facts > div {
   min-width: 0;
   padding: 15px 0;
-  border-top: 1px solid var(--lite-line, #3b3227);
+  border-top: 1px solid var(--lite-line, #2b3f5c);
   border-bottom: none;
   animation: signal-fact-enter 600ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
@@ -162,7 +162,7 @@
 }
 .showcase-signal-stage.showcase-evidence-values[data-channel] .signal-finance-facts dt {
   margin-bottom: 10px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
 }
 .showcase-signal-stage.showcase-evidence-values[data-channel] .signal-finance-facts dd {
@@ -171,7 +171,7 @@
   align-items: baseline;
   gap: 7px;
   margin: 0;
-  color: var(--lite-ink, #f5efe5);
+  color: var(--lite-ink, #f4f7fc);
   font-size: clamp(19px, 2.6vw, 28px);
   line-height: 1.3;
   font-weight: 600;
@@ -186,13 +186,13 @@
     12px/1.4 ui-monospace,
     monospace;
   letter-spacing: 0.07em;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   margin-left: 0;
 }
 .signal-fact-source {
   display: block;
   margin-top: 9px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
 }
 .signal-scene-controls {
@@ -209,17 +209,17 @@
   align-items: center;
   justify-content: center;
   padding: 8px 5px;
-  border: 1px solid var(--lite-line, #3b3227);
+  border: 1px solid var(--lite-line, #2b3f5c);
   border-radius: 8px;
-  background: var(--lite-surface-hover, #29231b);
-  color: var(--lite-muted, #b5a795);
+  background: var(--lite-surface-hover, #182942);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   transition:
     border-color 250ms ease,
     color 250ms ease;
 }
 .signal-scene-controls button > span {
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font:
     12px/1 ui-monospace,
     monospace;
@@ -242,7 +242,7 @@
   display: flex;
   justify-content: space-between;
   margin: 0 0 16px 75px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font:
     9px/1.4 ui-monospace,
     monospace;
@@ -256,13 +256,13 @@
 }
 .signal-bar-row > span {
   font-size: 12px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
 }
 .signal-bar-track {
   position: relative;
   height: 24px;
-  border-left: 1px solid var(--lite-muted, #b5a795);
-  background: repeating-linear-gradient(90deg, rgb(239 199 139 / 7%) 0 1px, transparent 1px 25%);
+  border-left: 1px solid var(--lite-muted, #b9c8dd);
+  background: repeating-linear-gradient(90deg, rgb(76 141 255 / 7%) 0 1px, transparent 1px 25%);
 }
 .signal-bar {
   height: 100%;
@@ -282,7 +282,7 @@
 }
 .signal-panel-note {
   margin: 15px 0 0;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   line-height: 1.9;
 }
@@ -296,9 +296,9 @@
   margin-top: 20px;
   padding: 10px 0;
   border: none;
-  border-top: 1px solid var(--lite-line, #3b3227);
+  border-top: 1px solid var(--lite-line, #2b3f5c);
   background: transparent;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   text-align: left;
 }
@@ -314,9 +314,9 @@
 .signal-difference-panel {
   position: relative;
   padding: 20px;
-  border: 1px solid rgb(239 199 139 / 22%);
+  border: 1px solid rgb(76 141 255 / 22%);
   border-radius: 12px;
-  background: rgb(239 199 139 / 4%);
+  background: rgb(76 141 255 / 4%);
   overflow: hidden;
 }
 .signal-difference-panel::before {
@@ -335,7 +335,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 9px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
 }
 .signal-equation svg {
@@ -344,7 +344,7 @@
 }
 .signal-difference-label {
   margin: 22px 0 8px;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
 }
 .signal-difference-amount {
@@ -353,7 +353,7 @@
   align-items: baseline;
   gap: 8px;
   margin: 0;
-  color: var(--lite-ink, #f5efe5);
+  color: var(--lite-ink, #f4f7fc);
   font-size: clamp(25px, 3.5vw, 40px);
   letter-spacing: -0.05em;
   font-weight: 600;
@@ -380,10 +380,10 @@
   gap: 7px;
   min-height: 44px;
   padding: 8px 12px;
-  border: 1px solid var(--lite-line, #3b3227);
+  border: 1px solid var(--lite-line, #2b3f5c);
   border-radius: 8px;
-  background: var(--lite-surface-strong, #201c17);
-  color: var(--lite-muted, #b5a795);
+  background: var(--lite-surface-strong, #101d30);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
 }
 .signal-original-tabs button[aria-pressed='true'] {
@@ -396,9 +396,9 @@
   width: 100%;
   padding: 12px;
   overflow: hidden;
-  border: 1px solid var(--lite-line, #3b3227);
+  border: 1px solid var(--lite-line, #2b3f5c);
   border-radius: 10px;
-  background: #eef0e8;
+  background: #f4f7fc;
   text-align: left;
 }
 .signal-original-sheet img {
@@ -417,8 +417,8 @@
   width: 32px;
   height: 32px;
   border-radius: 7px;
-  background: var(--lite-surface-strong, #201c17);
-  color: var(--lite-muted, #b5a795);
+  background: var(--lite-surface-strong, #101d30);
+  color: var(--lite-muted, #b9c8dd);
 }
 .signal-original-caption {
   display: flex;
@@ -428,7 +428,7 @@
   margin-top: 10px;
   font-size: 12px;
   line-height: 1.7;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
 }
 .signal-original-caption > span:last-child {
   flex: 0 0 auto;
@@ -454,9 +454,9 @@
   width: 76%;
   height: 65px;
   padding: 18px;
-  border: 1px solid rgb(239 199 139 / 25%);
+  border: 1px solid rgb(76 141 255 / 25%);
   border-radius: 9px;
-  background: var(--lite-surface-strong, #201c17);
+  background: var(--lite-surface-strong, #101d30);
   color: var(--signal-accent);
   font:
     12px/1.4 ui-monospace,
@@ -481,7 +481,7 @@
   --signal-record-y: 20px;
   --signal-record-angle: 3deg;
   animation-delay: 140ms;
-  background: var(--lite-surface-strong, #201c17);
+  background: var(--lite-surface-strong, #101d30);
 }
 .signal-record-questions {
   list-style: none;
@@ -492,7 +492,7 @@
   display: flex;
   gap: 14px;
   padding: 15px 0;
-  border-top: 1px solid var(--lite-line, #3b3227);
+  border-top: 1px solid var(--lite-line, #2b3f5c);
   animation: signal-record-row-enter 650ms ease both;
 }
 .signal-record-questions li:nth-child(2) {
@@ -510,13 +510,13 @@
     monospace;
 }
 .signal-record-questions strong {
-  color: var(--lite-ink, #f5efe5);
+  color: var(--lite-ink, #f4f7fc);
   font-size: 13px;
   font-weight: 550;
 }
 .signal-record-questions p {
   margin: 6px 0 0;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   line-height: 1.8;
 }
@@ -525,8 +525,8 @@
   padding: 13px 15px;
   border: 1px dashed color-mix(in srgb, var(--signal-accent) 28%, transparent);
   border-radius: 9px;
-  background: rgb(4 3 2 / 32%);
-  color: var(--lite-muted, #b5a795);
+  background: rgb(2 7 18 / 32%);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   line-height: 1.9;
 }
@@ -544,10 +544,10 @@
   align-self: flex-start;
   max-width: 90%;
   padding: 12px 20px;
-  border: 1px solid rgb(239 199 139 / 25%);
+  border: 1px solid rgb(76 141 255 / 25%);
   border-radius: 18px 18px 18px 3px;
   color: var(--signal-accent);
-  background: var(--lite-surface-strong, #201c17);
+  background: var(--lite-surface-strong, #101d30);
   font-size: clamp(16px, 2.5vw, 24px);
   font-weight: 500;
   animation: signal-question-enter 650ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -556,7 +556,7 @@
 .signal-question-cloud > span:nth-child(2) {
   align-self: flex-end;
   border-radius: 18px 18px 3px 18px;
-  background: var(--lite-surface-strong, #201c17);
+  background: var(--lite-surface-strong, #101d30);
 }
 .signal-question-cloud > span:nth-child(3) {
   margin-left: 7%;
@@ -567,13 +567,13 @@
   align-items: center;
   gap: 8px;
   padding: 18px 0;
-  border-top: 1px solid var(--lite-line, #3b3227);
-  border-bottom: 1px solid var(--lite-line, #3b3227);
+  border-top: 1px solid var(--lite-line, #2b3f5c);
+  border-bottom: 1px solid var(--lite-line, #2b3f5c);
 }
 .signal-reputation-filter > span {
   padding: 5px 9px;
   border-radius: 5px;
-  background: rgb(239 199 139 / 8%);
+  background: rgb(76 141 255 / 8%);
   color: var(--signal-accent);
   font-size: 12px;
 }
@@ -583,7 +583,7 @@
 }
 .signal-reputation-filter strong {
   margin-left: auto;
-  color: var(--lite-ink, #f5efe5);
+  color: var(--lite-ink, #f4f7fc);
   font-size: 13px;
   font-weight: 550;
 }
@@ -807,13 +807,13 @@
 }
 .signal-exact-data {
   margin-top: 18px;
-  border-top: 1px solid var(--lite-line, #3b3227);
+  border-top: 1px solid var(--lite-line, #2b3f5c);
 }
 .signal-exact-data summary {
   min-height: 48px;
   display: flex;
   align-items: center;
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   cursor: pointer;
 }
@@ -823,13 +823,13 @@
   margin: 0 0 18px;
 }
 .signal-exact-data dt {
-  color: var(--lite-muted, #b5a795);
+  color: var(--lite-muted, #b9c8dd);
   font-size: 12px;
   line-height: 1.7;
 }
 .signal-exact-data dd {
   margin: 4px 0 0;
-  color: var(--lite-ink, #f5efe5);
+  color: var(--lite-ink, #f4f7fc);
   font-size: 14px;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -848,5 +848,35 @@
 @media (max-width: 600px) {
   .showcase-signal-stage.showcase-evidence-values[data-channel] .signal-finance-facts dd {
     font-size: 23px;
+  }
+}
+.showcase-signal-stage::before {
+  background: radial-gradient(
+    320px circle at var(--lite-shine-x, 90%) var(--lite-shine-y, 5%),
+    color-mix(in srgb, var(--signal-accent) 12%, transparent),
+    transparent 70%
+  );
+}
+.signal-channel-tabs button[aria-selected='true'] {
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 8%),
+    0 0 18px color-mix(in srgb, var(--signal-accent) 8%, transparent);
+}
+.signal-channel-panel:not([hidden]) {
+  animation: signal-panel-reveal 320ms ease-out both;
+}
+@keyframes signal-panel-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .signal-channel-panel:not([hidden]) {
+    animation: none;
   }
 }

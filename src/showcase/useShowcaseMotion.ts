@@ -48,6 +48,7 @@ export function useShowcaseMotion(
           const all = (selector: string) =>
             Array.from(container.querySelectorAll<HTMLElement>(selector));
           const enter = gsap.timeline({ defaults: { ease: 'power3.out' } });
+          const hoverTweens: gsap.core.Tween[] = [];
           if (mode === 'search') {
             enter.from(all('.lite-search-eyebrow'), { opacity: 0, y: 8, duration: 0.45 });
             enter.from(
@@ -81,8 +82,13 @@ export function useShowcaseMotion(
             );
           }
           const visibility = () => {
-            if (document.hidden) enter.pause();
-            else enter.resume();
+            if (document.hidden) {
+              enter.pause();
+              hoverTweens.forEach((tween) => tween.pause());
+            } else {
+              enter.resume();
+              hoverTweens.forEach((tween) => tween.resume());
+            }
           };
           document.addEventListener('visibilitychange', visibility);
           visibility();
@@ -90,6 +96,8 @@ export function useShowcaseMotion(
           const handlers = cards.map((card) => {
             const tiltX = gsap.quickTo(card, 'rotationX', { duration: 0.35, ease: 'power2.out' });
             const tiltY = gsap.quickTo(card, 'rotationY', { duration: 0.35, ease: 'power2.out' });
+            hoverTweens.push(tiltX.tween, tiltY.tween);
+            const tilt = card.matches('.showcase-signal-stage') ? 4 : 2;
             const move = (event: PointerEvent) => {
               if (document.hidden || card.contains(document.activeElement)) return;
               const bounds = card.getBoundingClientRect();
@@ -97,8 +105,8 @@ export function useShowcaseMotion(
               const y = (event.clientY - bounds.top) / bounds.height;
               card.style.setProperty('--lite-shine-x', `${x * 100}%`);
               card.style.setProperty('--lite-shine-y', `${y * 100}%`);
-              tiltX((0.5 - y) * 2);
-              tiltY((x - 0.5) * 2);
+              tiltX((0.5 - y) * tilt);
+              tiltY((x - 0.5) * tilt);
             };
             const leave = () => {
               tiltX(0);

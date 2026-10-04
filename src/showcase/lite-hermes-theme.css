@@ -5,20 +5,20 @@
   .lite-hermes-dialog,
   body:has(.showcase-shell) .select-popup
 ) {
-  --lite-canvas: #100f0d;
-  --lite-surface: rgb(32 28 23 / 72%);
-  --lite-surface-strong: #201c17;
-  --lite-surface-hover: #29231b;
-  --lite-line: #3b3227;
-  --lite-line-strong: rgb(239 199 139 / 45%);
-  --lite-primary: #efc78b;
-  --lite-primary-ink: #261b0d;
-  --lite-primary-bright: #ffdda9;
-  --lite-ink: #f5efe5;
-  --lite-muted: #b5a795;
-  --lite-faint: #a29482;
+  --lite-canvas: #070f1b;
+  --lite-surface: rgb(16 29 48 / 85%);
+  --lite-surface-strong: #101d30;
+  --lite-surface-hover: #182942;
+  --lite-line: #2b3f5c;
+  --lite-line-strong: rgb(125 173 255 / 45%);
+  --lite-primary: #4c8dff;
+  --lite-primary-ink: #061021;
+  --lite-primary-bright: #b8d5ff;
+  --lite-ink: #f4f7fc;
+  --lite-muted: #b9c8dd;
+  --lite-faint: #a6b7cc;
   --lite-radius: 16px;
-  --lite-shadow: 0 20px 60px rgb(4 3 2 / 35%);
+  --lite-shadow: 0 20px 60px rgb(2 7 18 / 35%);
   --lite-glass: blur(14px);
   color-scheme: dark;
 }
@@ -57,6 +57,6 @@ body:has(.showcase-shell) .select-popup {
   color-scheme: dark;
 }
 body:has(.showcase-shell) .select-item:is([data-highlighted], :hover) {
-  background: #382d1f;
-  color: #f5efe5;
+  background: #203754;
+  color: #f4f7fc;
 }

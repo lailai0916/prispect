@@ -25,9 +25,9 @@
 }
 .showcase-hermes .lite-search-atmosphere {
   background-image:
-    radial-gradient(ellipse 78% 60% at 50% 0, rgb(239 199 139 / 6%), transparent),
-    linear-gradient(rgb(239 199 139 / 4%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(239 199 139 / 4%) 1px, transparent 1px);
+    radial-gradient(ellipse 78% 60% at 50% 0, rgb(76 141 255 / 6%), transparent),
+    linear-gradient(rgb(76 141 255 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(76 141 255 / 4%) 1px, transparent 1px);
   background-size:
     100% 100%,
     48px 48px,
@@ -87,7 +87,7 @@
   padding: 4px;
   border: 1px solid var(--lite-line);
   border-radius: 11px;
-  background: rgb(32 28 23 / 92%);
+  background: rgb(16 29 48 / 92%);
 }
 .showcase-hermes .lite-search-modes a {
   display: flex;
@@ -109,7 +109,7 @@
 .showcase-hermes .lite-search-modes a[aria-current='page'] {
   color: var(--lite-primary-ink);
   background: var(--lite-primary);
-  box-shadow: 0 3px 16px rgb(239 199 139 / 12%);
+  box-shadow: 0 3px 16px rgb(76 141 255 / 12%);
 }
 .showcase-hermes .lite-search-modes a:not([aria-current]):hover {
   color: var(--lite-ink);
@@ -138,7 +138,7 @@
   padding: 12px clamp(24px, 4vw, 56px);
   border-top: 1px solid var(--lite-line);
   color: var(--lite-faint);
-  background: rgb(16 15 13 / 90%);
+  background: rgb(7 15 27 / 90%);
   font-size: 12px;
 }
 .showcase-hermes .lite-search-footer > div {
@@ -249,7 +249,7 @@
   inset: 0 auto 0 var(--scan-position);
   width: 2px;
   background: var(--lite-primary);
-  box-shadow: 0 0 15px rgb(239 199 139 / 65%);
+  box-shadow: 0 0 15px rgb(76 141 255 / 65%);
   pointer-events: none;
 }
 .showcase-hermes .showcase-scan-control {
@@ -304,7 +304,7 @@
   border-radius: inherit;
   background: radial-gradient(
     220px circle at var(--lite-shine-x, 50%) var(--lite-shine-y, 50%),
-    rgb(239 199 139 / 7%),
+    rgb(76 141 255 / 7%),
     transparent
   );
   pointer-events: none;
@@ -500,4 +500,79 @@
 }
 .showcase-hermes .lite-search-introduction[hidden] {
   display: none;
+}
+/* Preserve the approved example: left reading prompt, right four-channel device. */
+.showcase-hermes[data-home-mode='example'] .lite-search-main {
+  width: min(calc(100% - 96px), 1280px);
+}
+.showcase-hermes .lite-search-example {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.15fr);
+  gap: 0 clamp(30px, 5vw, 80px);
+  perspective: 1200px;
+}
+.showcase-hermes .lite-search-example > .lite-search-detail-heading {
+  align-self: center;
+  margin: 0;
+}
+.showcase-hermes .lite-search-example .lite-search-detail-heading h1 {
+  font-size: clamp(32px, 4vw, 60px);
+  line-height: 1.25;
+  letter-spacing: -0.055em;
+}
+.showcase-hermes .lite-search-example .lite-search-detail-heading > p:last-child {
+  max-width: 380px;
+  margin-top: 24px;
+  font-size: 15px;
+  line-height: 1.9;
+}
+.showcase-hermes .lite-search-example > .showcase-signal-stage {
+  min-width: 0;
+}
+.showcase-hermes .lite-search-example > .lite-search-scanner-panel {
+  grid-column: 2;
+}
+@media (min-width: 901px) {
+  .showcase-hermes
+    .lite-search-example
+    .showcase-signal-stage.showcase-evidence-values[data-channel]
+    .signal-finance-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .showcase-hermes
+    .lite-search-example
+    .showcase-signal-stage.showcase-evidence-values[data-channel]
+    .signal-finance-facts
+    dd {
+    font-size: clamp(18px, 1.7vw, 28px);
+  }
+}
+@media (max-width: 900px) {
+  .showcase-hermes[data-home-mode='example'] .lite-search-main {
+    width: calc(100% - 32px);
+  }
+  .showcase-hermes .lite-search-example {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .showcase-hermes .lite-search-example .lite-search-detail-heading h1 {
+    font-size: 36px;
+  }
+  .showcase-hermes .lite-search-example .lite-search-detail-heading > p:last-child {
+    font-size: 14px;
+    max-width: 500px;
+    margin-top: 18px;
+  }
+  .showcase-hermes .lite-search-example > .lite-search-scanner-panel {
+    grid-column: 1;
+    margin-top: 0;
+  }
+}
+@media (max-width: 350px) {
+  .showcase-hermes[data-home-mode='example'] .lite-search-main {
+    width: calc(100% - 24px);
+  }
+  .showcase-hermes .lite-search-example .lite-search-detail-heading h1 {
+    font-size: 31px;
+  }
 }

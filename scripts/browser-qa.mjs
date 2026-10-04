@@ -141,11 +141,79 @@ async function readableComposer(page, name) {
     `${name}: company text has usable visible space without a redundant mode badge or inner submit hint`
   );
 }
+async function sharedAssistant(page, name, { dock = false } = {}) {
+  const trigger = page.locator('.company-assistant-trigger');
+  await trigger.waitFor();
+  assert.equal(await trigger.count(), 1, `${name}: duplicate assistant launcher`);
+  assert.equal(await trigger.locator('.assistant-character').count(), 1);
+  await trigger
+    .locator('img')
+    .evaluateAll((images) => Promise.all(images.map((image) => image.decode())));
+  if (dock) {
+    const measured = await trigger.evaluate((element) => {
+      const bounds = element.getBoundingClientRect();
+      const color = getComputedStyle(element).backgroundColor;
+      const alpha = color.match(/[\d.]+/g)?.map(Number)[3] ?? 1;
+      return {
+        x: bounds.x,
+        right: bounds.right,
+        y: bounds.y,
+        bottom: bounds.bottom,
+        height: bounds.height,
+        viewport: document.body.getBoundingClientRect().right,
+        innerWidth,
+        rootWidth: document.documentElement.clientWidth,
+        viewportHeight: innerHeight,
+        alpha,
+        paddingBottom: Number.parseFloat(getComputedStyle(document.body).paddingBottom),
+      };
+    });
+    assert.ok(
+      measured.x >= -1 && measured.right >= measured.viewport - 1,
+      JSON.stringify(measured)
+    );
+    assert.ok(Math.abs(measured.bottom - measured.viewportHeight) <= 1);
+    assert.ok(measured.height >= 64 && measured.height <= 80);
+    assert.equal(
+      measured.alpha,
+      1,
+      `${name}: translucent dock permits visible touch targets underneath`
+    );
+    assert.ok(measured.paddingBottom >= measured.height - 1, `${name}: no reserved footer space`);
+    await trigger.focus();
+    await page.keyboard.press('Enter');
+    const panel = page.locator('.company-assistant-panel:not([hidden])');
+    await panel.waitFor();
+    await panel.evaluate((element) =>
+      Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => {})))
+    );
+    const panelBounds = await panel.boundingBox();
+    assert.ok(
+      panelBounds && panelBounds.y >= 0 && panelBounds.y + panelBounds.height <= measured.y - 7,
+      JSON.stringify({ panelBounds, dock: measured })
+    );
+    await capture(page, `${name}-assistant-dock-panel`);
+    await panel.locator('textarea').focus();
+    await page.keyboard.press('Escape');
+    await panel.waitFor({ state: 'hidden' });
+    assert.equal(await trigger.getAttribute('aria-expanded'), 'false');
+  }
+  check(
+    `${name}: one shared assistant character${dock ? ', opaque fixed dock, reserved space and keyboard-closeable panel' : ''}`
+  );
+}
 async function readableDialogHeader(dialog, name) {
   const colors = await dialog.locator('.dialog-header h2').evaluate((element) => {
+    const colorCanvas = document.createElement('canvas');
+    colorCanvas.width = colorCanvas.height = 1;
+    const colorContext = colorCanvas.getContext('2d', { willReadFrequently: true });
+    if (!colorContext) throw new Error('Color normalization requires Canvas2D');
     const rgb = (value) => {
-      const numbers = value.match(/[\d.]+/g)?.map(Number) || [];
-      return [numbers[0] || 0, numbers[1] || 0, numbers[2] || 0, numbers[3] ?? 1];
+      colorContext.clearRect(0, 0, 1, 1);
+      colorContext.fillStyle = value;
+      colorContext.fillRect(0, 0, 1, 1);
+      const channels = Array.from(colorContext.getImageData(0, 0, 1, 1).data);
+      return [channels[0], channels[1], channels[2], channels[3] / 255];
     };
     const layers = [];
     for (let node = element; node; node = node.parentElement)
@@ -976,6 +1044,7 @@ try {
   await headlineFits(mobile.page, 'mobile English dark');
   await submitLabelFits(mobile.page, 'mobile English dark');
   await readableComposer(mobile.page, 'mobile English dark');
+  await sharedAssistant(mobile.page, '390-en', { dock: true });
   await capture(mobile.page, 'lite-mobile-en-dark');
   await mobile.page.locator('.showcase-menu-trigger').click();
   await mobile.page.getByRole('dialog', { name: 'Explore Prispect', exact: true }).waitFor();
@@ -1024,6 +1093,13 @@ try {
   await noOverflow(medium.page, '900px English financial difference');
   await capture(medium.page, 'lite-900-en-signal-difference');
   await medium.context.close();
+  const exampleDesktop = await openContext({ locale: 'en', width: 1024, height: 900 });
+  await exampleDesktop.page.locator('.lite-search-modes a[href*="view=example"]').click();
+  await scrollScene(exampleDesktop.page, '.showcase-signal-stage', 110);
+  await financeAmountsFit(exampleDesktop.page, '1024px English two-column financial example');
+  await noOverflow(exampleDesktop.page, '1024px English two-column historical example');
+  await capture(exampleDesktop.page, 'lite-1024-en-signal-finance');
+  await exampleDesktop.context.close();
   const narrow = await openContext({
     locale: 'en',
     width: 320,
@@ -1035,6 +1111,7 @@ try {
   await headlineFits(narrow.page, '320px English Lite');
   await submitLabelFits(narrow.page, '320px English Lite');
   await readableComposer(narrow.page, '320px English Lite');
+  await sharedAssistant(narrow.page, '320-en', { dock: true });
   await capture(narrow.page, 'lite-320-en-light');
   await staticOptics(narrow.page, '320px reduced motion');
   await narrow.page.locator('.showcase-examples button').filter({ hasText: '松原安全' }).click();
@@ -1062,6 +1139,16 @@ try {
   await narrowMenu.waitFor({ state: 'hidden' });
   assert.equal(await narrowTrigger.evaluate((element) => document.activeElement === element), true);
   check('320px English menu confines Tab/Shift+Tab focus and restores its trigger');
+  await narrow.page.locator('.experience-switch a').filter({ hasText: 'Pro' }).click();
+  await narrow.page.waitForURL(`${base}/query`);
+  await narrow.page.waitForFunction(() => {
+    const input = document.querySelector('.company-query-page textarea');
+    return input && !input.disabled;
+  });
+  await sharedAssistant(narrow.page, '320-en-pro', { dock: true });
+  await headerControlsFit(narrow.page, '320px English Pro');
+  await noOverflow(narrow.page, '320px English Pro');
+  await capture(narrow.page, 'pro-query-320-en-shared-assistant');
   await narrow.context.close();
   for (const name of [
     'pageErrors',

@@ -226,12 +226,14 @@ export function ShowcaseLanding({
               </a>
               <p className="lite-search-eyebrow">HISTORICAL EXAMPLE / 2025</p>
               <h1 id="lite-example-title" ref={exampleHeading} tabIndex={-1}>
-                {t('数字，能追到哪一页？', 'Which page supports the number?')}
+                {t('线索散落各处。', 'The clues are scattered.')}
+                <br />
+                {t('把它们连起来。', 'Connect them.')}
               </h1>
               <p>
                 {t(
-                  '松原安全的历史年报样例。换个问题，查看相同数字、金额差与真实原文。',
-                  'A historical Songyuan annual-report example. Explore the same figures, their difference and the original pages.'
+                  '从财务、公开记录到口碑，换一个问题，就多看见一层。',
+                  'From financials to public records and reputation, a different question reveals another layer.'
                 )}
               </p>
             </header>
