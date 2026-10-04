@@ -83,13 +83,11 @@ export function CompanyReportDocument({
   basis = 'consolidated',
   onInspect,
   disabled = false,
-  progress,
 }: {
   run: CompanyResearchRun;
   basis?: CompanyReadingBasis;
   onInspect?: (judgment: AssessmentJudgment) => void;
   disabled?: boolean;
-  progress?: ReactNode;
 }) {
   const { t, locale, user } = useApp();
   const document = deriveCompanyReportDocument(run, basis);
@@ -316,7 +314,6 @@ export function CompanyReportDocument({
               </div>
             )}
           </dl>
-          {progress}
           {document.warnings.length > 0 && (
             <ul className="report-document-warnings">
               {document.warnings.map((warning, index) => (

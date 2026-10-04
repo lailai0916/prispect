@@ -50,7 +50,6 @@ import { SourceTrust } from '../SourceTrust';
 import { CompanyEvidenceLab } from '../CompanyEvidenceLab';
 import { CompanyBrief } from '../CompanyBrief';
 import { CompanyFinancialOverview } from '../CompanyFinancialOverview';
-import { CompanyAIResearchStatus } from '../CompanyAIResearchStatus';
 import { CompanyReportDocument } from '../CompanyReportDocument';
 import { ResearchPlan } from '../ResearchPlan';
 import { CompanyPageIndex } from '../CompanyPageIndex';
@@ -477,21 +476,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
   const pageAnchors = pageAnchorItems(section, aiReport);
   const reportHref = `${companyPath(run.id)}&report=ai${savedOnly ? '&cached=1' : ''}`;
   const dataHref = `${companyPath(run.id)}${savedOnly ? '&cached=1' : ''}`;
-  const researchStatus =
-    section === 'overview' && !pausedMarket && !run.informationGap ? (
-      <CompanyAIResearchStatus
-        run={run}
-        reportHref={reportHref}
-        onStart={() => void refreshAssessment()}
-        onRetrySources={() => void refresh()}
-        onCancel={() => void cancelResearch()}
-        starting={assessmentUpdating}
-        cancelling={cancellingResearch}
-        disabled={!canWriteRun}
-        reportView={aiReport}
-        compact={aiReport}
-      />
-    ) : null;
   const scopeNote = snapshot
     ? `${t('数据更新于', 'Data updated at')} ${date(snapshot.fetchedAt, locale)}`
     : '';
@@ -592,7 +576,16 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           )}
         </div>
         <div className="context-page-actions">
-          {section !== 'overview' && companyResearchAvailability(run).canCancel && (
+          {section === 'overview' &&
+            !aiReport &&
+            snapshot &&
+            !pausedMarket &&
+            !run.informationGap && (
+              <a className="text-link" href={reportHref}>
+                {t('查看研究报告', 'View research report')}
+              </a>
+            )}
+          {companyResearchAvailability(run).canCancel && (
             <button
               className="button button-secondary"
               disabled={cancellingResearch || !canWriteRun}
@@ -633,7 +626,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
           </button>
         </div>
       </header>
-      {!aiReport && researchStatus}
       {!aiReport &&
         pageAnchors.length > 1 &&
         !pausedMarket &&
@@ -749,7 +741,6 @@ export function CompanyWorkspacePage({ query }: { query: URLSearchParams }) {
               run={run}
               basis="consolidated"
               disabled={!canWriteRun}
-              progress={researchStatus}
               onInspect={(judgment) =>
                 user &&
                 run.assessment &&
