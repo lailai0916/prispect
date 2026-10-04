@@ -103,6 +103,10 @@ const LiteResearchPage = lazyPage(
   () => import('./showcase/LiteResearch'),
   (module) => module.LiteResearchPage
 );
+const LiteCompanyComparePage = lazyPage(
+  () => import('./showcase/LiteCompanyCompare'),
+  (module) => module.LiteCompanyComparePage
+);
 const CompanyQueryPage = lazyPage(
   () => import('./pages/CompanyQuery'),
   (module) => module.CompanyQueryPage
@@ -143,7 +147,16 @@ const DocsHome = lazyPage(
   () => import('./pages/DocsHome'),
   (module) => module.DocsHome
 );
-const publicPages = ['/', '/query', '/company', '/docs', '/login', '/register', ...documentPaths];
+const publicPages = [
+  '/',
+  '/query',
+  '/company',
+  '/companies/compare',
+  '/docs',
+  '/login',
+  '/register',
+  ...documentPaths,
+];
 
 function pageResource(path: string) {
   const page = path.split('?')[0];
@@ -160,6 +173,8 @@ function pageResource(path: string) {
       return new URLSearchParams(path.split('?')[1]).get('experience') === 'lite'
         ? LiteResearchPage
         : CompanyWorkspacePage;
+    case '/companies/compare':
+      return LiteCompanyComparePage;
     case '/workspace':
       return WorkspacePage;
     case '/materials':
@@ -535,6 +550,7 @@ export function App() {
       '/decisions': t(...productTerms.paymentsAndHandovers),
       '/new': t(...productTerms.newFinancialReview),
       '/compare': t(...productTerms.compareReviews),
+      '/companies/compare': t('两家公司对比', 'Compare two companies'),
       '/login': t('登录', 'Log in'),
       '/register': t('创建账号', 'Create account'),
     };
@@ -596,9 +612,13 @@ export function App() {
   const sessionAvailable = loaded && !loadError;
   const showcaseHome =
     page === '/' && new URLSearchParams(route.split('?')[1]).get('view') !== 'story';
+  const liteSearchActive =
+    showcaseHome &&
+    !['example', 'guide'].includes(new URLSearchParams(route.split('?')[1]).get('view') || '');
   const liteCompany =
     page === '/company' && new URLSearchParams(route.split('?')[1]).get('experience') === 'lite';
-  const liteExperience = showcaseHome || liteCompany;
+  const liteComparison = page === '/companies/compare';
+  const liteExperience = showcaseHome || liteCompany || liteComparison;
   const experienceRun =
     page === '/company' ? new URLSearchParams(route.split('?')[1]).get('run') : null;
   const liteLink = experienceRun ? `${companyPath(experienceRun)}&experience=lite` : '/';
@@ -609,6 +629,7 @@ export function App() {
       (!protectedPage || accountUser) &&
       page !== '/' &&
       !liteCompany &&
+      !liteComparison &&
       !['/login', '/register', '/docs', ...documentPaths].includes(page)
   );
   const currentSection = page.startsWith('/tasks/')
@@ -722,15 +743,14 @@ export function App() {
                 >
                   {liteExperience ? (
                     <>
-                      <a
-                        href="/"
-                        aria-current={
-                          showcaseHome && !new URLSearchParams(route.split('?')[1]).has('view')
-                            ? 'page'
-                            : undefined
-                        }
-                      >
+                      <a href="/?view=search" aria-current={liteSearchActive ? 'page' : undefined}>
                         {t('查公司', 'Find a company')}
+                      </a>
+                      <a
+                        href="/companies/compare"
+                        aria-current={liteComparison ? 'page' : undefined}
+                      >
+                        {t('对比', 'Compare')}
                       </a>
                       <a href="/?view=guide">{t('如何阅读', 'How to read')}</a>
                     </>
@@ -824,7 +844,7 @@ export function App() {
                   </>
                 ) : null}
                 {liteExperience && (
-                  <ShowcaseNavigation homeActive={showcaseHome} proLink={proLink} />
+                  <ShowcaseNavigation homeActive={liteSearchActive} proLink={proLink} />
                 )}
               </div>
               {(pending > 0 || openingPage || (loaded && refreshingWorkspace)) && (
@@ -935,6 +955,8 @@ export function App() {
                     <Decisions key={route} query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/query' ? (
                     <CompanyQueryPage query={new URLSearchParams(route.split('?')[1])} />
+                  ) : liteComparison ? (
+                    <LiteCompanyComparePage query={new URLSearchParams(route.split('?')[1])} />
                   ) : page === '/company' ? (
                     liteCompany ? (
                       <LiteResearchPage

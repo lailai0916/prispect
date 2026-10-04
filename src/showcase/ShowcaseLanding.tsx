@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUpRight, FileSearch, Search, Workflow } from 'lucide-react';
-import { productTagline } from '../../shared/product-terms';
 import { Dialog } from '../components';
 import { useApp } from '../context';
 import { landingExample } from '../cinematic/landing-content';
 import { ShowcaseSearch } from './ShowcaseSearch';
+import { ShowcaseBrandHero } from './ShowcaseBrandHero';
 import { ShowcaseSignalStage } from './ShowcaseSignalStage';
 import { ShowcaseWorkspaceField } from './ShowcaseWorkspaceField';
 import { useShowcaseMotion } from './useShowcaseMotion';
@@ -65,8 +65,15 @@ export function ShowcaseLanding({
   const [sourceOpen, setSourceOpen] = useState(false);
   const [scanPosition, setScanPosition] = useState(52);
   const requestedView = query?.get('view');
+  const requestedAnchor = typeof window === 'undefined' ? '' : window.location.hash;
   const mode: HomeMode =
-    requestedView === 'example' ? 'example' : requestedView === 'guide' ? 'guide' : 'search';
+    requestedView === 'example'
+      ? 'example'
+      : requestedView === 'guide'
+        ? 'guide'
+        : requestedAnchor === '#showcase-evidence'
+          ? 'example'
+          : 'search';
   const requestedChannel = query?.get('channel');
   const channel =
     requestedChannel === 'public' ||
@@ -79,7 +86,7 @@ export function ShowcaseLanding({
     const parameters = new URLSearchParams(query);
     parameters.delete('view');
     parameters.delete('channel');
-    if (view !== 'search') parameters.set('view', view);
+    parameters.set('view', view);
     if (nextChannel) parameters.set('channel', nextChannel);
     return `/${parameters.size ? `?${parameters}` : ''}`;
   };
@@ -90,11 +97,11 @@ export function ShowcaseLanding({
       if (historyNavigation) return;
       const anchor = window.location.hash.slice(1);
       if (!['showcase-query', 'showcase-evidence'].includes(anchor)) return;
-      if (anchor === 'showcase-evidence' && mode !== 'example') {
+      if (anchor === 'showcase-evidence' && (mode !== 'example' || requestedView !== 'example')) {
         navigate(pageHref('example', 'finance'));
         return;
       }
-      if (anchor === 'showcase-query' && mode !== 'search') {
+      if (anchor === 'showcase-query' && (mode !== 'search' || requestedView !== 'search')) {
         navigate(`${pageHref('search')}#showcase-query`);
         return;
       }
@@ -113,7 +120,7 @@ export function ShowcaseLanding({
       cancelAnimationFrame(frame);
       window.removeEventListener('hashchange', followAnchor);
     };
-  }, [historyNavigation, mode, navigate]);
+  }, [historyNavigation, mode, navigate, requestedView]);
   useEffect(() => {
     setSourceOpen(false);
     if (historyNavigation || mode === 'search') return;
@@ -167,31 +174,7 @@ export function ShowcaseLanding({
       <ShowcaseWorkspaceField />
       <div className="lite-search-atmosphere" aria-hidden="true" />
       <div className="lite-search-main">
-        <div className="lite-search-introduction" hidden={mode !== 'search'}>
-          <p className="lite-search-eyebrow">LITE / COMPANY RESEARCH</p>
-          <h1 id="showcase-title" className="lite-search-title" aria-label={t(...productTagline)}>
-            <span aria-hidden="true">
-              {(locale === 'en'
-                ? productTagline[1].split(/(\s+)/)
-                : ['让企业判断，', '有据可查。']
-              ).map((word, wordIndex) => (
-                <span className="lite-search-word" key={`${word}-${wordIndex}`}>
-                  {Array.from(word).map((letter, index) => (
-                    <span className="lite-search-letter" key={`${letter}-${index}`}>
-                      {letter === ' ' ? '\u00a0' : letter}
-                    </span>
-                  ))}
-                </span>
-              ))}
-            </span>
-          </h1>
-          <p className="lite-search-description">
-            {t(
-              '找到公司，对齐年度，从数字追到原文。',
-              'Find a company, align the year, and follow the numbers to their sources.'
-            )}
-          </p>
-        </div>
+        {mode === 'search' && <ShowcaseBrandHero />}
         <nav className="lite-search-modes" aria-label={t('Lite 入口', 'Lite destinations')}>
           {modes.map(({ id, label, icon: Icon }) => (
             <a key={id} href={pageHref(id)} aria-current={mode === id ? 'page' : undefined}>
@@ -212,6 +195,10 @@ export function ShowcaseLanding({
               'A-share issuers · financials, public leads and their sources'
             )}
           </p>
+          <a className="lite-search-back" href="/companies/compare">
+            {t('两家公司，并排看', 'Compare two companies side by side')}
+            <ArrowUpRight size={16} aria-hidden="true" />
+          </a>
         </section>
         {mode === 'example' && (
           <section

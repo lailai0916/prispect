@@ -92,26 +92,131 @@ async function headerControlsFit(page, name) {
   check(`${name}: visible header controls remain inside the viewport`);
 }
 async function headlineFits(page, name) {
-  const measured = await page.locator('#showcase-title').evaluate((heading) => {
+  const heading = page.locator('#showcase-title');
+  assert.equal(await heading.getAttribute('aria-label'), '析光 Prispect');
+  assert.equal((await heading.innerText()).replace(/\s+/g, ''), '析光Prispect');
+  const measured = await heading.evaluate((heading) => {
     const box = heading.getBoundingClientRect();
     const range = document.createRange();
     range.selectNodeContents(heading);
     return {
       left: box.left,
       right: box.right,
-      ranges: Array.from(range.getClientRects(), (line) => ({
-        left: line.left,
-        right: line.right,
-      })),
+      ranges: [...range.getClientRects()].map((line) => ({ left: line.left, right: line.right })),
     };
   });
-  assert.ok(measured.ranges.length > 0, `${name} has no headline text`);
+  assert.ok(measured.ranges.length > 0, `${name}: brand title has no text`);
   for (const line of measured.ranges)
     assert.ok(
       line.left >= measured.left - 2 && line.right <= measured.right + 2,
-      `${name} clips its headline: ${JSON.stringify(line)}`
+      `${name}: bilingual brand title is clipped`
     );
-  check(`${name}: complete headline text fits its actual content area`);
+  check(`${name}: complete bilingual brand title fits its actual content area`);
+}
+async function settleBrandSearch(page) {
+  await page
+    .locator('.showcase-hermes[data-home-mode="search"] .lite-brand-hero[data-brand-ready="true"]')
+    .waitFor();
+  await page.locator('.site-header .command-trigger').waitFor({ state: 'attached' });
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() => {
+    const hero = document.querySelector(
+      '.showcase-hermes[data-home-mode="search"] .lite-brand-hero'
+    );
+    const composer = document.querySelector('.showcase-search');
+    if (!hero?.getClientRects().length || !composer?.getClientRects().length) return false;
+    const targets = [
+      hero,
+      hero.parentElement,
+      composer,
+      document.querySelector('.lite-search-modes'),
+      ...hero.querySelectorAll('.lite-brand-mark,#showcase-title,.lite-search-letter'),
+    ];
+    return (
+      targets.every((node) => {
+        const style = getComputedStyle(node);
+        const matrix = new DOMMatrixReadOnly(style.transform);
+        return Number(style.opacity) > 0.999 && Math.abs(matrix.m42) < 0.01;
+      }) &&
+      [...hero.querySelectorAll('path')].every(
+        (path) => Math.abs(parseFloat(getComputedStyle(path).strokeDashoffset) || 0) < 0.01
+      )
+    );
+  });
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+  );
+}
+async function brandSearchFits(page, name) {
+  await settleBrandSearch(page);
+  const hero = page.locator('.lite-brand-hero');
+  const heading = hero.locator('#showcase-title');
+  const mark = hero.locator('.lite-brand-mark svg');
+  assert.equal(await heading.getAttribute('aria-label'), '析光 Prispect');
+  assert.equal(await mark.count(), 1);
+  assert.equal(await mark.getAttribute('viewBox'), '0 0 44 44');
+  assert.deepEqual(
+    await mark.locator('path').evaluateAll((paths) => paths.map((path) => path.getAttribute('d'))),
+    ['M16 6H6v10M28 6h10v10M6 28v10h10M38 28v10H28', 'M13 23h6l5-9v16l6-7']
+  );
+  const bounds = await page.locator('.lite-search-main').boundingBox(),
+    logo = await mark.boundingBox();
+  assert.ok(
+    logo.width >= (page.viewportSize().width > 600 ? 150 : 90) &&
+      logo.x >= bounds.x - 1 &&
+      logo.x + logo.width <= bounds.x + bounds.width + 1
+  );
+  for (const selector of ['.lite-brand-name', '.lite-brand-latin']) {
+    const line = await heading.locator(selector).evaluate((node) => {
+      const box = node.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return {
+        left: box.left,
+        right: box.right,
+        rects: [...range.getClientRects()].map((r) => ({ left: r.left, right: r.right })),
+        filter: getComputedStyle(node).filter,
+        opacity: getComputedStyle(node).opacity,
+      };
+    });
+    assert.ok(line.rects.length > 0);
+    for (const rect of line.rects)
+      assert.ok(
+        rect.left >= bounds.x - 1 && rect.right <= bounds.x + bounds.width + 1,
+        `${name}: bilingual brand cropped`
+      );
+    assert.equal(line.filter, 'none');
+    assert.equal(Number(line.opacity), 1);
+  }
+  const input = page.locator('.showcase-search textarea');
+  assert.equal(await input.isVisible(), true);
+  assert.equal(await input.isEnabled(), true);
+  assert.equal(await page.locator('.lite-search-modes a:visible').count(), 3);
+  assert.equal(await page.locator('.lite-welcome-view,.lite-welcome-enter').count(), 0);
+  assert.equal(
+    await page.locator('.lite-search-description:not(.lite-brand-hero):visible').count(),
+    0
+  );
+  const inputBox = await input.boundingBox();
+  const submitBox = await page.locator('.showcase-search .start-submit').boundingBox();
+  const yearBox = await page.locator('.showcase-search-meta .select-trigger').boundingBox();
+  const headerBox = await page.locator('.site-header').boundingBox();
+  const bottom = page.viewportSize().height - (page.viewportSize().width <= 440 ? 64 : 0);
+  assert.ok(logo.y >= headerBox.y + headerBox.height - 1);
+  assert.ok(logo.y + logo.height <= inputBox.y + 1);
+  assert.ok(
+    inputBox.y + inputBox.height <= bottom &&
+      submitBox.y + submitBox.height <= bottom &&
+      yearBox.y + yearBox.height <= bottom,
+    `${name}: directly usable search is below the first visible screen`
+  );
+  assert.ok(
+    submitBox.height >= 44 && yearBox.height >= 44,
+    `${name}: query/year touch targets are under 44px`
+  );
+  check(
+    `${name}: canonical prominent logo and full bilingual wordmark coexist with a directly usable search above the mobile dock`
+  );
 }
 async function submitLabelFits(page, name) {
   const measured = await page.locator('.showcase-search .start-submit > span').evaluate((label) => {
@@ -767,7 +872,9 @@ async function evidenceExample(page, name) {
   await capture(page, `${name}-reading-guide`);
   await guide.locator('.lite-search-guide-actions a[href*="#showcase-query"]').focus();
   await page.keyboard.press('Enter');
-  await page.waitForURL((url) => !url.searchParams.has('view') && url.hash === '#showcase-query');
+  await page.waitForURL(
+    (url) => url.searchParams.get('view') === 'search' && url.hash === '#showcase-query'
+  );
   await page.waitForFunction(
     () => document.activeElement === document.querySelector('.showcase-search textarea')
   );
@@ -813,6 +920,7 @@ async function openContext({
   colorScheme = 'light',
   reducedMotion = 'no-preference',
   measureSignal = false,
+  entry = 'search',
 } = {}) {
   const context = await browser.newContext({
     viewport: { width, height },
@@ -918,7 +1026,9 @@ async function openContext({
     receipt[cancelledRead ? 'cancelledReadRequests' : 'failedRequests'].push(failure);
   });
   page.setDefaultTimeout(15000);
-  await page.goto(base, { waitUntil: 'networkidle' });
+  await page.goto(entry === 'home' ? base : `${base}/?view=search`, {
+    waitUntil: 'networkidle',
+  });
   await page.waitForFunction(() => {
     const input = document.querySelector('.showcase-search textarea');
     return input && !input.disabled;
@@ -926,23 +1036,9 @@ async function openContext({
   await page.waitForFunction(() => {
     const scene = document.querySelector('.showcase-hermes[data-ambient-ready="true"]');
     const surface = scene?.querySelector('canvas');
-    const description = document.querySelector('.lite-search-description');
-    return (
-      scene &&
-      surface &&
-      surface.width > 0 &&
-      surface.height > 0 &&
-      description &&
-      Number(getComputedStyle(description).opacity) > 0.99
-    );
+    return scene && surface && surface.width > 0 && surface.height > 0;
   });
-  await page.evaluate(() => document.fonts.ready);
-  await page.waitForFunction(() =>
-    Array.from(document.querySelectorAll('.lite-search-letter')).every((letter) => {
-      const matrix = new DOMMatrixReadOnly(getComputedStyle(letter).transform);
-      return Math.abs(matrix.m42) < 0.01 && matrix.m22 > 0.9999;
-    })
-  );
+  await settleBrandSearch(page);
   return { page, context };
 }
 // This provider is confined to two local synthetic identities. The real bundled
@@ -954,7 +1050,7 @@ const channelIdentities = [
     shortName: '合成甲企业（非真实企业）',
     companyName: '合成甲企业（非真实企业）',
     exchange: 'sse',
-    sourceUrl: 'https://example.invalid/601234/identity',
+    sourceUrl: 'https://www.cninfo.com.cn/new/snapshot/companyDetailCn?code=601234',
   },
   {
     securityCode: '601235',
@@ -962,7 +1058,7 @@ const channelIdentities = [
     shortName: '合成乙企业（非真实企业）',
     companyName: '合成乙企业（非真实企业）',
     exchange: 'sse',
-    sourceUrl: 'https://example.invalid/601235/identity',
+    sourceUrl: 'https://www.cninfo.com.cn/new/snapshot/companyDetailCn?code=601235',
   },
 ];
 let demoSnapshot;
@@ -980,10 +1076,16 @@ function channelSnapshot(identity) {
     cashflow: 'RPT_F10_FINANCE_GCASHFLOW',
     balance: 'RPT_F10_FINANCE_GBALANCE',
   };
+  // These saved synthetic URLs exercise the source-binding protocol only;
+  // the network guard prevents them from being queried as production evidence.
   const urls = Object.fromEntries(
     Object.entries(tables).map(([table, reportName]) => [
       table,
-      `https://datacenter.eastmoney.com/api/data/v1/get?reportName=${reportName}&syntheticCode=${identity.securityCode}`,
+      `https://datacenter.eastmoney.com/api/data/v1/get?${new URLSearchParams({
+        reportName,
+        syntheticCode: identity.securityCode,
+        filter: `(SECURITY_CODE="${identity.securityCode}")`,
+      })}`,
     ])
   );
   snapshot.sources = Object.entries(urls).map(([table, url]) => ({
@@ -1128,6 +1230,23 @@ async function companyChannelsAcceptance() {
   });
   const account = await (await context.request.get(`${base}/api/auth/session`)).json();
   assert.equal(account.user.isGuest, true);
+  await page.goto(`${base}/companies/compare`, { waitUntil: 'networkidle' });
+  const emptyComparison = page.locator('.lite-company-compare[data-compare-state="empty"]');
+  await emptyComparison.locator('.lite-compare-empty').waitFor();
+  assert.equal(await emptyComparison.locator('#lite-compare-a').inputValue(), '');
+  assert.equal(await emptyComparison.locator('#lite-compare-b').inputValue(), '');
+  assert.equal(await emptyComparison.locator('.lite-compare-row').count(), 0);
+  assert.deepEqual(await (await context.request.get(`${base}/api/company-records`)).json(), []);
+  assert.equal(receipt.researchWrites.length, 0);
+  const emptySearch = emptyComparison.locator('.lite-compare-empty a');
+  assert.equal(await emptySearch.getAttribute('href'), '/?view=search');
+  await emptySearch.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((url) => url.searchParams.get('view') === 'search');
+  await page.locator('.showcase-search textarea:enabled').waitFor();
+  check(
+    'A fresh owning visitor sees an empty comparison and a native search link, without invented companies or research writes'
+  );
   const saved = [];
   for (const identity of channelIdentities) {
     const response = await context.request.post(`${base}/api/company-runs`, {
@@ -1183,6 +1302,75 @@ async function companyChannelsAcceptance() {
   });
   check(
     'Two distinct local owning company records use explicit synthetic snapshots and pure rules, with zero retrieval/model calls'
+  );
+  await page.goto(
+    `${base}/companies/compare?${new URLSearchParams({
+      a: saved[0].id,
+      b: saved[1].id,
+      basis: 'consolidated',
+    })}`,
+    { waitUntil: 'networkidle' }
+  );
+  const comparison = page.locator('.lite-company-compare[data-compare-state="ready"]');
+  await comparison.waitFor();
+  assert.equal(await comparison.locator('#lite-compare-a').inputValue(), saved[0].id);
+  assert.equal(await comparison.locator('#lite-compare-b').inputValue(), saved[1].id);
+  assert.equal(await comparison.locator('#lite-compare-basis').inputValue(), 'consolidated');
+  assert.equal(await comparison.locator('[data-comparison-metric]').count(), 4);
+  for (const [side, run] of [
+    ['left', saved[0]],
+    ['right', saved[1]],
+  ]) {
+    const company = comparison.locator(`[data-comparison-company="${side}"]`);
+    assert.ok((await company.innerText()).includes(`${run.input.securityCode} · 2025`));
+    for (const link of await company.locator('nav a').all()) {
+      const url = new URL(await link.getAttribute('href'), base);
+      assert.equal(url.searchParams.get('run'), run.id);
+      assert.equal(url.searchParams.get('basis'), 'consolidated');
+      assert.equal(url.searchParams.get('experience'), 'lite');
+    }
+  }
+  for (const [metric, left, right, delta] of [
+    ['revenue', '1000000.00', '1000000.00', '0.00'],
+    ['netProfit', '100000.00', '2000000.00', '-1900000.00'],
+    ['ocf', '60000.00', '3000000.00', '-2940000.00'],
+    ['cash', '70000.00', '70000.00', '0.00'],
+  ]) {
+    const row = comparison.locator(`[data-comparison-metric="${metric}"]`);
+    for (const [side, exact, issuer] of [
+      ['left', left, saved[0]],
+      ['right', right, saved[1]],
+    ]) {
+      const cell = row.locator(`[data-comparison-side="${side}"]`);
+      assert.equal(
+        await cell.locator('.lite-compare-amount').getAttribute('data-exact-yuan'),
+        exact
+      );
+      await cell.locator('.lite-compare-exact summary').click();
+      const sources = await cell
+        .locator('.lite-compare-exact a')
+        .evaluateAll((links) => links.map((link) => link.href));
+      assert.ok(sources.length > 0);
+      assert.ok(
+        sources.every(
+          (url) => new URL(url).searchParams.get('syntheticCode') === issuer.input.securityCode
+        )
+      );
+    }
+    assert.equal(
+      await row.locator('.lite-compare-delta strong').getAttribute('data-exact-yuan'),
+      delta
+    );
+  }
+  assert.deepEqual(
+    (await (await context.request.get(`${base}/api/company-records`)).json())
+      .map((run) => run.id)
+      .sort(),
+    saved.map((run) => run.id).sort()
+  );
+  assert.equal(receipt.researchWrites.length, 0);
+  check(
+    'Two existing owning issuers compare four saved same-year fields, exact A-minus-B differences and their own source links without creating a record'
   );
   const href = (run, page = 'finance', basis = 'consolidated') =>
     `${base}/company?run=${run.id}&experience=lite&page=${page}&basis=${basis}`;
@@ -1376,7 +1564,7 @@ async function companyChannelsAcceptance() {
   check(
     'Attributable profit and every native channel retain the same owning record, year, snapshot, generation and selected basis'
   );
-  await page.goto(base, { waitUntil: 'networkidle' });
+  await page.goto(`${base}/?view=search`, { waitUntil: 'networkidle' });
   await page.locator('.showcase-search-history').waitFor();
   const recentLinks = page.locator('.showcase-search-history a');
   for (const issuer of saved) {
@@ -1384,7 +1572,7 @@ async function companyChannelsAcceptance() {
     assert.equal(await link.count(), 1);
     await link.click();
     await stable(issuer, 'finance');
-    await page.goto(base, { waitUntil: 'networkidle' });
+    await page.goto(`${base}/?view=search`, { waitUntil: 'networkidle' });
   }
   check(
     'Real owner-scoped recent-company links switch between the two actual local records without substituting another issuer'
@@ -1526,9 +1714,23 @@ try {
     instance.once('error', reject);
   });
   browser = await chromium.launch({ headless: true });
-  const desktop = await openContext();
+  const desktop = await openContext({ entry: 'home' });
   const page = desktop.page;
-  await page.getByRole('heading', { name: '让企业判断，有据可查。', exact: true }).waitFor();
+  await brandSearchFits(page, 'Default desktop brand and search');
+  await capture(page, 'lite-brand-search-desktop-zh');
+  assert.equal(new URL(page.url()).pathname, '/');
+  assert.equal(new URL(page.url()).search, '');
+  const firstInput = page.locator('.showcase-search textarea');
+  await firstInput.focus();
+  await page.keyboard.type('a');
+  assert.equal(await firstInput.inputValue(), 'a');
+  assert.equal(await firstInput.evaluate((element) => document.activeElement === element), true);
+  assert.equal(receipt.researchWrites.length, 0);
+  await firstInput.fill('');
+  await firstInput.blur();
+  check(
+    'Default branded home accepts keyboard company input immediately, without an entry screen or research submission'
+  );
   const session = await page.request.get(`${base}/api/auth/session`);
   assert.equal(session.status(), 200);
   assert.equal((await session.json()).user.isGuest, true);
@@ -1586,7 +1788,12 @@ try {
   await menuPro.focus();
   assert.equal(await menuPro.getAttribute('href'), '/query');
   assert.match(await menuPro.innerText(), /研究工作区|Research workspace/);
-  assert.equal(await menu.locator('.lite-search-navigation-links > a').count(), 3);
+  assert.deepEqual(
+    await menu
+      .locator('.lite-search-navigation-links > a')
+      .evaluateAll((links) => links.map((link) => link.getAttribute('href'))),
+    ['/?view=search', '/companies/compare', '/query', '/docs']
+  );
   assert.equal(await menu.locator('.lite-search-navigation-secondary > a').count(), 3);
   assert.equal(await menu.locator('img[src$="optical-prism.webp"]').count(), 0);
   await noOverflow(page, 'desktop full-screen menu');
@@ -1616,8 +1823,10 @@ try {
   await capture(page, 'pro-query-zh-light');
   await page.locator('.experience-switch a').filter({ hasText: 'Lite' }).click();
   await page.waitForURL(`${base}/`);
-  await page.locator('.showcase-home').waitFor();
-  check('Lite → Pro query → Lite navigation uses distinct real pages');
+  await settleBrandSearch(page);
+  check(
+    'Lite branded search → Pro query → the same directly usable branded search uses distinct real experiences'
+  );
   await desktop.context.close();
   const mobile = await openContext({
     locale: 'en',
@@ -1625,12 +1834,6 @@ try {
     height: 844,
     colorScheme: 'dark',
   });
-  await mobile.page
-    .getByRole('heading', {
-      name: 'Make company judgments traceable.',
-      exact: true,
-    })
-    .waitFor();
   assert.equal(await mobile.page.locator('html').getAttribute('data-theme'), 'dark');
   await noOverflow(mobile.page, 'mobile English dark');
   await headerControlsFit(mobile.page, 'mobile English dark');
@@ -1670,7 +1873,7 @@ try {
   await headlineFits(englishDesktop.page, 'desktop English Lite');
   await submitLabelFits(englishDesktop.page, 'desktop English Lite');
   await capture(englishDesktop.page, 'lite-desktop-en-light');
-  check('1440px English entry retains the complete canonical headline');
+  check('1440px English search retains its complete bilingual brand heading');
   await englishDesktop.context.close();
   const medium = await openContext({ locale: 'en', width: 900, height: 1024 });
   await noOverflow(medium.page, '900px English Lite');

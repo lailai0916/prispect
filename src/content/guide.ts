@@ -64,8 +64,8 @@ export const guideDocument: ProductDocument = {
       title: ['Lite 与 Pro', 'Lite and Pro'],
       paragraphs: [
         [
-          'Lite 首页以紧凑的“查公司、读样例、阅读路径”入口开始。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。每家公司都有财务、公开事项、口碑线索和原文四个独立页面，点击标签切换，浏览器返回和直接刷新也可继续阅读。四页使用当前企业自己的已保存资料，未取得内容会如实说明。',
-          'Lite home starts with compact Search, Example and Reading guide links. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Each company has four separate pages: Finance, Public records, Reputation and Original. Use their tabs to switch pages, or continue through browser history and direct refresh. All four use the current company’s own saved materials and label anything not acquired.',
+          'Lite 首屏将析光标志、字标和搜索框放在一起，可以直接查询，不需要额外进入步骤；“查公司、读样例、阅读路径”保持为紧凑入口。输入支持的 A 股公司名称或代码，确认披露主体与年报年度；已有记录可从“最近报告”打开。每家公司都有财务、公开事项、口碑线索和原文四个独立页面，点击标签切换，浏览器返回和直接刷新也可继续阅读。四页使用当前企业自己的已保存资料，未取得内容会如实说明。',
+          'Lite places the Prispect mark, wordmark and usable search together on the first screen, with no extra entry step. Search, Example and Reading guide remain compact links. Enter a supported A-share company name or code and confirm the disclosure entity and annual-report year. Open a saved record from Recent reports. Each company has four separate pages: Finance, Public records, Reputation and Original. Use their tabs to switch pages, or continue through browser history and direct refresh. All four use the current company’s own saved materials and label anything not acquired.',
         ],
         [
           '财务页从利润与经营现金对照开始，继续展开完整财务分析、行动与待核查内容；舍入金额注明约数与单位，详情保留精确原值。公开事项页阅读已取得的公司公告，口碑线索页阅读媒体与公众讨论记录；标题、摘要和已取得节选分别标注，公众观点不等于已证实事实，重复报道也不等于独立佐证。各页可自然向下阅读，以原生折叠打开更多内容。',
@@ -76,12 +76,17 @@ export const guideDocument: ProductDocument = {
           'Original shows only this company’s recorded sources, fields and excerpts, retaining their periods, known pages and reading scope, with access to related judgments. Missing PDFs, page numbers or full text are labeled; another company’s report images never fill the gap. Songyuan Safety annual-report crops from pages 190/191 appear only in the historical example, which retains its original company, year and sources. Filtering, paging and expansion organize acquired materials only. Printing from any company page retains the complete report and sources.',
         ],
         [
+          '从“对比”选择当前账号或浏览器访客的两份已有企业记录，并排阅读营业收入、所选口径净利润、经营现金流和货币资金。各列保留自己的年度、资料日期和出处；同年度、主体及人民币口径核对通过且字段可用时才显示 A 减 B。缺失或来源冲突不补零，不同年度只分别展示。选择、交换与切换口径不发起研究或模型调用；可从任一列回到这家企业的四个页面。',
+          'Choose two saved company records from Compare to read revenue, the selected net-profit basis, operating cash and monetary funds side by side. Each column retains its own year, snapshot date and sources. A minus B requires distinct verified issuers, matching annual CNY scope and available fields. Missing or conflicting inputs are not zero-filled; different years remain separate. Selection, swapping and basis changes do not start research or model calls. Each column links back to that company’s four pages.',
+        ],
+        [
           'Pro 从独立公司研究入口进入，使用原有七项侧边栏查看研究报告、财务走势、行业对比等专业页面。两版使用相同的数据源、研究记录和分析结果，分别组织展示与操作。切换 Lite／Pro 或在 Lite 翻页，保留当前企业、研究记录、年度及已保存资料、来源／报告版本，不新建查询、重新采集或调用模型；已经开始的后台分析按原状态继续。Lite 翻页保留所选利润口径，Pro 使用原有默认值与口径控件。判断与追问绑定各自的保存报告及引用代次，旧报告会注明原日期。未生成 AI 报告时，仍可核对已取得的金额和规则观察。',
           'Pro keeps its separate research entry and seven sidebar destinations, including Research report, Financial trends and Industry comparison. Both experiences use the same data sources, research record and analysis results, with distinct presentation and interactions. Switching Lite/Pro or turning a Lite page retains the company, research record, year and saved data/source/report versions without creating a query, acquiring sources or calling a model; existing background analysis continues in its current state. Lite page links retain its selected profit basis, while Pro keeps its existing default and basis control. Judgments and follow-ups stay bound to their saved report and reference generation, and older reports retain their original dates. Before an AI report is available, acquired amounts and rule observations remain readable.',
         ],
       ],
       links: [
         { label: ['打开 Lite', 'Open Lite'], href: '/' },
+        { label: ['两家公司对比', 'Compare two companies'], href: '/companies/compare' },
         { label: ['打开 Pro', 'Open Pro'], href: '/query' },
       ],
     },

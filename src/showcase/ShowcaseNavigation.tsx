@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { ArrowUpRight, BookOpen, FileSearch, Menu, PanelsTopLeft } from 'lucide-react';
+import { ArrowUpRight, BookOpen, Columns2, FileSearch, Menu, PanelsTopLeft } from 'lucide-react';
 import { Dialog } from '../components';
 import { useApp } from '../context';
 import './lite-hermes-theme.css';
@@ -18,13 +18,22 @@ export function ShowcaseNavigation({
   const firstLink = useRef<HTMLAnchorElement>(null);
   const entries = [
     {
-      href: '/',
+      href: '/?view=search',
       label: t('Lite · 查公司', 'Lite · Company search'),
       description: t(
         '从公司名称与年度开始，追到具体依据。',
         'Start with a company and year, then follow its evidence.'
       ),
       icon: FileSearch,
+    },
+    {
+      href: '/companies/compare',
+      label: t('Lite · 两家公司对比', 'Lite · Compare companies'),
+      description: t(
+        '并排查看两家公司的已取得指标与出处。',
+        'Read two companies’ acquired figures and sources side by side.'
+      ),
+      icon: Columns2,
     },
     {
       href: proLink,

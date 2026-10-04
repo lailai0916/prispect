@@ -15,6 +15,26 @@ import {
 
 const origin = 'https://prispect.com';
 
+test('company comparison supports native selection, empty sides and encoded owning-record return links', () => {
+  for (const query of [
+    '',
+    '?a=record%2Fone&b=record%3Ftwo&basis=consolidated',
+    '?a=record%3Ftwo&b=record%2Fone&basis=parent',
+    '?a=record%2Fone&b=&basis=parent',
+    '?a=&b=&basis=consolidated',
+  ]) {
+    const path = '/companies/compare' + query;
+    assert.equal(appPath(path, origin), path);
+    assert.equal(appLinkPath(path, origin), path);
+    assert.equal(appLinkPath(origin + path, origin), path);
+    assert.equal(loginDestination(path, origin), path);
+    assert.equal(legacyRoute('#' + path, origin), path);
+  }
+  assert.equal(appPath('/compare?first=private-review', origin), '/compare?first=private-review');
+  assert.equal(appLinkPath('https://foreign.example/companies/compare?a=record', origin), null);
+  assert.equal(appPath('/api/company-runs/record', origin), null);
+});
+
 test('fixed company pages resolve consistently and old combined routes remain readable', () => {
   for (const section of [null, undefined, '', 'unknown', 'qa', 'Overview'])
     assert.equal(resolveCompanySection(section), 'overview');
