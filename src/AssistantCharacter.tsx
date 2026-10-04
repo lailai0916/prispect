@@ -1,5 +1,5 @@
-import idleCharacter from './assets/assistant-character-idle.webp';
-import happyCharacter from './assets/assistant-character-happy.webp';
+import idleCharacter from './assets/assistant-character-rainbow-idle.webp';
+import happyCharacter from './assets/assistant-character-rainbow-happy.webp';
 
 export function AssistantCharacter({ happy = false }: { happy?: boolean }) {
   return (
