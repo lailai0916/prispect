@@ -469,8 +469,7 @@ pre {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.language-button,
-.theme-button {
+.header-button {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -485,6 +484,12 @@ pre {
   background: transparent;
   color: var(--muted);
   line-height: 1;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast) ease,
+    background-color var(--motion-fast) ease,
+    color var(--motion-fast) ease,
+    transform var(--motion-fast) ease;
 }
 .language-button {
   font-size: 16px;
@@ -494,15 +499,26 @@ pre {
 .language-button[data-locale='en'] {
   font-size: var(--text-ui);
 }
-.language-button:hover,
-.theme-button:hover {
+.header-button:hover:not(:disabled) {
   border-color: var(--line);
   background: var(--hover);
   color: var(--ink);
 }
+.header-button:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.header-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius);
+}
+.header-button > svg {
+  width: 17px;
+  height: 17px;
+  stroke-width: 1.75;
+}
 @media (max-width: 980px), (pointer: coarse) {
-  .language-button,
-  .theme-button {
+  .header-button {
     width: 44px;
     height: 44px;
     min-width: 44px;

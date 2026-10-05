@@ -719,10 +719,6 @@ kbd {
   .app-shell .start-key-hint + .start-submit {
     margin-left: auto;
   }
-  .header-actions .command-trigger {
-    width: 36px;
-    padding-inline: 0;
-  }
   .list-toolbar-controls {
     width: 100%;
     flex-wrap: wrap;
@@ -795,16 +791,19 @@ kbd {
   .site-header .header-actions {
     gap: 0;
   }
-  .site-header .header-actions :is(.icon-button, .language-button, .theme-button, .account-link) {
-    width: 32px;
-    min-width: 32px;
-    padding-inline: 0;
-  }
 }
 @media (max-width: 400px) {
+  .site-header .brand-name {
+    display: none;
+  }
   /* The professional mobile sidebar retains these guest account destinations. */
   .app-shell .site-header .header-actions .login-link {
     display: none;
+  }
+}
+@media (max-width: 360px) {
+  .business-shell > .site-header {
+    padding-inline: 6px;
   }
 }
 @media (max-width: 320px) {

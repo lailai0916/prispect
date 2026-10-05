@@ -703,20 +703,21 @@ export function App() {
               <div className="header-actions">
                 {(business || documentationRoute) && (
                   <Hint label={t(...documentationTitle)}>
-                    <a className="icon-button" href="/docs" aria-label={t(...documentationTitle)}>
-                      <BookOpen size={17} />
+                    <a className="header-button" href="/docs" aria-label={t(...documentationTitle)}>
+                      <BookOpen size={17} aria-hidden="true" />
                     </a>
                   </Hint>
                 )}
                 {sessionAvailable && (
                   <Hint label={t('搜索与跳转', 'Search and jump to')}>
                     <button
-                      className="icon-button command-trigger"
+                      type="button"
+                      className="header-button command-trigger"
                       onClick={() => setCommandOpen(true)}
                       aria-label={t('搜索与跳转', 'Search and jump to')}
                       aria-keyshortcuts="Meta+K Control+K"
                     >
-                      <Search size={17} />
+                      <Search size={17} aria-hidden="true" />
                     </button>
                   </Hint>
                 )}
@@ -727,7 +728,8 @@ export function App() {
                   )}
                 >
                   <button
-                    className="language-button"
+                    type="button"
+                    className="header-button language-button"
                     data-locale={locale}
                     onClick={() => setLocale(locale === 'en' ? 'zh-Hans' : 'en')}
                     aria-label={t(
@@ -741,12 +743,13 @@ export function App() {
                 <ThemeControl />
                 {business && (
                   <button
-                    className="icon-button mobile-menu"
+                    type="button"
+                    className="header-button mobile-menu"
                     aria-label={t('打开导航', 'Open navigation')}
                     aria-expanded={menuOpen}
                     onClick={() => setMenuOpen(true)}
                   >
-                    <Menu size={19} />
+                    <Menu size={17} aria-hidden="true" />
                   </button>
                 )}
                 {sessionAvailable && accountUser ? (

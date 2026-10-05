@@ -26,7 +26,7 @@ export function ThemeControl() {
     <Hint label={label}>
       <button
         type="button"
-        className="theme-button"
+        className="header-button theme-button"
         aria-label={label}
         onClick={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
       >
